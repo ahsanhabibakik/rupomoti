@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { Layout } from "@/components/layout/Layout";
-import { Providers } from "@/components/providers/Providers";
+import { Navbar } from "@/components/layout/Navbar";
+import { CartProvider } from "@/contexts/CartContext";
+import { Toaster } from "@/components/ui/toaster";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Rupomoti - Exquisite Jewelry Collection",
-  description: "Discover our stunning collection of fine jewelry at Rupomoti. Find the perfect piece to celebrate life's special moments.",
+  title: "Rupomoti - Exquisite Pearl Jewelry",
+  description: "Discover our collection of beautiful pearl jewelry pieces.",
 };
 
 export default function RootLayout({
@@ -19,9 +20,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="light">
       <body className={inter.className}>
-        <Providers>
-          <Layout>{children}</Layout>
-        </Providers>
+        <CartProvider>
+          <Navbar />
+          {children}
+          <Toaster />
+        </CartProvider>
       </body>
     </html>
   );

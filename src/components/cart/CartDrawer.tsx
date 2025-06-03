@@ -9,14 +9,42 @@ import { CheckoutModal } from './CheckoutModal'
 import Image from 'next/image'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
+import { useToast } from '@/hooks/use-toast'
 
 export function CartDrawer() {
   const { state, updateQuantity, removeItem } = useCart()
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
+  const { toast } = useToast()
 
   const subtotal = state.total
   const shipping = state.items.length > 0 ? 100 : 0
   const total = subtotal + shipping
+
+  const handleRemoveItem = (id: string, name: string) => {
+    removeItem(id)
+    toast({
+      title: "Item Removed",
+      description: `${name} has been removed from your cart.`,
+      variant: "info",
+    })
+  }
+
+  const handleUpdateQuantity = (id: string, newQuantity: number, name: string) => {
+    updateQuantity(id, newQuantity)
+    if (newQuantity === 0) {
+      toast({
+        title: "Item Removed",
+        description: `${name} has been removed from your cart.`,
+        variant: "info",
+      })
+    } else {
+      toast({
+        title: "Quantity Updated",
+        description: `${name} quantity has been updated to ${newQuantity}.`,
+        variant: "success",
+      })
+    }
+  }
 
   return (
     <>
@@ -69,7 +97,7 @@ export function CartDrawer() {
                             variant="outline"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => updateQuantity(item.id, Math.max(0, item.quantity - 1))}
+                            onClick={() => handleUpdateQuantity(item.id, Math.max(0, item.quantity - 1), item.name)}
                           >
                             <Minus className="h-4 w-4" />
                           </Button>
@@ -78,7 +106,7 @@ export function CartDrawer() {
                             variant="outline"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            onClick={() => handleUpdateQuantity(item.id, item.quantity + 1, item.name)}
                           >
                             <Plus className="h-4 w-4" />
                           </Button>
@@ -88,7 +116,7 @@ export function CartDrawer() {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8"
-                        onClick={() => removeItem(item.id)}
+                        onClick={() => handleRemoveItem(item.id, item.name)}
                       >
                         <X className="h-4 w-4" />
                       </Button>

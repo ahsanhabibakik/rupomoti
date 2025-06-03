@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { Progress } from '@/components/ui/progress'
 
 const slides = [
   {
@@ -26,22 +27,42 @@ const slides = [
   }
 ]
 
+const SLIDE_DURATION = 5000 // 5 seconds per slide
+
 export function HeroSlider() {
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [progress, setProgress] = useState(0)
 
   useEffect(() => {
+    const startTime = Date.now()
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length)
-    }, 5000)
+      const elapsed = Date.now() - startTime
+      const newProgress = (elapsed / SLIDE_DURATION) * 100
+
+      if (newProgress >= 100) {
+        setCurrentSlide((prev) => (prev + 1) % slides.length)
+        setProgress(0)
+      } else {
+        setProgress(newProgress)
+      }
+    }, 50)
+
     return () => clearInterval(timer)
-  }, [])
+  }, [currentSlide])
 
   const prevSlide = () => {
     setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)
+    setProgress(0)
   }
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % slides.length)
+    setProgress(0)
+  }
+
+  const goToSlide = (index: number) => {
+    setCurrentSlide(index)
+    setProgress(0)
   }
 
   return (
@@ -61,6 +82,24 @@ export function HeroSlider() {
             priority={index === 0}
             sizes="100vw"
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-white text-center p-4">
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-2 animate-fade-up [--slide-delay:200ms]">
+              {slide.title}
+            </h2>
+            <h3 className="text-2xl sm:text-3xl lg:text-4xl mb-4 animate-fade-up [--slide-delay:400ms]">
+              {slide.subtitle}
+            </h3>
+            <p className="max-w-lg text-lg text-white/90 mb-8 animate-fade-up [--slide-delay:600ms]">
+              {slide.description}
+            </p>
+            <Button
+              size="lg"
+              className="bg-primary/90 hover:bg-primary text-white animate-fade-up [--slide-delay:800ms]"
+            >
+              Shop Now
+            </Button>
+          </div>
         </div>
       ))}
       
@@ -77,15 +116,22 @@ export function HeroSlider() {
         <ChevronRight className="w-6 h-6" />
       </button>
 
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex gap-2">
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex gap-3">
         {slides.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => setCurrentSlide(index)}
-            className={`w-2 h-2 rounded-full transition-all ${
-              index === currentSlide ? 'bg-white w-4' : 'bg-white/50'
-            }`}
-          />
+          <div key={index} className="relative">
+            <button
+              onClick={() => goToSlide(index)}
+              className={`w-16 h-1.5 rounded-full transition-all ${
+                index === currentSlide ? 'bg-white' : 'bg-white/50'
+              }`}
+            />
+            {index === currentSlide && (
+              <div
+                className="absolute top-0 left-0 h-full bg-primary rounded-full transition-all"
+                style={{ width: `${progress}%` }}
+              />
+            )}
+          </div>
         ))}
       </div>
     </section>
