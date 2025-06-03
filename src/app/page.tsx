@@ -6,72 +6,50 @@ import { Badge } from '@/components/ui/badge'
 import { ProductCard } from '@/components/products/ProductCard'
 import productsData from '@/data/products.json'
 import { GemIcon, Crown, Diamond, Sparkles } from 'lucide-react'
+import { HeroSlider } from '@/components/hero/HeroSlider'
 
 const categories = [
   { 
     name: 'Necklaces', 
     count: '24',
     icon: Crown,
-    image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&q=80&w=800',
+    image: '/images/pearl/jewelery1.jpeg',
     description: 'Elegant pearl necklaces for every occasion'
   },
   { 
     name: 'Rings', 
     count: '38',
     icon: Diamond,
-    image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=80&w=800',
+    image: '/images/pearl/jewelery2.jpeg',
     description: 'Stunning pearl rings that make a statement'
   },
   { 
     name: 'Earrings', 
     count: '16',
     icon: Sparkles,
-    image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&q=80&w=800',
+    image: '/images/pearl/jewelery3.jpeg',
     description: 'Beautiful pearl earrings for everyday elegance'
   },
   { 
     name: 'Bracelets', 
     count: '29',
     icon: GemIcon,
-    image: 'https://images.unsplash.com/photo-1611085583191-a3b181a88401?auto=format&fit=crop&q=80&w=800',
+    image: '/images/pearl/jewelery4.jpeg',
     description: 'Delicate pearl bracelets that complement any style'
   }
 ]
 
-export default function Home() {
+async function getProducts() {
+  return productsData.products
+}
+
+export default async function Home() {
+  const products = await getProducts()
+  
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="relative h-[90vh] flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0">
-          <Image
-            src="https://images.unsplash.com/photo-1584302179602-e4c3d3fd629d?auto=format&fit=crop&q=80&w=2000"
-            alt="Luxury pearls"
-            className="object-cover"
-            fill
-            priority
-            sizes="100vw"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-black/40" />
-        </div>
-        <div className="relative z-20 text-center text-white px-4 max-w-5xl mx-auto">
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-            Discover the Timeless
-            <span className="text-secondary block mt-2">Beauty of Pearls</span>
-          </h1>
-          <p className="text-xl md:text-2xl mb-8 max-w-2xl mx-auto text-gray-200">
-            Exquisite jewelry pieces that tell your unique story, crafted with the finest pearls
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-primary hover:bg-primary/90 text-white">
-              Explore Collections
-            </Button>
-            <Button size="lg" variant="outline" className="text-white border-white hover:bg-white/10">
-              View Catalog
-            </Button>
-          </div>
-        </div>
-      </section>
+      <HeroSlider />
 
       {/* Categories Section - Immediately below hero */}
       <section className="py-12 px-4 sm:py-16 bg-gradient-to-b from-background to-gray-50">
@@ -125,7 +103,7 @@ export default function Home() {
             <p className="text-gray-600 mt-2">Our most popular and exclusive pieces</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-            {productsData.products.map((product) => (
+            {products.map((product) => (
               <ProductCard
                 key={product.id}
                 id={product.id}

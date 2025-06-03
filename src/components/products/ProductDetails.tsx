@@ -6,16 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { useCart } from '@/contexts/CartContext'
 import { Heart, Share2, ChevronRight, Truck } from 'lucide-react'
 import Image from 'next/image'
-
-interface Product {
-  id: string
-  name: string
-  description: string
-  price: number
-  images: string[]
-  details: Record<string, string>
-  inStock: boolean
-}
+import { Product } from '@/types/product'
 
 interface ProductDetailsProps {
   product: Product
