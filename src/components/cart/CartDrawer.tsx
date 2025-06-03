@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { useCart } from '@/contexts/CartContext'
 import { ShoppingCart, Plus, Minus, X } from 'lucide-react'
 import { CheckoutModal } from './CheckoutModal'
+import Image from 'next/image'
 
 export function CartDrawer() {
   const { state, updateQuantity, removeItem } = useCart()
@@ -38,11 +39,13 @@ export function CartDrawer() {
               <div className="space-y-4">
                 {state.items.map((item) => (
                   <div key={item.id} className="flex gap-4">
-                    <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden">
-                      <img
+                    <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden relative">
+                      <Image
                         src={item.image}
                         alt={item.name}
-                        className="w-full h-full object-cover"
+                        className="object-cover"
+                        fill
+                        sizes="80px"
                       />
                     </div>
                     <div className="flex-1">

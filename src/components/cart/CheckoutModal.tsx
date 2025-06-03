@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -70,6 +70,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px] h-[90vh] sm:h-auto overflow-y-auto">
+        <DialogTitle>অর্ডার ফর্ম</DialogTitle>
         <form onSubmit={handleSubmit} className="space-y-6 py-4">
           <div className="space-y-4">
             <Label>ডেলিভারি এলাকা</Label>

@@ -61,11 +61,11 @@ export function Navbar() {
               <NavigationMenuList>
                 {navigationLinks.map((link) => (
                   <NavigationMenuItem key={link.href}>
-                    <Link href={link.href} legacyBehavior passHref>
-                      <NavigationMenuLink className="hover:text-primary">
+                    <NavigationMenuLink asChild>
+                      <Link href={link.href} className="hover:text-primary">
                         {link.label}
-                      </NavigationMenuLink>
-                    </Link>
+                      </Link>
+                    </NavigationMenuLink>
                   </NavigationMenuItem>
                 ))}
               </NavigationMenuList>

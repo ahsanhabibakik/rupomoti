@@ -1,17 +1,9 @@
-import { Metadata } from 'next'
+'use client'
+
 import { ProductDetails } from '@/components/products/ProductDetails'
 import productsData from '@/data/products.json'
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
-  const product = productsData.products.find(p => p.id === params.id)
-
-  return {
-    title: product ? `${product.name} - Rupomoti` : 'Product Not Found - Rupomoti',
-    description: product?.description || 'Product not found',
-  }
-}
-
-export default async function Page({ params }: { params: { id: string } }) {
+export default function Page({ params }: { params: { id: string } }) {
   const product = productsData.products.find(p => p.id === params.id)
 
   if (!product) {

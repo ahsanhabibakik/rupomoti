@@ -6,8 +6,8 @@
       "description": "Elegant single-strand freshwater pearl necklace with sterling silver clasp",
       "price": 2999,
       "images": [
-        "https://images.unsplash.com/photo-1611085583191-a3b181a88401",
-        "https://images.unsplash.com/photo-1602751584552-8ba73aad10e1"
+        "https://images.unsplash.com/photo-1611085583191-a3b181a88401?auto=format&fit=crop&q=80&w=800",
+        "https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?auto=format&fit=crop&q=80&w=800"
       ],
       "category": "necklaces",
       "details": {
@@ -25,8 +25,8 @@
       "description": "Beautiful drop earrings featuring AAA grade pearls with zircon accents",
       "price": 1899,
       "images": [
-        "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908",
-        "https://images.unsplash.com/photo-1598560917505-59a3ad559071"
+        "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&q=80&w=800",
+        "https://images.unsplash.com/photo-1598560917505-59a3ad559071?auto=format&fit=crop&q=80&w=800"
       ],
       "category": "earrings",
       "details": {
@@ -44,8 +44,8 @@
       "description": "Luxurious bracelet featuring perfectly matched pearls with crystal accents",
       "price": 3499,
       "images": [
-        "https://images.unsplash.com/photo-1611085583191-a3b181a88401",
-        "https://images.unsplash.com/photo-1602751584552-8ba73aad10e1"
+        "https://images.unsplash.com/photo-1611085583191-a3b181a88401?auto=format&fit=crop&q=80&w=800",
+        "https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?auto=format&fit=crop&q=80&w=800"
       ],
       "category": "bracelets",
       "details": {
@@ -63,8 +63,8 @@
       "description": "Modern design featuring a large center pearl surrounded by cubic zirconia",
       "price": 2499,
       "images": [
-        "https://images.unsplash.com/photo-1602751584552-8ba73aad10e1",
-        "https://images.unsplash.com/photo-1611085583191-a3b181a88401"
+        "https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?auto=format&fit=crop&q=80&w=800",
+        "https://images.unsplash.com/photo-1611085583191-a3b181a88401?auto=format&fit=crop&q=80&w=800"
       ],
       "category": "rings",
       "details": {
@@ -82,8 +82,8 @@
       "description": "Three-strand pearl choker with modern sterling silver toggle clasp",
       "price": 4999,
       "images": [
-        "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908",
-        "https://images.unsplash.com/photo-1598560917505-59a3ad559071"
+        "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&q=80&w=800",
+        "https://images.unsplash.com/photo-1598560917505-59a3ad559071?auto=format&fit=crop&q=80&w=800"
       ],
       "category": "necklaces",
       "details": {
