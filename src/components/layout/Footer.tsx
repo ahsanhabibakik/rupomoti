@@ -2,132 +2,140 @@
 
 import Link from 'next/link'
 import { Facebook, Instagram, Twitter } from 'lucide-react'
-import { Separator } from '@/components/ui/separator'
 
 const footerLinks = {
   shop: [
-    { label: 'All Jewelry', href: '/jewelry' },
-    { label: 'New Arrivals', href: '/new-arrivals' },
-    { label: 'Best Sellers', href: '/best-sellers' },
-    { label: 'Special Offers', href: '/offers' },
+    { name: 'All Jewelry', href: '/shop' },
+    { name: 'New Arrivals', href: '/new-arrivals' },
+    { name: 'Best Sellers', href: '/best-sellers' },
+    { name: 'Special Offers', href: '/special-offers' },
   ],
   support: [
-    { label: 'Contact Us', href: '/contact' },
-    { label: 'FAQs', href: '/faqs' },
-    { label: 'Shipping Info', href: '/shipping' },
-    { label: 'Returns', href: '/returns' },
+    { name: 'Contact Us', href: '/contact' },
+    { name: 'FAQs', href: '/faqs' },
+    { name: 'Shipping Info', href: '/shipping' },
+    { name: 'Returns', href: '/returns' },
   ],
   company: [
-    { label: 'About Us', href: '/about' },
-    { label: 'Blog', href: '/blog' },
-    { label: 'Careers', href: '/careers' },
-    { label: 'Press', href: '/press' },
+    { name: 'About Us', href: '/about' },
+    { name: 'Blog', href: '/blog' },
+    { name: 'Careers', href: '/careers' },
+    { name: 'Press', href: '/press' },
+  ],
+  legal: [
+    { name: 'Privacy Policy', href: '/privacy' },
+    { name: 'Terms of Service', href: '/terms' },
+    { name: 'Sitemap', href: '/sitemap' },
   ],
 }
 
 const socialLinks = [
-  { icon: Facebook, href: 'https://facebook.com', label: 'Facebook' },
-  { icon: Instagram, href: 'https://instagram.com', label: 'Instagram' },
-  { icon: Twitter, href: 'https://twitter.com', label: 'Twitter' },
+  { name: 'Facebook', icon: Facebook, href: 'https://facebook.com/rupomoti' },
+  { name: 'Instagram', icon: Instagram, href: 'https://instagram.com/rupomoti' },
+  { name: 'Twitter', icon: Twitter, href: 'https://twitter.com/rupomoti' },
 ]
 
 export function Footer() {
   return (
-    <footer className="bg-gray-50 pt-12 sm:pt-16 pb-6 sm:pb-8">
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-8 mb-12">
-          {/* Brand Column */}
-          <div className="col-span-2 sm:col-span-3 lg:col-span-1 space-y-4">
+    <footer className="border-t bg-white">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="xl:grid xl:grid-cols-5 xl:gap-8">
+          <div className="space-y-8 xl:col-span-2">
             <Link href="/" className="text-2xl font-bold text-primary">
               Rupomoti
             </Link>
-            <p className="text-muted-foreground text-sm sm:text-base">
+            <p className="text-sm text-muted-foreground max-w-md">
               Crafting timeless pieces of elegance. Your trusted destination for fine jewelry.
             </p>
-            <div className="flex space-x-4">
-              {socialLinks.map((social) => (
-                <a
-                  key={social.label}
-                  href={social.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-muted-foreground hover:text-primary transition-colors"
-                >
-                  <social.icon className="h-5 w-5" />
-                  <span className="sr-only">{social.label}</span>
-                </a>
-              ))}
+            <div className="flex space-x-6">
+              {socialLinks.map((item) => {
+                const Icon = item.icon
+                return (
+                  <a
+                    key={item.name}
+                    href={item.href}
+                    className="text-muted-foreground hover:text-primary"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <span className="sr-only">{item.name}</span>
+                    <Icon className="h-6 w-6" />
+                  </a>
+                )
+              })}
             </div>
           </div>
-
-          {/* Shop Links */}
-          <div>
-            <h3 className="font-semibold text-base sm:text-lg mb-3 sm:mb-4">Shop</h3>
-            <ul className="space-y-2 sm:space-y-3">
-              {footerLinks.shop.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm sm:text-base text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Support Links */}
-          <div>
-            <h3 className="font-semibold text-base sm:text-lg mb-3 sm:mb-4">Support</h3>
-            <ul className="space-y-2 sm:space-y-3">
-              {footerLinks.support.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm sm:text-base text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Company Links */}
-          <div className="sm:col-start-3 lg:col-auto">
-            <h3 className="font-semibold text-base sm:text-lg mb-3 sm:mb-4">Company</h3>
-            <ul className="space-y-2 sm:space-y-3">
-              {footerLinks.company.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm sm:text-base text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+          <div className="mt-16 grid grid-cols-2 gap-8 xl:col-span-3 xl:mt-0">
+            <div className="md:grid md:grid-cols-2 md:gap-8">
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Shop</h3>
+                <ul role="list" className="mt-4 space-y-4">
+                  {footerLinks.shop.map((item) => (
+                    <li key={item.name}>
+                      <Link
+                        href={item.href}
+                        className="text-sm text-muted-foreground hover:text-primary"
+                      >
+                        {item.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="mt-10 md:mt-0">
+                <h3 className="text-sm font-semibold text-foreground">Support</h3>
+                <ul role="list" className="mt-4 space-y-4">
+                  {footerLinks.support.map((item) => (
+                    <li key={item.name}>
+                      <Link
+                        href={item.href}
+                        className="text-sm text-muted-foreground hover:text-primary"
+                      >
+                        {item.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            <div className="md:grid md:grid-cols-2 md:gap-8">
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Company</h3>
+                <ul role="list" className="mt-4 space-y-4">
+                  {footerLinks.company.map((item) => (
+                    <li key={item.name}>
+                      <Link
+                        href={item.href}
+                        className="text-sm text-muted-foreground hover:text-primary"
+                      >
+                        {item.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="mt-10 md:mt-0">
+                <h3 className="text-sm font-semibold text-foreground">Legal</h3>
+                <ul role="list" className="mt-4 space-y-4">
+                  {footerLinks.legal.map((item) => (
+                    <li key={item.name}>
+                      <Link
+                        href={item.href}
+                        className="text-sm text-muted-foreground hover:text-primary"
+                      >
+                        {item.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
-
-        <Separator className="mb-6 sm:mb-8" />
-
-        {/* Bottom Section */}
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-xs sm:text-sm text-muted-foreground">
-          <div className="flex flex-wrap gap-4 justify-center sm:justify-start">
-            <Link href="/privacy" className="hover:text-primary">
-              Privacy Policy
-            </Link>
-            <Link href="/terms" className="hover:text-primary">
-              Terms of Service
-            </Link>
-            <Link href="/sitemap" className="hover:text-primary">
-              Sitemap
-            </Link>
-          </div>
-          <p>© {new Date().getFullYear()} Rupomoti. All rights reserved.</p>
+        <div className="mt-12 border-t pt-8">
+          <p className="text-sm text-muted-foreground">
+            © {new Date().getFullYear()} Rupomoti. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>
