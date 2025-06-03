@@ -33,16 +33,16 @@ const socialLinks = [
 
 export function Footer() {
   return (
-    <footer className="bg-gray-50 pt-16 pb-8">
+    <footer className="bg-gray-50 pt-12 sm:pt-16 pb-6 sm:pb-8">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-8 mb-12">
           {/* Brand Column */}
-          <div className="space-y-4">
+          <div className="col-span-2 sm:col-span-3 lg:col-span-1 space-y-4">
             <Link href="/" className="text-2xl font-bold text-primary">
               Rupomoti
             </Link>
-            <p className="text-gray-600 mt-4">
-              Crafting timeless pieces of elegance since 1995. Your trusted destination for fine jewelry.
+            <p className="text-muted-foreground text-sm sm:text-base">
+              Crafting timeless pieces of elegance. Your trusted destination for fine jewelry.
             </p>
             <div className="flex space-x-4">
               {socialLinks.map((social) => (
@@ -51,7 +51,7 @@ export function Footer() {
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-gray-600 hover:text-primary transition-colors"
+                  className="text-muted-foreground hover:text-primary transition-colors"
                 >
                   <social.icon className="h-5 w-5" />
                   <span className="sr-only">{social.label}</span>
@@ -62,13 +62,13 @@ export function Footer() {
 
           {/* Shop Links */}
           <div>
-            <h3 className="font-semibold text-lg mb-4">Shop</h3>
-            <ul className="space-y-3">
+            <h3 className="font-semibold text-base sm:text-lg mb-3 sm:mb-4">Shop</h3>
+            <ul className="space-y-2 sm:space-y-3">
               {footerLinks.shop.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-gray-600 hover:text-primary transition-colors"
+                    className="text-sm sm:text-base text-muted-foreground hover:text-primary transition-colors"
                   >
                     {link.label}
                   </Link>
@@ -79,13 +79,13 @@ export function Footer() {
 
           {/* Support Links */}
           <div>
-            <h3 className="font-semibold text-lg mb-4">Support</h3>
-            <ul className="space-y-3">
+            <h3 className="font-semibold text-base sm:text-lg mb-3 sm:mb-4">Support</h3>
+            <ul className="space-y-2 sm:space-y-3">
               {footerLinks.support.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-gray-600 hover:text-primary transition-colors"
+                    className="text-sm sm:text-base text-muted-foreground hover:text-primary transition-colors"
                   >
                     {link.label}
                   </Link>
@@ -95,14 +95,14 @@ export function Footer() {
           </div>
 
           {/* Company Links */}
-          <div>
-            <h3 className="font-semibold text-lg mb-4">Company</h3>
-            <ul className="space-y-3">
+          <div className="sm:col-start-3 lg:col-auto">
+            <h3 className="font-semibold text-base sm:text-lg mb-3 sm:mb-4">Company</h3>
+            <ul className="space-y-2 sm:space-y-3">
               {footerLinks.company.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-gray-600 hover:text-primary transition-colors"
+                    className="text-sm sm:text-base text-muted-foreground hover:text-primary transition-colors"
                   >
                     {link.label}
                   </Link>
@@ -112,11 +112,11 @@ export function Footer() {
           </div>
         </div>
 
-        <Separator className="my-8" />
+        <Separator className="mb-6 sm:mb-8" />
 
         {/* Bottom Section */}
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-600">
-          <div className="flex flex-wrap gap-4 justify-center md:justify-start">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-xs sm:text-sm text-muted-foreground">
+          <div className="flex flex-wrap gap-4 justify-center sm:justify-start">
             <Link href="/privacy" className="hover:text-primary">
               Privacy Policy
             </Link>

@@ -1,105 +1,128 @@
 'use client'
 
 import { useState } from 'react'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { useCart } from '@/contexts/CartContext'
-import { ShoppingCart, Plus, Minus, X } from 'lucide-react'
+import { ShoppingCart, Plus, Minus, X, ArrowLeft } from 'lucide-react'
 import { CheckoutModal } from './CheckoutModal'
 import Image from 'next/image'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Separator } from '@/components/ui/separator'
 
 export function CartDrawer() {
   const { state, updateQuantity, removeItem } = useCart()
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
 
+  const subtotal = state.total
+  const shipping = state.items.length > 0 ? 100 : 0
+  const total = subtotal + shipping
+
   return (
     <>
       <Sheet>
         <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="relative">
+          <Button variant="outline" size="icon" className="relative">
             <ShoppingCart className="h-5 w-5" />
-            {state.itemCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-primary text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                {state.itemCount}
+            {state.items.length > 0 && (
+              <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground w-5 h-5 rounded-full text-xs flex items-center justify-center">
+                {state.items.length}
               </span>
             )}
           </Button>
         </SheetTrigger>
-        <SheetContent className="w-full sm:max-w-lg flex flex-col">
-          <SheetHeader>
-            <SheetTitle>আপনার কার্ট</SheetTitle>
+        <SheetContent className="flex flex-col w-full sm:max-w-lg p-0">
+          <SheetHeader className="px-6 py-4 border-b">
+            <SheetTitle>Shopping Cart ({state.items.length})</SheetTitle>
           </SheetHeader>
 
-          <div className="flex-1 overflow-auto py-4">
-            {state.items.length === 0 ? (
-              <div className="text-center text-gray-500 py-8">
-                আপনার কার্ট খালি
+          {state.items.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-4">
+              <ShoppingCart className="w-12 h-12 text-muted-foreground" />
+              <div className="space-y-1">
+                <h3 className="font-medium text-lg">Your cart is empty</h3>
+                <p className="text-sm text-muted-foreground">Add items to your cart to continue shopping</p>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {state.items.map((item) => (
-                  <div key={item.id} className="flex gap-4">
-                    <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden relative">
-                      <Image
-                        src={item.image}
-                        alt={item.name}
-                        className="object-cover"
-                        fill
-                        sizes="80px"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-medium">{item.name}</h3>
-                      <p className="text-sm text-gray-500">
-                        ৳{item.price.toLocaleString()}
-                      </p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => updateQuantity(item.id, Math.max(0, item.quantity - 1))}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                        <span className="w-8 text-center">{item.quantity}</span>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeItem(item.id)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="border-t pt-4 space-y-4">
-            <div className="flex justify-between text-lg font-medium">
-              <span>মোট</span>
-              <span>৳{state.total.toLocaleString()}</span>
+              <SheetClose asChild>
+                <Button>Continue Shopping</Button>
+              </SheetClose>
             </div>
-            <Button
-              className="w-full"
-              size="lg"
-              disabled={state.items.length === 0}
-              onClick={() => setIsCheckoutOpen(true)}
-            >
-              অর্ডার করুন
-            </Button>
-          </div>
+          ) : (
+            <>
+              <ScrollArea className="flex-1 px-6">
+                <div className="divide-y">
+                  {state.items.map((item) => (
+                    <div key={item.id} className="py-4 flex gap-4">
+                      <div className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+                        <Image
+                          src={item.image}
+                          alt={item.name}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <h4 className="font-medium line-clamp-2">{item.name}</h4>
+                        <p className="text-sm text-muted-foreground">৳{item.price.toLocaleString()}</p>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => updateQuantity(item.id, Math.max(0, item.quantity - 1))}
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                          <span className="w-8 text-center">{item.quantity}</span>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => removeItem(item.id)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+
+              <div className="border-t p-6 space-y-4">
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">সাবটোটাল</span>
+                    <span>৳{subtotal.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">ডেলিভারি চার্জ</span>
+                    <span>৳{shipping.toLocaleString()}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between text-lg font-medium">
+                    <span>মোট</span>
+                    <span>৳{total.toLocaleString()}</span>
+                  </div>
+                </div>
+                <Button
+                  className="w-full"
+                  size="lg"
+                  onClick={() => setIsCheckoutOpen(true)}
+                >
+                  অর্ডার করুন
+                </Button>
+              </div>
+            </>
+          )}
         </SheetContent>
       </Sheet>
 

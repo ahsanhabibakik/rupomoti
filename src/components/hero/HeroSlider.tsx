@@ -45,7 +45,7 @@ export function HeroSlider() {
   }
 
   return (
-    <section className="relative h-[90vh] flex items-center justify-center overflow-hidden">
+    <section className="relative h-[50vh] sm:h-[70vh] lg:h-[90vh] flex items-center justify-center overflow-hidden">
       {slides.map((slide, index) => (
         <div
           key={index}
@@ -61,26 +61,6 @@ export function HeroSlider() {
             priority={index === 0}
             sizes="100vw"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-black/40" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="relative z-20 text-center text-white px-4 max-w-5xl mx-auto">
-              <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-                {slide.title}
-                <span className="text-secondary block mt-2">{slide.subtitle}</span>
-              </h1>
-              <p className="text-xl md:text-2xl mb-8 max-w-2xl mx-auto text-gray-200">
-                {slide.description}
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="lg" className="bg-primary hover:bg-primary/90 text-white">
-                  Explore Collections
-                </Button>
-                <Button size="lg" variant="outline" className="text-white border-white hover:bg-white/10">
-                  View Catalog
-                </Button>
-              </div>
-            </div>
-          </div>
         </div>
       ))}
       
