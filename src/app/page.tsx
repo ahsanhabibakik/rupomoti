@@ -2,32 +2,9 @@
 
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-
-const featuredCollections = [
-  {
-    id: 1,
-    title: 'Diamond Collection',
-    image: '/images/diamond-collection.jpg',
-    description: 'Exquisite diamond pieces that capture eternal beauty',
-    price: 'Starting from $999'
-  },
-  {
-    id: 2,
-    title: 'Gold Essentials',
-    image: '/images/gold-collection.jpg',
-    description: 'Timeless gold jewelry for every occasion',
-    price: 'Starting from $499'
-  },
-  {
-    id: 3,
-    title: 'Wedding Collection',
-    image: '/images/wedding-collection.jpg',
-    description: 'Special pieces for your special day',
-    price: 'Starting from $799'
-  }
-]
+import { ProductCard } from '@/components/products/ProductCard'
+import productsData from '@/data/products.json'
 
 const categories = [
   { name: 'Necklaces', count: '24' },
@@ -55,27 +32,22 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Collections */}
+      {/* Featured Products */}
       <section className="py-16 px-4 bg-background">
         <div className="container mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12">
             Featured Collections
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredCollections.map((collection) => (
-              <Card key={collection.id} className="overflow-hidden group">
-                <div className="relative h-64 overflow-hidden">
-                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors z-10" />
-                  <div className="relative h-full w-full bg-gray-200">
-                    {/* Replace with actual images later */}
-                  </div>
-                </div>
-                <CardContent className="p-6">
-                  <h3 className="text-xl font-semibold mb-2">{collection.title}</h3>
-                  <p className="text-gray-600 mb-4">{collection.description}</p>
-                  <p className="font-medium text-primary">{collection.price}</p>
-                </CardContent>
-              </Card>
+            {productsData.products.map((product) => (
+              <ProductCard
+                key={product.id}
+                id={product.id}
+                name={product.name}
+                description={product.description}
+                price={product.price}
+                image={product.images[0]}
+              />
             ))}
           </div>
         </div>
