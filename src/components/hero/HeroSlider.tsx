@@ -6,19 +6,19 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 const slides = [
   {
-    image: '/images/hero/slider1.jpeg',
+    image: '/images/pearl/jewelery1.jpeg',
     title: 'Discover the Timeless',
     subtitle: 'Beauty of Pearls',
     description: 'Exquisite jewelry pieces that tell your unique story, crafted with the finest pearls'
   },
   {
-    image: '/images/hero/slider2.jpeg',
+    image: '/images/pearl/jewelery2.jpeg',
     title: 'Elegant Collection',
     subtitle: 'For Every Occasion',
     description: 'Find the perfect piece to celebrate life\'s special moments'
   },
   {
-    image: '/images/hero/slider3.jpg',
+    image: '/images/pearl/jewelery3.jpeg',
     title: 'Handcrafted',
     subtitle: 'With Love',
     description: 'Each piece is carefully crafted to bring out the natural beauty of pearls'
@@ -30,8 +30,15 @@ const SLIDE_DURATION = 5000 // 5 seconds per slide
 export function HeroSlider() {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [progress, setProgress] = useState(0)
+  const [isLoaded, setIsLoaded] = useState(false)
 
   useEffect(() => {
+    setIsLoaded(true)
+  }, [])
+
+  useEffect(() => {
+    if (!isLoaded) return
+
     const startTime = Date.now()
     const timer = setInterval(() => {
       const elapsed = Date.now() - startTime
@@ -46,7 +53,13 @@ export function HeroSlider() {
     }, 50)
 
     return () => clearInterval(timer)
-  }, [currentSlide])
+  }, [currentSlide, isLoaded])
+
+  if (!isLoaded) {
+    return (
+      <div className="relative h-[50vh] sm:h-[60vh] lg:h-[70vh] max-h-[600px] bg-gray-100" />
+    )
+  }
 
   const prevSlide = () => {
     setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)

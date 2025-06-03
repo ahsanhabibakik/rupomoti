@@ -1,5 +1,3 @@
-'use client'
-
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -52,9 +50,9 @@ export default function HomePage() {
   // For new arrivals, we'll use the first 8 products
   const newArrivals = productsData.products.slice(0, 8)
 
-  // For best sellers, we'll randomly select 8 products
+  // For best sellers, we'll randomly select 8 products with a stable sort
   const bestSellers = [...productsData.products]
-    .sort(() => Math.random() - 0.5)
+    .sort((a, b) => parseInt(a.id) - parseInt(b.id))
     .slice(0, 8)
 
   return (
