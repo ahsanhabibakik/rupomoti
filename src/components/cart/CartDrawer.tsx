@@ -5,7 +5,6 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Button } from '@/components/ui/button'
 import { useCart } from '@/contexts/CartContext'
 import { ShoppingCart, Plus, Minus, X } from 'lucide-react'
-import { Separator } from '@/components/ui/separator'
 import { CheckoutModal } from './CheckoutModal'
 
 export function CartDrawer() {
