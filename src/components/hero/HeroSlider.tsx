@@ -2,9 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { Progress } from '@/components/ui/progress'
 
 const slides = [
   {
@@ -93,12 +91,6 @@ export function HeroSlider() {
             <p className="max-w-lg text-lg text-white/90 mb-8 animate-fade-up [--slide-delay:600ms]">
               {slide.description}
             </p>
-            <Button
-              size="lg"
-              className="bg-primary/90 hover:bg-primary text-white animate-fade-up [--slide-delay:800ms]"
-            >
-              Shop Now
-            </Button>
           </div>
         </div>
       ))}
@@ -116,18 +108,18 @@ export function HeroSlider() {
         <ChevronRight className="w-6 h-6" />
       </button>
 
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex gap-3">
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex gap-2">
         {slides.map((_, index) => (
           <div key={index} className="relative">
             <button
               onClick={() => goToSlide(index)}
-              className={`w-16 h-1.5 rounded-full transition-all ${
+              className={`w-12 h-1 rounded-full transition-all ${
                 index === currentSlide ? 'bg-white' : 'bg-white/50'
               }`}
             />
             {index === currentSlide && (
               <div
-                className="absolute top-0 left-0 h-full bg-primary rounded-full transition-all"
+                className="absolute top-0 left-0 h-full bg-white/90 rounded-full transition-all"
                 style={{ width: `${progress}%` }}
               />
             )}

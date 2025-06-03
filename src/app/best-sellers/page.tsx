@@ -19,7 +19,7 @@ export default function BestSellersPage() {
           Our Most Popular Pieces
         </h1>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          Discover our customers' favorite jewelry pieces. These timeless designs have
+          Discover our customers&apos; favorite jewelry pieces. These timeless designs have
           captured hearts and continue to be our most sought-after selections.
         </p>
       </div>

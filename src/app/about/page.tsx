@@ -11,7 +11,7 @@ export default function AboutPage() {
           Crafting Timeless Beauty Since 2020
         </h1>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          Rupomoti is Bangladesh's premier destination for exquisite pearl jewelry.
+          Rupomoti is Bangladesh&apos;s premier destination for exquisite pearl jewelry.
           We combine traditional craftsmanship with modern design to create pieces that
           tell your unique story.
         </p>
@@ -58,7 +58,7 @@ export default function AboutPage() {
           <p>
             Founded in 2020, Rupomoti began with a simple vision: to make high-quality
             pearl jewelry accessible to everyone in Bangladesh. What started as a small
-            family business has grown into one of the country's most trusted jewelry brands.
+            family business has grown into one of the country&apos;s most trusted jewelry brands.
           </p>
           <p>
             We take pride in our commitment to quality, authenticity, and customer
