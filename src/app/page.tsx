@@ -1,5 +1,3 @@
-'use client'
-
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -39,19 +37,15 @@ const categories = [
   }
 ]
 
-async function getProducts() {
-  return productsData.products
-}
-
-export default async function Home() {
-  const products = await getProducts()
+export default function Home() {
+  const products = productsData.products
   
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
       <HeroSlider />
 
-      {/* Categories Section - Immediately below hero */}
+      {/* Categories Section */}
       <section className="py-12 px-4 sm:py-16 bg-gradient-to-b from-background to-gray-50">
         <div className="container mx-auto">
           <div className="text-center mb-8 sm:mb-12">

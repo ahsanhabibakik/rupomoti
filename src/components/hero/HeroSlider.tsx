@@ -16,7 +16,7 @@ const slides = [
     image: '/images/hero/slider2.jpeg',
     title: 'Elegant Collection',
     subtitle: 'For Every Occasion',
-    description: 'Find the perfect piece to celebrate life's special moments'
+    description: 'Find the perfect piece to celebrate life\'s special moments'
   },
   {
     image: '/images/hero/slider3.jpg',
