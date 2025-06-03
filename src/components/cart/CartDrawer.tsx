@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { useCart } from '@/contexts/CartContext'
-import { ShoppingCart, Plus, Minus, X, ArrowLeft } from 'lucide-react'
+import { ShoppingCart, Plus, Minus, X } from 'lucide-react'
 import { CheckoutModal } from './CheckoutModal'
 import Image from 'next/image'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -48,9 +48,9 @@ export function CartDrawer() {
               </SheetClose>
             </div>
           ) : (
-            <>
-              <ScrollArea className="flex-1 px-6">
-                <div className="divide-y">
+            <div className="flex flex-col h-[calc(100vh-6rem)]">
+              <div className="flex-1 overflow-y-auto">
+                <div className="px-6 divide-y">
                   {state.items.map((item) => (
                     <div key={item.id} className="py-4 flex gap-4">
                       <div className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
@@ -95,9 +95,9 @@ export function CartDrawer() {
                     </div>
                   ))}
                 </div>
-              </ScrollArea>
+              </div>
 
-              <div className="border-t p-6 space-y-4">
+              <div className="border-t p-6 space-y-4 bg-background">
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">সাবটোটাল</span>
@@ -121,7 +121,7 @@ export function CartDrawer() {
                   অর্ডার করুন
                 </Button>
               </div>
-            </>
+            </div>
           )}
         </SheetContent>
       </Sheet>

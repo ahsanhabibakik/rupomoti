@@ -9,9 +9,11 @@ import { GemIcon, Crown, Diamond, Sparkles } from 'lucide-react'
 import { HeroSlider } from '@/components/hero/HeroSlider'
 import { CategorySection } from '@/components/home/CategorySection'
 import { FeaturedSection } from '@/components/home/FeaturedSection'
+import Link from 'next/link'
 
 const categories = [
   { 
+    id: 'necklaces',
     name: 'Necklaces', 
     count: '24',
     icon: Crown,
@@ -19,6 +21,7 @@ const categories = [
     description: 'Elegant pearl necklaces for every occasion'
   },
   { 
+    id: 'rings',
     name: 'Rings', 
     count: '38',
     icon: Diamond,
@@ -26,6 +29,7 @@ const categories = [
     description: 'Stunning pearl rings that make a statement'
   },
   { 
+    id: 'earrings',
     name: 'Earrings', 
     count: '16',
     icon: Sparkles,
@@ -33,6 +37,7 @@ const categories = [
     description: 'Beautiful pearl earrings for everyday elegance'
   },
   { 
+    id: 'bracelets',
     name: 'Bracelets', 
     count: '29',
     icon: GemIcon,
@@ -69,9 +74,10 @@ export default function HomePage() {
             {categories.map((category) => {
               const Icon = category.icon
               return (
-                <div
-                  key={category.name}
-                  className="group relative overflow-hidden rounded-xl sm:rounded-2xl cursor-pointer"
+                <Link
+                  key={category.id}
+                  href={`/shop/${category.id}`}
+                  className="group relative overflow-hidden rounded-xl sm:rounded-2xl"
                 >
                   <div className="aspect-[4/5] relative">
                     <Image
@@ -93,7 +99,7 @@ export default function HomePage() {
                       {category.description}
                     </p>
                   </div>
-                </div>
+                </Link>
               )
             })}
           </div>
@@ -162,8 +168,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      <CategorySection />
 
       <FeaturedSection
         title="New Arrivals"
