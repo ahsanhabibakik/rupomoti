@@ -1,0 +1,113 @@
+{
+  "products": [
+    {
+      "id": "1",
+      "name": "Classic Pearl Necklace",
+      "description": "Elegant single-strand freshwater pearl necklace with sterling silver clasp",
+      "price": 2999,
+      "images": [
+        "https://images.unsplash.com/photo-1611085583191-a3b181a88401",
+        "https://images.unsplash.com/photo-1602751584552-8ba73aad10e1"
+      ],
+      "category": "necklaces",
+      "details": {
+        "pearlType": "Freshwater Pearl",
+        "pearlSize": "7-8mm",
+        "pearlColor": "White",
+        "clasp": "Sterling Silver",
+        "length": "18 inches"
+      },
+      "inStock": true
+    },
+    {
+      "id": "2",
+      "name": "Pearl Drop Earrings",
+      "description": "Beautiful drop earrings featuring AAA grade pearls with zircon accents",
+      "price": 1899,
+      "images": [
+        "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908",
+        "https://images.unsplash.com/photo-1598560917505-59a3ad559071"
+      ],
+      "category": "earrings",
+      "details": {
+        "pearlType": "South Sea Pearl",
+        "pearlSize": "9-10mm",
+        "pearlColor": "White with Rose Overtone",
+        "setting": "18K Gold Plated",
+        "closure": "Push Back"
+      },
+      "inStock": true
+    },
+    {
+      "id": "3",
+      "name": "Pearl Tennis Bracelet",
+      "description": "Luxurious bracelet featuring perfectly matched pearls with crystal accents",
+      "price": 3499,
+      "images": [
+        "https://images.unsplash.com/photo-1611085583191-a3b181a88401",
+        "https://images.unsplash.com/photo-1602751584552-8ba73aad10e1"
+      ],
+      "category": "bracelets",
+      "details": {
+        "pearlType": "Akoya Pearl",
+        "pearlSize": "6-7mm",
+        "pearlColor": "Cream",
+        "clasp": "Double Safety",
+        "length": "7.5 inches"
+      },
+      "inStock": true
+    },
+    {
+      "id": "4",
+      "name": "Pearl Statement Ring",
+      "description": "Modern design featuring a large center pearl surrounded by cubic zirconia",
+      "price": 2499,
+      "images": [
+        "https://images.unsplash.com/photo-1602751584552-8ba73aad10e1",
+        "https://images.unsplash.com/photo-1611085583191-a3b181a88401"
+      ],
+      "category": "rings",
+      "details": {
+        "pearlType": "Tahitian Pearl",
+        "pearlSize": "11-12mm",
+        "pearlColor": "Black with Peacock Overtone",
+        "setting": "Sterling Silver",
+        "size": "Adjustable"
+      },
+      "inStock": true
+    },
+    {
+      "id": "5",
+      "name": "Multi-Strand Pearl Choker",
+      "description": "Three-strand pearl choker with modern sterling silver toggle clasp",
+      "price": 4999,
+      "images": [
+        "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908",
+        "https://images.unsplash.com/photo-1598560917505-59a3ad559071"
+      ],
+      "category": "necklaces",
+      "details": {
+        "pearlType": "Freshwater Pearl",
+        "pearlSize": "5-6mm",
+        "pearlColor": "White and Pink",
+        "clasp": "Sterling Silver Toggle",
+        "length": "16 inches"
+      },
+      "inStock": true
+    }
+  ],
+  "deliveryAreas": {
+    "insideDhaka": {
+      "name": "ঢাকার ভিতরে",
+      "charge": 60
+    },
+    "nearDhaka": {
+      "name": "ঢাকার আশেপাশে",
+      "charge": 100
+    },
+    "outsideDhaka": {
+      "name": "ঢাকার বাহিরে",
+      "charge": 150
+    }
+  }
+} 
