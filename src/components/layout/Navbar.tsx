@@ -2,12 +2,13 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Menu, Search, ShoppingCart } from 'lucide-react'
+import { Menu, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { Input } from '@/components/ui/input'
 import { NavigationMenu, NavigationMenuItem, NavigationMenuList, NavigationMenuLink } from '@/components/ui/navigation-menu'
 import { colors } from '@/lib/constants/colors'
+import { CartDrawer } from '@/components/cart/CartDrawer'
 
 const navigationLinks = [
   { href: '/jewelry', label: 'Jewelry' },
@@ -80,10 +81,7 @@ export function Navbar() {
             >
               <Search className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon">
-              <ShoppingCart className="h-5 w-5" />
-              <span className="sr-only">Shopping Cart</span>
-            </Button>
+            <CartDrawer />
           </div>
         </div>
 
