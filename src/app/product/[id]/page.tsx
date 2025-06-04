@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
-import { useCart } from '@/contexts/CartContext'
+import { useCart } from '@/hooks/useCart'
 import { showToast } from '@/lib/toast'
 import { cn } from '@/lib/utils'
 
@@ -23,14 +23,13 @@ const product = {
 
 export default function ProductPage({ params }: { params: { id: string } }) {
   const [selectedImage, setSelectedImage] = useState(0)
-  const { addItem } = useCart()
+  const { add } = useCart()
 
   const handleAddToCart = () => {
-    addItem({
+    add({
       id: product.id,
       name: product.name,
       price: product.price,
-      quantity: 1,
       image: product.images[0],
     })
     showToast.success(`${product.name} has been added to your cart.`)
@@ -38,17 +37,16 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="grid lg:grid-cols-2 gap-8">
-        {/* Image Gallery */}
+      <div className="grid gap-8 md:grid-cols-2">
+        {/* Product Images */}
         <div className="space-y-4">
-          <div className="relative aspect-square overflow-hidden rounded-lg bg-gray-100">
+          <div className="relative aspect-square overflow-hidden rounded-lg border">
             <Image
               src={product.images[selectedImage]}
               alt={product.name}
-              className="object-cover"
               fill
+              className="object-cover"
               priority
-              sizes="(min-width: 1024px) 50vw, 100vw"
             />
           </div>
           <div className="grid grid-cols-4 gap-4">
@@ -57,16 +55,15 @@ export default function ProductPage({ params }: { params: { id: string } }) {
                 key={index}
                 onClick={() => setSelectedImage(index)}
                 className={cn(
-                  "relative aspect-square overflow-hidden rounded-lg bg-gray-100",
-                  selectedImage === index && "ring-2 ring-primary"
+                  'relative aspect-square overflow-hidden rounded-lg border',
+                  selectedImage === index && 'ring-2 ring-primary'
                 )}
               >
                 <Image
                   src={image}
                   alt={`${product.name} ${index + 1}`}
-                  className="object-cover"
                   fill
-                  sizes="(min-width: 1024px) 15vw, 25vw"
+                  className="object-cover"
                 />
               </button>
             ))}
@@ -77,36 +74,32 @@ export default function ProductPage({ params }: { params: { id: string } }) {
         <div className="space-y-6">
           <div>
             <h1 className="text-3xl font-bold">{product.name}</h1>
-            <p className="mt-2 text-2xl font-semibold text-primary">
-              ৳{product.price.toLocaleString()}
-            </p>
+            <p className="mt-4 text-lg text-muted-foreground">{product.description}</p>
           </div>
 
-          <div className="prose max-w-none">
-            <p>{product.description}</p>
+          <div className="space-y-4">
+            <div className="text-3xl font-bold">৳{product.price.toLocaleString()}</div>
+            <Button size="lg" onClick={handleAddToCart}>
+              Add to Cart
+            </Button>
           </div>
 
-          <Button
-            size="lg"
-            className="w-full"
-            onClick={handleAddToCart}
-          >
-            Add to Cart
-          </Button>
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold">Product Details</h2>
+            <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
+              <li>Freshwater pearls</li>
+              <li>Sterling silver clasp</li>
+              <li>Adjustable length</li>
+              <li>Handcrafted in Bangladesh</li>
+            </ul>
+          </div>
 
-          <div className="space-y-4 border-t pt-6">
-            <div>
-              <h3 className="text-sm font-medium">Free Delivery</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Enter your postal code for delivery availability
-              </p>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-medium">Returns</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Free 30-day returns. See our return policy for more details.
-              </p>
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold">Shipping Information</h2>
+            <div className="prose text-muted-foreground">
+              <p>Free shipping on orders over ৳10,000</p>
+              <p>Delivery within 3-5 business days</p>
+              <p>30-day return policy</p>
             </div>
           </div>
         </div>

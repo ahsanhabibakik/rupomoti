@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: false,
+  reactStrictMode: true,
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -16,6 +16,11 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react'],
   },
+  poweredByHeader: false,
+  compress: true,
+  generateEtags: true,
+  distDir: '.next',
+  cleanDistDir: true,
   webpack: (config) => {
     config.watchOptions = {
       poll: 1000,
