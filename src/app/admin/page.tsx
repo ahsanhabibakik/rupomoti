@@ -24,15 +24,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8']
 
 export default function DashboardPage() {
-  const { data: products } = useProducts()
-  const { data: orders } = useOrders()
-  const { data: categories } = useCategories()
+  const { data: products, isLoading: productsLoading } = useProducts()
+  const { data: orders, isLoading: ordersLoading } = useOrders()
+  const { data: categories, isLoading: categoriesLoading } = useCategories()
   const [salesData, setSalesData] = useState<any[]>([])
   const [categoryData, setCategoryData] = useState<any[]>([])
   const [topProducts, setTopProducts] = useState<any[]>([])
 
   useEffect(() => {
-    if (orders) {
+    if (orders && Array.isArray(orders)) {
       // Group orders by date and calculate total sales
       const salesByDate = orders.reduce((acc: any, order: any) => {
         const date = new Date(order.createdAt).toLocaleDateString('bn-BD')
@@ -75,24 +75,33 @@ export default function DashboardPage() {
   }, [orders])
 
   useEffect(() => {
-    if (products && categories) {
+    if (products && categories && Array.isArray(categories)) {
       const data = categories.map((category: any) => ({
         name: category.name,
-        value: category._count.products,
+        value: category._count?.products || 0,
       }))
       setCategoryData(data)
     }
   }, [products, categories])
 
-  const totalSales = orders?.reduce((sum: number, order: any) => sum + order.total, 0) || 0
-  const totalOrders = orders?.length || 0
-  const totalProducts = products?.length || 0
-  const totalCategories = categories?.length || 0
+  // Show loading state if any data is still loading
+  if (productsLoading || ordersLoading || categoriesLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="h-32 w-32 animate-spin rounded-full border-b-2 border-primary"></div>
+      </div>
+    )
+  }
 
-  const pendingOrders = orders?.filter((order: any) => order.status === 'PENDING').length || 0
-  const processingOrders = orders?.filter((order: any) => order.status === 'PROCESSING').length || 0
-  const shippedOrders = orders?.filter((order: any) => order.status === 'SHIPPED').length || 0
-  const deliveredOrders = orders?.filter((order: any) => order.status === 'DELIVERED').length || 0
+  const totalSales = Array.isArray(orders) ? orders.reduce((sum: number, order: any) => sum + order.total, 0) : 0
+  const totalOrders = Array.isArray(orders) ? orders.length : 0
+  const totalProducts = Array.isArray(products) ? products.length : 0
+  const totalCategories = Array.isArray(categories) ? categories.length : 0
+
+  const pendingOrders = Array.isArray(orders) ? orders.filter((order: any) => order.status === 'PENDING').length : 0
+  const processingOrders = Array.isArray(orders) ? orders.filter((order: any) => order.status === 'PROCESSING').length : 0
+  const shippedOrders = Array.isArray(orders) ? orders.filter((order: any) => order.status === 'SHIPPED').length : 0
+  const deliveredOrders = Array.isArray(orders) ? orders.filter((order: any) => order.status === 'DELIVERED').length : 0
 
   return (
     <div className="space-y-6">

@@ -76,10 +76,12 @@ export default function ProductsPage() {
     )
   }
 
-  const filteredProducts = products?.filter(product =>
-    product.name.toLowerCase().includes(search.toLowerCase()) ||
-    product.sku.toLowerCase().includes(search.toLowerCase())
-  )
+  const filteredProducts = Array.isArray(products) 
+    ? products.filter(product =>
+        product.name.toLowerCase().includes(search.toLowerCase()) ||
+        product.sku.toLowerCase().includes(search.toLowerCase())
+      )
+    : []
 
   return (
     <div className="space-y-6">
@@ -102,7 +104,7 @@ export default function ProductsPage() {
 
       <DataTable
         columns={columns}
-        data={filteredProducts || []}
+        data={filteredProducts}
       />
 
       <ProductDialog
