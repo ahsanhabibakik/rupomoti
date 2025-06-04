@@ -6,13 +6,22 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 const slides = [
   {
-    image: '/images/pearl/jewelery1.jpeg'
+    image: '/images/hero/slider1.jpeg'
+  //   title: 'Discover the Timeless',
+  //   subtitle: 'Beauty of Pearls',
+  //   description: 'Exquisite jewelry pieces that tell your unique story, crafted with the finest pearls'
+  // },
+  {
+    image: '/images/hero/slider2.jpeg',
+    // title: 'Elegant Collection',
+    // subtitle: 'For Every Occasion',
+    // description: 'Find the perfect piece to celebrate life\'s special moments'
   },
   {
-    image: '/images/pearl/jewelery2.jpeg'
-  },
-  {
-    image: '/images/pearl/jewelery3.jpeg'
+    image: '/images/hero/slider3.jpg',
+    // title: 'Handcrafted',
+    // subtitle: 'With Love',
+    // description: 'Each piece is carefully crafted to bring out the natural beauty of pearls'
   }
 ]
 
