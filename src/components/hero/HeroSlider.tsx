@@ -6,22 +6,13 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 const slides = [
   {
-    image: '/images/pearl/jewelery1.jpeg',
-    title: 'Discover the Timeless',
-    subtitle: 'Beauty of Pearls',
-    description: 'Exquisite jewelry pieces that tell your unique story, crafted with the finest pearls'
+    image: '/images/pearl/jewelery1.jpeg'
   },
   {
-    image: '/images/pearl/jewelery2.jpeg',
-    title: 'Elegant Collection',
-    subtitle: 'For Every Occasion',
-    description: 'Find the perfect piece to celebrate life\'s special moments'
+    image: '/images/pearl/jewelery2.jpeg'
   },
   {
-    image: '/images/pearl/jewelery3.jpeg',
-    title: 'Handcrafted',
-    subtitle: 'With Love',
-    description: 'Each piece is carefully crafted to bring out the natural beauty of pearls'
+    image: '/images/pearl/jewelery3.jpeg'
   }
 ]
 
