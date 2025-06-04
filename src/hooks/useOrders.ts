@@ -1,72 +1,51 @@
 import useSWR from 'swr'
-import { toast } from '@/components/ui/use-toast'
+import { showToast } from '@/lib/toast'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
 export function useOrders() {
   const { data, error, mutate } = useSWR('/api/orders', fetcher)
 
-  const updateOrder = async (id: string, orderData: any) => {
-    try {
-      const response = await fetch('/api/orders', {
+  const updateOrderStatus = async (id: string, status: string) => {
+    return showToast.promise(
+      fetch(`/api/orders/${id}/status`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ id, ...orderData }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to update order')
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      }).then((res) => {
+        if (!res.ok) throw new Error('Failed to update order status')
+        mutate()
+        return res.json()
+      }),
+      {
+        loading: 'Updating order status...',
+        success: 'Order status updated successfully',
+        error: 'Failed to update order status',
       }
-
-      const updatedOrder = await response.json()
-      mutate()
-      toast({
-        title: 'Success',
-        description: 'Order updated successfully',
-      })
-      return updatedOrder
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to update order',
-        variant: 'destructive',
-      })
-      throw error
-    }
+    )
   }
 
   const deleteOrder = async (id: string) => {
-    try {
-      const response = await fetch(`/api/orders?id=${id}`, {
+    return showToast.promise(
+      fetch(`/api/orders/${id}`, {
         method: 'DELETE',
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to delete order')
+      }).then((res) => {
+        if (!res.ok) throw new Error('Failed to delete order')
+        mutate()
+      }),
+      {
+        loading: 'Deleting order...',
+        success: 'Order deleted successfully',
+        error: 'Failed to delete order',
       }
-
-      mutate()
-      toast({
-        title: 'Success',
-        description: 'Order deleted successfully',
-      })
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to delete order',
-        variant: 'destructive',
-      })
-      throw error
-    }
+    )
   }
 
   return {
     data,
     isLoading: !error && !data,
     error,
-    updateOrder,
+    updateOrderStatus,
     deleteOrder,
   }
 } 

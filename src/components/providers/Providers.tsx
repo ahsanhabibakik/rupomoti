@@ -1,7 +1,7 @@
 'use client'
 
 import { ReactNode } from 'react'
-import { CartProvider } from '@/contexts/CartContext'
+import { SessionProvider } from 'next-auth/react'
 import { Toaster } from 'sonner'
 
 interface ProvidersProps {
@@ -10,7 +10,7 @@ interface ProvidersProps {
 
 export function Providers({ children }: ProvidersProps) {
   return (
-    <CartProvider>
+    <SessionProvider>
       {children}
       <Toaster 
         position="top-right"
@@ -22,6 +22,6 @@ export function Providers({ children }: ProvidersProps) {
           },
         }}
       />
-    </CartProvider>
+    </SessionProvider>
   )
 } 

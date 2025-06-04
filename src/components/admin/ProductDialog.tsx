@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ImageUpload } from '@/components/admin/ImageUpload'
 import { useCategories } from '@/hooks/useCategories'
-import { useToast } from '@/components/ui/use-toast'
+import { showToast } from '@/lib/toast'
 
 const productSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -35,7 +35,6 @@ interface ProductDialogProps {
 export function ProductDialog({ open, onOpenChange, product }: ProductDialogProps) {
   const [images, setImages] = useState<string[]>(product?.images || [])
   const { data: categories } = useCategories()
-  const { toast } = useToast()
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -53,28 +52,26 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
   const onSubmit = async (data: ProductFormValues) => {
     try {
       if (images.length === 0) {
-        toast({
-          title: 'Error',
-          description: 'Please upload at least one image',
-          variant: 'destructive',
-        })
+        showToast.error('Please upload at least one image')
         return
       }
 
       // TODO: Add API call to create/update product
       console.log({ ...data, images })
 
+      await showToast.promise(
+        // Replace with actual API call
+        Promise.resolve('Product created successfully'),
+        {
+          loading: 'Creating product...',
+          success: 'Product created successfully',
+          error: 'Failed to create product'
+        }
+      )
+
       onOpenChange(false)
-      toast({
-        title: 'Success',
-        description: `Product ${product ? 'updated' : 'created'} successfully`,
-      })
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Something went wrong',
-        variant: 'destructive',
-      })
+      showToast.error('Something went wrong')
     }
   }
 

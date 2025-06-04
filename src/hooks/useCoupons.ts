@@ -1,5 +1,5 @@
 import useSWR from 'swr'
-import { toast } from '@/components/ui/use-toast'
+import { showToast } from '@/lib/toast'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
@@ -7,90 +7,57 @@ export function useCoupons() {
   const { data, error, mutate } = useSWR('/api/coupons', fetcher)
 
   const createCoupon = async (couponData: any) => {
-    try {
-      const response = await fetch('/api/coupons', {
+    return showToast.promise(
+      fetch('/api/coupons', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(couponData),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to create coupon')
+      }).then((res) => {
+        if (!res.ok) throw new Error('Failed to create coupon')
+        mutate()
+        return res.json()
+      }),
+      {
+        loading: 'Creating coupon...',
+        success: 'Coupon created successfully',
+        error: 'Failed to create coupon',
       }
-
-      const newCoupon = await response.json()
-      mutate()
-      toast({
-        title: 'Success',
-        description: 'Coupon created successfully',
-      })
-      return newCoupon
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to create coupon',
-        variant: 'destructive',
-      })
-      throw error
-    }
+    )
   }
 
   const updateCoupon = async (id: string, couponData: any) => {
-    try {
-      const response = await fetch('/api/coupons', {
+    return showToast.promise(
+      fetch(`/api/coupons/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ id, ...couponData }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to update coupon')
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(couponData),
+      }).then((res) => {
+        if (!res.ok) throw new Error('Failed to update coupon')
+        mutate()
+        return res.json()
+      }),
+      {
+        loading: 'Updating coupon...',
+        success: 'Coupon updated successfully',
+        error: 'Failed to update coupon',
       }
-
-      const updatedCoupon = await response.json()
-      mutate()
-      toast({
-        title: 'Success',
-        description: 'Coupon updated successfully',
-      })
-      return updatedCoupon
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to update coupon',
-        variant: 'destructive',
-      })
-      throw error
-    }
+    )
   }
 
   const deleteCoupon = async (id: string) => {
-    try {
-      const response = await fetch(`/api/coupons?id=${id}`, {
+    return showToast.promise(
+      fetch(`/api/coupons/${id}`, {
         method: 'DELETE',
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to delete coupon')
+      }).then((res) => {
+        if (!res.ok) throw new Error('Failed to delete coupon')
+        mutate()
+      }),
+      {
+        loading: 'Deleting coupon...',
+        success: 'Coupon deleted successfully',
+        error: 'Failed to delete coupon',
       }
-
-      mutate()
-      toast({
-        title: 'Success',
-        description: 'Coupon deleted successfully',
-      })
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to delete coupon',
-        variant: 'destructive',
-      })
-      throw error
-    }
+    )
   }
 
   return {

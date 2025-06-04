@@ -1,109 +1,53 @@
 import useSWR from 'swr'
-import { toast } from '@/components/ui/use-toast'
-import { uploadImage } from '@/lib/cloudinary'
+import { showToast } from '@/lib/toast'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
 export function useMedia() {
   const { data, error, mutate } = useSWR('/api/media', fetcher)
 
-  const createMedia = async (file: File, type: string, alt?: string) => {
-    try {
-      // Upload to Cloudinary
-      const url = await uploadImage(file)
+  const uploadMedia = async (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
 
-      // Create media record
-      const response = await fetch('/api/media', {
+    return showToast.promise(
+      fetch('/api/media/upload', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ url, type, alt }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to create media')
+        body: formData,
+      }).then((res) => {
+        if (!res.ok) throw new Error('Failed to upload media')
+        mutate()
+        return res.json()
+      }),
+      {
+        loading: 'Uploading media...',
+        success: 'Media uploaded successfully',
+        error: 'Failed to upload media',
       }
-
-      const newMedia = await response.json()
-      mutate()
-      toast({
-        title: 'Success',
-        description: 'Media uploaded successfully',
-      })
-      return newMedia
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to upload media',
-        variant: 'destructive',
-      })
-      throw error
-    }
-  }
-
-  const updateMedia = async (id: string, mediaData: any) => {
-    try {
-      const response = await fetch('/api/media', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ id, ...mediaData }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to update media')
-      }
-
-      const updatedMedia = await response.json()
-      mutate()
-      toast({
-        title: 'Success',
-        description: 'Media updated successfully',
-      })
-      return updatedMedia
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to update media',
-        variant: 'destructive',
-      })
-      throw error
-    }
+    )
   }
 
   const deleteMedia = async (id: string) => {
-    try {
-      const response = await fetch(`/api/media?id=${id}`, {
+    return showToast.promise(
+      fetch(`/api/media/${id}`, {
         method: 'DELETE',
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to delete media')
+      }).then((res) => {
+        if (!res.ok) throw new Error('Failed to delete media')
+        mutate()
+      }),
+      {
+        loading: 'Deleting media...',
+        success: 'Media deleted successfully',
+        error: 'Failed to delete media',
       }
-
-      mutate()
-      toast({
-        title: 'Success',
-        description: 'Media deleted successfully',
-      })
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to delete media',
-        variant: 'destructive',
-      })
-      throw error
-    }
+    )
   }
 
   return {
     data,
     isLoading: !error && !data,
     error,
-    createMedia,
-    updateMedia,
+    uploadMedia,
     deleteMedia,
   }
 } 

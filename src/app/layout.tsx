@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { RootLayoutClient } from "@/components/layout/RootLayoutClient";
+import { Providers } from '@/components/providers'
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,9 +19,14 @@ export default function RootLayout({
   return (
     <html lang="en" className="light">
       <body className={inter.className}>
-        <RootLayoutClient>
-          {children}
-        </RootLayoutClient>
+        <Providers>
+          {/* Only render RootLayoutClient for non-admin routes */}
+          {!children?.toString().includes('/admin') ? (
+            <RootLayoutClient>{children}</RootLayoutClient>
+          ) : (
+            children
+          )}
+        </Providers>
       </body>
     </html>
   );

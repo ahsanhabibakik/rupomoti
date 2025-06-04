@@ -35,17 +35,23 @@ export default function AdminLayout({
   const pathname = usePathname()
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/admin/login')
+    if (status === 'unauthenticated' && pathname !== '/admin/login') {
+      router.push(`/admin/login?callbackUrl=${encodeURIComponent(pathname)}`)
     }
-  }, [status, router])
+  }, [status, router, pathname])
 
+  // Show loading state
   if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="h-32 w-32 animate-spin rounded-full border-b-2 border-primary"></div>
       </div>
     )
+  }
+
+  // Show login page or children based on authentication status
+  if (!session && pathname === '/admin/login') {
+    return children
   }
 
   if (!session) {
@@ -82,11 +88,11 @@ export default function AdminLayout({
             })}
           </nav>
 
-          <div className="p-4 border-t">
+          <div className="p-4">
             <Button
               variant="ghost"
               className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
-              onClick={() => signOut()}
+              onClick={() => signOut({ callbackUrl: '/' })}
             >
               <LogOut className="w-5 h-5 mr-3" />
               Sign Out

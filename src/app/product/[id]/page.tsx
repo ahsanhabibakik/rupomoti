@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { useCart } from '@/contexts/CartContext'
-import { useToast } from '@/hooks/use-toast'
+import { showToast } from '@/lib/toast'
 import { cn } from '@/lib/utils'
 
 // Mock product data - replace with your actual data fetching logic
@@ -24,7 +24,6 @@ const product = {
 export default function ProductPage({ params }: { params: { id: string } }) {
   const [selectedImage, setSelectedImage] = useState(0)
   const { addItem } = useCart()
-  const { toast } = useToast()
 
   const handleAddToCart = () => {
     addItem({
@@ -34,11 +33,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
       quantity: 1,
       image: product.images[0],
     })
-    toast({
-      title: "Added to Cart",
-      description: `${product.name} has been added to your cart.`,
-      variant: "success",
-    })
+    showToast.success(`${product.name} has been added to your cart.`)
   }
 
   return (

@@ -26,6 +26,8 @@ model Product {
   variants    Variant[]
   specs       Json?       // Technical specifications
   orderItems  OrderItem[]
+  wishedByIds String[]    @db.ObjectId
+  wishedBy    Customer[]  @relation("CustomerWishlist", fields: [wishedByIds], references: [id])
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 }
@@ -113,8 +115,8 @@ model Customer {
   avatar       String?   // Profile picture URL
   orders       Order[]
   reviews      Review[]
-  wishlist     Product[] @relation(name: "CustomerWishlist", fields: [wishlistIds], references: [id])
   wishlistIds  String[]  @db.ObjectId
+  wishlist     Product[] @relation("CustomerWishlist", fields: [wishlistIds], references: [id])
   newsletter   Boolean   @default(false)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt

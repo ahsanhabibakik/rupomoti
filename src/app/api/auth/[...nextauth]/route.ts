@@ -1,7 +1,6 @@
 import NextAuth from "next-auth"
 import { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import { compare } from "bcryptjs"
 
 // In production, these would be stored securely and hashed
 const ADMIN_EMAIL = "admin@rupomoti.com"
@@ -51,6 +50,13 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).role = token.role
       }
       return session
+    },
+    async redirect({ url, baseUrl }) {
+      // Allows relative callback URLs
+      if (url.startsWith("/")) return `${baseUrl}${url}`
+      // Allows callback URLs on the same origin
+      else if (new URL(url).origin === baseUrl) return url
+      return baseUrl
     }
   },
   session: {

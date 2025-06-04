@@ -1,18 +1,20 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { toast } from '@/components/ui/use-toast'
+import { showToast } from '@/lib/toast'
 
 export default function LoginPage() {
-  const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const callbackUrl = searchParams.get('callbackUrl') || '/admin'
+  const [isLoading, setIsLoading] = useState(false)
 
-  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsLoading(true)
 
@@ -28,69 +30,68 @@ export default function LoginPage() {
       })
 
       if (result?.error) {
-        toast({
-          title: 'Error',
-          description: 'Invalid credentials',
-          variant: 'destructive',
-        })
-        return
+        showToast.error('Invalid credentials')
+      } else {
+        router.push(callbackUrl)
+        showToast.success('Logged in successfully')
       }
-
-      router.push('/admin')
-      router.refresh()
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Something went wrong',
-        variant: 'destructive',
-      })
+      showToast.error('Something went wrong')
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md">
-        <div className="bg-white px-8 py-12 rounded-lg shadow-md">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold">Admin Login</h1>
-            <p className="text-gray-600 mt-2">Sign in to access the admin dashboard</p>
-          </div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="w-full max-w-md space-y-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Admin Login</h1>
+          <p className="text-sm text-muted-foreground mt-2">
+            Sign in to access the admin dashboard
+          </p>
+        </div>
 
-          <form onSubmit={onSubmit} className="space-y-6">
-            <div className="space-y-2">
+        <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+          <div className="space-y-4">
+            <div>
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 name="email"
                 type="email"
-                placeholder="admin@rupomoti.com"
+                autoComplete="email"
                 required
-                disabled={isLoading}
+                placeholder="admin@rupomoti.com"
+                className="mt-1"
               />
             </div>
 
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
                 name="password"
                 type="password"
+                autoComplete="current-password"
                 required
-                disabled={isLoading}
+                placeholder="••••••••"
+                className="mt-1"
               />
             </div>
+          </div>
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Signing in...' : 'Sign in'}
-            </Button>
-          </form>
-        </div>
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? (
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                <span>Signing in...</span>
+              </div>
+            ) : (
+              'Sign in'
+            )}
+          </Button>
+        </form>
       </div>
     </div>
   )

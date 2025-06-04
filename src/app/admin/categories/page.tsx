@@ -8,6 +8,27 @@ import { DataTable } from '@/components/ui/data-table'
 import { useCategories } from '@/hooks/useCategories'
 import { CategoryDialog } from '@/components/admin/CategoryDialog'
 
+function CategoryActions({ category }: { category: any }) {
+  const { deleteCategory } = useCategories()
+
+  const handleDelete = async () => {
+    if (window.confirm('Are you sure you want to delete this category?')) {
+      await deleteCategory(category.id)
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <Button variant="outline" size="sm">
+        Edit
+      </Button>
+      <Button variant="destructive" size="sm" onClick={handleDelete}>
+        Delete
+      </Button>
+    </div>
+  )
+}
+
 const columns = [
   {
     accessorKey: 'name',
@@ -23,27 +44,7 @@ const columns = [
   },
   {
     id: 'actions',
-    cell: ({ row }) => {
-      const category = row.original
-      const { deleteCategory } = useCategories()
-
-      const handleDelete = async () => {
-        if (window.confirm('Are you sure you want to delete this category?')) {
-          await deleteCategory(category.id)
-        }
-      }
-
-      return (
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            Edit
-          </Button>
-          <Button variant="destructive" size="sm" onClick={handleDelete}>
-            Delete
-          </Button>
-        </div>
-      )
-    },
+    cell: ({ row }) => <CategoryActions category={row.original} />,
   },
 ]
 

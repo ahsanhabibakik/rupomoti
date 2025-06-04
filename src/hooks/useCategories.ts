@@ -1,102 +1,80 @@
-import useSWR from 'swr'
-import { toast } from '@/components/ui/use-toast'
+import { useState } from 'react'
+import { showToast } from '@/lib/toast'
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json())
+interface Category {
+  id: string
+  name: string
+  description?: string
+  image?: string
+  slug: string
+  parentId?: string
+}
 
 export function useCategories() {
-  const { data, error, mutate } = useSWR('/api/categories', fetcher)
+  const [data, setData] = useState<Category[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const createCategory = async (categoryData: any) => {
+  const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/categories', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(categoryData),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to create category')
-      }
-
-      const newCategory = await response.json()
-      mutate()
-      toast({
-        title: 'Success',
-        description: 'Category created successfully',
-      })
-      return newCategory
+      // TODO: Replace with actual API call
+      const response = await fetch('/api/categories')
+      const data = await response.json()
+      setData(data)
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to create category',
-        variant: 'destructive',
-      })
-      throw error
+      showToast.error('Failed to fetch categories')
+    } finally {
+      setLoading(false)
     }
   }
 
-  const updateCategory = async (id: string, categoryData: any) => {
-    try {
-      const response = await fetch('/api/categories', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ id, ...categoryData }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to update category')
+  const createCategory = async (category: Omit<Category, 'id'>) => {
+    return showToast.promise(
+      // TODO: Replace with actual API call
+      fetch('/api/categories', {
+        method: 'POST',
+        body: JSON.stringify(category),
+      }).then(() => fetchCategories()),
+      {
+        loading: 'Creating category...',
+        success: 'Category created successfully',
+        error: 'Failed to create category',
       }
+    )
+  }
 
-      const updatedCategory = await response.json()
-      mutate()
-      toast({
-        title: 'Success',
-        description: 'Category updated successfully',
-      })
-      return updatedCategory
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to update category',
-        variant: 'destructive',
-      })
-      throw error
-    }
+  const updateCategory = async (id: string, category: Partial<Category>) => {
+    return showToast.promise(
+      // TODO: Replace with actual API call
+      fetch(`/api/categories/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(category),
+      }).then(() => fetchCategories()),
+      {
+        loading: 'Updating category...',
+        success: 'Category updated successfully',
+        error: 'Failed to update category',
+      }
+    )
   }
 
   const deleteCategory = async (id: string) => {
-    try {
-      const response = await fetch(`/api/categories?id=${id}`, {
+    return showToast.promise(
+      // TODO: Replace with actual API call
+      fetch(`/api/categories/${id}`, {
         method: 'DELETE',
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to delete category')
+      }).then(() => fetchCategories()),
+      {
+        loading: 'Deleting category...',
+        success: 'Category deleted successfully',
+        error: 'Failed to delete category',
       }
-
-      mutate()
-      toast({
-        title: 'Success',
-        description: 'Category deleted successfully',
-      })
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to delete category',
-        variant: 'destructive',
-      })
-      throw error
-    }
+    )
   }
 
   return {
     data,
-    isLoading: !error && !data,
-    error,
+    loading,
+    fetchCategories,
     createCategory,
     updateCategory,
     deleteCategory,
