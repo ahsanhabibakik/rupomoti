@@ -3,25 +3,26 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 const slides = [
   {
-    image: '/images/hero/slider1.jpeg'
-  //   title: 'Discover the Timeless',
-  //   subtitle: 'Beauty of Pearls',
-  //   description: 'Exquisite jewelry pieces that tell your unique story, crafted with the finest pearls'
-  // },
-  {
-    image: '/images/hero/slider2.jpeg',
-    // title: 'Elegant Collection',
-    // subtitle: 'For Every Occasion',
-    // description: 'Find the perfect piece to celebrate life\'s special moments'
+    image: '/images/hero/slider1.jpeg',
+    title: 'Discover the Timeless',
+    subtitle: 'Beauty of Pearls',
+    description: 'Exquisite jewelry pieces that tell your unique story, crafted with the finest pearls'
   },
   {
-    image: '/images/hero/slider3.jpg',
-    // title: 'Handcrafted',
-    // subtitle: 'With Love',
-    // description: 'Each piece is carefully crafted to bring out the natural beauty of pearls'
+    image: '/images/hero/slider2.jpeg',
+    title: 'Elegant Collection',
+    subtitle: 'For Every Occasion',
+    description: 'Find the perfect piece to celebrate life\'s special moments'
+  },
+  {
+    image: '/images/hero/slider3.jpeg',
+    title: 'Handcrafted',
+    subtitle: 'With Love',
+    description: 'Each piece is carefully crafted to bring out the natural beauty of pearls'
   }
 ]
 
@@ -30,14 +31,23 @@ const SLIDE_DURATION = 5000 // 5 seconds per slide
 export function HeroSlider() {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [progress, setProgress] = useState(0)
-  const [isLoaded, setIsLoaded] = useState(false)
+  const [isPaused, setIsPaused] = useState(false)
 
+  // Handle automatic slide changes
   useEffect(() => {
-    setIsLoaded(true)
-  }, [])
+    if (isPaused) return
 
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length)
+      setProgress(0)
+    }, SLIDE_DURATION)
+
+    return () => clearInterval(interval)
+  }, [isPaused])
+
+  // Handle progress bar
   useEffect(() => {
-    if (!isLoaded) return
+    if (isPaused) return
 
     const startTime = Date.now()
     const timer = setInterval(() => {
@@ -45,7 +55,6 @@ export function HeroSlider() {
       const newProgress = (elapsed / SLIDE_DURATION) * 100
 
       if (newProgress >= 100) {
-        setCurrentSlide((prev) => (prev + 1) % slides.length)
         setProgress(0)
       } else {
         setProgress(newProgress)
@@ -53,13 +62,7 @@ export function HeroSlider() {
     }, 50)
 
     return () => clearInterval(timer)
-  }, [currentSlide, isLoaded])
-
-  if (!isLoaded) {
-    return (
-      <div className="relative h-[50vh] sm:h-[60vh] lg:h-[70vh] max-h-[600px] bg-gray-100" />
-    )
-  }
+  }, [currentSlide, isPaused])
 
   const prevSlide = () => {
     setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)
@@ -77,7 +80,11 @@ export function HeroSlider() {
   }
 
   return (
-    <section className="relative h-[50vh] sm:h-[60vh] lg:h-[70vh] max-h-[600px] flex items-center justify-center overflow-hidden">
+    <section 
+      className="relative h-[50vh] sm:h-[60vh] lg:h-[70vh] max-h-[600px] flex items-center justify-center overflow-hidden"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
       {slides.map((slide, index) => (
         <div
           key={index}
@@ -87,7 +94,7 @@ export function HeroSlider() {
         >
           <Image
             src={slide.image}
-            alt={slide.title}
+            alt={`Slide ${index + 1}`}
             className="object-cover"
             fill
             priority={index === 0}
@@ -104,40 +111,49 @@ export function HeroSlider() {
             <p className="max-w-lg text-lg text-white/90 mb-8 animate-fade-up [--slide-delay:600ms]">
               {slide.description}
             </p>
+            <Button 
+              variant="secondary" 
+              size="lg"
+              className="animate-fade-up [--slide-delay:800ms] bg-white hover:bg-white/90 text-gray-900"
+            >
+              Shop Now
+            </Button>
           </div>
         </div>
       ))}
       
       <button
         onClick={prevSlide}
-        className="absolute left-4 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+        className="absolute left-4 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-white/80 text-gray-800 hover:bg-white transition-colors"
       >
         <ChevronLeft className="w-6 h-6" />
       </button>
       <button
         onClick={nextSlide}
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+        className="absolute right-4 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-white/80 text-gray-800 hover:bg-white transition-colors"
       >
         <ChevronRight className="w-6 h-6" />
       </button>
 
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex gap-2">
         {slides.map((_, index) => (
-          <div key={index} className="relative">
-            <button
-              onClick={() => goToSlide(index)}
-              className={`w-12 h-1 rounded-full transition-all ${
-                index === currentSlide ? 'bg-white' : 'bg-white/50'
-              }`}
-            />
-            {index === currentSlide && (
-              <div
-                className="absolute top-0 left-0 h-full bg-white/90 rounded-full transition-all"
-                style={{ width: `${progress}%` }}
-              />
-            )}
-          </div>
+          <button
+            key={index}
+            onClick={() => goToSlide(index)}
+            className="w-3 h-3 rounded-full transition-all"
+            style={{
+              backgroundColor: index === currentSlide ? 'white' : 'rgba(255, 255, 255, 0.5)'
+            }}
+          />
         ))}
+      </div>
+
+      {/* Progress Bar */}
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/20">
+        <div
+          className="h-full bg-white transition-all duration-300 ease-linear"
+          style={{ width: `${progress}%` }}
+        />
       </div>
     </section>
   )
