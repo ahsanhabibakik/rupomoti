@@ -13,7 +13,6 @@ const nextConfig = {
       },
     ],
   },
-  output: 'standalone',
   experimental: {
     optimizePackageImports: ['lucide-react'],
   },
@@ -22,8 +21,21 @@ const nextConfig = {
       poll: 1000,
       aggregateTimeout: 300,
     }
+    // Add custom handling for path resolution
+    config.resolve = {
+      ...config.resolve,
+      fallback: {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+      },
+    }
     return config
   },
+  // Add pageExtensions to explicitly define valid page extensions
+  pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
+  // Disable source maps in production to reduce complexity
+  productionBrowserSourceMaps: false,
 }
 
 module.exports = nextConfig 
