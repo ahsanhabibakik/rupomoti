@@ -78,7 +78,7 @@ export default function HomePage() {
                   className="group relative overflow-hidden rounded-xl sm:rounded-2xl"
                 >
                   <div className="aspect-[4/5] relative">
-                    <Image
+            <Image
                       src={category.image}
                       alt={category.name}
                       className="object-cover transition-transform duration-500 group-hover:scale-110"

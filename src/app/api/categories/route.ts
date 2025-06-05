@@ -12,12 +12,8 @@ export async function GET() {
             products: true
           }
         }
-      },
-      orderBy: {
-        createdAt: 'desc'
       }
     })
-
     return NextResponse.json(categories)
   } catch (error) {
     console.error('Error fetching categories:', error)
@@ -30,25 +26,22 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
     const json = await request.json()
+    const { name, description, image } = json
+
+    // Generate slug from name
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
 
     const category = await prisma.category.create({
       data: {
-        name: json.name,
-        description: json.description,
-        image: json.image
+        name,
+        description,
+        image,
+        slug,
       }
     })
 
+    console.log('✅ Category created:', category)
     return NextResponse.json(category)
   } catch (error) {
     console.error('Error creating category:', error)
@@ -61,17 +54,12 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
     const json = await request.json()
     const { id, ...data } = json
+
+    if (data.name) {
+      data.slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+    }
 
     const category = await prisma.category.update({
       where: { id },
@@ -90,15 +78,6 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 

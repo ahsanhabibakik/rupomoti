@@ -1,5 +1,6 @@
 'use client'
 
+import { format } from 'date-fns'
 import {
   Dialog,
   DialogContent,
@@ -15,97 +16,202 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
 
 interface OrderDetailsDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  order: any // Replace with proper type
+  order: any
 }
 
-export function OrderDetailsDialog({ open, onOpenChange, order }: OrderDetailsDialogProps) {
+export function OrderDetailsDialog({
+  open,
+  onOpenChange,
+  order,
+}: OrderDetailsDialogProps) {
   if (!order) return null
-
-  const statusColors = {
-    PENDING: 'bg-yellow-100 text-yellow-800',
-    PROCESSING: 'bg-blue-100 text-blue-800',
-    SHIPPED: 'bg-purple-100 text-purple-800',
-    DELIVERED: 'bg-green-100 text-green-800',
-    CANCELLED: 'bg-red-100 text-red-800',
-  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Order Details - {order.orderNumber}</DialogTitle>
+          <DialogTitle>Order #{order.orderNumber}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <h3 className="font-semibold">Customer Information</h3>
-              <p>Name: {order.customer.name}</p>
-              <p>Email: {order.customer.email || 'N/A'}</p>
-              <p>Phone: {order.customer.phone}</p>
+          {/* Order Status */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Order Status</p>
+              <Badge
+                variant={
+                  order.status === 'DELIVERED'
+                    ? 'success'
+                    : order.status === 'CANCELLED'
+                    ? 'destructive'
+                    : 'default'
+                }
+              >
+                {order.status}
+              </Badge>
             </div>
-
-            <div className="space-y-2">
-              <h3 className="font-semibold">Order Information</h3>
-              <p>Date: {new Date(order.createdAt).toLocaleDateString('bn-BD')}</p>
-              <p>Status: <Badge className={statusColors[order.status]}>{order.status}</Badge></p>
-              <p>Total: {new Intl.NumberFormat('bn-BD', {
-                style: 'currency',
-                currency: 'BDT'
-              }).format(order.total)}</p>
+            <div>
+              <p className="text-sm text-gray-500">Payment Status</p>
+              <Badge
+                variant={
+                  order.paymentStatus === 'PAID'
+                    ? 'success'
+                    : order.paymentStatus === 'PENDING'
+                    ? 'warning'
+                    : 'destructive'
+                }
+              >
+                {order.paymentStatus}
+              </Badge>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Order Date</p>
+              <p className="font-medium">
+                {format(new Date(order.createdAt), 'PPP')}
+              </p>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <h3 className="font-semibold">Shipping Information</h3>
-            <p>{order.shippingInfo.address}</p>
-            <p>{order.shippingInfo.city}, {order.shippingInfo.postalCode}</p>
+          <Separator />
+
+          {/* Customer Information */}
+          <div>
+            <h3 className="font-semibold mb-2">Customer Information</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-gray-500">Name</p>
+                <p className="font-medium">{order.customer.name}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Email</p>
+                <p className="font-medium">{order.customer.email}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Phone</p>
+                <p className="font-medium">{order.customer.phone}</p>
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <h3 className="font-semibold">Order Items</h3>
+          <Separator />
+
+          {/* Shipping Information */}
+          <div>
+            <h3 className="font-semibold mb-2">Shipping Information</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-gray-500">Address</p>
+                <p className="font-medium">{order.shippingInfo.address}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">City</p>
+                <p className="font-medium">{order.shippingInfo.city}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">State</p>
+                <p className="font-medium">{order.shippingInfo.state || '-'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Postal Code</p>
+                <p className="font-medium">{order.shippingInfo.postalCode}</p>
+              </div>
+            </div>
+          </div>
+
+          {order.steadfastInfo && (
+            <>
+              <Separator />
+              {/* Steadfast Tracking Information */}
+              <div>
+                <h3 className="font-semibold mb-2">Tracking Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Tracking ID</p>
+                    <p className="font-medium">{order.steadfastInfo.trackingId}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Status</p>
+                    <Badge>{order.steadfastInfo.status}</Badge>
+                  </div>
+                  {order.steadfastInfo.lastUpdate && (
+                    <div>
+                      <p className="text-sm text-gray-500">Last Update</p>
+                      <p className="font-medium">
+                        {format(new Date(order.steadfastInfo.lastUpdate), 'PPP')}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
+          <Separator />
+
+          {/* Order Items */}
+          <div>
+            <h3 className="font-semibold mb-2">Order Items</h3>
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Product</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Quantity</TableHead>
-                  <TableHead>Total</TableHead>
+                  <TableHead className="text-right">Quantity</TableHead>
+                  <TableHead className="text-right">Price</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {order.items.map((item: any) => (
                   <TableRow key={item.id}>
                     <TableCell>{item.product.name}</TableCell>
-                    <TableCell>{new Intl.NumberFormat('bn-BD', {
-                      style: 'currency',
-                      currency: 'BDT'
-                    }).format(item.price)}</TableCell>
-                    <TableCell>{item.quantity}</TableCell>
-                    <TableCell>{new Intl.NumberFormat('bn-BD', {
-                      style: 'currency',
-                      currency: 'BDT'
-                    }).format(item.price * item.quantity)}</TableCell>
+                    <TableCell className="text-right">{item.quantity}</TableCell>
+                    <TableCell className="text-right">
+                      ৳{item.price.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      ৳{(item.price * item.quantity).toFixed(2)}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </div>
 
-          {order.paymentInfo && (
-            <div className="space-y-2">
-              <h3 className="font-semibold">Payment Information</h3>
-              <p>Method: {order.paymentInfo.method}</p>
-              <p>Status: {order.paymentInfo.status}</p>
-              {order.paymentInfo.transactionId && (
-                <p>Transaction ID: {order.paymentInfo.transactionId}</p>
-              )}
+          <Separator />
+
+          {/* Order Summary */}
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <p className="text-sm text-gray-500">Subtotal</p>
+              <p className="font-medium">৳{order.subtotal.toFixed(2)}</p>
             </div>
-          )}
+            <div className="flex justify-between">
+              <p className="text-sm text-gray-500">Shipping</p>
+              <p className="font-medium">৳{order.shipping.toFixed(2)}</p>
+            </div>
+            {order.discount > 0 && (
+              <div className="flex justify-between">
+                <p className="text-sm text-gray-500">Discount</p>
+                <p className="font-medium text-red-600">
+                  -৳{order.discount.toFixed(2)}
+                </p>
+              </div>
+            )}
+            <div className="flex justify-between">
+              <p className="text-sm text-gray-500">Tax</p>
+              <p className="font-medium">৳{order.tax.toFixed(2)}</p>
+            </div>
+            <Separator />
+            <div className="flex justify-between">
+              <p className="font-semibold">Total</p>
+              <p className="font-semibold">৳{order.total.toFixed(2)}</p>
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

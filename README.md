@@ -1,36 +1,143 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Rupomoti E-commerce Platform
+
+A modern e-commerce platform built with Next.js 14, featuring a powerful admin dashboard and Steadfast Courier integration.
+
+## Features
+
+### Admin Dashboard
+- Secure authentication with role-based access control
+- Comprehensive order management system
+- Product and category management
+- Customer management
+- Media library with Cloudinary integration
+- Real-time analytics and reporting
+- Inventory tracking
+- Promotion and discount management
+
+### Order Management
+- Complete order lifecycle management
+- Steadfast Courier integration for shipping
+- Real-time order tracking
+- Automated shipping label generation
+- Order status updates
+- Payment status tracking
+- Detailed order history
+
+### Product Management
+- Rich product information management
+- Multiple product images
+- Category and tag organization
+- Stock tracking
+- Price management with discount support
+- SEO optimization fields
+
+### Customer Management
+- Customer profiles and history
+- Order tracking for customers
+- Wishlist management
+- Account settings
+- Communication preferences
+
+## Tech Stack
+
+- **Framework**: Next.js 14
+- **Language**: TypeScript
+- **Database**: MongoDB with Prisma ORM
+- **Authentication**: NextAuth.js
+- **UI Components**: Shadcn UI
+- **Styling**: Tailwind CSS
+- **Image Storage**: Cloudinary
+- **Shipping**: Steadfast Courier API
+- **State Management**: React Context
+- **Forms**: React Hook Form
+- **Validation**: Zod
+- **Date Handling**: date-fns
 
 ## Getting Started
 
-First, run the development server:
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-username/rupomoti.git
+   cd rupomoti
+   ```
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Set up environment variables:
+   - Copy `.env.example` to `.env`
+   - Fill in your configuration values
+
+4. Set up the database:
+   ```bash
+   npx prisma generate
+   npx prisma db push
+   ```
+
+5. Run the development server:
+   ```bash
+   npm run dev
+   ```
+
+## Environment Variables
+
+Create a `.env` file with the following variables:
+
+```env
+# Database
+DATABASE_URL="your_mongodb_url"
+
+# NextAuth
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="your_nextauth_secret"
+
+# Steadfast API
+STEADFAST_API_KEY="your_steadfast_api_key"
+STEADFAST_SECRET_KEY="your_steadfast_secret_key"
+STEADFAST_WEBHOOK_TOKEN="your_webhook_auth_token"
+
+# Cloudinary
+CLOUDINARY_CLOUD_NAME="your_cloud_name"
+CLOUDINARY_API_KEY="your_api_key"
+CLOUDINARY_API_SECRET="your_api_secret"
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## API Routes
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Admin API
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `GET /api/admin/orders` - List orders with pagination and filters
+- `POST /api/admin/orders` - Update order status and shipping information
+- `GET /api/admin/products` - List products with pagination and filters
+- `POST /api/admin/products` - Create or update products
+- `GET /api/admin/customers` - List customers with pagination and filters
+- `GET /api/admin/analytics` - Get dashboard analytics and reports
 
-## Learn More
+### Steadfast Integration
 
-To learn more about Next.js, take a look at the following resources:
+- `POST /api/shipping/create` - Create a new shipment
+- `GET /api/shipping/track/:id` - Track shipment status
+- `POST /api/shipping/cancel/:id` - Cancel a shipment
+- `POST /api/shipping/price` - Calculate shipping price
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Contributing
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## Deploy on Vercel
+## License
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Acknowledgments
+
+- [Next.js](https://nextjs.org/)
+- [Shadcn UI](https://ui.shadcn.com/)
+- [Steadfast Courier](https://steadfast.com.bd/)
+- [Cloudinary](https://cloudinary.com/)
+- [Prisma](https://www.prisma.io/)

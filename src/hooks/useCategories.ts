@@ -1,39 +1,36 @@
-import { useState } from 'react'
+import useSWR from 'swr'
 import { showToast } from '@/lib/toast'
 
-interface Category {
+const fetcher = (url: string) => fetch(url).then((res) => res.json())
+
+export interface Category {
   id: string
   name: string
   description?: string
   image?: string
   slug: string
-  parentId?: string
+  _count?: {
+    products: number
+  }
 }
 
 export function useCategories() {
-  const [data, setData] = useState<Category[]>([])
-  const [loading, setLoading] = useState(true)
+  const { data, error, mutate } = useSWR<Category[]>('/api/categories', fetcher)
 
-  const fetchCategories = async () => {
-    try {
-      // TODO: Replace with actual API call
-      const response = await fetch('/api/categories')
-      const data = await response.json()
-      setData(data)
-    } catch (error) {
-      showToast.error('Failed to fetch categories')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const createCategory = async (category: Omit<Category, 'id'>) => {
+  const createCategory = async (categoryData: Omit<Category, 'id' | 'slug'>) => {
     return showToast.promise(
-      // TODO: Replace with actual API call
       fetch('/api/categories', {
         method: 'POST',
-        body: JSON.stringify(category),
-      }).then(() => fetchCategories()),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(categoryData),
+      }).then(async (res) => {
+        if (!res.ok) {
+          const error = await res.json()
+          throw new Error(error.message || 'Failed to create category')
+        }
+        mutate() // Refresh the categories list
+        return res.json()
+      }),
       {
         loading: 'Creating category...',
         success: 'Category created successfully',
@@ -42,13 +39,20 @@ export function useCategories() {
     )
   }
 
-  const updateCategory = async (id: string, category: Partial<Category>) => {
+  const updateCategory = async (id: string, categoryData: Partial<Category>) => {
     return showToast.promise(
-      // TODO: Replace with actual API call
       fetch(`/api/categories/${id}`, {
         method: 'PUT',
-        body: JSON.stringify(category),
-      }).then(() => fetchCategories()),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...categoryData }),
+      }).then(async (res) => {
+        if (!res.ok) {
+          const error = await res.json()
+          throw new Error(error.message || 'Failed to update category')
+        }
+        mutate() // Refresh the categories list
+        return res.json()
+      }),
       {
         loading: 'Updating category...',
         success: 'Category updated successfully',
@@ -59,10 +63,15 @@ export function useCategories() {
 
   const deleteCategory = async (id: string) => {
     return showToast.promise(
-      // TODO: Replace with actual API call
       fetch(`/api/categories/${id}`, {
         method: 'DELETE',
-      }).then(() => fetchCategories()),
+      }).then(async (res) => {
+        if (!res.ok) {
+          const error = await res.json()
+          throw new Error(error.message || 'Failed to delete category')
+        }
+        mutate() // Refresh the categories list
+      }),
       {
         loading: 'Deleting category...',
         success: 'Category deleted successfully',
@@ -73,8 +82,8 @@ export function useCategories() {
 
   return {
     data,
-    loading,
-    fetchCategories,
+    isLoading: !error && !data,
+    error,
     createCategory,
     updateCategory,
     deleteCategory,

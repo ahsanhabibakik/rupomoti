@@ -7,36 +7,79 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Account {
+  id                String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String  @db.ObjectId
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.String
+  access_token      String? @db.String
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.String
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  sessionToken String   @unique
+  userId       String   @db.ObjectId
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?   // Added password field
+  role          Role      @default(USER)
+  accounts      Account[]
+  sessions      Session[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
 model Product {
-  id          String      @id @default(auto()) @map("_id") @db.ObjectId
-  name        String
-  description String?
-  price       Float
-  salePrice   Float?
-  images      String[]
-  category    Category    @relation(fields: [categoryId], references: [id])
-  categoryId  String      @db.ObjectId
-  stock       Int         @default(0)
-  sku         String      @unique
-  tags        String[]
-  featured    Boolean     @default(false)
-  isNew       Boolean     @default(true)
-  rating      Float       @default(0)
-  reviews     Review[]
-  variants    Variant[]
-  specs       Json?       // Technical specifications
-  orderItems  OrderItem[]
-  wishedByIds String[]    @db.ObjectId
-  wishedBy    Customer[]  @relation("CustomerWishlist", fields: [wishedByIds], references: [id])
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id              String      @id @default(auto()) @map("_id") @db.ObjectId
+  name            String
+  slug            String      @unique
+  description     String
+  price           Float
+  discountedPrice Float?
+  images          String[]
+  stock           Int         @default(0)
+  sku             String      @unique
+  category        Category    @relation(fields: [categoryId], references: [id])
+  categoryId      String      @db.ObjectId
+  orderItems      OrderItem[]
+  reviews         Review[]
+  variants        Variant[]
+  wishlistedByIds String[]    @db.ObjectId
+  wishlistedBy    Customer[]  @relation("CustomerWishlist", fields: [wishlistedByIds], references: [id])
+  featured        Boolean     @default(false)
+  status          Status      @default(ACTIVE)
+  metadata        Json?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([categoryId])
+  @@index([status])
 }
 
 model Variant {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  name      String   // e.g., "Size", "Color"
-  value     String   // e.g., "XL", "Red"
-  price     Float?   // Additional price if any
+  name      String // e.g., "Size", "Color"
+  value     String // e.g., "XL", "Red"
+  price     Float? // Additional price if any
   sku       String   @unique
   stock     Int      @default(0)
   product   Product  @relation(fields: [productId], references: [id])
@@ -46,105 +89,179 @@ model Variant {
 }
 
 model Review {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  rating    Int
-  comment   String?
-  product   Product  @relation(fields: [productId], references: [id])
-  productId String   @db.ObjectId
-  customer  Customer @relation(fields: [customerId], references: [id])
-  customerId String  @db.ObjectId
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  rating     Int
+  comment    String?
+  product    Product  @relation(fields: [productId], references: [id])
+  productId  String   @db.ObjectId
+  customer   Customer @relation(fields: [customerId], references: [id])
+  customerId String   @db.ObjectId
+  status     Status   @default(PENDING)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([productId])
+  @@index([customerId])
+  @@index([status])
 }
 
 model Category {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
   name        String
   description String?
   image       String?
-  slug        String    @unique
-  parent      Category? @relation("SubCategories", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  parentId    String?   @db.ObjectId
+  slug        String     @unique
+  parent      Category?  @relation("SubCategories", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  parentId    String?    @db.ObjectId
   children    Category[] @relation("SubCategories")
   products    Product[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([parentId])
 }
 
 model Order {
-  id           String      @id @default(auto()) @map("_id") @db.ObjectId
-  orderNumber  String      @unique
-  customer     Customer    @relation(fields: [customerId], references: [id])
-  customerId   String      @db.ObjectId
-  items        OrderItem[]
-  total        Float
-  subtotal     Float
-  tax          Float      @default(0)
-  shipping     Float      @default(0)
-  discount     Float      @default(0)
-  coupon       Coupon?    @relation(fields: [couponId], references: [id])
-  couponId     String?    @db.ObjectId
-  status       OrderStatus @default(PENDING)
-  shippingInfo Json
-  paymentInfo  Json?
-  notes        String?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  orderNumber   String         @unique
+  customer      Customer       @relation(fields: [customerId], references: [id])
+  customerId    String         @db.ObjectId
+  items         OrderItem[]
+  total         Float
+  subtotal      Float
+  tax           Float          @default(0)
+  shipping      Float          @default(0)
+  discount      Float          @default(0)
+  coupon        Coupon?        @relation(fields: [couponId], references: [id])
+  couponId      String?        @db.ObjectId
+  status        OrderStatus    @default(PENDING)
+  paymentStatus PaymentStatus  @default(PENDING)
+  paymentMethod String?
+  shippingInfo  ShippingInfo
+  steadfastInfo SteadfastInfo?
+  notes         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([customerId])
+  @@index([status])
+  @@index([paymentStatus])
 }
 
 model OrderItem {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  order       Order    @relation(fields: [orderId], references: [id])
-  orderId     String   @db.ObjectId
-  product     Product  @relation(fields: [productId], references: [id])
-  productId   String   @db.ObjectId
-  variantId   String?  @db.ObjectId
-  quantity    Int
-  price       Float
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  order     Order    @relation(fields: [orderId], references: [id])
+  orderId   String   @db.ObjectId
+  product   Product  @relation(fields: [productId], references: [id])
+  productId String   @db.ObjectId
+  quantity  Int
+  price     Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([productId])
 }
 
 model Customer {
-  id           String    @id @default(auto()) @map("_id") @db.ObjectId
-  name         String
-  email        String    @unique
-  phone        String
-  address      String?
-  password     String?   // Hashed password for customer accounts
-  avatar       String?   // Profile picture URL
-  orders       Order[]
-  reviews      Review[]
-  wishlistIds  String[]  @db.ObjectId
-  wishlist     Product[] @relation("CustomerWishlist", fields: [wishlistIds], references: [id])
-  newsletter   Boolean   @default(false)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  email       String    @unique
+  phone       String
+  address     String?
+  password    String? // Hashed password for customer accounts
+  avatar      String? // Profile picture URL
+  orders      Order[]
+  reviews     Review[]
+  wishlistIds String[]  @db.ObjectId
+  wishlist    Product[] @relation("CustomerWishlist", fields: [wishlistIds], references: [id])
+  newsletter  Boolean   @default(false)
+  status      Status    @default(ACTIVE)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status])
 }
 
 model Media {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
   url       String
-  type      String
+  type      MediaType
   alt       String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Coupon {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  code        String    @unique
-  type        String    // percentage, fixed
-  value       Float
-  minAmount   Float?
-  maxAmount   Float?
-  startDate   DateTime
-  endDate     DateTime
-  usageLimit  Int?
-  usageCount  Int       @default(0)
-  orders      Order[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id         String       @id @default(auto()) @map("_id") @db.ObjectId
+  code       String       @unique
+  type       DiscountType
+  value      Float
+  minAmount  Float?
+  maxAmount  Float?
+  startDate  DateTime
+  endDate    DateTime
+  usageLimit Int?
+  usageCount Int          @default(0)
+  orders     Order[]
+  status     Status       @default(ACTIVE)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@index([status])
+}
+
+model Settings {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  storeName         String
+  storeDescription  String?
+  storeEmail        String
+  storePhone        String
+  storeAddress      String
+  logoUrl           String?
+  faviconUrl        String?
+  socialLinks       Json?
+  paymentSettings   Json
+  shippingSettings  Json
+  steadfastSettings Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+type ShippingInfo {
+  address    String
+  city       String
+  state      String?
+  postalCode String
+  country    String
+  phone      String
+  email      String
+  name       String
+}
+
+type SteadfastInfo {
+  trackingId     String?
+  consignmentId  String?
+  status         String?
+  lastUpdate     DateTime?
+  deliveryDate   DateTime?
+  deliveryCharge Float?
+  codAmount      Float?
+  lastMessage    String?
+}
+
+enum Role {
+  USER
+  ADMIN
+  MANAGER
+  SUPPORT
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+  PENDING
+  BANNED
 }
 
 enum OrderStatus {
@@ -153,4 +270,22 @@ enum OrderStatus {
   SHIPPED
   DELIVERED
   CANCELLED
-} 
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  DOCUMENT
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
