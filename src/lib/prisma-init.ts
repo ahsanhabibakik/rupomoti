@@ -10,6 +10,11 @@ declare global {
 const prismaClientSingleton = () => {
   return new PrismaClient({
     log: ['error', 'warn'],
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL
+      }
+    }
   })
 }
 
@@ -29,7 +34,11 @@ function getSchemaHash(): string {
 // Function to save schema hash
 function saveSchemaHash(hash: string) {
   const hashPath = path.join(process.cwd(), '.schema-hash')
-  fs.writeFileSync(hashPath, hash)
+  try {
+    fs.writeFileSync(hashPath, hash)
+  } catch (error) {
+    console.warn('Failed to save schema hash:', error)
+  }
 }
 
 // Function to get saved schema hash
@@ -58,8 +67,8 @@ export async function initializeDatabase() {
         try {
           // In development, automatically push schema changes
           const { execSync } = require('child_process')
-          execSync('npx prisma generate', { stdio: 'inherit' })
-          execSync('npx prisma db push', { stdio: 'inherit' })
+          execSync('npx prisma generate --schema=./prisma/schema.prisma', { stdio: 'inherit' })
+          execSync('npx prisma db push --schema=./prisma/schema.prisma', { stdio: 'inherit' })
           
           // Save new schema hash only if commands succeed
           saveSchemaHash(currentHash)

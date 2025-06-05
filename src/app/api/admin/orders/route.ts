@@ -7,8 +7,11 @@ import { authOptions } from '@/lib/auth';
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!session || session.user.role !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
     const { searchParams } = new URL(request.url);
@@ -18,14 +21,15 @@ export async function GET(request: Request) {
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
-    const where: any = {};
-    if (status) where.status = status;
-    if (startDate && endDate) {
-      where.createdAt = {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
-      };
-    }
+    const where = {
+      ...(status && { status }),
+      ...(startDate && endDate && {
+        createdAt: {
+          gte: new Date(startDate),
+          lte: new Date(endDate)
+        }
+      })
+    };
 
     const [orders, total] = await Promise.all([
       prisma.order.findMany({
@@ -34,21 +38,22 @@ export async function GET(request: Request) {
           customer: true,
           items: {
             include: {
-              product: true,
-            },
-          },
+              product: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
         },
         skip: (page - 1) * limit,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
+        take: limit
       }),
-      prisma.order.count({ where }),
+      prisma.order.count({ where })
     ]);
 
     return NextResponse.json({
       orders,
-      total,
-      pages: Math.ceil(total / limit),
+      pages: Math.ceil(total / limit)
     });
   } catch (error) {
     console.error('Error fetching orders:', error);

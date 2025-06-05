@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Table,
@@ -70,7 +70,7 @@ export default function OrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       setLoading(true)
       const searchParams = new URLSearchParams({
@@ -95,11 +95,11 @@ export default function OrdersPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [page, filters])
 
   useEffect(() => {
     fetchOrders()
-  }, [page, filters])
+  }, [fetchOrders])
 
   const handleAction = async (orderId: string, action: string) => {
     try {

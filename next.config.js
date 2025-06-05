@@ -21,7 +21,7 @@ const nextConfig = {
   generateEtags: true,
   distDir: '.next',
   cleanDistDir: true,
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     config.watchOptions = {
       poll: 1000,
       aggregateTimeout: 300,
@@ -33,6 +33,30 @@ const nextConfig = {
         ...config.resolve.fallback,
         fs: false,
         path: false,
+      },
+    }
+    // Optimize chunk loading
+    config.optimization = {
+      ...config.optimization,
+      splitChunks: {
+        chunks: 'all',
+        minSize: 20000,
+        maxSize: 244000,
+        minChunks: 1,
+        maxAsyncRequests: 30,
+        maxInitialRequests: 30,
+        cacheGroups: {
+          defaultVendors: {
+            test: /[\\/]node_modules[\\/]/,
+            priority: -10,
+            reuseExistingChunk: true,
+          },
+          default: {
+            minChunks: 2,
+            priority: -20,
+            reuseExistingChunk: true,
+          },
+        },
       },
     }
     return config

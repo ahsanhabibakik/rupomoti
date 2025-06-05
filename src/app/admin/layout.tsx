@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
@@ -60,7 +60,9 @@ function Sidebar({ className }: { className?: string }) {
       </nav>
 
       <div className="p-4 space-y-4">
-        <ConnectionStatus />
+        <Suspense fallback={<div className="h-8 animate-pulse bg-gray-200 rounded" />}>
+          <ConnectionStatus />
+        </Suspense>
         <Button
           variant="ghost"
           className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
@@ -70,6 +72,14 @@ function Sidebar({ className }: { className?: string }) {
           Sign Out
         </Button>
       </div>
+    </div>
+  )
+}
+
+function LoadingSpinner() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="h-32 w-32 animate-spin rounded-full border-b-2 border-primary"></div>
     </div>
   )
 }
@@ -92,11 +102,7 @@ export default function AdminLayout({
 
   // Show loading state
   if (status === 'loading') {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="h-32 w-32 animate-spin rounded-full border-b-2 border-primary"></div>
-      </div>
-    )
+    return <LoadingSpinner />
   }
 
   // Show login page or children based on authentication status
@@ -131,7 +137,11 @@ export default function AdminLayout({
 
       {/* Main content */}
       <div className="lg:pl-64">
-        <main className="p-8">{children}</main>
+        <main className="p-8">
+          <Suspense fallback={<LoadingSpinner />}>
+            {children}
+          </Suspense>
+        </main>
       </div>
     </div>
   )
