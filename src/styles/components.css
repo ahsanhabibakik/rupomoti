@@ -1,0 +1,156 @@
+@layer components {
+  /* Button Variants */
+  .btn-primary {
+    @apply bg-gold hover:bg-gold-dark text-charcoal font-medium py-2 px-4 rounded-md transition-all duration-200 
+           shadow-pearl hover:shadow-gold focus:ring-2 focus:ring-gold focus:ring-offset-2 focus:ring-offset-pearl;
+  }
+  
+  .btn-secondary {
+    @apply bg-pearl hover:bg-pearl-dark text-charcoal font-medium py-2 px-4 rounded-md transition-all duration-200 
+           border border-gold hover:border-gold-dark shadow-pearl hover:shadow-gold;
+  }
+  
+  .btn-accent {
+    @apply bg-sapphire hover:bg-sapphire-dark text-pearl font-medium py-2 px-4 rounded-md transition-all duration-200 
+           shadow-pearl hover:shadow-sapphire focus:ring-2 focus:ring-sapphire focus:ring-offset-2 focus:ring-offset-pearl;
+  }
+
+  .btn-outline {
+    @apply bg-transparent border-2 border-gold text-gold hover:bg-gold hover:text-charcoal font-medium py-2 px-4 
+           rounded-md transition-all duration-200 focus:ring-2 focus:ring-gold focus:ring-offset-2 focus:ring-offset-pearl;
+  }
+
+  /* Card Variants */
+  .card {
+    @apply bg-pearl rounded-lg shadow-pearl p-6 transition-all duration-200 hover:shadow-gold;
+  }
+
+  .card-hover {
+    @apply card hover:scale-[1.02] hover:rotate-[0.5deg];
+  }
+
+  .card-gold {
+    @apply bg-gradient-gold text-pearl rounded-lg shadow-gold p-6 transition-all duration-200 hover:shadow-sapphire;
+  }
+
+  /* Form Elements */
+  .input {
+    @apply bg-pearl border border-gold rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gold 
+           focus:border-transparent transition-all duration-200 placeholder:text-slate/50;
+  }
+
+  .input-error {
+    @apply border-destructive focus:ring-destructive;
+  }
+
+  .label {
+    @apply text-sm font-medium text-charcoal mb-1 block;
+  }
+
+  /* Navigation */
+  .nav-link {
+    @apply text-charcoal hover:text-gold transition-colors duration-200 relative after:absolute after:bottom-0 
+           after:left-0 after:h-0.5 after:w-0 after:bg-gold after:transition-all after:duration-200 
+           hover:after:w-full;
+  }
+  
+  .footer-link {
+    @apply text-slate hover:text-gold transition-colors duration-200;
+  }
+
+  /* Product Cards */
+  .product-card {
+    @apply card group overflow-hidden;
+  }
+
+  .product-image {
+    @apply relative aspect-square overflow-hidden bg-pearl-light;
+  }
+
+  .product-image img {
+    @apply object-cover transition-transform duration-500 group-hover:scale-110;
+  }
+
+  .product-badge {
+    @apply absolute top-2 right-2 bg-gold text-charcoal text-xs font-medium px-2 py-1 rounded-full;
+  }
+
+  .product-title {
+    @apply font-display text-lg text-charcoal mt-4 mb-1;
+  }
+
+  .product-price {
+    @apply text-gold-dark font-medium;
+  }
+
+  /* Category Cards */
+  .category-card {
+    @apply relative aspect-square overflow-hidden rounded-lg group;
+  }
+
+  .category-overlay {
+    @apply absolute inset-0 bg-gradient-to-t from-charcoal/80 to-transparent opacity-0 group-hover:opacity-100 
+           transition-opacity duration-300;
+  }
+
+  .category-title {
+    @apply absolute bottom-4 left-4 text-pearl font-display text-xl opacity-0 group-hover:opacity-100 
+           transition-opacity duration-300 transform translate-y-4 group-hover:translate-y-0;
+  }
+
+  /* Loading States */
+  .skeleton {
+    @apply animate-pulse bg-pearl-dark/20 rounded-md;
+  }
+
+  .skeleton-text {
+    @apply skeleton h-4 w-3/4;
+  }
+
+  .skeleton-image {
+    @apply skeleton aspect-square w-full;
+  }
+
+  /* Modal Styles */
+  .modal-overlay {
+    @apply fixed inset-0 bg-charcoal/50 backdrop-blur-sm z-50;
+  }
+
+  .modal-content {
+    @apply fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-pearl rounded-lg shadow-gold p-6 
+           w-full max-w-lg max-h-[90vh] overflow-y-auto z-50;
+  }
+
+  /* Toast Notifications */
+  .toast {
+    @apply fixed bottom-4 right-4 bg-pearl text-charcoal px-4 py-2 rounded-lg shadow-gold 
+           transform transition-all duration-300 translate-y-0 opacity-100;
+  }
+
+  .toast-hide {
+    @apply translate-y-2 opacity-0;
+  }
+
+  /* Tooltips */
+  .tooltip {
+    @apply absolute bg-charcoal text-pearl px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 
+           transition-opacity duration-200 pointer-events-none whitespace-nowrap;
+  }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-gold {
+    @apply badge bg-gold text-charcoal;
+  }
+
+  .badge-pearl {
+    @apply badge bg-pearl text-charcoal border border-gold;
+  }
+
+  .badge-sapphire {
+    @apply badge bg-sapphire text-pearl;
+  }
+} 
