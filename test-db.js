@@ -1,7 +1,12 @@
+require('dotenv').config();
 const { MongoClient } = require('mongodb');
 
 async function main() {
-    const uri = "mongodb+srv://rupomotiofficial:iQjPXS0Y1NDeyUrp@rupomotilifestyle.ikspfql.mongodb.net/rupomoti?retryWrites=true&w=majority";
+    const uri = process.env.DATABASE_URL;
+    if (!uri) {
+        console.error('DATABASE_URL is not set in environment variables.');
+        return;
+    }
     const client = new MongoClient(uri, {
         ssl: true,
         tls: true,
@@ -12,7 +17,7 @@ async function main() {
     try {
         await client.connect();
         console.log("Connected successfully to MongoDB");
-        const db = client.db("rupomoti");
+        const db = client.db();
         const collections = await db.listCollections().toArray();
         console.log("Available collections:", collections);
     } catch (e) {

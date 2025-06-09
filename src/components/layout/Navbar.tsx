@@ -9,6 +9,8 @@ import { NavigationMenu, NavigationMenuItem, NavigationMenuList, NavigationMenuL
 import { colors } from '@/lib/constants/colors'
 import { CartDrawer } from '@/components/cart/CartDrawer'
 import { SearchModal } from '@/components/search/SearchModal'
+import { signIn } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
 
 const navigationLinks = [
   { href: '/shop', label: 'Shop' },
@@ -30,6 +32,7 @@ export function Navbar() {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [placeholder, setPlaceholder] = useState(searchPlaceholders[0])
   const [isScrolled, setIsScrolled] = useState(false)
+  const session = useSession()
 
   // Change placeholder text periodically
   useEffect(() => {
@@ -122,7 +125,25 @@ export function Navbar() {
 
           {/* Right Side Actions */}
           <div className="flex items-center gap-2">
+            {/* Sign in with Google button (shown if user is not signed in) */}
+            {!session && (
+              <button
+                onClick={() => signIn("google")}
+                className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700"
+              >
+                Sign in
+              </button>
+            )}
             <CartDrawer />
+            {/* Visit Dashboard button (only shown if user is signed in and is an admin) */}
+            {session?.user?.role === 'ADMIN' && (
+              <Link
+                href="/admin"
+                className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+              >
+                Dashboard
+              </Link>
+            )}
           </div>
         </div>
 

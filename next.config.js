@@ -16,9 +16,13 @@ const nextConfig = {
         pathname: '/**',
       },
     ],
+    unoptimized: process.env.NODE_ENV === 'development',
+    domains: ['images.unsplash.com', 'plus.unsplash.com'],
   },
   experimental: {
     optimizePackageImports: ['lucide-react'],
+    serverComponentsExternalPackages: ['bcrypt'],
+    serverActions: true,
   },
   poweredByHeader: false,
   compress: true,
@@ -69,6 +73,10 @@ const nextConfig = {
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
   // Disable source maps in production to reduce complexity
   productionBrowserSourceMaps: false,
+  swcMinify: true,
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
 }
 
 module.exports = nextConfig 

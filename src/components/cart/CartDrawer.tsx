@@ -62,9 +62,9 @@ export function CartDrawer() {
                 <Button>Continue Shopping</Button>
               </SheetClose>
             </div>
-          ) :
+          ) : (
             <div className="flex flex-col h-[calc(100vh-6rem)]">
-              <div className="flex-1 overflow-y-auto">
+              <ScrollArea className="flex-1">
                 <div className="px-6 divide-y">
                   {items.map((item) => (
                     <div key={item.id} className="py-4 flex gap-4">
@@ -110,9 +110,9 @@ export function CartDrawer() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </ScrollArea>
 
-              <div className="p-6 border-t space-y-4">
+              <div className="p-6 border-t space-y-4 bg-background">
                 <div className="space-y-1.5">
                   <div className="flex justify-between">
                     <span className="text-sm">Subtotal</span>
@@ -134,7 +134,7 @@ export function CartDrawer() {
                 </Button>
               </div>
             </div>
-          }
+          )}
         </SheetContent>
       </Sheet>
 

@@ -1,4 +1,1 @@
-require('dotenv').config();
-console.log('DATABASE_URL:', process.env.DATABASE_URL);
-console.log('NEXTAUTH_URL:', process.env.NEXTAUTH_URL);
-console.log('NEXTAUTH_SECRET:', process.env.NEXTAUTH_SECRET); 
+require('dotenv').config(); console.log('Environment Variables Check:'); console.log('------------------------'); console.log('DATABASE_URL:', process.env.DATABASE_URL ? '✅ Set' : '❌ Not Set'); console.log('NEXTAUTH_URL:', process.env.NEXTAUTH_URL ? '✅ Set' : '❌ Not Set'); console.log('NEXTAUTH_SECRET:', process.env.NEXTAUTH_SECRET ? '✅ Set' : '❌ Not Set'); console.log('STEADFAST_API_KEY:', process.env.STEADFAST_API_KEY ? '✅ Set' : '❌ Not Set'); console.log('STEADFAST_SECRET_KEY:', process.env.STEADFAST_SECRET_KEY ? '✅ Set' : '❌ Not Set'); console.log('CLOUDINARY_CLOUD_NAME:', process.env.CLOUDINARY_CLOUD_NAME ? '✅ Set' : '❌ Not Set'); console.log('------------------------');
