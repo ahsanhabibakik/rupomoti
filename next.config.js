@@ -1,6 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  server: {
+    http: true,
+    https: false
+  },
   typescript: {
     ignoreBuildErrors: true,
   },

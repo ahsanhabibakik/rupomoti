@@ -14,6 +14,14 @@ import {
   FolderTree,
   Menu,
   X,
+  Settings,
+  Tag,
+  Star,
+  ShoppingCart,
+  Truck,
+  FileText,
+  Bell,
+  Shield,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -27,6 +35,13 @@ const navigation = [
   { name: 'Orders', href: '/admin/orders', icon: ListOrdered },
   { name: 'Customers', href: '/admin/customers', icon: Users },
   { name: 'Media', href: '/admin/media', icon: ImageIcon },
+  { name: 'Reviews', href: '/admin/reviews', icon: Star },
+  { name: 'Coupons', href: '/admin/coupons', icon: Tag },
+  { name: 'Shipping', href: '/admin/shipping', icon: Truck },
+  { name: 'Reports', href: '/admin/reports', icon: FileText },
+  { name: 'Notifications', href: '/admin/notifications', icon: Bell },
+  { name: 'Settings', href: '/admin/settings', icon: Settings },
+  { name: 'Roles & Permissions', href: '/admin/roles', icon: Shield },
 ]
 
 function Sidebar({ className }: { className?: string }) {
