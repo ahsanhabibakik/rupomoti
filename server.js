@@ -35,22 +35,37 @@ const httpsOptions = {
   cert: fs.readFileSync(certPath)
 }
 
+const HTTPS_PORT = 3000
+const HTTP_PORT = 3001
+
 app.prepare().then(() => {
   // Create HTTPS server
   createServer(httpsOptions, (req, res) => {
     const parsedUrl = parse(req.url, true)
     handle(req, res, parsedUrl)
-  }).listen(3001, (err) => {
-    if (err) throw err
-    console.log('> Ready on https://localhost:3001')
+  }).listen(HTTPS_PORT, (err) => {
+    if (err) {
+      if (err.code === 'EADDRINUSE') {
+        console.error(`Port ${HTTPS_PORT} is already in use. Please try a different port or kill the process using this port.`)
+        process.exit(1)
+      }
+      throw err
+    }
+    console.log(`> Ready on https://localhost:${HTTPS_PORT}`)
   })
 
   // Also create HTTP server to redirect to HTTPS
   createHttpServer((req, res) => {
-    res.writeHead(301, { "Location": "https://localhost:3001" + req.url })
+    res.writeHead(301, { "Location": `https://localhost:${HTTPS_PORT}${req.url}` })
     res.end()
-  }).listen(3000, (err) => {
-    if (err) throw err
-    console.log('> HTTP server redirecting to HTTPS on port 3000')
+  }).listen(HTTP_PORT, (err) => {
+    if (err) {
+      if (err.code === 'EADDRINUSE') {
+        console.error(`Port ${HTTP_PORT} is already in use. Please try a different port or kill the process using this port.`)
+        process.exit(1)
+      }
+      throw err
+    }
+    console.log(`> HTTP server redirecting to HTTPS on port ${HTTP_PORT}`)
   })
 }) 

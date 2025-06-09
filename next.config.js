@@ -22,7 +22,6 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react'],
     serverComponentsExternalPackages: ['bcrypt'],
-    serverActions: true,
   },
   poweredByHeader: false,
   compress: true,
