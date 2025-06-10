@@ -104,7 +104,7 @@ export default function NotificationsPage() {
                   <Bell className="w-12 h-12 text-muted-foreground mb-4" />
                   <p className="text-lg font-medium">No notifications</p>
                   <p className="text-sm text-muted-foreground">
-                    You're all caught up! Check back later for updates.
+                    You&apos;re all caught up! Check back later for updates.
                   </p>
                 </div>
               ) : (
@@ -169,7 +169,7 @@ export default function NotificationsPage() {
                   <Check className="w-12 h-12 text-muted-foreground mb-4" />
                   <p className="text-lg font-medium">No unread notifications</p>
                   <p className="text-sm text-muted-foreground">
-                    You're all caught up! Check back later for updates.
+                    You&apos;re all caught up! Check back later for updates.
                   </p>
                 </div>
               ) : (

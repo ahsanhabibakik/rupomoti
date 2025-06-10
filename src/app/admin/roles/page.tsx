@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { toast } from 'sonner'
+import { Badge } from "@/components/ui/badge"
 
 // Mock data for demonstration
 const roles = [

@@ -142,7 +142,7 @@ export default function TermsPage() {
             Questions About Our Terms?
           </h2>
           <p className="text-lg mb-8 max-w-2xl mx-auto text-slate">
-            If you have any questions about our terms of service, please don't 
+            If you have any questions about our terms of service, please don&apos;t 
             hesitate to contact our legal team.
           </p>
           <div className="flex gap-4 justify-center">

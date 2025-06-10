@@ -6,10 +6,12 @@ import { ReduxProvider } from '@/components/providers/ReduxProvider'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import './globals.css'
+import { Metadata } from 'next'
 
 const inter = Inter({ subsets: ['latin'] })
 
-export const metadata = {
+export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXTAUTH_URL || 'http://localhost:3000'),
   title: {
     default: 'Rupomoti - Elegant Jewelry Collection',
     template: '%s | Rupomoti'

@@ -14,6 +14,7 @@ import { showToast } from '@/lib/toast'
 export function CartDrawer() {
   const { items, total, itemCount, remove: removeItem, updateQuantity } = useCart()
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
 
   const subtotal = total
   const shipping = items.length > 0 ? 100 : 0
@@ -35,7 +36,7 @@ export function CartDrawer() {
 
   return (
     <>
-      <Sheet>
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
           <Button variant="outline" size="icon" className="relative">
             <ShoppingCart className="h-5 w-5" />
@@ -59,7 +60,7 @@ export function CartDrawer() {
                 <p className="text-sm text-muted-foreground">Add items to your cart to continue shopping</p>
               </div>
               <SheetClose asChild>
-                <Button>Continue Shopping</Button>
+                <Button onClick={() => setIsOpen(false)}>Continue Shopping</Button>
               </SheetClose>
             </div>
           ) : (
@@ -74,6 +75,7 @@ export function CartDrawer() {
                           alt={item.name}
                           fill
                           className="object-cover"
+                          priority={false}
                         />
                       </div>
                       <div className="flex-1 space-y-1">
@@ -129,7 +131,10 @@ export function CartDrawer() {
                   </div>
                 </div>
 
-                <Button className="w-full" onClick={() => setIsCheckoutOpen(true)}>
+                <Button className="w-full" onClick={() => {
+                  setIsOpen(false)
+                  setIsCheckoutOpen(true)
+                }}>
                   Proceed to Checkout
                 </Button>
               </div>

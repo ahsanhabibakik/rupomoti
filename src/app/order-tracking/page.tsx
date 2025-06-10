@@ -18,7 +18,7 @@ export default function OrderTrackingPage() {
         <div className="container relative h-full flex items-center">
           <div className="max-w-2xl text-pearl">
             <h1 className="font-display text-5xl md:text-6xl mb-4">Order Tracking</h1>
-            <p className="text-lg md:text-xl text-pearl-light">Enter your tracking number below to see your order's status.</p>
+            <p className="text-lg md:text-xl text-pearl-light">Enter your tracking number below to see your order&apos;s status.</p>
           </div>
         </div>
       </section>

@@ -334,7 +334,7 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>SEO Settings</CardTitle>
-              <CardDescription>Configure your site's SEO settings</CardDescription>
+              <CardDescription>Configure your site&apos;s SEO settings</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">

@@ -29,28 +29,19 @@ const searchPlaceholders = [
 ]
 
 export function Navbar() {
+  const { data: session } = useSession()
   const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const [placeholder, setPlaceholder] = useState(searchPlaceholders[0])
-  const [isScrolled, setIsScrolled] = useState(false)
-  const session = useSession()
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [currentPlaceholder, setCurrentPlaceholder] = useState('')
 
-  // Change placeholder text periodically
   useEffect(() => {
-    let currentIndex = 0
     const interval = setInterval(() => {
-      currentIndex = (currentIndex + 1) % searchPlaceholders.length
-      setPlaceholder(searchPlaceholders[currentIndex])
+      setCurrentPlaceholder(
+        searchPlaceholders[Math.floor(Math.random() * searchPlaceholders.length)]
+      )
     }, 3000)
-    return () => clearInterval(interval)
-  }, [])
 
-  // Add shadow on scroll
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 0)
-    }
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
+    return () => clearInterval(interval)
   }, [])
 
   return (
@@ -59,9 +50,9 @@ export function Navbar() {
         {/* Main Navigation Bar */}
         <div className="h-16 flex items-center justify-between lg:justify-start lg:gap-8">
           {/* Mobile Menu (Left) */}
-          <Sheet>
-            <SheetTrigger asChild className="lg:hidden">
-              <Button variant="ghost" size="icon" className="shrink-0">
+          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="lg:hidden shrink-0">
                 <Menu className="h-6 w-6" />
               </Button>
             </SheetTrigger>
@@ -73,6 +64,7 @@ export function Navbar() {
                       key={link.href}
                       href={link.href}
                       className="block text-lg font-medium hover:text-primary"
+                      onClick={() => setIsMobileMenuOpen(false)}
                     >
                       {link.label}
                     </Link>
@@ -92,78 +84,52 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:block">
-            <NavigationMenu>
-              <NavigationMenuList>
-                {navigationLinks.map((link) => (
-                  <NavigationMenuItem key={link.href}>
-                    <NavigationMenuLink asChild>
-                      <Link 
-                        href={link.href} 
-                        className="px-3 py-2 text-sm font-medium hover:text-primary transition-colors"
-                      >
-                        {link.label}
-                      </Link>
+          <NavigationMenu className="hidden lg:flex">
+            <NavigationMenuList>
+              {navigationLinks.map((link) => (
+                <NavigationMenuItem key={link.href}>
+                  <Link href={link.href} legacyBehavior passHref>
+                    <NavigationMenuLink className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50">
+                      {link.label}
                     </NavigationMenuLink>
-                  </NavigationMenuItem>
-                ))}
-              </NavigationMenuList>
-            </NavigationMenu>
-          </div>
-
-          {/* Desktop Search Bar */}
-          <div className="hidden lg:flex lg:flex-1 lg:justify-center lg:px-4">
-            <Button
-              variant="outline"
-              className="w-full max-w-md justify-start text-left text-muted-foreground"
-              onClick={() => setIsSearchOpen(true)}
-            >
-              <Search className="mr-2 h-4 w-4" />
-              <span className="truncate">{placeholder}</span>
-            </Button>
-          </div>
+                  </Link>
+                </NavigationMenuItem>
+              ))}
+            </NavigationMenuList>
+          </NavigationMenu>
 
           {/* Right Side Actions */}
           <div className="flex items-center gap-2">
-            {/* Sign in with Google button (shown if user is not signed in) */}
-            {!session && (
-              <button
-                onClick={() => signIn("google")}
-                className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700"
-              >
-                Sign in
-              </button>
-            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsSearchOpen(true)}
+            >
+              <Search className="h-5 w-5" />
+            </Button>
             <CartDrawer />
-            {/* Visit Dashboard button (only shown if user is signed in and is an admin) */}
-            {session?.user?.role === 'ADMIN' && (
-              <Link
-                href="/admin"
-                className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
-              >
-                Dashboard
+            {session ? (
+              <Link href="/account">
+                <Button variant="ghost" size="icon">
+                  <ShoppingBag className="h-5 w-5" />
+                </Button>
               </Link>
+            ) : (
+              <Button
+                variant="ghost"
+                onClick={() => signIn()}
+              >
+                Sign In
+              </Button>
             )}
           </div>
         </div>
-
-        {/* Mobile Search Bar */}
-        <div className="lg:hidden py-3">
-          <Button
-            variant="outline"
-            className="w-full justify-start text-left text-muted-foreground"
-            onClick={() => setIsSearchOpen(true)}
-          >
-            <Search className="mr-2 h-4 w-4" />
-            <span className="truncate">{placeholder}</span>
-          </Button>
-        </div>
       </div>
 
-      {/* Search Modal */}
-      <SearchModal 
-        isOpen={isSearchOpen}
-        onClose={() => setIsSearchOpen(false)}
+      <SearchModal
+        open={isSearchOpen}
+        onOpenChange={setIsSearchOpen}
+        placeholder={currentPlaceholder}
       />
     </header>
   )

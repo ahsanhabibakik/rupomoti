@@ -18,7 +18,7 @@ export default function ContactPage() {
               Contact Us
             </h1>
             <p className="text-lg md:text-xl text-pearl-light">
-              We'd love to hear from you
+              We&apos;d love to hear from you
             </p>
           </div>
         </div>

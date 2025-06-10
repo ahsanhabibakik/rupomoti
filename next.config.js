@@ -17,7 +17,7 @@ const nextConfig = {
   },
   experimental: {
     optimizePackageImports: ['lucide-react'],
-    serverComponentsExternalPackages: ['bcrypt'],
+    serverComponentsExternalPackages: ['bcrypt', 'mongodb', 'mongoose'],
   },
   poweredByHeader: false,
   compress: true,
