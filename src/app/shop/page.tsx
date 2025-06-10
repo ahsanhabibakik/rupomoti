@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { ChevronDown, SlidersHorizontal } from 'lucide-react'
-import productsData from '@/data/products.json'
+import productsJson from '@/data/products.json'
 import {
   Sheet,
   SheetContent,
@@ -38,7 +38,7 @@ export default function ShopPage() {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 100000])
   const [sortBy, setSortBy] = useState<string>('newest')
 
-  const filteredProducts = productsData.filter((product) => {
+  const filteredProducts = productsJson.products.filter((product) => {
     const matchesCategory =
       selectedCategories.length === 0 ||
       selectedCategories.includes(product.category)

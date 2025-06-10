@@ -1,10 +1,9 @@
 import { Inter } from 'next/font/google'
-import { Toaster } from '@/components/ui/toaster'
+import { RootLayoutClient } from '@/components/layout/RootLayoutClient'
 import { AuthProvider } from '@/components/providers/AuthProvider'
 import { CartProvider } from '@/components/providers/CartProvider'
 import { ReduxProvider } from '@/components/providers/ReduxProvider'
-import { Navbar } from '@/components/layout/Navbar'
-import { Footer } from '@/components/layout/Footer'
+import { Toaster } from '@/components/ui/toaster'
 import './globals.css'
 import { Metadata } from 'next'
 
@@ -73,20 +72,16 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ReduxProvider>
-          <AuthProvider>
+        <AuthProvider>
+          <ReduxProvider>
             <CartProvider>
-              <div className="flex min-h-screen flex-col">
-                <Navbar />
-                <main className="flex-1">
-                  {children}
-                </main>
-                <Footer />
-              </div>
+              <RootLayoutClient>
+                {children}
+              </RootLayoutClient>
               <Toaster />
             </CartProvider>
-          </AuthProvider>
-        </ReduxProvider>
+          </ReduxProvider>
+        </AuthProvider>
       </body>
     </html>
   )

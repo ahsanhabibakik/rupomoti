@@ -10,6 +10,28 @@ import Image from 'next/image'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { showToast } from '@/lib/toast'
+import React from 'react'
+
+const CartTrigger = React.forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement> & { itemCount: number }
+>(({ itemCount, ...props }, ref) => (
+  <Button
+    ref={ref}
+    variant="outline"
+    size="icon"
+    className="relative"
+    {...props}
+  >
+    <ShoppingCart className="h-5 w-5" />
+    {itemCount > 0 && (
+      <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground w-5 h-5 rounded-full text-xs flex items-center justify-center">
+        {itemCount}
+      </span>
+    )}
+  </Button>
+))
+CartTrigger.displayName = "CartTrigger"
 
 export function CartDrawer() {
   const { items, total, itemCount, remove: removeItem, updateQuantity } = useCart()
@@ -38,14 +60,7 @@ export function CartDrawer() {
     <>
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
-          <Button variant="outline" size="icon" className="relative">
-            <ShoppingCart className="h-5 w-5" />
-            {items.length > 0 && (
-              <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground w-5 h-5 rounded-full text-xs flex items-center justify-center">
-                {items.length}
-              </span>
-            )}
-          </Button>
+          <CartTrigger itemCount={items.length} />
         </SheetTrigger>
         <SheetContent className="flex flex-col w-full sm:max-w-lg p-0">
           <SheetHeader className="px-6 py-4 border-b">
