@@ -396,3 +396,15 @@
 .animate-float {
   animation: float 3s ease-in-out infinite;
 }
+
+/* Add a @layer utilities block to define custom classes (like bg-pearl) so that Tailwind recognizes them. */
+@layer utilities {
+  .bg-pearl { background-color: #F8F7F4; }
+  .bg-pearl-light { background-color: #FCFBFA; }
+  .bg-pearl-dark { background-color: #E5E3DD; }
+  .bg-charcoal { background-color: #232323; }
+  .bg-slate { background-color: #6B7280; }
+  .bg-gold { background-color: #E6C674; }
+  .bg-sapphire { background-color: #0F52BA; }
+  /* (Add any other custom bg classes as needed) */
+}
