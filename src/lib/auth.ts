@@ -11,37 +11,46 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
   pages: {
-    signIn: "/login",
+    signIn: "/admin/login",
   },
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
+        emailOrMobile: { label: "Email or Mobile", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        if (!credentials?.emailOrMobile || !credentials?.password) {
           return null;
         }
 
-        const user = await prisma.user.findUnique({
+        // Try to find user by email or mobile
+        const user = await prisma.user.findFirst({
           where: {
-            email: credentials.email,
+            OR: [
+              { email: credentials.emailOrMobile },
+              { mobile: credentials.emailOrMobile },
+            ],
           },
         });
 
-        if (!user) {
+        if (!user || !user.password) {
           return null;
         }
 
         const isPasswordValid = await compare(credentials.password, user.password);
 
         if (!isPasswordValid) {
+          return null;
+        }
+
+        // Only allow admin users to log in through admin login
+        if (user.role !== 'ADMIN') {
           return null;
         }
 
@@ -55,24 +64,29 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
-        if (user.email === "rupomoti.official@gmail.com") {
-          token.role = "ADMIN";
-        } else {
-          token.role = user.role;
+        token.role = user.role;
+        token.id = user.id;
+      }
+      if (account?.provider === 'google') {
+        // For Google sign-in, check if user exists and update role if needed
+        const existingUser = await prisma.user.findUnique({
+          where: { email: token.email! },
+        });
+        if (existingUser) {
+          token.role = existingUser.role;
+          token.id = existingUser.id;
         }
       }
       return token;
     },
     async session({ session, token }) {
-      return {
-        ...session,
-        user: {
-          ...session.user,
-          role: token.role,
-        },
-      };
+      if (session.user) {
+        session.user.role = token.role as string;
+        session.user.id = token.id as string;
+      }
+      return session;
     },
   },
 }; 

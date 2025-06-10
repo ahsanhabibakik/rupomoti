@@ -5,7 +5,7 @@ export default withAuth({
   callbacks: {
     authorized: ({ token }) => {
       // Allow access if user has admin role
-      return token?.role === 'admin'
+      return token?.role === 'ADMIN'
     }
   },
   pages: {

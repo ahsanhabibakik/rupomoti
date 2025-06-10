@@ -17,7 +17,7 @@ const nextConfig = {
   },
   experimental: {
     optimizePackageImports: ['lucide-react'],
-    serverComponentsExternalPackages: ['bcrypt', 'mongodb', 'mongoose'],
+    serverComponentsExternalPackages: ['bcrypt', 'mongodb', 'mongoose', '@auth/prisma-adapter'],
   },
   poweredByHeader: false,
   compress: true,
