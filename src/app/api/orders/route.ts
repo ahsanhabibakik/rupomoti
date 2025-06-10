@@ -101,4 +101,32 @@ export async function DELETE(request: Request) {
       { status: 500 }
     )
   }
+}
+
+export async function POST(req: Request) {
+  try {
+    const { items, user } = await req.json()
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return NextResponse.json({ error: 'No items in order' }, { status: 400 })
+    }
+    const order = await prisma.order.create({
+      data: {
+        userEmail: user?.email || null,
+        userMobile: user?.mobile || null,
+        items: {
+          create: items.map((item: any) => ({
+            productId: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            image: item.image,
+          })),
+        },
+      },
+      include: { items: true },
+    })
+    return NextResponse.json(order)
+  } catch (error) {
+    return NextResponse.json({ error: 'Error creating order' }, { status: 500 })
+  }
 } 

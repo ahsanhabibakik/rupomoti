@@ -13,6 +13,9 @@ import { Separator } from '@/components/ui/separator'
 import { Check, MapPin, Phone, User, Wallet, ShoppingCart } from 'lucide-react'
 import Image from 'next/image'
 import { showToast } from '@/lib/toast'
+import { useSelector, useDispatch } from 'react-redux'
+import { RootState } from '@/redux/store'
+import { clearCart } from '@/redux/features/cartSlice'
 
 interface CheckoutModalProps {
   open: boolean
@@ -20,24 +23,29 @@ interface CheckoutModalProps {
 }
 
 export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
-  const { items, total, clear } = useCart()
+  const { items, total } = useSelector((state: RootState) => state.cart)
+  const dispatch = useDispatch()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const shipping = items.length > 0 ? 100 : 0
   const totalWithShipping = total + shipping
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
-
     try {
-      // Here you would typically send the order to your backend
-      await new Promise(resolve => setTimeout(resolve, 2000)) // Simulated API call
-      clear()
-      onOpenChange(false)
-      showToast.success('Order placed successfully!')
-    } catch (error) {
-      showToast.error('Failed to place order. Please try again.')
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items, user: { email, mobile } }),
+      })
+      if (!response.ok) throw new Error('Order failed')
+      dispatch(clearCart())
+      setSuccess(true)
+    } catch (err) {
+      setError('Order failed')
     } finally {
       setIsSubmitting(false)
     }

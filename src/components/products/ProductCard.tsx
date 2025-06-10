@@ -6,7 +6,9 @@ import Link from 'next/link'
 import { Heart, ShoppingCart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { useCart } from '@/hooks/useCart'
+import { useAppDispatch } from '@/redux/hooks'
+import { addToCart } from '@/redux/slices/cartSlice'
+import { setCartDrawerOpen } from '@/redux/slices/uiSlice'
 import { useWishlist } from '@/hooks/useWishlist'
 import { useToast } from '@/hooks/use-toast'
 
@@ -33,14 +35,15 @@ export function ProductCard({
   isOutOfStock = false,
   discount = 0,
 }: ProductCardProps) {
-  const { addToCart } = useCart()
+  const dispatch = useAppDispatch()
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist()
   const { toast } = useToast()
   const [isHovered, setIsHovered] = useState(false)
   const [isImageLoading, setIsImageLoading] = useState(true)
 
   const handleAddToCart = () => {
-    addToCart({ id, name, price, image, quantity: 1 })
+    dispatch(addToCart({ id, name, price, image }))
+    dispatch(setCartDrawerOpen(true))
     toast({
       title: 'Added to Cart',
       description: `${name} has been added to your cart.`,
@@ -48,14 +51,14 @@ export function ProductCard({
   }
 
   const handleWishlistToggle = () => {
-    if (isInWishlist(id)) {
-      removeFromWishlist(id)
+    if (isInWishlist()) {
+      removeFromWishlist()
       toast({
         title: 'Removed from Wishlist',
         description: `${name} has been removed from your wishlist.`,
       })
     } else {
-      addToWishlist({ id, name, price, image })
+      addToWishlist()
       toast({
         title: 'Added to Wishlist',
         description: `${name} has been added to your wishlist.`,
@@ -63,106 +66,85 @@ export function ProductCard({
     }
   }
 
-  const discountedPrice = discount > 0 ? price - (price * discount) / 100 : price
+  const safePrice = typeof price === 'number' && !isNaN(price) ? price : 0
+  const discountedPrice = discount > 0 && typeof price === 'number' && !isNaN(price)
+    ? price - (price * discount) / 100
+    : safePrice
 
   return (
     <div
-      className="group relative flex flex-col overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm transition-all hover:shadow-md"
+      className="group relative overflow-hidden rounded-lg border bg-background transition-all hover:shadow-lg"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Product Image */}
-      <Link href={`/shop/${id}`} className="relative aspect-[4/5] overflow-hidden">
-        <Image
-          src={image}
-          alt={name}
-          fill
-          className={`object-cover transition-transform duration-500 ${
-            isHovered ? 'scale-110' : 'scale-100'
-          } ${isImageLoading ? 'animate-pulse bg-muted' : ''}`}
-          onLoadingComplete={() => setIsImageLoading(false)}
-          sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 50vw"
-        />
-        {isOutOfStock && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/60">
-            <Badge variant="secondary" className="bg-white text-black">
-              Out of Stock
-            </Badge>
-          </div>
-        )}
-        {isNew && (
-          <Badge className="absolute left-2 top-2 bg-primary">New</Badge>
-        )}
-        {isBestSeller && (
-          <Badge variant="secondary" className="absolute right-2 top-2 bg-secondary text-secondary-foreground">
-            Best Seller
-          </Badge>
-        )}
-        {discount > 0 && (
-          <Badge variant="destructive" className="absolute left-2 top-2 bg-destructive">
-            {discount}% Off
-          </Badge>
-        )}
-      </Link>
-
-      {/* Product Info */}
-      <div className="flex flex-1 flex-col p-4">
-        <Link href={`/shop/${id}`} className="flex-1">
-          <h3 className="mb-1 line-clamp-1 text-lg font-semibold transition-colors group-hover:text-primary">
-            {name}
-          </h3>
-          <p className="mb-2 line-clamp-2 text-sm text-muted-foreground">
+      <Link href={`/product/${id}`} className="block">
+        <div className="relative aspect-square overflow-hidden">
+          <Image
+            src={image}
+            alt={name}
+            fill
+            className={`object-cover transition-transform duration-300 ${
+              isHovered ? 'scale-110' : 'scale-100'
+            } ${isImageLoading ? 'blur-sm' : 'blur-0'}`}
+            onLoadingComplete={() => setIsImageLoading(false)}
+          />
+          {isNew && (
+            <Badge className="absolute left-2 top-2 bg-primary">New</Badge>
+          )}
+          {isBestSeller && (
+            <Badge className="absolute right-2 top-2 bg-secondary">Best Seller</Badge>
+          )}
+          {isOutOfStock && (
+            <div className="absolute inset-0 flex items-center justify-center bg-background/80">
+              <Badge variant="destructive">Out of Stock</Badge>
+            </div>
+          )}
+        </div>
+        <div className="p-4">
+          <h3 className="font-medium line-clamp-1">{name}</h3>
+          <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
             {description}
           </p>
-        </Link>
-
-        {/* Price and Actions */}
-        <div className="mt-auto flex items-baseline justify-between">
-          <div className="flex flex-col">
-            {discount > 0 ? (
-              <>
-                <span className="text-lg font-bold text-destructive">
-                  ${discountedPrice.toFixed(2)}
-                </span>
-                <span className="text-sm text-muted-foreground line-through">
-                  ${price.toFixed(2)}
-                </span>
-              </>
-            ) : (
-              <span className="text-lg font-bold">${price.toFixed(2)}</span>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className={`h-8 w-8 rounded-full transition-colors ${
-                isInWishlist(id)
-                  ? 'bg-destructive/10 text-destructive hover:bg-destructive/20'
-                  : 'hover:bg-muted'
-              }`}
-              onClick={handleWishlistToggle}
-              aria-label={isInWishlist(id) ? 'Remove from wishlist' : 'Add to wishlist'}
-            >
-              <Heart
-                className={`h-4 w-4 ${
-                  isInWishlist(id) ? 'fill-destructive' : ''
-                }`}
-              />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-full hover:bg-muted"
-              onClick={handleAddToCart}
-              disabled={isOutOfStock}
-              aria-label="Add to cart"
-            >
-              <ShoppingCart className="h-4 w-4" />
-            </Button>
+          <div className="mt-2 flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="font-bold">৳{discountedPrice.toLocaleString()}</p>
+              {discount > 0 && (
+                <p className="text-sm text-muted-foreground line-through">
+                  ৳{safePrice.toLocaleString()}
+                </p>
+              )}
+            </div>
           </div>
         </div>
+      </Link>
+      <div className="absolute bottom-4 right-4 flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          className={`h-8 w-8 rounded-full transition-colors ${
+            isInWishlist()
+              ? 'bg-destructive/10 text-destructive hover:bg-destructive/20'
+              : 'hover:bg-muted'
+          }`}
+          onClick={handleWishlistToggle}
+          aria-label={isInWishlist() ? 'Remove from wishlist' : 'Add to wishlist'}
+        >
+          <Heart
+            className={`h-4 w-4 ${
+              isInWishlist() ? 'fill-destructive' : ''
+            }`}
+          />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 rounded-full hover:bg-muted"
+          onClick={handleAddToCart}
+          disabled={isOutOfStock}
+          aria-label="Add to cart"
+        >
+          <ShoppingCart className="h-4 w-4" />
+        </Button>
       </div>
     </div>
   )
