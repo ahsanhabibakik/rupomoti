@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { useSession, signOut, signIn } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import {
   LayoutDashboard,
@@ -13,11 +13,9 @@ import {
   LogOut,
   FolderTree,
   Menu,
-  X,
   Settings,
   Tag,
   Star,
-  ShoppingCart,
   Truck,
   FileText,
   Bell,
@@ -27,6 +25,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { ConnectionStatus } from '@/components/ConnectionStatus'
+import { signOut } from 'next-auth/react'
 
 const navigation = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
@@ -116,35 +115,16 @@ export default function AdminLayout({
   }, [status, router, pathname])
 
   if (status === 'loading') {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    )
+    return <LoadingSpinner />
   }
 
   if (!session) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <h1 className="text-2xl font-bold">Admin Access Required</h1>
-        <p className="text-muted-foreground">Please sign in to access the admin dashboard</p>
-        <button
-          onClick={() => signIn('google')}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700"
-        >
-          Sign in with Google
-        </button>
-      </div>
-    )
+    return children
   }
 
   if (session.user?.role !== 'ADMIN') {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <h1 className="text-2xl font-bold">Access Denied</h1>
-        <p className="text-muted-foreground">You do not have permission to access this page</p>
-      </div>
-    )
+    router.push('/')
+    return <LoadingSpinner />
   }
 
   return (

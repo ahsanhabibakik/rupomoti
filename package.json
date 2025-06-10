@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
-    "seed": "ts-node --project scripts/tsconfig.json scripts/seed-admin.ts"
+    "seed": "ts-node --project scripts/tsconfig.json scripts/seed-admin.ts",
+    "create-admin": "ts-node --project scripts/tsconfig.json scripts/create-admin.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.9.1",

@@ -13,10 +13,12 @@ export default function LoginPage() {
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') || '/admin'
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsLoading(true)
+    setError('')
 
     const formData = new FormData(e.currentTarget)
     const email = formData.get('email') as string
@@ -27,15 +29,18 @@ export default function LoginPage() {
         email,
         password,
         redirect: false,
+        callbackUrl,
       })
 
       if (result?.error) {
-        showToast.error('Invalid credentials')
-      } else {
+        setError('Invalid email or password')
+        showToast.error('Invalid email or password')
+      } else if (result?.ok) {
         router.push(callbackUrl)
         showToast.success('Logged in successfully')
       }
     } catch (error) {
+      setError('Something went wrong')
       showToast.error('Something went wrong')
     } finally {
       setIsLoading(false)
@@ -62,7 +67,7 @@ export default function LoginPage() {
                 type="email"
                 autoComplete="email"
                 required
-                placeholder="admin@rupomoti.com"
+                defaultValue="admin@rupomoti.com"
                 className="mt-1"
               />
             </div>
@@ -75,15 +80,21 @@ export default function LoginPage() {
                 type="password"
                 autoComplete="current-password"
                 required
-                placeholder="••••••••"
+                defaultValue="admin123"
                 className="mt-1"
               />
             </div>
           </div>
 
+          {error && (
+            <div className="text-sm text-red-500 text-center">
+              {error}
+            </div>
+          )}
+
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-2">
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                 <span>Signing in...</span>
               </div>
