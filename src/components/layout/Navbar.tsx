@@ -6,9 +6,10 @@ import { signIn, signOut, useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { ShoppingCart, Search, Menu, X, User, LogOut, Settings, Heart, Package } from 'lucide-react'
-import { useCart } from '@/hooks/useCart'
-import { useWishlistTest as useWishlist } from '@/hooks/useWishlistTest'
+import { Search, Menu, X, User, LogOut, Settings, Heart, Package } from 'lucide-react'
+import { useAppSelector } from '@/redux/hooks'
+import { selectCartItemCount } from '@/redux/slices/cartSlice'
+import { useWishlist } from '@/hooks/useWishlist'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,7 +20,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
-import { useState } from 'react'
+import { useState, FormEvent, ChangeEvent } from 'react'
+import { CartDrawer } from '@/components/cart/CartDrawer'
 
 const navigationLinks = [
   { href: '/shop', label: 'Shop' },
@@ -32,17 +34,20 @@ const navigationLinks = [
 export function Navbar() {
   const pathname = usePathname()
   const { data: session } = useSession()
-  const { cartItemsCount } = useCart()
   const { wishlistItemsCount } = useWishlist()
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (searchQuery.trim()) {
       window.location.href = `/shop?search=${encodeURIComponent(searchQuery.trim())}`
     }
+  }
+
+  const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value)
   }
 
   return (
@@ -77,7 +82,7 @@ export function Navbar() {
                 type="search"
                 placeholder="Search products..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={handleSearchChange}
                 className="w-full pr-10"
               />
               <Button
@@ -102,31 +107,18 @@ export function Navbar() {
           </Button>
 
           {/* Cart */}
-          <Link href="/cart">
-            <Button variant="ghost" size="icon" className="relative">
-              <ShoppingCart className="h-5 w-5" />
-              {cartItemsCount > 0 && (
-                <Badge
-                  variant="secondary"
-                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-                >
-                  {cartItemsCount}
-                </Badge>
-              )}
-            </Button>
-          </Link>
+          <CartDrawer />
 
           {/* Wishlist */}
           <Link href="/account?tab=wishlist">
             <Button variant="ghost" size="icon" className="relative">
               <Heart className="h-5 w-5" />
               {wishlistItemsCount > 0 && (
-                <Badge
-                  variant="secondary"
-                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-                >
-                  {wishlistItemsCount}
-                </Badge>
+                <div className="absolute -top-1 -right-1">
+                  <div className="h-5 w-5 flex items-center justify-center p-0 text-xs bg-secondary text-secondary-foreground rounded-full">
+                    {wishlistItemsCount}
+                  </div>
+                </div>
               )}
             </Button>
           </Link>
@@ -198,16 +190,16 @@ export function Navbar() {
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right">
+            <SheetContent>
               <SheetHeader>
-                <SheetTitle>Menu</SheetTitle>
+                <SheetTitle>Rupomoti</SheetTitle>
               </SheetHeader>
-              <div className="mt-6 flex flex-col space-y-4">
+              <nav className="mt-6 flex flex-col space-y-4">
                 {navigationLinks.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`text-sm font-medium transition-colors hover:text-primary ${
+                    className={`text-lg font-medium transition-colors hover:text-primary ${
                       pathname === link.href ? 'text-primary' : 'text-muted-foreground'
                     }`}
                     onClick={() => setIsMobileMenuOpen(false)}
@@ -215,12 +207,7 @@ export function Navbar() {
                     {link.label}
                   </Link>
                 ))}
-                {!session && (
-                  <Button onClick={() => signIn('google')} variant="outline" className="w-full">
-                    Sign In
-                  </Button>
-                )}
-              </div>
+              </nav>
             </SheetContent>
           </Sheet>
         </div>
@@ -228,25 +215,23 @@ export function Navbar() {
 
       {/* Mobile Search Bar */}
       {isSearchOpen && (
-        <div className="md:hidden border-t">
-          <form onSubmit={handleSearch} className="container py-2">
-            <div className="relative">
-              <Input
-                type="search"
-                placeholder="Search products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pr-10"
-              />
-              <Button
-                type="submit"
-                size="icon"
-                variant="ghost"
-                className="absolute right-0 top-0 h-full px-3"
-              >
-                <Search className="h-4 w-4" />
-              </Button>
-            </div>
+        <div className="border-t p-4 md:hidden">
+          <form onSubmit={handleSearch} className="relative">
+            <Input
+              type="search"
+              placeholder="Search products..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className="w-full pr-10"
+            />
+            <Button
+              type="submit"
+              size="icon"
+              variant="ghost"
+              className="absolute right-0 top-0 h-full px-3"
+            >
+              <Search className="h-4 w-4" />
+            </Button>
           </form>
         </div>
       )}

@@ -21,14 +21,25 @@ const persistConfig = {
 
 const persistedReducer = persistReducer(persistConfig, rootReducer)
 
+const cartPersistConfig = {
+  key: 'cart',
+  storage,
+  whitelist: ['items'], // only persist items array
+}
+
+const persistedCartReducer = persistReducer(cartPersistConfig, cartReducer)
+
 export const store = configureStore({
-  reducer: persistedReducer,
+  reducer: {
+    cart: persistedCartReducer,
+    ui: uiReducer,
+  },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE', 'persist/REGISTER']
-      }
-    })
+        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
+      },
+    }),
 })
 
 export const persistor = persistStore(store)

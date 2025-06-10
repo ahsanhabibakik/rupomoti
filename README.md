@@ -1,126 +1,76 @@
-# Rupomoti E-commerce Platform
+# Rupomoti - Jewelry E-commerce
 
-A modern e-commerce platform built with Next.js 14, featuring a powerful admin dashboard and Steadfast Courier integration.
+A modern e-commerce platform for jewelry built with Next.js 14, TypeScript, Redux Toolkit, and Tailwind CSS.
 
 ## Features
 
-### Admin Dashboard
-- Secure authentication with role-based access control
-- Comprehensive order management system
-- Product and category management
-- Customer management
-- Media library with Cloudinary integration
-- Real-time analytics and reporting
-- Inventory tracking
-- Promotion and discount management
-
-### Order Management
-- Complete order lifecycle management
-- Steadfast Courier integration for shipping
-- Real-time order tracking
-- Automated shipping label generation
-- Order status updates
-- Payment status tracking
-- Detailed order history
-
-### Product Management
-- Rich product information management
-- Multiple product images
-- Category and tag organization
-- Stock tracking
-- Price management with discount support
-- SEO optimization fields
-
-### Customer Management
-- Customer profiles and history
-- Order tracking for customers
-- Wishlist management
-- Account settings
-- Communication preferences
-
-## Tech Stack
-
-- **Framework**: Next.js 14
-- **Language**: TypeScript
-- **Database**: MongoDB with Prisma ORM
-- **Authentication**: NextAuth.js
-- **UI Components**: Shadcn UI
-- **Styling**: Tailwind CSS
-- **Image Storage**: Cloudinary
-- **Shipping**: Steadfast Courier API
-- **State Management**: React Context
-- **Forms**: React Hook Form
-- **Validation**: Zod
-- **Date Handling**: date-fns
+- Modern UI with Tailwind CSS and shadcn/ui
+- Cart functionality with Redux Toolkit and Redux Persist
+- Authentication with NextAuth.js
+- Responsive design
+- Product search and filtering
+- Wishlist functionality
+- Admin dashboard
+- Toast notifications with Sonner
 
 ## Getting Started
 
 1. Clone the repository:
-   ```bash
-   git clone https://github.com/your-username/rupomoti.git
-   cd rupomoti
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Set up environment variables:
-   - Copy `.env.example` to `.env`
-   - Fill in your configuration values
-
-4. Set up the database:
-   ```bash
-   npx prisma generate
-   npx prisma db push
-   ```
-
-5. Run the development server:
-   ```bash
-   npm run dev
-   ```
-
-## Environment Variables
-
-Create a `.env` file with the following variables:
-
-```env
-# Database
-DATABASE_URL="your_mongodb_url"
-
-# NextAuth
-NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="your_nextauth_secret"
-
-# Steadfast API
-STEADFAST_API_KEY="your_steadfast_api_key"
-STEADFAST_SECRET_KEY="your_steadfast_secret_key"
-STEADFAST_WEBHOOK_TOKEN="your_webhook_auth_token"
-
-# Cloudinary
-CLOUDINARY_CLOUD_NAME="your_cloud_name"
-CLOUDINARY_API_KEY="your_api_key"
-CLOUDINARY_API_SECRET="your_api_secret"
+```bash
+git clone https://github.com/yourusername/rupomoti.git
+cd rupomoti
 ```
 
-## API Routes
+2. Install dependencies:
+```bash
+npm install
+```
 
-### Admin API
+3. Create a `.env.local` file with the following variables:
+```env
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your_secret_here
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+```
 
-- `GET /api/admin/orders` - List orders with pagination and filters
-- `POST /api/admin/orders` - Update order status and shipping information
-- `GET /api/admin/products` - List products with pagination and filters
-- `POST /api/admin/products` - Create or update products
-- `GET /api/admin/customers` - List customers with pagination and filters
-- `GET /api/admin/analytics` - Get dashboard analytics and reports
+4. Run the development server:
+```bash
+npm run dev
+```
 
-### Steadfast Integration
+5. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-- `POST /api/shipping/create` - Create a new shipment
-- `GET /api/shipping/track/:id` - Track shipment status
-- `POST /api/shipping/cancel/:id` - Cancel a shipment
-- `POST /api/shipping/price` - Calculate shipping price
+## Project Structure
+
+```
+src/
+├── app/                  # Next.js app directory
+├── components/          # React components
+│   ├── cart/           # Cart-related components
+│   ├── layout/         # Layout components
+│   ├── products/       # Product-related components
+│   └── ui/             # UI components
+├── hooks/              # Custom React hooks
+├── lib/                # Utility functions
+└── redux/              # Redux store and slices
+    ├── hooks.ts        # Redux hooks
+    ├── store.ts        # Redux store configuration
+    └── slices/         # Redux slices
+```
+
+## Technologies Used
+
+- Next.js 14
+- TypeScript
+- Redux Toolkit
+- Redux Persist
+- NextAuth.js
+- Tailwind CSS
+- shadcn/ui
+- Sonner
+- React Hook Form
+- Zod
 
 ## Contributing
 

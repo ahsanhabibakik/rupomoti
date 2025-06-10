@@ -10,7 +10,8 @@ import { useAppDispatch } from '@/redux/hooks'
 import { addToCart } from '@/redux/slices/cartSlice'
 import { setCartDrawerOpen } from '@/redux/slices/uiSlice'
 import { useWishlist } from '@/hooks/useWishlist'
-import { useToast } from '@/hooks/use-toast'
+import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 
 interface ProductCardProps {
   id: string
@@ -37,55 +38,53 @@ export function ProductCard({
 }: ProductCardProps) {
   const dispatch = useAppDispatch()
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist()
-  const { toast } = useToast()
   const [isHovered, setIsHovered] = useState(false)
   const [isImageLoading, setIsImageLoading] = useState(true)
-
-  const handleAddToCart = () => {
-    dispatch(addToCart({ id, name, price, image }))
-    dispatch(setCartDrawerOpen(true))
-    toast({
-      title: 'Added to Cart',
-      description: `${name} has been added to your cart.`,
-    })
-  }
-
-  const handleWishlistToggle = () => {
-    if (isInWishlist()) {
-      removeFromWishlist()
-      toast({
-        title: 'Removed from Wishlist',
-        description: `${name} has been removed from your wishlist.`,
-      })
-    } else {
-      addToWishlist()
-      toast({
-        title: 'Added to Wishlist',
-        description: `${name} has been added to your wishlist.`,
-      })
-    }
-  }
 
   const safePrice = typeof price === 'number' && !isNaN(price) ? price : 0
   const discountedPrice = discount > 0 && typeof price === 'number' && !isNaN(price)
     ? price - (price * discount) / 100
     : safePrice
 
+  const handleAddToCart = () => {
+    const cartItem = {
+      id,
+      name,
+      price: discount > 0 ? discountedPrice : safePrice,
+      image,
+      quantity: 1
+    }
+    dispatch(addToCart(cartItem))
+    dispatch(setCartDrawerOpen(true))
+    toast.success(`${name} has been added to your cart.`)
+  }
+
+  const handleWishlistToggle = () => {
+    if (isInWishlist()) {
+      removeFromWishlist()
+      toast.success(`${name} has been removed from your wishlist.`)
+    } else {
+      addToWishlist()
+      toast.success(`${name} has been added to your wishlist.`)
+    }
+  }
+
   return (
-    <div
-      className="group relative overflow-hidden rounded-lg border bg-background transition-all hover:shadow-lg"
+    <div 
+      className="group relative overflow-hidden rounded-lg border bg-background p-2"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       <Link href={`/product/${id}`} className="block">
-        <div className="relative aspect-square overflow-hidden">
+        <div className="relative aspect-square overflow-hidden rounded-md">
           <Image
             src={image}
             alt={name}
             fill
-            className={`object-cover transition-transform duration-300 ${
+            className={cn(
+              'object-cover transition-transform duration-300',
               isHovered ? 'scale-110' : 'scale-100'
-            } ${isImageLoading ? 'blur-sm' : 'blur-0'}`}
+            )}
             onLoadingComplete={() => setIsImageLoading(false)}
           />
           {isNew && (
@@ -100,23 +99,43 @@ export function ProductCard({
             </div>
           )}
         </div>
-        <div className="p-4">
-          <h3 className="font-medium line-clamp-1">{name}</h3>
-          <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
-            {description}
-          </p>
-          <div className="mt-2 flex items-center justify-between">
-            <div className="space-y-1">
-              <p className="font-bold">৳{discountedPrice.toLocaleString()}</p>
-              {discount > 0 && (
-                <p className="text-sm text-muted-foreground line-through">
-                  ৳{safePrice.toLocaleString()}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
       </Link>
+
+      <div className="relative mt-4 space-y-2 p-2">
+        <div className="flex gap-2">
+          {isNew && <Badge>New</Badge>}
+          {isBestSeller && <Badge variant="secondary">Best Seller</Badge>}
+          {discount > 0 && (
+            <Badge variant="destructive">-{discount}% OFF</Badge>
+          )}
+        </div>
+        
+        <h3 className="font-medium leading-none">{name}</h3>
+        <p className="text-sm text-muted-foreground line-clamp-2">
+          {description}
+        </p>
+        
+        <div className="flex items-center justify-between">
+          <div>
+            {discount > 0 ? (
+              <div className="flex items-baseline gap-2">
+                <span className="font-bold">${discountedPrice.toFixed(2)}</span>
+                <span className="text-sm text-muted-foreground line-through">
+                  ${safePrice.toFixed(2)}
+                </span>
+              </div>
+            ) : (
+              <span className="font-bold">${safePrice.toFixed(2)}</span>
+            )}
+          </div>
+          {isOutOfStock && (
+            <Badge variant="secondary" className="pointer-events-none">
+              Out of Stock
+            </Badge>
+          )}
+        </div>
+      </div>
+
       <div className="absolute bottom-4 right-4 flex items-center gap-2">
         <Button
           variant="ghost"
@@ -148,6 +167,4 @@ export function ProductCard({
       </div>
     </div>
   )
-}
-
-export default ProductCard 
+} 
