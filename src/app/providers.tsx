@@ -1,10 +1,10 @@
 'use client'
 
-import { SessionProvider } from 'next-auth/react'
 import { Provider } from 'react-redux'
 import { PersistGate } from 'redux-persist/integration/react'
 import { store, persistor } from '@/redux/store'
 import { Toaster } from 'sonner'
+import { AuthProvider } from '@/components/providers/auth-provider'
 
 interface ProvidersProps {
   children: React.ReactNode
@@ -12,7 +12,7 @@ interface ProvidersProps {
 
 export function Providers({ children }: ProvidersProps) {
   return (
-    <SessionProvider>
+    <AuthProvider>
       <Provider store={store}>
         <PersistGate loading={null} persistor={persistor}>
           {children}
@@ -28,6 +28,6 @@ export function Providers({ children }: ProvidersProps) {
           />
         </PersistGate>
       </Provider>
-    </SessionProvider>
+    </AuthProvider>
   )
 } 
