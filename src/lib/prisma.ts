@@ -38,8 +38,6 @@ export async function checkDatabaseConnection() {
   } catch (error) {
     console.error('❌ Database connection failed:', error)
     return false
-  } finally {
-    await prisma.$disconnect()
   }
 }
 

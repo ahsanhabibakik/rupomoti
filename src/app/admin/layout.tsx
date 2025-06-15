@@ -96,7 +96,7 @@ export default function AdminLayout({
 
   useEffect(() => {
     if (status === 'unauthenticated' && pathname !== '/admin/login') {
-      router.push(`/admin/login?callbackUrl=${encodeURIComponent(pathname)}`)
+      router.push(`/admin/login?callbackUrl=${encodeURIComponent(pathname || '')}`)
     }
   }, [status, router, pathname])
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
+import { Card } from "@/components/ui/card"
 
 export default function MediaPage() {
   const [search, setSearch] = useState('')
@@ -85,34 +86,48 @@ export default function MediaPage() {
         />
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {filteredMedia?.map((item) => (
-          <div
-            key={item.id}
-            className="group relative aspect-square rounded-lg overflow-hidden border"
-          >
-            <Image
-              src={item.url}
-              alt={item.alt || ''}
-              fill
-              className="object-cover"
-            />
-            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => handleDelete(item.id)}
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="absolute bottom-0 left-0 right-0 bg-black/75 text-white p-2 text-sm">
-              <p className="font-medium">{item.type}</p>
-              {item.alt && <p className="text-xs opacity-75">{item.alt}</p>}
-            </div>
+      {filteredMedia?.length === 0 ? (
+        <div className="text-center text-gray-500">No media found.</div>
+      ) : (
+        <Card>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead>
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Preview</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredMedia?.map((item) => (
+                  <tr key={item.id}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {item.url ? (
+                        <img src={item.url} alt={item.alt || ''} className="h-12 w-12 object-cover rounded" />
+                      ) : null}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">{item.name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{item.type}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDelete(item.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        ))}
-      </div>
+        </Card>
+      )}
 
       <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
         <DialogContent>
