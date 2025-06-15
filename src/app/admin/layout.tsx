@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { useSession, signOut } from 'next-auth/react'
+import { useSession, signOut, signIn } from 'next-auth/react'
 import Link from 'next/link'
 import {
   LayoutDashboard,
@@ -14,6 +14,14 @@ import {
   FolderTree,
   Menu,
   X,
+  Settings,
+  Tag,
+  Star,
+  ShoppingCart,
+  Truck,
+  FileText,
+  Bell,
+  Shield,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -27,6 +35,13 @@ const navigation = [
   { name: 'Orders', href: '/admin/orders', icon: ListOrdered },
   { name: 'Customers', href: '/admin/customers', icon: Users },
   { name: 'Media', href: '/admin/media', icon: ImageIcon },
+  { name: 'Reviews', href: '/admin/reviews', icon: Star },
+  { name: 'Coupons', href: '/admin/coupons', icon: Tag },
+  { name: 'Shipping', href: '/admin/shipping', icon: Truck },
+  { name: 'Reports', href: '/admin/reports', icon: FileText },
+  { name: 'Notifications', href: '/admin/notifications', icon: Bell },
+  { name: 'Settings', href: '/admin/settings', icon: Settings },
+  { name: 'Roles & Permissions', href: '/admin/roles', icon: Shield },
 ]
 
 function Sidebar({ className }: { className?: string }) {
@@ -100,18 +115,36 @@ export default function AdminLayout({
     }
   }, [status, router, pathname])
 
-  // Show loading state
   if (status === 'loading') {
-    return <LoadingSpinner />
-  }
-
-  // Show login page or children based on authentication status
-  if (!session && pathname === '/admin/login') {
-    return children
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    )
   }
 
   if (!session) {
-    return null
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <h1 className="text-2xl font-bold">Admin Access Required</h1>
+        <p className="text-muted-foreground">Please sign in to access the admin dashboard</p>
+        <button
+          onClick={() => signIn('google')}
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700"
+        >
+          Sign in with Google
+        </button>
+      </div>
+    )
+  }
+
+  if (session.user?.role !== 'ADMIN') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <h1 className="text-2xl font-bold">Access Denied</h1>
+        <p className="text-muted-foreground">You do not have permission to access this page</p>
+      </div>
+    )
   }
 
   return (

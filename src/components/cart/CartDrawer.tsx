@@ -1,147 +1,148 @@
 'use client'
 
-import { useState } from 'react'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from '@/components/ui/sheet'
+import { useAppDispatch, useAppSelector } from '@/redux/hooks'
+import { removeFromCart, updateQuantity, clearCart, selectCartItems, selectCartTotal, selectCartItemCount } from '@/redux/slices/cartSlice'
 import { Button } from '@/components/ui/button'
-import { useCart } from '@/hooks/useCart'
-import { ShoppingCart, Plus, Minus, X } from 'lucide-react'
-import { CheckoutModal } from './CheckoutModal'
+import * as Sheet from '@radix-ui/react-dialog'
+import { ShoppingCart, Trash2, Plus, Minus, X } from 'lucide-react'
 import Image from 'next/image'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
-import { showToast } from '@/lib/toast'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { Badge } from '@/components/ui/badge'
+import { CartItem } from '@/redux/slices/cartSlice'
 
 export function CartDrawer() {
-  const { items, total, itemCount, remove: removeItem, updateQuantity } = useCart()
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
+  const dispatch = useAppDispatch()
+  const router = useRouter()
+  const items = useAppSelector(selectCartItems)
+  const total = useAppSelector(selectCartTotal)
+  const itemCount = useAppSelector(selectCartItemCount)
 
-  const subtotal = total
-  const shipping = items.length > 0 ? 100 : 0
-  const totalWithShipping = subtotal + shipping
-
-  const handleRemoveItem = (id: string, name: string) => {
-    removeItem(id)
-    showToast.info(`${name} has been removed from your cart.`)
+  const handleRemoveItem = (id: string, variantId?: string) => {
+    dispatch(removeFromCart({ id, variantId }))
   }
 
-  const handleUpdateQuantity = (id: string, newQuantity: number, name: string) => {
-    updateQuantity(id, newQuantity)
-    if (newQuantity === 0) {
-      showToast.info(`${name} has been removed from your cart.`)
-    } else {
-      showToast.success(`${name} quantity has been updated to ${newQuantity}.`)
-    }
+  const handleUpdateQuantity = (id: string, quantity: number, variantId?: string) => {
+    if (quantity < 1) return
+    dispatch(updateQuantity({ id, quantity, variantId }))
+  }
+
+  const handleCheckout = () => {
+    router.push('/checkout')
   }
 
   return (
-    <>
-      <Sheet>
-        <SheetTrigger asChild>
-          <Button variant="outline" size="icon" className="relative">
-            <ShoppingCart className="h-5 w-5" />
-            {items.length > 0 && (
-              <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground w-5 h-5 rounded-full text-xs flex items-center justify-center">
-                {items.length}
-              </span>
+    <Sheet.Root>
+      <Sheet.Trigger asChild>
+        <Button variant="outline" size="icon" className="relative">
+          <ShoppingCart className="h-5 w-5" />
+          <div className="absolute -top-1 -right-1">
+            {itemCount > 0 && (
+              <div className="h-5 w-5 flex items-center justify-center p-0 text-xs bg-secondary text-secondary-foreground rounded-full">
+                {itemCount}
+              </div>
             )}
-          </Button>
-        </SheetTrigger>
-        <SheetContent className="flex flex-col w-full sm:max-w-lg p-0">
-          <SheetHeader className="px-6 py-4 border-b">
-            <SheetTitle>Shopping Cart ({items.length})</SheetTitle>
-          </SheetHeader>
-
-          {items.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-4">
-              <ShoppingCart className="w-12 h-12 text-muted-foreground" />
-              <div className="space-y-1">
-                <h3 className="font-medium text-lg">Your cart is empty</h3>
-                <p className="text-sm text-muted-foreground">Add items to your cart to continue shopping</p>
-              </div>
-              <SheetClose asChild>
-                <Button>Continue Shopping</Button>
-              </SheetClose>
-            </div>
-          ) :
-            <div className="flex flex-col h-[calc(100vh-6rem)]">
-              <div className="flex-1 overflow-y-auto">
-                <div className="px-6 divide-y">
-                  {items.map((item) => (
-                    <div key={item.id} className="py-4 flex gap-4">
-                      <div className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
-                        <Image
-                          src={item.image}
-                          alt={item.name}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <div className="flex-1 space-y-1">
-                        <h4 className="font-medium line-clamp-2">{item.name}</h4>
-                        <p className="text-sm text-muted-foreground">৳{item.price.toLocaleString()}</p>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => handleUpdateQuantity(item.id, Math.max(0, item.quantity - 1), item.name)}
-                          >
-                            <Minus className="h-4 w-4" />
-                          </Button>
-                          <span className="w-8 text-center">{item.quantity}</span>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => handleUpdateQuantity(item.id, item.quantity + 1, item.name)}
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                        onClick={() => handleRemoveItem(item.id, item.name)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="p-6 border-t space-y-4">
-                <div className="space-y-1.5">
-                  <div className="flex justify-between">
-                    <span className="text-sm">Subtotal</span>
-                    <span>৳{subtotal.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">Shipping</span>
-                    <span>৳{shipping.toLocaleString()}</span>
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between font-medium">
-                    <span>Total</span>
-                    <span>৳{totalWithShipping.toLocaleString()}</span>
-                  </div>
-                </div>
-
-                <Button className="w-full" onClick={() => setIsCheckoutOpen(true)}>
-                  Proceed to Checkout
+          </div>
+        </Button>
+      </Sheet.Trigger>
+      <Sheet.Portal>
+        <Sheet.Overlay className="fixed inset-0 bg-black/50" />
+        <Sheet.Content className="fixed right-0 top-0 h-full w-full border-l bg-background p-6 shadow-lg sm:max-w-sm">
+          <div className="space-y-2">
+            <Sheet.Title className="text-lg font-semibold">Your Cart</Sheet.Title>
+            <Sheet.Description>
+              {itemCount === 0
+                ? 'Your cart is empty'
+                : `You have ${itemCount} item${itemCount === 1 ? '' : 's'} in your cart`}
+            </Sheet.Description>
+          </div>
+          <div className="mt-8 flex-1 overflow-y-auto">
+            {items.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Add some items to your cart</p>
+                <Button asChild className="mt-4">
+                  <Link href="/products">Browse Products</Link>
                 </Button>
               </div>
+            ) : (
+              <div className="space-y-4">
+                {items.map((item: CartItem) => (
+                  <div key={item.id + (item.variantId || '')} className="flex items-center gap-4">
+                    <div className="relative h-20 w-20 flex-shrink-0">
+                      <Image
+                        src={item.image}
+                        alt={item.name}
+                        fill
+                        className="object-cover rounded-md"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-medium">
+                        {item.name}
+                        {item.variantName && (
+                          <span className="text-sm text-muted-foreground"> ({item.variantName})</span>
+                        )}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        ${item.price.toFixed(2)}
+                      </p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleUpdateQuantity(item.id, item.quantity - 1, item.variantId)}
+                        >
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                        <span className="w-8 text-center">{item.quantity}</span>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleUpdateQuantity(item.id, item.quantity + 1, item.variantId)}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive"
+                          onClick={() => handleRemoveItem(item.id, item.variantId)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          {items.length > 0 && (
+            <div className="mt-8">
+              <div className="flex justify-between items-center mb-4">
+                <span className="font-medium">Total:</span>
+                <span className="font-bold">${total.toFixed(2)}</span>
+              </div>
+              <div className="space-y-2">
+                <Button onClick={handleCheckout} className="w-full">
+                  Proceed to Checkout
+                </Button>
+                <Sheet.Close asChild>
+                  <Button variant="outline" className="w-full">
+                    Continue Shopping
+                  </Button>
+                </Sheet.Close>
+              </div>
             </div>
-          }
-        </SheetContent>
-      </Sheet>
-
-      <CheckoutModal
-        open={isCheckoutOpen}
-        onOpenChange={setIsCheckoutOpen}
-      />
-    </>
+          )}
+          <Sheet.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </Sheet.Close>
+        </Sheet.Content>
+      </Sheet.Portal>
+    </Sheet.Root>
   )
 } 

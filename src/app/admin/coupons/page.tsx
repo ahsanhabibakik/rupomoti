@@ -5,98 +5,144 @@ import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { DataTable } from '@/components/ui/data-table'
-import { useCoupons } from '@/hooks/useCoupons'
-import { CouponDialog } from '@/components/admin/CouponDialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
+
+const columns = [
+  {
+    accessorKey: 'code',
+    header: 'Code',
+  },
+  {
+    accessorKey: 'type',
+    header: 'Type',
+    cell: ({ row }) => {
+      const type = row.getValue('type')
+      return type === 'PERCENTAGE' ? 'Percentage' : 'Fixed Amount'
+    },
+  },
+  {
+    accessorKey: 'value',
+    header: 'Value',
+    cell: ({ row }) => {
+      const type = row.getValue('type')
+      const value = row.getValue('value')
+      return type === 'PERCENTAGE' ? `${value}%` : `৳${value}`
+    },
+  },
+  {
+    accessorKey: 'minPurchase',
+    header: 'Min. Purchase',
+    cell: ({ row }) => {
+      const value = row.getValue('minPurchase')
+      return value ? `৳${value}` : 'No minimum'
+    },
+  },
+  {
+    accessorKey: 'usageLimit',
+    header: 'Usage Limit',
+    cell: ({ row }) => {
+      const value = row.getValue('usageLimit')
+      return value || 'Unlimited'
+    },
+  },
+  {
+    accessorKey: 'usedCount',
+    header: 'Used',
+  },
+  {
+    accessorKey: 'validUntil',
+    header: 'Valid Until',
+    cell: ({ row }) => {
+      const date = row.getValue('validUntil')
+      return date ? new Date(date).toLocaleDateString() : 'No expiry'
+    },
+  },
+  {
+    accessorKey: 'status',
+    header: 'Status',
+    cell: ({ row }) => {
+      const status = row.getValue('status')
+      return (
+        <span
+          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+            status === 'ACTIVE'
+              ? 'bg-green-100 text-green-800'
+              : 'bg-red-100 text-red-800'
+          }`}
+        >
+          {status}
+        </span>
+      )
+    },
+  },
+  {
+    id: 'actions',
+    cell: ({ row }) => {
+      const coupon = row.original
+      return (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleStatusChange(coupon.id, coupon.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE')}
+          >
+            {coupon.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => handleDelete(coupon.id)}
+          >
+            Delete
+          </Button>
+        </div>
+      )
+    },
+  },
+]
 
 export default function CouponsPage() {
   const [search, setSearch] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [selectedCoupon, setSelectedCoupon] = useState<any>(null)
-  const { data: coupons, isLoading, error } = useCoupons()
+  const [coupons, setCoupons] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const columns = [
-    {
-      accessorKey: 'code',
-      header: 'Code',
-    },
-    {
-      accessorKey: 'type',
-      header: 'Type',
-      cell: ({ row }) => {
-        const type = row.getValue('type')
-        return type === 'percentage' ? 'Percentage' : 'Fixed Amount'
-      },
-    },
-    {
-      accessorKey: 'value',
-      header: 'Value',
-      cell: ({ row }) => {
-        const value = row.getValue('value')
-        const type = row.original.type
-        return type === 'percentage'
-          ? `${value}%`
-          : new Intl.NumberFormat('bn-BD', {
-              style: 'currency',
-              currency: 'BDT'
-            }).format(value)
-      },
-    },
-    {
-      accessorKey: 'usageCount',
-      header: 'Usage',
-      cell: ({ row }) => {
-        const usageCount = row.getValue('usageCount')
-        const usageLimit = row.original.usageLimit
-        return usageLimit ? `${usageCount}/${usageLimit}` : usageCount
-      },
-    },
-    {
-      accessorKey: 'startDate',
-      header: 'Start Date',
-      cell: ({ row }) => {
-        const date = new Date(row.getValue('startDate'))
-        return date.toLocaleDateString('bn-BD')
-      },
-    },
-    {
-      accessorKey: 'endDate',
-      header: 'End Date',
-      cell: ({ row }) => {
-        const date = new Date(row.getValue('endDate'))
-        return date.toLocaleDateString('bn-BD')
-      },
-    },
-    {
-      id: 'actions',
-      cell: ({ row }) => {
-        const coupon = row.original
+  // TODO: Implement coupon management hooks
+  const handleStatusChange = async (couponId: string, status: string) => {
+    try {
+      // TODO: Implement status change API call
+      console.log('Changing coupon status:', couponId, status)
+    } catch (error) {
+      console.error('Error changing coupon status:', error)
+    }
+  }
 
-        const handleEdit = () => {
-          setSelectedCoupon(coupon)
-          setIsDialogOpen(true)
-        }
+  const handleDelete = async (couponId: string) => {
+    if (window.confirm('Are you sure you want to delete this coupon?')) {
+      try {
+        // TODO: Implement delete API call
+        console.log('Deleting coupon:', couponId)
+      } catch (error) {
+        console.error('Error deleting coupon:', error)
+      }
+    }
+  }
 
-        const handleDelete = async () => {
-          if (window.confirm('Are you sure you want to delete this coupon?')) {
-            await deleteCoupon(coupon.id)
-          }
-        }
-
-        return (
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleEdit}>
-              Edit
-            </Button>
-            <Button variant="destructive" size="sm" onClick={handleDelete}>
-              Delete
-            </Button>
-          </div>
-        )
-      },
-    },
-  ]
-
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="h-32 w-32 animate-spin rounded-full border-b-2 border-primary"></div>
@@ -104,15 +150,7 @@ export default function CouponsPage() {
     )
   }
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <p className="text-destructive">Error loading coupons</p>
-      </div>
-    )
-  }
-
-  const filteredCoupons = coupons?.filter(coupon =>
+  const filteredCoupons = coupons.filter((coupon: any) =>
     coupon.code.toLowerCase().includes(search.toLowerCase())
   )
 
@@ -137,15 +175,20 @@ export default function CouponsPage() {
 
       <DataTable
         columns={columns}
-        data={filteredCoupons || []}
+        data={filteredCoupons}
       />
 
-      <CouponDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        coupon={selectedCoupon}
-        onClose={() => setSelectedCoupon(null)}
-      />
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Coupon</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* TODO: Implement coupon creation form */}
+            <p>Coupon creation form will be implemented here</p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 } 

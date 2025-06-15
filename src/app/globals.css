@@ -1,110 +1,124 @@
+@layer utilities {
+  .bg-pearl { background-color: #F8F6F0; }
+  .bg-pearl-light { background-color: #FFFDFA; }
+  .bg-pearl-dark { background-color: #E6E2D8; }
+  .text-charcoal { color: #222222; }
+  .text-charcoal-light { color: #444444; }
+  .text-charcoal-dark { color: #000000; }
+  .bg-charcoal { background-color: #232323; }
+  .bg-slate { background-color: #6B7280; }
+  .bg-gold { background-color: #E6C674; }
+  .bg-sapphire { background-color: #0F52BA; }
+  /* Add more as needed */
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    --background: 48 33% 97%;
+    --foreground: 0 0% 13%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card: 48 33% 97%;
+    --card-foreground: 0 0% 13%;
  
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
+    --popover: 48 33% 97%;
+    --popover-foreground: 0 0% 13%;
  
-    /* Brand Colors */
-    --brand: 350 85% 89%;
-    --brand-foreground: 355 80% 25%;
+    /* Brand Colors - Pearl & Gold */
+    --brand: 35 65% 70%;
+    --brand-foreground: 0 0% 13%;
  
-    /* Primary - Soft Pink */
-    --primary: 350 85% 89%;
-    --primary-foreground: 355 80% 25%;
+    /* Primary - Gold */
+    --primary: 35 65% 70%;
+    --primary-foreground: 0 0% 13%;
  
-    /* Secondary - Warm Gray */
-    --secondary: 30 20% 96%;
-    --secondary-foreground: 240 10% 3.9%;
+    /* Secondary - Pearl */
+    --secondary: 48 33% 97%;
+    --secondary-foreground: 0 0% 13%;
  
-    /* Muted - Cool Gray */
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
+    /* Muted - Pearl Dark */
+    --muted: 48 33% 90%;
+    --muted-foreground: 0 0% 40%;
  
-    /* Accent - Deeper Pink */
-    --accent: 350 85% 82%;
-    --accent-foreground: 355 80% 25%;
+    /* Accent - Sapphire */
+    --accent: 240 65% 30%;
+    --accent-foreground: 48 33% 97%;
  
-    /* Destructive */
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    /* Destructive - Rose Gold */
+    --destructive: 350 65% 70%;
+    --destructive-foreground: 0 0% 13%;
 
-    /* Success */
-    --success: 142 76% 36%;
-    --success-foreground: 355 100% 20%;
+    /* Success - Emerald */
+    --success: 160 65% 30%;
+    --success-foreground: 48 33% 97%;
 
-    /* Info */
-    --info: 199 89% 48%;
-    --info-foreground: 355 100% 20%;
+    /* Info - Sapphire Light */
+    --info: 240 65% 50%;
+    --info-foreground: 48 33% 97%;
 
-    /* Warning */
-    --warning: 38 92% 50%;
-    --warning-foreground: 355 100% 20%;
+    /* Warning - Gold Dark */
+    --warning: 35 65% 50%;
+    --warning-foreground: 48 33% 97%;
  
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 350 85% 89%;
+    --border: 35 65% 70%;
+    --input: 35 65% 70%;
+    --ring: 35 65% 70%;
  
     --radius: 0.5rem;
   }
  
   .dark {
     --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
+    --foreground: 48 33% 97%;
  
     --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
+    --card-foreground: 48 33% 97%;
  
     --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
+    --popover-foreground: 48 33% 97%;
  
     /* Brand Colors - Dark Mode */
-    --brand: 350 85% 89%;
-    --brand-foreground: 355 80% 25%;
+    --brand: 35 65% 70%;
+    --brand-foreground: 48 33% 97%;
  
-    /* Primary - Soft Pink */
-    --primary: 350 85% 89%;
-    --primary-foreground: 355 80% 25%;
+    /* Primary - Gold */
+    --primary: 35 65% 70%;
+    --primary-foreground: 48 33% 97%;
  
-    /* Secondary - Darker Gray */
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
+    /* Secondary - Pearl Dark */
+    --secondary: 240 10% 3.9%;
+    --secondary-foreground: 48 33% 97%;
  
     /* Muted - Dark Gray */
     --muted: 240 3.7% 15.9%;
     --muted-foreground: 240 5% 64.9%;
  
-    /* Accent - Deeper Pink */
-    --accent: 350 85% 82%;
-    --accent-foreground: 355 80% 25%;
+    /* Accent - Sapphire */
+    --accent: 240 65% 30%;
+    --accent-foreground: 48 33% 97%;
  
-    /* Destructive */
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
+    /* Destructive - Rose Gold */
+    --destructive: 350 65% 70%;
+    --destructive-foreground: 48 33% 97%;
 
-    /* Success */
-    --success: 142 76% 36%;
-    --success-foreground: 355 100% 20%;
+    /* Success - Emerald */
+    --success: 160 65% 30%;
+    --success-foreground: 48 33% 97%;
 
-    /* Info */
-    --info: 199 89% 48%;
-    --info-foreground: 355 100% 20%;
+    /* Info - Sapphire Light */
+    --info: 240 65% 50%;
+    --info-foreground: 48 33% 97%;
 
-    /* Warning */
-    --warning: 38 92% 50%;
-    --warning-foreground: 355 100% 20%;
+    /* Warning - Gold Dark */
+    --warning: 35 65% 50%;
+    --warning-foreground: 48 33% 97%;
  
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
-    --ring: 350 85% 89%;
+    --ring: 35 65% 70%;
   }
 }
  
@@ -113,7 +127,14 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-pearl text-charcoal antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display text-charcoal;
+  }
+  p {
+    @apply font-body text-slate;
   }
 }
 
@@ -187,19 +208,207 @@
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
-  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--secondary);
-  border-radius: 4px;
+  @apply bg-pearl;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--primary);
-  border-radius: 4px;
+  @apply bg-gold rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--primary-foreground);
+  @apply bg-gold-dark;
 }
+
+/* Loading States */
+.loading-shimmer {
+  @apply relative overflow-hidden;
+}
+
+.loading-shimmer::after {
+  content: '';
+  @apply absolute inset-0 bg-gradient-to-r from-transparent via-pearl-light to-transparent;
+  animation: shimmer 2s infinite;
+}
+
+/* Focus States */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2 focus:ring-offset-pearl;
+}
+
+/* Selection */
+::selection {
+  @apply bg-gold text-charcoal;
+}
+
+@layer components {
+  /* Button Variants */
+  .btn-primary {
+    @apply bg-gold hover:bg-gold-dark text-charcoal font-medium py-2 px-4 rounded-md transition-all duration-200 
+           shadow-pearl hover:shadow-gold focus:ring-2 focus:ring-gold focus:ring-offset-2 focus:ring-offset-pearl;
+  }
+  
+  .btn-secondary {
+    @apply bg-pearl hover:bg-pearl-dark text-charcoal font-medium py-2 px-4 rounded-md transition-all duration-200 
+           border border-gold hover:border-gold-dark shadow-pearl hover:shadow-gold;
+  }
+  
+  .btn-accent {
+    @apply bg-sapphire hover:bg-sapphire-dark text-pearl font-medium py-2 px-4 rounded-md transition-all duration-200 
+           shadow-pearl hover:shadow-sapphire focus:ring-2 focus:ring-sapphire focus:ring-offset-2 focus:ring-offset-pearl;
+  }
+
+  .btn-outline {
+    @apply bg-transparent border-2 border-gold text-gold hover:bg-gold hover:text-charcoal font-medium py-2 px-4 
+           rounded-md transition-all duration-200 focus:ring-2 focus:ring-gold focus:ring-offset-2 focus:ring-offset-pearl;
+  }
+
+  /* Card Variants */
+  .card {
+    @apply bg-pearl rounded-lg shadow-pearl p-6 transition-all duration-200 hover:shadow-gold;
+  }
+
+  .card-hover {
+    @apply card hover:scale-[1.02] hover:rotate-[0.5deg];
+  }
+
+  .card-gold {
+    @apply bg-gradient-gold text-pearl rounded-lg shadow-gold p-6 transition-all duration-200 hover:shadow-sapphire;
+  }
+
+  /* Form Elements */
+  .input {
+    @apply bg-pearl border border-gold rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gold 
+           focus:border-transparent transition-all duration-200 placeholder:text-slate/50;
+  }
+
+  .input-error {
+    @apply border-destructive focus:ring-destructive;
+  }
+
+  .label {
+    @apply text-sm font-medium text-charcoal mb-1 block;
+  }
+
+  /* Navigation */
+  .nav-link {
+    @apply text-charcoal hover:text-gold transition-colors duration-200 relative after:absolute after:bottom-0 
+           after:left-0 after:h-0.5 after:w-0 after:bg-gold after:transition-all after:duration-200 
+           hover:after:w-full;
+  }
+  
+  .footer-link {
+    @apply text-slate hover:text-gold transition-colors duration-200;
+  }
+
+  /* Product Cards */
+  .product-card {
+    @apply card group overflow-hidden;
+  }
+
+  .product-image {
+    @apply relative aspect-square overflow-hidden bg-pearl-light;
+  }
+
+  .product-image img {
+    @apply object-cover transition-transform duration-500 group-hover:scale-110;
+  }
+
+  .product-badge {
+    @apply absolute top-2 right-2 bg-gold text-charcoal text-xs font-medium px-2 py-1 rounded-full;
+  }
+
+  .product-title {
+    @apply font-display text-lg text-charcoal mt-4 mb-1;
+  }
+
+  .product-price {
+    @apply text-gold-dark font-medium;
+  }
+
+  /* Category Cards */
+  .category-card {
+    @apply relative aspect-square overflow-hidden rounded-lg group;
+  }
+
+  .category-overlay {
+    @apply absolute inset-0 bg-gradient-to-t from-charcoal/80 to-transparent opacity-0 group-hover:opacity-100 
+           transition-opacity duration-300;
+  }
+
+  .category-title {
+    @apply absolute bottom-4 left-4 text-pearl font-display text-xl opacity-0 group-hover:opacity-100 
+           transition-opacity duration-300 transform translate-y-4 group-hover:translate-y-0;
+  }
+
+  /* Loading States */
+  .skeleton {
+    @apply animate-pulse bg-pearl-dark/20 rounded-md;
+  }
+
+  .skeleton-text {
+    @apply skeleton h-4 w-3/4;
+  }
+
+  .skeleton-image {
+    @apply skeleton aspect-square w-full;
+  }
+
+  /* Modal Styles */
+  .modal-overlay {
+    @apply fixed inset-0 bg-charcoal/50 backdrop-blur-sm z-50;
+  }
+
+  .modal-content {
+    @apply fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-pearl rounded-lg shadow-gold p-6 
+           w-full max-w-lg max-h-[90vh] overflow-y-auto z-50;
+  }
+
+  /* Toast Notifications */
+  .toast {
+    @apply fixed bottom-4 right-4 bg-pearl text-charcoal px-4 py-2 rounded-lg shadow-gold 
+           transform transition-all duration-300 translate-y-0 opacity-100;
+  }
+
+  .toast-hide {
+    @apply translate-y-2 opacity-0;
+  }
+
+  /* Tooltips */
+  .tooltip {
+    @apply absolute bg-charcoal text-pearl px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 
+           transition-opacity duration-200 pointer-events-none whitespace-nowrap;
+  }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-gold {
+    @apply badge bg-gold text-charcoal;
+  }
+
+  .badge-pearl {
+    @apply badge bg-pearl text-charcoal border border-gold;
+  }
+
+  .badge-sapphire {
+    @apply badge bg-sapphire text-pearl;
+  }
+}
+
+/* Custom Animations */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Add a @layer utilities block to define custom classes (like bg-pearl) so that Tailwind recognizes them. */

@@ -1,10 +1,17 @@
+<<<<<<< HEAD
 # Rupomoti E-Commerce Platform
 
 ## Overview
 Rupomoti is a modern, premium jewelry e-commerce platform built with Next.js 14, Prisma, and MongoDB. It features a robust admin panel, seamless user experience, and a visually rich, jewelry-themed design.
+=======
+# Rupomoti - Jewelry E-commerce
+
+A modern e-commerce platform for jewelry built with Next.js 14, TypeScript, Redux Toolkit, and Tailwind CSS.
+>>>>>>> 81f1253cb8fb303049983703593359d0e3eff39f
 
 ---
 
+<<<<<<< HEAD
 ## Table of Contents
 1. [Core Features](#core-features)
 2. [Admin Panel Features](#admin-panel-features)
@@ -253,75 +260,75 @@ Rupomoti is a modern, premium jewelry e-commerce platform built with Next.js 14,
 - How it works (user/admin)
 - Where to find it in the codebase
 - How to customize or extend it
+=======
+- Modern UI with Tailwind CSS and shadcn/ui
+- Cart functionality with Redux Toolkit and Redux Persist
+- Authentication with NextAuth.js
+- Responsive design
+- Product search and filtering
+- Wishlist functionality
+- Admin dashboard
+- Toast notifications with Sonner
+>>>>>>> 81f1253cb8fb303049983703593359d0e3eff39f
 
 ## Getting Started
 
 1. Clone the repository:
-   ```bash
-   git clone https://github.com/your-username/rupomoti.git
-   cd rupomoti
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Set up environment variables:
-   - Copy `.env.example` to `.env`
-   - Fill in your configuration values
-
-4. Set up the database:
-   ```bash
-   npx prisma generate
-   npx prisma db push
-   ```
-
-5. Run the development server:
-   ```bash
-   npm run dev
-   ```
-
-## Environment Variables
-
-Create a `.env` file with the following variables:
-
-```env
-# Database
-DATABASE_URL="your_mongodb_url"
-
-# NextAuth
-NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="your_nextauth_secret"
-
-# Steadfast API
-STEADFAST_API_KEY="your_steadfast_api_key"
-STEADFAST_SECRET_KEY="your_steadfast_secret_key"
-STEADFAST_WEBHOOK_TOKEN="your_webhook_auth_token"
-
-# Cloudinary
-CLOUDINARY_CLOUD_NAME="your_cloud_name"
-CLOUDINARY_API_KEY="your_api_key"
-CLOUDINARY_API_SECRET="your_api_secret"
+```bash
+git clone https://github.com/yourusername/rupomoti.git
+cd rupomoti
 ```
 
-## API Routes
+2. Install dependencies:
+```bash
+npm install
+```
 
-### Admin API
+3. Create a `.env.local` file with the following variables:
+```env
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your_secret_here
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+```
 
-- `GET /api/admin/orders` - List orders with pagination and filters
-- `POST /api/admin/orders` - Update order status and shipping information
-- `GET /api/admin/products` - List products with pagination and filters
-- `POST /api/admin/products` - Create or update products
-- `GET /api/admin/customers` - List customers with pagination and filters
-- `GET /api/admin/analytics` - Get dashboard analytics and reports
+4. Run the development server:
+```bash
+npm run dev
+```
 
-### Steadfast Integration
+5. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-- `POST /api/shipping/create` - Create a new shipment
-- `GET /api/shipping/track/:id` - Track shipment status
-- `POST /api/shipping/cancel/:id` - Cancel a shipment
-- `POST /api/shipping/price` - Calculate shipping price
+## Project Structure
+
+```
+src/
+├── app/                  # Next.js app directory
+├── components/          # React components
+│   ├── cart/           # Cart-related components
+│   ├── layout/         # Layout components
+│   ├── products/       # Product-related components
+│   └── ui/             # UI components
+├── hooks/              # Custom React hooks
+├── lib/                # Utility functions
+└── redux/              # Redux store and slices
+    ├── hooks.ts        # Redux hooks
+    ├── store.ts        # Redux store configuration
+    └── slices/         # Redux slices
+```
+
+## Technologies Used
+
+- Next.js 14
+- TypeScript
+- Redux Toolkit
+- Redux Persist
+- NextAuth.js
+- Tailwind CSS
+- shadcn/ui
+- Sonner
+- React Hook Form
+- Zod
 
 ## Contributing
 
