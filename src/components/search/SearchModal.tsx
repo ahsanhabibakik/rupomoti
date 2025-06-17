@@ -1,176 +1,244 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Search, Clock, Sparkles, X } from 'lucide-react'
-import Link from 'next/link'
+import { X, Tag, Clock, TrendingUp, Leaf, Filter } from 'lucide-react'
+import { BsSearch } from 'react-icons/bs'
 import Image from 'next/image'
-import { Button } from '@/components/ui/button'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 interface SearchModalProps {
   isOpen: boolean
   onClose: () => void
+  initialQuery?: string
 }
 
-const popularSearches = [
-  'Pearl Necklace',
-  'Diamond Ring',
-  'Gold Earrings',
-  'Wedding Collection',
-  'Gift Sets'
-]
-
-const popularItems = [
-  {
-    id: '1',
-    name: 'Classic Pearl Necklace',
-    image: '/images/pearl/jewelery1.jpeg',
-    price: 2999
-  },
-  {
-    id: '2',
-    name: 'Pearl Drop Earrings',
-    image: '/images/pearl/jewelery2.jpeg',
-    price: 1899
-  },
-  {
-    id: '3',
-    name: 'Pearl Tennis Bracelet',
-    image: '/images/pearl/jewelery3.jpeg',
-    price: 3499
-  }
-]
-
-export function SearchModal({ isOpen, onClose }: SearchModalProps) {
-  const [query, setQuery] = useState('')
+export default function SearchModal({ isOpen, onClose, initialQuery = '' }: SearchModalProps) {
+  const [searchQuery, setSearchQuery] = useState(initialQuery)
+  const [activeCategory, setActiveCategory] = useState('all')
   const [recentSearches, setRecentSearches] = useState<string[]>([])
+  const [popularSearches] = useState([
+    "Pearl Necklaces",
+    "Earrings",
+    "Bracelets",
+    "Rings",
+    "Pearl Sets",
+    "New Arrivals",
+    "Best Sellers",
+    "Gifts",
+  ])
 
+  const router = useRouter()
+
+  // Load recent searches from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('recentSearches')
-    if (saved) {
-      setRecentSearches(JSON.parse(saved))
+    const savedSearches = localStorage.getItem('recentSearches')
+    if (savedSearches) {
+      setRecentSearches(JSON.parse(savedSearches))
     }
   }, [])
 
-  const addToRecentSearches = (term: string) => {
-    const updated = [term, ...recentSearches.filter(s => s !== term)].slice(0, 5)
-    setRecentSearches(updated)
-    localStorage.setItem('recentSearches', JSON.stringify(updated))
+  // Save search to recent searches
+  const saveSearch = (query: string) => {
+    if (!query.trim()) return
+
+    const updatedSearches = [
+      query,
+      ...recentSearches.filter((search) => search !== query),
+    ].slice(0, 5) // Keep only the 5 most recent searches
+
+    setRecentSearches(updatedSearches)
+    localStorage.setItem('recentSearches', JSON.stringify(updatedSearches))
   }
 
-  const removeFromRecentSearches = (term: string) => {
-    const updated = recentSearches.filter(s => s !== term)
-    setRecentSearches(updated)
-    localStorage.setItem('recentSearches', JSON.stringify(updated))
-  }
-
-  const handleSearch = (term: string) => {
-    if (term.trim()) {
-      addToRecentSearches(term.trim())
-      // TODO: Implement search functionality
+  // Handle search submission
+  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (searchQuery.trim()) {
+      saveSearch(searchQuery)
+      router.push(`/shop?search=${encodeURIComponent(searchQuery.trim())}`)
       onClose()
     }
   }
 
+  // Clear recent searches
+  const clearRecentSearches = () => {
+    setRecentSearches([])
+    localStorage.removeItem('recentSearches')
+  }
+
+  if (!isOpen) return null
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl p-0">
-        <div className="p-4 border-b">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <Input
-              type="search"
-              placeholder="Search for jewelry, collections, and more..."
-              className="pl-10 pr-4 h-12"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch(query)}
-            />
-          </div>
-        </div>
+    <>
+      {/* Backdrop with blur effect */}
+      <div
+        className="fixed inset-0 bg-black/30 backdrop-blur-md z-40"
+        onClick={onClose}
+      />
 
-        <div className="max-h-[80vh] overflow-y-auto p-4">
-          {/* Recent Searches */}
-          {recentSearches.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-3 flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Recent Searches
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {recentSearches.map((term) => (
-                  <div
-                    key={term}
-                    className="flex items-center gap-1 bg-gray-100 rounded-full px-3 py-1"
+      {/* Modal */}
+      <div className="fixed top-0 left-0 right-0 flex items-start justify-center p-4 z-50">
+        <div className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl mt-16 border border-gray-100 overflow-hidden">
+          {/* Search Input */}
+          <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-primary/5 to-white">
+            <form onSubmit={handleSearch}>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search for jewelry, accessories, or gifts..."
+                    className="w-full px-4 py-3 pl-12 pr-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-gray-800 placeholder-gray-400"
+                    autoFocus
+                  />
+                  <button
+                    type="submit"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
-                    <button
-                      onClick={() => handleSearch(term)}
-                      className="text-sm hover:text-primary"
-                    >
-                      {term}
-                    </button>
-                    <button
-                      onClick={() => removeFromRecentSearches(term)}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Popular Searches */}
-          <div className="mb-6">
-            <h3 className="text-sm font-medium text-gray-500 mb-3 flex items-center gap-2">
-              <Sparkles className="h-4 w-4" />
-              Popular Searches
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {popularSearches.map((term) => (
-                <Button
-                  key={term}
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => handleSearch(term)}
+                    <BsSearch size={20} />
+                  </button>
+                </div>
+                <button
+                  onClick={onClose}
+                  className="p-2.5 hover:bg-gray-100 rounded-xl transition-colors duration-200 text-gray-600 hover:text-gray-800"
                 >
-                  {term}
-                </Button>
-              ))}
+                  <X size={22} />
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Categories */}
+          <div className="p-3 border-b border-gray-100 bg-gray-50">
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              <button
+                onClick={() => setActiveCategory('all')}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                  activeCategory === 'all'
+                    ? 'bg-primary text-white'
+                    : 'bg-white text-gray-700 hover:bg-primary/10 hover:text-primary'
+                }`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setActiveCategory('necklaces')}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                  activeCategory === 'necklaces'
+                    ? 'bg-primary text-white'
+                    : 'bg-white text-gray-700 hover:bg-primary/10 hover:text-primary'
+                }`}
+              >
+                Necklaces
+              </button>
+              <button
+                onClick={() => setActiveCategory('earrings')}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                  activeCategory === 'earrings'
+                    ? 'bg-primary text-white'
+                    : 'bg-white text-gray-700 hover:bg-primary/10 hover:text-primary'
+                }`}
+              >
+                Earrings
+              </button>
+              <button
+                onClick={() => setActiveCategory('rings')}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                  activeCategory === 'rings'
+                    ? 'bg-primary text-white'
+                    : 'bg-white text-gray-700 hover:bg-primary/10 hover:text-primary'
+                }`}
+              >
+                Rings
+              </button>
+              <button
+                onClick={() => setActiveCategory('bracelets')}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                  activeCategory === 'bracelets'
+                    ? 'bg-primary text-white'
+                    : 'bg-white text-gray-700 hover:bg-primary/10 hover:text-primary'
+                }`}
+              >
+                Bracelets
+              </button>
+              <button
+                onClick={() => setActiveCategory('sets')}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                  activeCategory === 'sets'
+                    ? 'bg-primary text-white'
+                    : 'bg-white text-gray-700 hover:bg-primary/10 hover:text-primary'
+                }`}
+              >
+                Pearl Sets
+              </button>
             </div>
           </div>
 
-          {/* Popular Items */}
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-3">Popular Items</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {popularItems.map((item) => (
-                <Link
-                  key={item.id}
-                  href={`/product/${item.id}`}
-                  className="group block"
-                  onClick={onClose}
-                >
-                  <div className="aspect-square relative rounded-lg overflow-hidden mb-2">
-                    <Image
-                      src={item.image}
-                      alt={item.name}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform"
-                    />
+          {/* Search Results */}
+          <div className="max-h-[60vh] overflow-y-auto">
+            {searchQuery.trim() === '' ? (
+              <div className="p-6">
+                {/* Recent Searches */}
+                {recentSearches.length > 0 && (
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-medium text-gray-500 flex items-center gap-1">
+                        <Clock size={16} />
+                        Recent Searches
+                      </h3>
+                      <button
+                        onClick={clearRecentSearches}
+                        className="text-xs text-gray-400 hover:text-gray-600"
+                      >
+                        Clear All
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {recentSearches.map((search, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setSearchQuery(search)}
+                          className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-full text-sm text-gray-700 transition-colors"
+                        >
+                          {search}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <h4 className="text-sm font-medium group-hover:text-primary truncate">
-                    {item.name}
-                  </h4>
-                  <p className="text-sm text-gray-500">৳{item.price.toLocaleString()}</p>
-                </Link>
-              ))}
-            </div>
+                )}
+
+                {/* Popular Searches */}
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500 flex items-center gap-1 mb-3">
+                    <TrendingUp size={16} />
+                    Popular Searches
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {popularSearches.map((search, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setSearchQuery(search)}
+                        className="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 rounded-full text-sm text-primary transition-colors"
+                      >
+                        {search}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center text-gray-400 py-12">
+                <BsSearch className="text-gray-400" size={24} />
+                <p className="mt-4 text-gray-500">
+                  Type to search for products...
+                </p>
+              </div>
+            )}
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </>
   )
 } 

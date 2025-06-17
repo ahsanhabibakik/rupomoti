@@ -7,11 +7,16 @@ import { authOptions } from '@/lib/auth';
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check if user is admin
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
+    if (!user?.isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -21,15 +26,14 @@ export async function GET(request: Request) {
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
-    const where = {
-      ...(status && { status }),
-      ...(startDate && endDate && {
-        createdAt: {
-          gte: new Date(startDate),
-          lte: new Date(endDate)
-        }
-      })
-    };
+    const where: any = {};
+    if (status) where.status = status;
+    if (startDate && endDate) {
+      where.createdAt = {
+        gte: new Date(startDate),
+        lte: new Date(endDate),
+      };
+    }
 
     const [orders, total] = await Promise.all([
       prisma.order.findMany({
@@ -38,22 +42,43 @@ export async function GET(request: Request) {
           customer: true,
           items: {
             include: {
-              product: true
-            }
-          }
+              product: true,
+            },
+          },
         },
-        orderBy: {
-          createdAt: 'desc'
-        },
+        orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
-        take: limit
+        take: limit,
       }),
-      prisma.order.count({ where })
+      prisma.order.count({ where }),
     ]);
 
+    const formattedOrders = orders.map((order) => ({
+      id: order.id,
+      orderNumber: order.orderNumber,
+      customer: {
+        name: order.customer.name,
+        email: order.customer.email,
+        phone: order.customer.phone,
+        address: order.customer.address,
+      },
+      total: order.total,
+      status: order.status,
+      paymentStatus: order.paymentStatus,
+      createdAt: order.createdAt,
+      items: order.items.map((item) => ({
+        name: item.product.name,
+        price: item.price,
+        quantity: item.quantity,
+        image: item.product.images[0] || '/placeholder.png',
+      })),
+      steadfastInfo: order.steadfastInfo,
+    }));
+
     return NextResponse.json({
-      orders,
-      pages: Math.ceil(total / limit)
+      orders: formattedOrders,
+      total,
+      pages: Math.ceil(total / limit),
     });
   } catch (error) {
     console.error('Error fetching orders:', error);
@@ -67,19 +92,19 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { orderId, action, ...data } = body;
-
-    if (!orderId || !action) {
-      return NextResponse.json(
-        { error: 'Order ID and action are required' },
-        { status: 400 }
-      );
+    // Check if user is admin
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
+    if (!user?.isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const { orderId, action, status } = await request.json();
 
     const order = await prisma.order.findUnique({
       where: { id: orderId },
@@ -94,55 +119,65 @@ export async function POST(request: Request) {
     });
 
     if (!order) {
-      return NextResponse.json(
-        { error: 'Order not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
     switch (action) {
-      case 'update_status':
-        const { status } = data;
-        if (!status) {
+      case 'confirm_order': {
+        if (order.status !== 'PENDING') {
           return NextResponse.json(
-            { error: 'Status is required' },
+            { error: 'Order cannot be confirmed' },
             { status: 400 }
           );
         }
 
-        const updatedOrder = await prisma.order.update({
+        await prisma.order.update({
           where: { id: orderId },
-          data: { status },
+          data: { status: 'CONFIRMED' },
         });
 
-        return NextResponse.json(updatedOrder);
+        return NextResponse.json({ message: 'Order confirmed successfully' });
+      }
 
-      case 'create_shipment':
-        // Create parcel in Steadfast
-        const parcelData = {
-          invoice: order.orderNumber,
-          recipient_name: order.shippingInfo.name,
-          recipient_phone: order.shippingInfo.phone,
-          recipient_address: order.shippingInfo.address,
-          recipient_city: order.shippingInfo.city,
-          recipient_zone: order.shippingInfo.state || 'Default',
-          parcel_weight: 1, // Calculate based on products
-          payment_method: order.paymentMethod || 'COD',
-          amount_to_collect: order.paymentStatus === 'PENDING' ? order.total : 0,
-          merchant_invoice_id: order.orderNumber,
-          parcel_content: order.items.map(item => item.product.name).join(', '),
-        };
-
-        const steadfastResponse = await steadfast.createParcel(parcelData);
-        if (!steadfastResponse.success) {
+      case 'create_shipment': {
+        if (order.status !== 'CONFIRMED') {
           return NextResponse.json(
-            { error: steadfastResponse.message },
+            { error: 'Order must be confirmed before creating shipment' },
             { status: 400 }
           );
+        }
+
+        if (order.steadfastInfo?.trackingId) {
+          return NextResponse.json(
+            { error: 'Shipment already exists' },
+            { status: 400 }
+          );
+        }
+
+        // Prepare shipment data for Steadfast
+        const shipmentData = {
+          recipient_name: order.customer.name,
+          recipient_phone: order.customer.phone,
+          recipient_address: order.customer.address,
+          amount_to_collect: order.total,
+          item_description: order.items
+            .map((item) => `${item.product.name} (${item.quantity})`)
+            .join(', '),
+          item_quantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
+          item_weight: 1, // Default weight in kg
+          service_type: 'regular', // or 'express' based on your needs
+          instruction: 'Handle with care',
+        };
+
+        // Create shipment in Steadfast
+        const steadfastResponse = await steadfast.createShipment(shipmentData);
+
+        if (!steadfastResponse.success) {
+          throw new Error(steadfastResponse.message || 'Failed to create shipment');
         }
 
         // Update order with Steadfast tracking info
-        const orderWithTracking = await prisma.order.update({
+        await prisma.order.update({
           where: { id: orderId },
           data: {
             status: 'SHIPPED',
@@ -150,67 +185,61 @@ export async function POST(request: Request) {
               trackingId: steadfastResponse.tracking_id,
               consignmentId: steadfastResponse.consignment_id,
               status: 'PICKED',
-              lastUpdate: new Date(),
+              lastUpdate: new Date().toISOString(),
+              lastMessage: 'Shipment created and picked up by courier',
             },
           },
         });
 
-        return NextResponse.json(orderWithTracking);
+        return NextResponse.json({
+          message: 'Shipment created successfully',
+          trackingId: steadfastResponse.tracking_id,
+        });
+      }
 
-      case 'track_shipment':
-        if (!order.steadfastInfo?.trackingId) {
+      case 'update_status': {
+        if (!status) {
           return NextResponse.json(
-            { error: 'No tracking ID found for this order' },
+            { error: 'Status is required' },
             { status: 400 }
           );
         }
 
-        const trackingResponse = await steadfast.trackParcel(
-          order.steadfastInfo.trackingId
-        );
+        const validStatuses = [
+          'PENDING',
+          'PROCESSING',
+          'CONFIRMED',
+          'SHIPPED',
+          'DELIVERED',
+          'CANCELLED',
+        ];
 
-        if (!trackingResponse.success) {
+        if (!validStatuses.includes(status)) {
           return NextResponse.json(
-            { error: trackingResponse.message },
+            { error: 'Invalid status' },
             { status: 400 }
           );
         }
 
-        return NextResponse.json(trackingResponse);
-
-      case 'cancel_shipment':
-        if (!order.steadfastInfo?.consignmentId) {
-          return NextResponse.json(
-            { error: 'No consignment ID found for this order' },
-            { status: 400 }
-          );
+        // If order is being marked as delivered, update Steadfast status
+        if (status === 'DELIVERED' && order.steadfastInfo?.trackingId) {
+          try {
+            await steadfast.updateDeliveryStatus(
+              order.steadfastInfo.trackingId,
+              'DELIVERED'
+            );
+          } catch (error) {
+            console.error('Error updating Steadfast status:', error);
+          }
         }
 
-        const cancelResponse = await steadfast.cancelParcel(
-          order.steadfastInfo.consignmentId
-        );
-
-        if (!cancelResponse.success) {
-          return NextResponse.json(
-            { error: cancelResponse.message },
-            { status: 400 }
-          );
-        }
-
-        // Update order status
-        const cancelledOrder = await prisma.order.update({
+        await prisma.order.update({
           where: { id: orderId },
-          data: {
-            status: 'CANCELLED',
-            steadfastInfo: {
-              ...order.steadfastInfo,
-              status: 'CANCELLED',
-              lastUpdate: new Date(),
-            },
-          },
+          data: { status },
         });
 
-        return NextResponse.json(cancelledOrder);
+        return NextResponse.json({ message: 'Order status updated successfully' });
+      }
 
       default:
         return NextResponse.json(
@@ -218,10 +247,10 @@ export async function POST(request: Request) {
           { status: 400 }
         );
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error processing order action:', error);
     return NextResponse.json(
-      { error: 'Failed to process order action' },
+      { error: error.message || 'Failed to process order action' },
       { status: 500 }
     );
   }

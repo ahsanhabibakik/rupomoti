@@ -1,14 +1,13 @@
-'use client'
+"use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ProductCard } from '@/components/products/ProductCard'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-import { ChevronDown, SlidersHorizontal } from 'lucide-react'
-import productsJson from '@/data/products.json'
+import { ChevronDown, SlidersHorizontal, Search } from 'lucide-react'
 import {
   Sheet,
   SheetContent,
@@ -37,28 +36,32 @@ export default function ShopPage() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 100000])
   const [sortBy, setSortBy] = useState<string>('newest')
+  const [search, setSearch] = useState('')
+  const [searchInput, setSearchInput] = useState('')
+  const [products, setProducts] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
 
-  const filteredProducts = productsJson.products.filter((product) => {
-    const matchesCategory =
-      selectedCategories.length === 0 ||
-      selectedCategories.includes(product.category)
-    const matchesPrice =
-      product.price >= priceRange[0] && product.price <= priceRange[1]
-    return matchesCategory && matchesPrice
-  })
-
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
-    switch (sortBy) {
-      case 'price-low':
-        return a.price - b.price
-      case 'price-high':
-        return b.price - a.price
-      case 'popular':
-        return b.popularity - a.popularity
-      default:
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true)
+      const params = new URLSearchParams()
+      if (search) params.append('search', search)
+      selectedCategories.forEach(cat => params.append('categories', cat))
+      params.append('minPrice', priceRange[0].toString())
+      params.append('maxPrice', priceRange[1].toString())
+      params.append('sort', sortBy)
+      const res = await fetch(`/api/products?${params.toString()}`)
+      const data = await res.json()
+      setProducts(data)
+      setLoading(false)
     }
-  })
+    fetchProducts()
+  }, [search, selectedCategories, priceRange, sortBy])
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setSearch(searchInput)
+  }
 
   const FilterSection = () => (
     <div className="space-y-6">
@@ -119,10 +122,22 @@ export default function ShopPage() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold mb-2">All Products</h1>
           <p className="text-muted-foreground">
-            {filteredProducts.length} products found
+            {loading ? 'Loading...' : `${products.length} products found`}
           </p>
         </div>
         <div className="flex items-center gap-2 self-stretch sm:self-auto">
+          <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="Search products..."
+              value={searchInput}
+              onChange={e => setSearchInput(e.target.value)}
+              className="border rounded px-3 py-2 text-sm focus:outline-none focus:ring focus:border-primary"
+            />
+            <Button type="submit" variant="outline" size="icon" className="h-9 w-9">
+              <Search className="h-4 w-4" />
+            </Button>
+          </form>
           <Sheet open={isMobileFiltersOpen} onOpenChange={setIsMobileFiltersOpen}>
             <SheetTrigger asChild>
               <Button
@@ -142,50 +157,62 @@ export default function ShopPage() {
             </SheetContent>
           </Sheet>
           <div className="relative">
-            <Button variant="outline" className="w-[140px] justify-between">
-              <span>Sort By</span>
-              <ChevronDown className="h-4 w-4" />
-            </Button>
+            <select
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value)}
+              className="border rounded px-3 py-2 text-sm focus:outline-none focus:ring focus:border-primary w-[140px]"
+            >
+              {sortOptions.map(option => (
+                <option key={option.id} value={option.id}>{option.name}</option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
 
       {/* Active Filters */}
-      {(selectedCategories.length > 0 || priceRange[0] > 0 || priceRange[1] < 100000) && (
-        <div className="flex flex-wrap gap-2 mb-6">
-          {selectedCategories.map((categoryId) => {
-            const category = categories.find((c) => c.id === categoryId)
-            return (
-              <Badge
-                key={categoryId}
-                variant="secondary"
-                className="cursor-pointer"
-                onClick={() =>
-                  setSelectedCategories(
-                    selectedCategories.filter((id) => id !== categoryId)
-                  )
-                }
-              >
-                {category?.name} ×
-              </Badge>
-            )
-          })}
-          {(priceRange[0] > 0 || priceRange[1] < 100000) && (
+      <div className="flex flex-wrap gap-2 mb-6">
+        {selectedCategories.map((categoryId) => {
+          const category = categories.find((c) => c.id === categoryId)
+          return (
             <Badge
+              key={categoryId}
               variant="secondary"
               className="cursor-pointer"
-              onClick={() => setPriceRange([0, 100000])}
+              onClick={() =>
+                setSelectedCategories(
+                  selectedCategories.filter((id) => id !== categoryId)
+                )
+              }
             >
-              Price: ৳{priceRange[0].toLocaleString()} - ৳
-              {priceRange[1].toLocaleString()} ×
+              {category?.name} ×
             </Badge>
-          )}
-        </div>
-      )}
+          )
+        })}
+        {(priceRange[0] > 0 || priceRange[1] < 100000) && (
+          <Badge
+            variant="secondary"
+            className="cursor-pointer"
+            onClick={() => setPriceRange([0, 100000])}
+          >
+            Price: ৳{priceRange[0].toLocaleString()} - ৳
+            {priceRange[1].toLocaleString()} ×
+          </Badge>
+        )}
+        {search && (
+          <Badge
+            variant="secondary"
+            className="cursor-pointer"
+            onClick={() => { setSearch(''); setSearchInput('') }}
+          >
+            Search: {search} ×
+          </Badge>
+        )}
+      </div>
 
       {/* Products Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {sortedProducts.map((product) => (
+        {products.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}
       </div>

@@ -1,240 +1,134 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { signIn, signOut, useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Search, Menu, X, User, LogOut, Settings, Heart, Package } from 'lucide-react'
-import { useAppSelector } from '@/redux/hooks'
-import { selectCartItemCount } from '@/redux/slices/cartSlice'
-import { useWishlist } from '@/hooks/useWishlist'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
-import { useState, FormEvent, ChangeEvent } from 'react'
+import { ShoppingCart, Search, Menu, X, User } from 'lucide-react'
 import { CartDrawer } from '@/components/cart/CartDrawer'
+import { cn } from '@/lib/utils'
 
-const navigationLinks = [
-  { href: '/shop', label: 'Shop' },
-  { href: '/shop?category=necklaces', label: 'Necklaces' },
-  { href: '/shop?category=earrings', label: 'Earrings' },
-  { href: '/shop?category=rings', label: 'Rings' },
-  { href: '/shop?category=bracelets', label: 'Bracelets' },
+const navigation = [
+  { name: 'Home', href: '/' },
+  { name: 'Shop', href: '/shop' },
+  { name: 'About', href: '/about' },
+  { name: 'Contact', href: '/contact' },
 ]
 
-export function Navbar() {
+export default function Navbar() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isCartOpen, setIsCartOpen] = useState(false)
   const pathname = usePathname()
-  const { data: session } = useSession()
-  const { wishlistItemsCount } = useWishlist()
-  const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-
-  const handleSearch = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    if (searchQuery.trim()) {
-      window.location.href = `/shop?search=${encodeURIComponent(searchQuery.trim())}`
-    }
-  }
-
-  const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value)
-  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
-        {/* Logo */}
-        <Link href="/" className="flex items-center space-x-2">
-          <span className="font-bold text-xl">Rupomoti</span>
-        </Link>
+      <nav className="container mx-auto px-4">
+        <div className="flex h-16 items-center justify-between">
+          {/* Logo */}
+          <Link href="/" className="flex items-center space-x-2">
+            <span className="text-xl font-bold text-pearl-600">Rupomoti</span>
+          </Link>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-6">
-          {navigationLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`text-sm font-medium transition-colors hover:text-primary ${
-                pathname === link.href ? 'text-primary' : 'text-muted-foreground'
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex md:items-center md:space-x-8">
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={cn(
+                  'text-sm font-medium transition-colors hover:text-pearl-600',
+                  pathname === item.href
+                    ? 'text-pearl-600'
+                    : 'text-muted-foreground'
+                )}
+              >
+                {item.name}
+              </Link>
+            ))}
+          </div>
 
-        {/* Right Section: Search, Cart, Account */}
-        <div className="flex items-center space-x-4">
-          {/* Search */}
-          <div className="hidden md:flex items-center">
-            <form onSubmit={handleSearch} className="relative w-[300px]">
+          {/* Search, Cart, and Mobile Menu */}
+          <div className="flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-2">
               <Input
                 type="search"
                 placeholder="Search products..."
-                value={searchQuery}
-                onChange={handleSearchChange}
-                className="w-full pr-10"
+                className="h-9 w-[200px] lg:w-[300px]"
               />
-              <Button
-                type="submit"
-                size="icon"
-                variant="ghost"
-                className="absolute right-0 top-0 h-full px-3"
-              >
-                <Search className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="text-pearl-600">
+                <Search className="h-5 w-5" />
               </Button>
-            </form>
-          </div>
+            </div>
 
-          {/* Mobile Search Toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            onClick={() => setIsSearchOpen(!isSearchOpen)}
-          >
-            <Search className="h-5 w-5" />
-          </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-pearl-600"
+              onClick={() => setIsCartOpen(true)}
+            >
+              <ShoppingCart className="h-5 w-5" />
+            </Button>
 
-          {/* Cart */}
-          <CartDrawer />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-pearl-600"
+              asChild
+            >
+              <Link href="/admin/login">
+                <User className="h-5 w-5" />
+              </Link>
+            </Button>
 
-          {/* Wishlist */}
-          <Link href="/account?tab=wishlist">
-            <Button variant="ghost" size="icon" className="relative">
-              <Heart className="h-5 w-5" />
-              {wishlistItemsCount > 0 && (
-                <div className="absolute -top-1 -right-1">
-                  <div className="h-5 w-5 flex items-center justify-center p-0 text-xs bg-secondary text-secondary-foreground rounded-full">
-                    {wishlistItemsCount}
-                  </div>
-                </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden text-pearl-600"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              {isMenuOpen ? (
+                <X className="h-5 w-5" />
+              ) : (
+                <Menu className="h-5 w-5" />
               )}
             </Button>
-          </Link>
+          </div>
+        </div>
 
-          {/* Account Menu */}
-          {session ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback>
-                      {session.user?.name?.charAt(0) || session.user?.email?.charAt(0) || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/account" className="cursor-pointer">
-                    <User className="mr-2 h-4 w-4" />
-                    Profile
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/account?tab=orders" className="cursor-pointer">
-                    <Package className="mr-2 h-4 w-4" />
-                    Orders
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/account?tab=wishlist" className="cursor-pointer">
-                    <Heart className="mr-2 h-4 w-4" />
-                    Wishlist
-                  </Link>
-                </DropdownMenuItem>
-                {session.user?.email === 'mirabidhasn7@gmail.com' && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href="/admin" className="cursor-pointer">
-                        <Settings className="mr-2 h-4 w-4" />
-                        Admin Dashboard
-                      </Link>
-                    </DropdownMenuItem>
-                  </>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="cursor-pointer text-red-600"
-                  onClick={() => signOut()}
+        {/* Mobile Menu */}
+        {isMenuOpen && (
+          <div className="md:hidden">
+            <div className="space-y-1 px-2 pb-3 pt-2">
+              {navigation.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={cn(
+                    'block rounded-md px-3 py-2 text-base font-medium',
+                    pathname === item.href
+                      ? 'bg-pearl-50 text-pearl-600'
+                      : 'text-muted-foreground hover:bg-pearl-50 hover:text-pearl-600'
+                  )}
+                  onClick={() => setIsMenuOpen(false)}
                 >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <Button onClick={() => signIn('google')} variant="ghost">
-              Sign In
-            </Button>
-          )}
+                  {item.name}
+                </Link>
+              ))}
+            </div>
+            <div className="px-4 py-3">
+              <Input
+                type="search"
+                placeholder="Search products..."
+                className="w-full"
+              />
+            </div>
+          </div>
+        )}
+      </nav>
 
-          {/* Mobile Menu Toggle */}
-          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent>
-              <SheetHeader>
-                <SheetTitle>Rupomoti</SheetTitle>
-              </SheetHeader>
-              <nav className="mt-6 flex flex-col space-y-4">
-                {navigationLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={`text-lg font-medium transition-colors hover:text-primary ${
-                      pathname === link.href ? 'text-primary' : 'text-muted-foreground'
-                    }`}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </nav>
-            </SheetContent>
-          </Sheet>
-        </div>
-      </div>
-
-      {/* Mobile Search Bar */}
-      {isSearchOpen && (
-        <div className="border-t p-4 md:hidden">
-          <form onSubmit={handleSearch} className="relative">
-            <Input
-              type="search"
-              placeholder="Search products..."
-              value={searchQuery}
-              onChange={handleSearchChange}
-              className="w-full pr-10"
-            />
-            <Button
-              type="submit"
-              size="icon"
-              variant="ghost"
-              className="absolute right-0 top-0 h-full px-3"
-            >
-              <Search className="h-4 w-4" />
-            </Button>
-          </form>
-        </div>
-      )}
+      {/* Cart Drawer */}
+      <CartDrawer open={isCartOpen} onOpenChange={setIsCartOpen} />
     </header>
   )
 } 

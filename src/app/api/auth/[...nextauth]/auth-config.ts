@@ -6,35 +6,54 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { compare } from "bcryptjs";
 
-export const authConfig: AuthOptions = {
-  adapter: PrismaAdapter(prisma),
-  providers: [
+// Only include providers that have their environment variables set
+const providers = [];
+
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  providers.push(
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID ?? "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
-    }),
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    })
+  );
+}
+
+if (
+  process.env.EMAIL_SERVER_HOST &&
+  process.env.EMAIL_SERVER_PORT &&
+  process.env.EMAIL_SERVER_USER &&
+  process.env.EMAIL_SERVER_PASSWORD &&
+  process.env.EMAIL_FROM
+) {
+  providers.push(
     EmailProvider({
       server: {
         host: process.env.EMAIL_SERVER_HOST,
-        port: process.env.EMAIL_SERVER_PORT,
+        port: Number(process.env.EMAIL_SERVER_PORT),
         auth: {
           user: process.env.EMAIL_SERVER_USER,
           pass: process.env.EMAIL_SERVER_PASSWORD,
         },
       },
       from: process.env.EMAIL_FROM,
-    }),
-    CredentialsProvider({
-      name: "credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null;
-        }
+    })
+  );
+}
 
+// Always include credentials provider
+providers.push(
+  CredentialsProvider({
+    name: "credentials",
+    credentials: {
+      email: { label: "Email", type: "email" },
+      password: { label: "Password", type: "password" }
+    },
+    async authorize(credentials) {
+      if (!credentials?.email || !credentials?.password) {
+        return null;
+      }
+
+      try {
         const user = await prisma.user.findUnique({
           where: {
             email: credentials.email
@@ -57,9 +76,17 @@ export const authConfig: AuthOptions = {
           name: user.name,
           role: user.role,
         };
+      } catch (error) {
+        console.error('Error in credentials provider:', error);
+        return null;
       }
-    }),
-  ],
+    }
+  })
+);
+
+export const authConfig: AuthOptions = {
+  adapter: PrismaAdapter(prisma),
+  providers,
   session: {
     strategy: "jwt",
   },

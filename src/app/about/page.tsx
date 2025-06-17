@@ -2,187 +2,148 @@ import Image from 'next/image'
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'About Us | Rupomoti Jewelry',
-  description: 'Discover the story behind Rupomoti Jewelry - where tradition meets contemporary elegance in every piece.',
+  title: 'About Us | Rupomoti',
+  description: 'Learn about Rupomoti - your trusted source for exquisite pearl jewelry',
 }
 
 export default function AboutPage() {
   return (
-    <main className="min-h-screen">
-      {/* Hero Section */}
-      <section className="relative h-[60vh] bg-pearl-pattern">
-        <div className="absolute inset-0 bg-gradient-to-b from-charcoal/20 to-charcoal/60" />
-        <div className="container relative h-full flex items-center">
-          <div className="max-w-2xl text-pearl">
-            <h1 className="font-display text-5xl md:text-6xl mb-4">
+    <main className="min-h-screen py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">About Rupomoti</h1>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Discover the story behind our passion for pearl jewelry
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center mb-16">
+          <div className="relative aspect-[4/3] rounded-2xl overflow-hidden">
+            <img
+              src="/images/about/store.jpg"
+              alt="Rupomoti Store"
+              className="object-cover w-full h-full"
+            />
+          </div>
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
               Our Story
-            </h1>
-            <p className="text-lg md:text-xl text-pearl-light">
-              Crafting timeless elegance since 1995
+            </h2>
+            <p className="text-gray-600 mb-4">
+              Founded with a passion for exquisite pearl jewelry, Rupomoti has been
+              crafting beautiful pieces that capture the timeless elegance of pearls
+              since 2010. Our journey began with a simple mission: to bring the
+              natural beauty of pearls to jewelry lovers worldwide.
+            </p>
+            <p className="text-gray-600">
+              Today, we continue to uphold our commitment to quality, craftsmanship,
+              and customer satisfaction, offering a carefully curated collection of
+              pearl jewelry that celebrates both tradition and contemporary design.
             </p>
           </div>
         </div>
-      </section>
 
-      {/* Our Heritage */}
-      <section className="py-20 bg-pearl">
-        <div className="container">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="relative aspect-square rounded-lg overflow-hidden">
-              <Image
-                src="/images/about/heritage.jpg"
-                alt="Our Heritage"
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 50vw"
-              />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg
+                className="w-8 h-8 text-orange-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                />
+              </svg>
             </div>
-            <div>
-              <h2 className="font-display text-4xl mb-6 text-charcoal">
-                A Legacy of Excellence
-              </h2>
-              <p className="text-slate mb-6">
-                Founded in 1995, Rupomoti Jewelry has been at the forefront of 
-                crafting exquisite jewelry that celebrates both traditional 
-                craftsmanship and contemporary design. Our journey began with a 
-                simple yet profound vision: to create pieces that tell stories 
-                and become cherished heirlooms.
-              </p>
-              <p className="text-slate">
-                Each piece in our collection is a testament to our commitment to 
-                quality, innovation, and the timeless beauty of fine jewelry. We 
-                source the finest materials and work with master artisans who 
-                bring decades of experience to every creation.
-              </p>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Quality Assurance
+            </h3>
+            <p className="text-gray-600">
+              We source only the finest pearls and materials for our jewelry
+              collection.
+            </p>
+          </div>
+
+          <div className="text-center">
+            <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg
+                className="w-8 h-8 text-orange-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                />
+              </svg>
             </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Expert Craftsmanship
+            </h3>
+            <p className="text-gray-600">
+              Each piece is meticulously crafted by skilled artisans with years of
+              experience.
+            </p>
+          </div>
+
+          <div className="text-center">
+            <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg
+                className="w-8 h-8 text-orange-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Customer Focus
+            </h3>
+            <p className="text-gray-600">
+              We prioritize customer satisfaction and provide exceptional service at
+              every step.
+            </p>
           </div>
         </div>
-      </section>
 
-      {/* Our Values */}
-      <section className="py-20 bg-gradient-pearl">
-        <div className="container">
-          <h2 className="font-display text-4xl text-center mb-16 text-charcoal">
-            Our Values
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+            Visit Our Store
           </h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="card text-center">
-              <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gold/20 flex items-center justify-center">
-                <svg className="w-8 h-8 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h3 className="font-display text-xl mb-4 text-charcoal">
-                Quality
-              </h3>
-              <p className="text-slate">
-                We never compromise on the quality of our materials or craftsmanship, 
-                ensuring each piece meets our exacting standards.
-              </p>
-            </div>
-            <div className="card text-center">
-              <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gold/20 flex items-center justify-center">
-                <svg className="w-8 h-8 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 className="font-display text-xl mb-4 text-charcoal">
-                Sustainability
-              </h3>
-              <p className="text-slate">
-                We are committed to ethical sourcing and sustainable practices, 
-                ensuring our jewelry is as beautiful for the planet as it is for you.
-              </p>
-            </div>
-            <div className="card text-center">
-              <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gold/20 flex items-center justify-center">
-                <svg className="w-8 h-8 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                </svg>
-              </div>
-              <h3 className="font-display text-xl mb-4 text-charcoal">
-                Innovation
-              </h3>
-              <p className="text-slate">
-                We blend traditional techniques with modern design, creating pieces 
-                that are both timeless and contemporary.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Our Team */}
-      <section className="py-20 bg-pearl">
-        <div className="container">
-          <h2 className="font-display text-4xl text-center mb-16 text-charcoal">
-            Meet Our Team
-          </h2>
-          <div className="grid md:grid-cols-4 gap-8">
-            {[
-              {
-                name: 'Sarah Ahmed',
-                role: 'Creative Director',
-                image: '/images/team/sarah.jpg',
-              },
-              {
-                name: 'Mohammed Rahman',
-                role: 'Master Craftsman',
-                image: '/images/team/mohammed.jpg',
-              },
-              {
-                name: 'Fatima Khan',
-                role: 'Design Lead',
-                image: '/images/team/fatima.jpg',
-              },
-              {
-                name: 'Aminul Islam',
-                role: 'Quality Control',
-                image: '/images/team/aminul.jpg',
-              },
-            ].map((member, index) => (
-              <div key={index} className="card text-center">
-                <div className="relative aspect-square rounded-full overflow-hidden mb-6">
-                  <Image
-                    src={member.image}
-                    alt={member.name}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 100vw, 25vw"
-                  />
-                </div>
-                <h3 className="font-display text-xl mb-2 text-charcoal">
-                  {member.name}
-                </h3>
-                <p className="text-slate">
-                  {member.role}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Call to Action */}
-      <section className="py-20 bg-gradient-gold text-pearl">
-        <div className="container text-center">
-          <h2 className="font-display text-4xl mb-6">
-            Experience Our Craft
-          </h2>
-          <p className="text-lg mb-8 max-w-2xl mx-auto">
-            Visit our showroom to explore our collection in person and discover 
-            the perfect piece that speaks to your story.
+          <p className="text-gray-600 mb-8">
+            Experience the beauty of our pearl jewelry collection in person at our
+            store.
           </p>
-          <div className="flex gap-4 justify-center">
-            <a href="/contact" className="btn-outline">
-              Contact Us
-            </a>
-            <a href="/shop" className="btn-accent">
-              Explore Collection
-            </a>
+          <div className="bg-orange-50 rounded-2xl p-8 max-w-2xl mx-auto">
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Rupomoti Pearl House
+            </h3>
+            <p className="text-gray-600 mb-4">
+              123 Pearl Street, Dhaka 1000, Bangladesh
+            </p>
+            <p className="text-gray-600 mb-4">
+              Phone: +880 1234-567890
+            </p>
+            <p className="text-gray-600">
+              Email: info@rupomoti.com
+            </p>
           </div>
         </div>
-      </section>
+      </div>
     </main>
   )
 } 

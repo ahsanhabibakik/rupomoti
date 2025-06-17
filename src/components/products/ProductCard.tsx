@@ -71,7 +71,7 @@ export function ProductCard({
 
   return (
     <div 
-      className="group relative overflow-hidden rounded-lg border bg-background p-2"
+      className="group relative flex flex-col h-full overflow-hidden rounded-lg border bg-background p-2 sm:p-4 transition-shadow hover:shadow-lg"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -100,70 +100,60 @@ export function ProductCard({
           )}
         </div>
       </Link>
-
-      <div className="relative mt-4 space-y-2 p-2">
-        <div className="flex gap-2">
+      <div className="flex flex-col flex-1 gap-2 mt-2">
+        <div className="flex flex-wrap gap-2 min-h-[28px]">
           {isNew && <Badge>New</Badge>}
           {isBestSeller && <Badge variant="secondary">Best Seller</Badge>}
           {discount > 0 && (
             <Badge variant="destructive">-{discount}% OFF</Badge>
           )}
         </div>
-        
-        <h3 className="font-medium leading-none">{name}</h3>
-        <p className="text-sm text-muted-foreground line-clamp-2">
-          {description}
-        </p>
-        
-        <div className="flex items-center justify-between">
+        <h3 className="font-medium leading-tight text-base sm:text-lg line-clamp-1">{name}</h3>
+        <p className="text-sm text-muted-foreground line-clamp-2 flex-1">{description}</p>
+        <div className="flex items-center justify-between mt-2">
           <div>
             {discount > 0 ? (
               <div className="flex items-baseline gap-2">
-                <span className="font-bold">${discountedPrice.toFixed(2)}</span>
-                <span className="text-sm text-muted-foreground line-through">
-                  ${safePrice.toFixed(2)}
-                </span>
+                <span className="font-bold text-lg text-primary">${discountedPrice.toFixed(2)}</span>
+                <span className="text-sm text-muted-foreground line-through">${safePrice.toFixed(2)}</span>
               </div>
             ) : (
-              <span className="font-bold">${safePrice.toFixed(2)}</span>
+              <span className="font-bold text-lg text-primary">${safePrice.toFixed(2)}</span>
             )}
           </div>
           {isOutOfStock && (
-            <Badge variant="secondary" className="pointer-events-none">
-              Out of Stock
-            </Badge>
+            <Badge variant="secondary" className="pointer-events-none">Out of Stock</Badge>
           )}
         </div>
-      </div>
-
-      <div className="absolute bottom-4 right-4 flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          className={`h-8 w-8 rounded-full transition-colors ${
-            isInWishlist()
-              ? 'bg-destructive/10 text-destructive hover:bg-destructive/20'
-              : 'hover:bg-muted'
-          }`}
-          onClick={handleWishlistToggle}
-          aria-label={isInWishlist() ? 'Remove from wishlist' : 'Add to wishlist'}
-        >
-          <Heart
-            className={`h-4 w-4 ${
-              isInWishlist() ? 'fill-destructive' : ''
+        <div className="flex gap-2 mt-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className={`h-8 w-8 rounded-full transition-colors ${
+              isInWishlist()
+                ? 'bg-destructive/10 text-destructive hover:bg-destructive/20'
+                : 'hover:bg-muted'
             }`}
-          />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 rounded-full hover:bg-muted"
-          onClick={handleAddToCart}
-          disabled={isOutOfStock}
-          aria-label="Add to cart"
-        >
-          <ShoppingCart className="h-4 w-4" />
-        </Button>
+            onClick={handleWishlistToggle}
+            aria-label={isInWishlist() ? 'Remove from wishlist' : 'Add to wishlist'}
+          >
+            <Heart
+              className={`h-4 w-4 ${
+                isInWishlist() ? 'fill-destructive' : ''
+              }`}
+            />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full hover:bg-muted"
+            onClick={handleAddToCart}
+            disabled={isOutOfStock}
+            aria-label="Add to cart"
+          >
+            <ShoppingCart className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </div>
   )
