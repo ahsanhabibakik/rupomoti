@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import prisma, { checkDatabaseConnection } from '@/lib/prisma'
+import { prisma, checkDatabaseConnection } from '@/lib/prisma'
 import { checkSteadfastConnection } from '@/lib/steadfast'
 
 export async function GET() {
