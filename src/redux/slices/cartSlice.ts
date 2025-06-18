@@ -27,7 +27,7 @@ const initialState: CartState = {
   savedForLater: [],
   isCartOpen: false,
   total: 0,
-  shippingCost: 0,
+  shippingCost: 100, // Default shipping cost
   discount: 0,
   couponCode: null,
 }
@@ -70,12 +70,15 @@ const cartSlice = createSlice({
     ) => {
       const item = state.items.find((item) => item.id === action.payload.id)
       if (item) {
-        item.quantity = Math.max(1, action.payload.quantity)
-        state.total = state.items.reduce(
-          (total, item) => total + item.price * item.quantity,
-          0
-        )
+        item.quantity = Math.max(0, action.payload.quantity)
+        if (item.quantity === 0) {
+          state.items = state.items.filter((i) => i.id !== action.payload.id)
+        }
       }
+      state.total = state.items.reduce(
+        (total, item) => total + item.price * item.quantity,
+        0
+      )
     },
 
     clearCart: (state) => {
@@ -83,18 +86,35 @@ const cartSlice = createSlice({
       state.total = 0
       state.discount = 0
       state.couponCode = null
-      state.shippingCost = 0
+      state.shippingCost = 100
     },
 
     toggleCart: (state) => {
       state.isCartOpen = !state.isCartOpen
     },
 
+    setShippingCost: (state, action: PayloadAction<number>) => {
+      state.shippingCost = action.payload
+    },
+
+    applyCoupon: (
+      state,
+      action: PayloadAction<{ code: string; discount: number }>
+    ) => {
+      state.couponCode = action.payload.code
+      state.discount = action.payload.discount
+    },
+
+    removeCoupon: (state) => {
+      state.couponCode = null
+      state.discount = 0
+    },
+
     saveForLater: (state, action: PayloadAction<string>) => {
       const item = state.items.find((item) => item.id === action.payload)
       if (item) {
-        state.savedForLater.push(item)
-        state.items = state.items.filter((item) => item.id !== action.payload)
+        state.savedForLater.push({ ...item })
+        state.items = state.items.filter((i) => i.id !== action.payload)
         state.total = state.items.reduce(
           (total, item) => total + item.price * item.quantity,
           0
@@ -105,9 +125,9 @@ const cartSlice = createSlice({
     moveToCart: (state, action: PayloadAction<string>) => {
       const item = state.savedForLater.find((item) => item.id === action.payload)
       if (item) {
-        state.items.push(item)
+        state.items.push({ ...item })
         state.savedForLater = state.savedForLater.filter(
-          (item) => item.id !== action.payload
+          (i) => i.id !== action.payload
         )
         state.total = state.items.reduce(
           (total, item) => total + item.price * item.quantity,
@@ -121,18 +141,6 @@ const cartSlice = createSlice({
         (item) => item.id !== action.payload
       )
     },
-
-    applyCoupon: (
-      state,
-      action: PayloadAction<{ code: string; discount: number }>
-    ) => {
-      state.couponCode = action.payload.code
-      state.discount = action.payload.discount
-    },
-
-    setShippingCost: (state, action: PayloadAction<number>) => {
-      state.shippingCost = action.payload
-    },
   },
 })
 
@@ -142,11 +150,12 @@ export const {
   updateQuantity,
   clearCart,
   toggleCart,
+  setShippingCost,
+  applyCoupon,
+  removeCoupon,
   saveForLater,
   moveToCart,
   removeFromSaved,
-  applyCoupon,
-  setShippingCost,
 } = cartSlice.actions
 
 // Selectors

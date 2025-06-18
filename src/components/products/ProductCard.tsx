@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Heart, ShoppingCart } from 'lucide-react'
+import { Heart, ShoppingCart, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useAppDispatch } from '@/redux/hooks'
@@ -71,7 +71,7 @@ export function ProductCard({
 
   return (
     <div 
-      className="group relative flex flex-col h-full overflow-hidden rounded-lg border bg-background p-2 sm:p-4 transition-shadow hover:shadow-lg"
+      className="group relative flex flex-col h-full overflow-hidden rounded-lg border border-pearl-dark bg-pearl-light p-2 sm:p-4 transition-all duration-300 hover:shadow-pearl hover:border-gold"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -88,41 +88,44 @@ export function ProductCard({
             onLoadingComplete={() => setIsImageLoading(false)}
           />
           {isNew && (
-            <Badge className="absolute left-2 top-2 bg-primary">New</Badge>
+            <Badge className="absolute left-2 top-2 bg-sapphire text-pearl">New</Badge>
           )}
           {isBestSeller && (
-            <Badge className="absolute right-2 top-2 bg-secondary">Best Seller</Badge>
+            <Badge className="absolute right-2 top-2 bg-gold text-charcoal">Best Seller</Badge>
           )}
           {isOutOfStock && (
-            <div className="absolute inset-0 flex items-center justify-center bg-background/80">
+            <div className="absolute inset-0 flex items-center justify-center bg-pearl-light/80">
               <Badge variant="destructive">Out of Stock</Badge>
             </div>
+          )}
+          {discount > 0 && (
+            <Badge className="absolute top-2 left-2 bg-gold text-charcoal">-{discount}%</Badge>
           )}
         </div>
       </Link>
       <div className="flex flex-col flex-1 gap-2 mt-2">
         <div className="flex flex-wrap gap-2 min-h-[28px]">
-          {isNew && <Badge>New</Badge>}
-          {isBestSeller && <Badge variant="secondary">Best Seller</Badge>}
+          {isNew && <Badge className="bg-sapphire text-pearl">New</Badge>}
+          {isBestSeller && <Badge className="bg-gold text-charcoal">Best Seller</Badge>}
           {discount > 0 && (
-            <Badge variant="destructive">-{discount}% OFF</Badge>
+            <Badge className="bg-gold text-charcoal">-{discount}% OFF</Badge>
           )}
         </div>
-        <h3 className="font-medium leading-tight text-base sm:text-lg line-clamp-1">{name}</h3>
-        <p className="text-sm text-muted-foreground line-clamp-2 flex-1">{description}</p>
+        <h3 className="font-medium leading-tight text-base sm:text-lg line-clamp-1 text-charcoal">{name}</h3>
+        <p className="text-sm text-slate line-clamp-2 flex-1">{description}</p>
         <div className="flex items-center justify-between mt-2">
           <div>
             {discount > 0 ? (
               <div className="flex items-baseline gap-2">
-                <span className="font-bold text-lg text-primary">${discountedPrice.toFixed(2)}</span>
-                <span className="text-sm text-muted-foreground line-through">${safePrice.toFixed(2)}</span>
+                <span className="font-bold text-lg text-gold">${discountedPrice.toFixed(2)}</span>
+                <span className="text-sm text-slate line-through">${safePrice.toFixed(2)}</span>
               </div>
             ) : (
-              <span className="font-bold text-lg text-primary">${safePrice.toFixed(2)}</span>
+              <span className="font-bold text-lg text-gold">${safePrice.toFixed(2)}</span>
             )}
           </div>
           {isOutOfStock && (
-            <Badge variant="secondary" className="pointer-events-none">Out of Stock</Badge>
+            <Badge className="bg-pearl text-charcoal pointer-events-none">Out of Stock</Badge>
           )}
         </div>
         <div className="flex gap-2 mt-2">
@@ -131,22 +134,22 @@ export function ProductCard({
             size="icon"
             className={`h-8 w-8 rounded-full transition-colors ${
               isInWishlist()
-                ? 'bg-destructive/10 text-destructive hover:bg-destructive/20'
-                : 'hover:bg-muted'
+                ? 'bg-gold/10 text-gold hover:bg-gold/20'
+                : 'hover:bg-pearl text-slate hover:text-charcoal'
             }`}
             onClick={handleWishlistToggle}
             aria-label={isInWishlist() ? 'Remove from wishlist' : 'Add to wishlist'}
           >
             <Heart
               className={`h-4 w-4 ${
-                isInWishlist() ? 'fill-destructive' : ''
+                isInWishlist() ? 'fill-gold' : ''
               }`}
             />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 rounded-full hover:bg-muted"
+            className="h-8 w-8 rounded-full hover:bg-pearl text-slate hover:text-charcoal"
             onClick={handleAddToCart}
             disabled={isOutOfStock}
             aria-label="Add to cart"

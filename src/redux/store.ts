@@ -21,14 +21,6 @@ const persistConfig = {
 
 const persistedReducer = persistReducer(persistConfig, rootReducer)
 
-const cartPersistConfig = {
-  key: 'cart',
-  storage,
-  whitelist: ['items'], // only persist items array
-}
-
-const persistedCartReducer = persistReducer(cartPersistConfig, cartReducer)
-
 export const store = configureStore({
   reducer: persistedReducer,
   middleware: (getDefaultMiddleware) =>

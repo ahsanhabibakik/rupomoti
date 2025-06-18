@@ -1,21 +1,9 @@
 {
   "name": "Rupomoti",
   "short_name": "Rupomoti",
-  "description": "Elegant Jewelry Collection",
+  "description": "Elegant Pearl Jewelry Collection",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#000000",
-  "icons": [
-    {
-      "src": "/android-chrome-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/android-chrome-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ]
+  "background_color": "#F8F6F0",
+  "theme_color": "#1A237E"
 } 

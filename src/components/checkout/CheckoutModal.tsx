@@ -8,9 +8,10 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
-import { useCart } from '@/hooks/useCart'
 import { formatPrice } from '@/lib/utils'
 import Image from 'next/image'
+import { useAppSelector, useAppDispatch } from '@/redux/hooks'
+import { selectCartItems, clearCart } from '@/redux/slices/cartSlice'
 
 interface CheckoutModalProps {
   open: boolean
@@ -46,7 +47,8 @@ const PAYMENT_METHODS = [
 ]
 
 export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
-  const { items, clearCart } = useCart()
+  const dispatch = useAppDispatch()
+  const items = useAppSelector(selectCartItems)
   const [deliveryArea, setDeliveryArea] = useState('inside-dhaka')
   const [paymentMethod, setPaymentMethod] = useState('cash')
   const [formData, setFormData] = useState({
@@ -71,7 +73,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
       total,
     })
     // Clear cart and close modal
-    clearCart()
+    dispatch(clearCart())
     onOpenChange(false)
   }
 

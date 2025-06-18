@@ -9,8 +9,8 @@ import { HeroSlider } from '@/components/hero/HeroSlider'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Rupomoti - Elegant Jewelry Collection',
-  description: 'Discover our exquisite collection of elegant jewelry pieces. From timeless classics to modern designs, find the perfect piece for every occasion.',
+  title: 'Rupomoti - Elegant Pearl Jewelry Collection',
+  description: 'Discover our exquisite collection of elegant pearl jewelry pieces. From timeless classics to modern designs, find the perfect pearl piece for every occasion.',
 }
 
 export default function HomePage() {
@@ -31,7 +31,7 @@ export default function HomePage() {
   const categories = [
     { 
       id: 'necklaces',
-      name: 'Necklaces', 
+      name: 'Pearl Necklaces', 
       count: '24',
       icon: Crown,
       image: '/images/pearl/jewelery1.jpeg',
@@ -39,7 +39,7 @@ export default function HomePage() {
     },
     { 
       id: 'rings',
-      name: 'Rings', 
+      name: 'Pearl Rings', 
       count: '38',
       icon: Diamond,
       image: '/images/pearl/jewelery2.jpeg',
@@ -47,7 +47,7 @@ export default function HomePage() {
     },
     { 
       id: 'earrings',
-      name: 'Earrings', 
+      name: 'Pearl Earrings', 
       count: '16',
       icon: Sparkles,
       image: '/images/pearl/jewelery3.jpeg',
@@ -55,7 +55,7 @@ export default function HomePage() {
     },
     { 
       id: 'bracelets',
-      name: 'Bracelets', 
+      name: 'Pearl Bracelets', 
       count: '29',
       icon: GemIcon,
       image: '/images/pearl/jewelery4.jpeg',
@@ -69,12 +69,12 @@ export default function HomePage() {
       <HeroSlider />
 
       {/* Categories Section */}
-      <section className="py-12 px-4 sm:py-16 bg-gradient-to-b from-background to-gray-50">
+      <section className="py-12 px-4 sm:py-16 bg-gradient-to-b from-pearl to-pearl-light">
         <div className="container mx-auto">
           <div className="text-center mb-8 sm:mb-12">
-            <Badge className="bg-primary/10 text-primary mb-4">Collections</Badge>
-            <h2 className="text-2xl sm:text-3xl font-bold">Browse by Category</h2>
-            <p className="text-muted-foreground mt-2">Discover our curated collections of fine pearl jewelry</p>
+            <Badge className="bg-gold/10 text-gold mb-4">Collections</Badge>
+            <h2 className="text-2xl sm:text-3xl font-bold text-charcoal">Browse by Category</h2>
+            <p className="text-slate mt-2">Discover our curated collections of fine pearl jewelry</p>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
             {categories.map((category) => {
@@ -83,7 +83,7 @@ export default function HomePage() {
                 <Link
                   key={category.id}
                   href={`/shop?category=${category.id}`}
-                  className="group relative overflow-hidden rounded-xl sm:rounded-2xl"
+                  className="group relative overflow-hidden rounded-xl sm:rounded-2xl shadow-pearl hover:shadow-gold transition-all duration-300"
                 >
                   <div className="aspect-[4/5] relative">
                     <Image
@@ -93,15 +93,15 @@ export default function HomePage() {
                       fill
                       sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 50vw"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-charcoal/30 to-transparent" />
                   </div>
-                  <div className="absolute inset-0 p-3 sm:p-6 flex flex-col justify-end text-white">
+                  <div className="absolute inset-0 p-3 sm:p-6 flex flex-col justify-end text-pearl">
                     <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
-                      <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-secondary" />
-                      <Badge variant="secondary" className="text-xs sm:text-sm">{category.count} items</Badge>
+                      <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-gold" />
+                      <Badge className="bg-gold/20 text-gold text-xs sm:text-sm">{category.count} items</Badge>
                     </div>
                     <h3 className="text-base sm:text-xl font-semibold mb-1 sm:mb-2">{category.name}</h3>
-                    <p className="text-xs sm:text-sm text-gray-200 opacity-0 group-hover:opacity-100 transition-opacity line-clamp-2">
+                    <p className="text-xs sm:text-sm text-pearl/80 opacity-0 group-hover:opacity-100 transition-opacity line-clamp-2">
                       {category.description}
                     </p>
                   </div>
@@ -113,12 +113,12 @@ export default function HomePage() {
       </section>
 
       {/* Best Sellers Section */}
-      <section className="py-12 px-4 sm:py-16 bg-background">
+      <section className="py-12 px-4 sm:py-16 bg-pearl-light">
         <div className="container mx-auto">
           <div className="text-center mb-8 sm:mb-12">
-            <Badge className="bg-secondary/10 text-secondary mb-4">Best Sellers</Badge>
-            <h2 className="text-2xl sm:text-3xl font-bold">Most Popular Pieces</h2>
-            <p className="text-muted-foreground mt-2">Our customers&apos; favorite jewelry pieces</p>
+            <Badge className="bg-gold/10 text-gold mb-4">Best Sellers</Badge>
+            <h2 className="text-2xl sm:text-3xl font-bold text-charcoal">Most Popular Pieces</h2>
+            <p className="text-slate mt-2">Our customers&apos; favorite pearl jewelry pieces</p>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
             {bestSellers.map((product) => (
@@ -136,7 +136,7 @@ export default function HomePage() {
             ))}
           </div>
           <div className="text-center mt-8">
-            <Button asChild variant="outline" size="lg">
+            <Button asChild variant="outline" size="lg" className="border-gold text-gold hover:bg-gold hover:text-charcoal">
               <Link href="/shop?sort=popular">View All Best Sellers</Link>
             </Button>
           </div>
@@ -144,12 +144,12 @@ export default function HomePage() {
       </section>
 
       {/* New Arrivals Section */}
-      <section className="py-12 px-4 sm:py-16 bg-gray-50">
+      <section className="py-12 px-4 sm:py-16 bg-pearl">
         <div className="container mx-auto">
           <div className="text-center mb-8 sm:mb-12">
-            <Badge className="bg-primary/10 text-primary mb-4">New Arrivals</Badge>
-            <h2 className="text-2xl sm:text-3xl font-bold">Latest Collection</h2>
-            <p className="text-muted-foreground mt-2">Discover our newest jewelry pieces</p>
+            <Badge className="bg-sapphire/10 text-sapphire mb-4">New Arrivals</Badge>
+            <h2 className="text-2xl sm:text-3xl font-bold text-charcoal">Latest Collection</h2>
+            <p className="text-slate mt-2">Discover our newest pearl jewelry pieces</p>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
             {newArrivals.map((product) => (
@@ -167,7 +167,7 @@ export default function HomePage() {
             ))}
           </div>
           <div className="text-center mt-8">
-            <Button asChild variant="outline" size="lg">
+            <Button asChild variant="outline" size="lg" className="border-sapphire text-sapphire hover:bg-sapphire hover:text-pearl">
               <Link href="/shop?sort=newest">View All New Arrivals</Link>
             </Button>
           </div>
@@ -175,12 +175,12 @@ export default function HomePage() {
       </section>
 
       {/* Featured Products */}
-      <section className="py-12 px-4 sm:py-16 bg-background">
+      <section className="py-12 px-4 sm:py-16 bg-pearl-light">
         <div className="container mx-auto">
           <div className="text-center mb-8 sm:mb-12">
-            <Badge className="bg-secondary/10 text-secondary mb-4">Featured</Badge>
-            <h2 className="text-2xl sm:text-3xl font-bold">Featured Collections</h2>
-            <p className="text-muted-foreground mt-2">Our most popular and exclusive pieces</p>
+            <Badge className="bg-gold/10 text-gold mb-4">Featured</Badge>
+            <h2 className="text-2xl sm:text-3xl font-bold text-charcoal">Featured Collections</h2>
+            <p className="text-slate mt-2">Our most popular and exclusive pearl pieces</p>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
             {products.map((product) => (
