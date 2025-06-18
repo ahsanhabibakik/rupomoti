@@ -144,23 +144,23 @@ export function HeroSlider() {
             />
             
             {/* Overlay with content */}
-            <div className="absolute inset-0 bg-gradient-to-r from-charcoal/60 via-charcoal/30 to-transparent">
+            <div className="absolute inset-0 bg-gradient-to-r from-neutral/60 via-neutral/30 to-transparent">
               <div className="absolute inset-0 flex items-center">
                 <div className="container mx-auto px-4">
                   <div className="max-w-2xl">
                     <div className="flex items-center gap-2 mb-4">
-                      <Sparkles className="w-6 h-6 text-gold" />
-                      <span className="text-gold font-medium">Premium Pearls</span>
+                      <Sparkles className="w-6 h-6 text-accent" />
+                      <span className="text-accent font-medium">Premium Pearls</span>
                     </div>
-                    <h1 className="text-4xl md:text-6xl font-display text-pearl mb-4 leading-tight">
+                    <h1 className="text-4xl md:text-6xl font-display text-base mb-4 leading-tight">
                       {slide.title}
                     </h1>
-                    <p className="text-lg md:text-xl text-pearl/90 mb-8 max-w-lg">
+                    <p className="text-lg md:text-xl text-base/90 mb-8 max-w-lg">
                       {slide.subtitle}
                     </p>
                     <Link
                       href={slide.link}
-                      className="inline-flex items-center gap-2 bg-gold text-charcoal px-8 py-4 rounded-full font-semibold hover:bg-gold-dark transition-colors duration-200 shadow-gold"
+                      className="inline-flex items-center gap-2 bg-accent text-primary px-8 py-4 rounded-full font-semibold hover:bg-accent-dark transition-colors duration-200 shadow-accent"
                     >
                       {slide.cta}
                       <ChevronRight className="w-5 h-5" />
@@ -175,22 +175,22 @@ export function HeroSlider() {
         {/* Navigation Arrows */}
         <button
           onClick={prevSlide}
-          className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-pearl-light/90 p-3 rounded-full hover:bg-pearl-light transition-colors z-20 shadow-pearl"
+          className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-base-light/90 p-3 rounded-full hover:bg-base-light transition-colors z-20 shadow-premium"
         >
-          <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-charcoal" />
+          <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-neutral" />
         </button>
         <button
           onClick={nextSlide}
-          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-pearl-light/90 p-3 rounded-full hover:bg-pearl-light transition-colors z-20 shadow-pearl"
+          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-base-light/90 p-3 rounded-full hover:bg-base-light transition-colors z-20 shadow-premium"
         >
-          <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-charcoal" />
+          <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-neutral" />
         </button>
 
         {/* Slide Indicators */}
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-40 sm:w-56 h-2 flex items-center z-20">
-          <div className="relative w-full h-2 bg-pearl-light/40 rounded-full overflow-hidden">
+          <div className="relative w-full h-2 bg-base-light/40 rounded-full overflow-hidden">
             <div
-              className="absolute top-0 left-0 h-full bg-gold rounded-full transition-all duration-500"
+              className="absolute top-0 left-0 h-full bg-accent rounded-full transition-all duration-500"
               style={{
                 width: `${100 / slides.length}%`,
                 left: `${(100 / slides.length) * currentSlide}%`,
