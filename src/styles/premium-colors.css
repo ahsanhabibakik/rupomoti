@@ -1,0 +1,106 @@
+/* Premium Jewelry Color Palette for Rupomoti */
+
+:root {
+  /* Primary Colors */
+  --primary: #0D1E78; /* Deep Sapphire Blue */
+  --primary-light: #1A237E;
+  --primary-dark: #000051;
+  
+  /* Accent Colors */
+  --accent: #E8CBAF; /* Champagne Gold */
+  --accent-light: #F5E6D3;
+  --accent-dark: #D4B483;
+  
+  /* Base Colors */
+  --base: #FDF9F4; /* Ivory / Pearl White */
+  --base-light: #FFFDFA;
+  --base-dark: #F8F6F0;
+  
+  /* Neutral Colors */
+  --neutral: #4A2E21; /* Soft Cocoa Brown */
+  --neutral-light: #8B6E4F;
+  --neutral-dark: #2D1B13;
+  
+  /* Highlight Colors */
+  --highlight: #F5E7DD; /* Pearl Pink / Rose Beige */
+  --highlight-light: #FDF9F4;
+  --highlight-dark: #E6D5C7;
+}
+
+/* Background Colors */
+.bg-premium-primary { background-color: var(--primary); }
+.bg-premium-primary-light { background-color: var(--primary-light); }
+.bg-premium-primary-dark { background-color: var(--primary-dark); }
+
+.bg-premium-accent { background-color: var(--accent); }
+.bg-premium-accent-light { background-color: var(--accent-light); }
+.bg-premium-accent-dark { background-color: var(--accent-dark); }
+
+.bg-premium-base { background-color: var(--base); }
+.bg-premium-base-light { background-color: var(--base-light); }
+.bg-premium-base-dark { background-color: var(--base-dark); }
+
+.bg-premium-neutral { background-color: var(--neutral); }
+.bg-premium-neutral-light { background-color: var(--neutral-light); }
+.bg-premium-neutral-dark { background-color: var(--neutral-dark); }
+
+.bg-premium-highlight { background-color: var(--highlight); }
+.bg-premium-highlight-light { background-color: var(--highlight-light); }
+.bg-premium-highlight-dark { background-color: var(--highlight-dark); }
+
+/* Text Colors */
+.text-premium-primary { color: var(--primary); }
+.text-premium-accent { color: var(--accent); }
+.text-premium-base { color: var(--base); }
+.text-premium-neutral { color: var(--neutral); }
+.text-premium-highlight { color: var(--highlight); }
+
+/* Border Colors */
+.border-premium-primary { border-color: var(--primary); }
+.border-premium-accent { border-color: var(--accent); }
+.border-premium-base { border-color: var(--base); }
+.border-premium-neutral { border-color: var(--neutral); }
+.border-premium-highlight { border-color: var(--highlight); }
+
+/* Gradient Backgrounds */
+.bg-gradient-premium-primary {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+}
+
+.bg-gradient-premium-accent {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+}
+
+.bg-gradient-premium-base {
+  background: linear-gradient(135deg, var(--base) 0%, var(--highlight) 100%);
+}
+
+/* Premium Shadows */
+.shadow-premium {
+  box-shadow: 0 8px 32px 0 rgba(13, 30, 120, 0.15);
+}
+
+.shadow-premium-accent {
+  box-shadow: 0 4px 20px 0 rgba(232, 203, 175, 0.3);
+}
+
+/* Premium Animations */
+@keyframes premium-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-premium-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(232, 203, 175, 0.4), transparent);
+  background-size: 200% 100%;
+  animation: premium-shimmer 2s infinite;
+}
+
+@keyframes premium-sparkle {
+  0%, 100% { opacity: 0; transform: scale(0) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1) rotate(180deg); }
+}
+
+.animate-premium-sparkle {
+  animation: premium-sparkle 1.5s ease-in-out infinite;
+} 

@@ -95,44 +95,44 @@ export function Navbar() {
   }, [isCategoriesOpen]);
 
   return (
-    <nav className="bg-gradient-to-r from-sapphire to-sapphire-dark text-pearl shadow-pearl sticky top-0 z-50">
+    <nav className="bg-gradient-to-r from-primary to-primary-dark text-accent shadow-premium sticky top-0 z-50">
       {/* Pearl pattern background */}
       <div className="absolute top-0 left-0 w-full h-full opacity-10">
         <div className="absolute top-2 left-2 transform rotate-12">
-          <Sparkles size={20} />
+          <Sparkles size={20} className="text-accent" />
         </div>
         <div className="absolute top-2 left-1/4 transform rotate-45">
-          <Sparkles size={16} />
+          <Sparkles size={16} className="text-accent" />
         </div>
         <div className="absolute top-2 left-1/2 transform rotate-90">
-          <Sparkles size={18} />
+          <Sparkles size={18} className="text-accent" />
         </div>
         <div className="absolute top-2 left-3/4 transform rotate-135">
-          <Sparkles size={14} />
+          <Sparkles size={14} className="text-accent" />
         </div>
         <div className="absolute top-2 right-2 transform -rotate-12">
-          <Sparkles size={20} />
+          <Sparkles size={20} className="text-accent" />
         </div>
         <div className="absolute bottom-2 left-2 transform -rotate-45">
-          <Sparkles size={16} />
+          <Sparkles size={16} className="text-accent" />
         </div>
         <div className="absolute bottom-2 left-1/4 transform -rotate-90">
-          <Sparkles size={18} />
+          <Sparkles size={18} className="text-accent" />
         </div>
         <div className="absolute bottom-2 left-1/2 transform -rotate-135">
-          <Sparkles size={14} />
+          <Sparkles size={14} className="text-accent" />
         </div>
         <div className="absolute bottom-2 left-3/4 transform -rotate-180">
-          <Sparkles size={16} />
+          <Sparkles size={16} className="text-accent" />
         </div>
         <div className="absolute bottom-2 right-2 transform rotate-45">
-          <Sparkles size={20} />
+          <Sparkles size={20} className="text-accent" />
         </div>
         <div className="absolute top-1/2 left-1/4 transform rotate-30">
-          <Sparkles size={22} />
+          <Sparkles size={22} className="text-accent" />
         </div>
         <div className="absolute top-1/2 right-1/4 transform -rotate-30">
-          <Sparkles size={22} />
+          <Sparkles size={22} className="text-accent" />
         </div>
       </div>
 
@@ -141,7 +141,7 @@ export function Navbar() {
         <div className="w-full md:w-auto flex items-center justify-between md:justify-start gap-2 relative">
           <div className="flex items-center gap-2">
             <button
-              className="block md:hidden text-pearl hover:bg-sapphire-light/20 p-2 rounded-full"
+              className="block md:hidden text-accent hover:bg-primary-light/20 p-2 rounded-full transition-colors"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
@@ -151,8 +151,8 @@ export function Navbar() {
           <div className="block md:hidden absolute left-1/2 transform -translate-x-1/2">
             <Link href="/" className="flex items-center">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-6 h-6 text-gold" />
-                <span className="text-xl font-bold bg-gradient-to-r from-gold to-pearl bg-clip-text text-transparent">
+                <Sparkles className="w-6 h-6 text-accent" />
+                <span className="text-xl font-bold bg-gradient-to-r from-accent to-base bg-clip-text text-transparent">
                   Rupomoti
                 </span>
               </div>
@@ -162,17 +162,17 @@ export function Navbar() {
           <div className="flex md:hidden items-center gap-2">
             <Link
               href="/signin"
-              className="text-pearl hover:bg-sapphire-light/20 p-2 rounded-full"
+              className="text-accent hover:bg-primary-light/20 p-2 rounded-full transition-colors"
             >
               <VscAccount size={20} />
             </Link>
             <button
               onClick={() => dispatch(toggleCart())}
-              className="text-pearl hover:bg-sapphire-light/20 p-2 rounded-full relative"
+              className="text-accent hover:bg-primary-light/20 p-2 rounded-full relative transition-colors"
             >
               <PiBasketThin size={20} />
               {getCartCount() > 0 && (
-                <span className="absolute -top-1 -right-1 bg-gold text-charcoal text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-accent text-primary text-xs w-5 h-5 rounded-full flex items-center justify-center font-medium">
                   {getCartCount()}
                 </span>
               )}
@@ -184,8 +184,8 @@ export function Navbar() {
         <div className="hidden md:flex items-center">
           <Link href="/" className="flex items-center">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-8 h-8 text-gold" />
-              <span className="text-2xl font-bold bg-gradient-to-r from-gold to-pearl bg-clip-text text-transparent">
+              <Sparkles className="w-8 h-8 text-accent" />
+              <span className="text-2xl font-bold bg-gradient-to-r from-accent to-base bg-clip-text text-transparent">
                 Rupomoti
               </span>
             </div>
@@ -193,17 +193,17 @@ export function Navbar() {
         </div>
 
         {/* Desktop navigation */}
-        <div className="hidden md:flex items-center space-x-3 text-pearl">
+        <div className="hidden md:flex items-center space-x-3 text-accent">
           <Link
             href="/shop"
-            className="hover:text-gold transition-colors text-sm"
+            className="hover:text-base transition-colors text-sm font-medium"
           >
             Shop
           </Link>
           <div className="relative group">
             <button
               id="categories-button"
-              className="flex items-center hover:text-gold transition-colors text-sm"
+              className="flex items-center hover:text-base transition-colors text-sm font-medium"
               onMouseEnter={handleOpenCategories}
               onMouseLeave={handleCloseCategories}
             >
@@ -231,19 +231,19 @@ export function Navbar() {
           </div>
           <Link
             href="/about"
-            className="hover:text-gold transition-colors text-sm"
+            className="hover:text-base transition-colors text-sm font-medium"
           >
             About
           </Link>
           <Link
             href="/blog"
-            className="hover:text-gold transition-colors text-sm"
+            className="hover:text-base transition-colors text-sm font-medium"
           >
             Blog
           </Link>
           <Link
             href="/contact"
-            className="hover:text-gold transition-colors text-sm"
+            className="hover:text-base transition-colors text-sm font-medium"
           >
             Contact
           </Link>
@@ -275,17 +275,17 @@ export function Navbar() {
         <div className="hidden md:flex items-center gap-2">
           <Link
             href="/signin"
-            className="text-pearl hover:bg-sapphire-light/20 p-2 rounded-full"
+            className="text-accent hover:bg-primary-light/20 p-2 rounded-full transition-colors"
           >
             <VscAccount size={20} />
           </Link>
           <button
             onClick={() => dispatch(toggleCart())}
-            className="text-pearl hover:bg-sapphire-light/20 p-2 rounded-full relative"
+            className="text-accent hover:bg-primary-light/20 p-2 rounded-full relative transition-colors"
           >
             <PiBasketThin size={20} />
             {getCartCount() > 0 && (
-              <span className="absolute -top-1 -right-1 bg-gold text-charcoal text-xs w-5 h-5 rounded-full flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 bg-accent text-primary text-xs w-5 h-5 rounded-full flex items-center justify-center font-medium">
                 {getCartCount()}
               </span>
             )}
