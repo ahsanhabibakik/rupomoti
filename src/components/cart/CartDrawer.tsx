@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { formatPrice } from '@/lib/utils'
 import Image from 'next/image'
-import { CheckoutModal } from '@/components/cart/CheckoutModal'
+import { CheckoutModal } from '@/components/checkout/CheckoutModal'
 import { useAppSelector, useAppDispatch } from '@/redux/hooks'
 import {
   selectCartItems,
@@ -41,6 +41,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   const [inputCouponCode, setInputCouponCode] = useState('')
   const [freeShippingThreshold] = useState(50000) // Free shipping above 50,000 BDT
   const [showAddedToCart, setShowAddedToCart] = useState({})
+  const [checkoutModalOpen, setCheckoutModalOpen] = useState(false)
 
   useEffect(() => {
     // Calculate shipping cost based on cart total
@@ -78,6 +79,13 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
     setTimeout(() => {
       setShowAddedToCart({ ...showAddedToCart, [itemId]: false })
     }, 2000)
+  }
+
+  const handleCheckout = () => {
+    if (items.length === 0) {
+      return
+    }
+    setCheckoutModalOpen(true)
   }
 
   return (
@@ -258,93 +266,99 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                   )}
                 </div>
 
-                {/* Footer */}
-                <div className="border-t p-4 space-y-4">
-                  {/* Coupon Code */}
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="Enter coupon code"
-                      value={inputCouponCode}
-                      onChange={(e) => setInputCouponCode(e.target.value)}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pearl-500"
-                    />
-                    <button
-                      onClick={applyCoupon}
-                      className="px-4 py-2 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700 transition-colors"
-                    >
-                      Apply
-                    </button>
-                  </div>
-
-                  {/* Free Shipping Progress */}
-                  {getAmountNeededForFreeShipping() > 0 && (
-                    <div className="bg-pearl-50 p-3 rounded-lg">
-                      <div className="flex items-center gap-2 text-pearl-800">
-                        <Truck className="w-5 h-5" />
-                        <p className="text-sm">
-                          Add ৳{getAmountNeededForFreeShipping().toLocaleString()} more
-                          for free shipping
-                        </p>
-                      </div>
+                {/* Footer - Only show when there are items */}
+                {items.length > 0 && (
+                  <div className="border-t p-4 space-y-4">
+                    {/* Coupon Code */}
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Enter coupon code"
+                        value={inputCouponCode}
+                        onChange={(e) => setInputCouponCode(e.target.value)}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pearl-500"
+                      />
+                      <button
+                        onClick={applyCoupon}
+                        className="px-4 py-2 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700 transition-colors"
+                      >
+                        Apply
+                      </button>
                     </div>
-                  )}
 
-                  {/* Order Summary */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Subtotal</span>
-                      <span className="font-medium">৳{cartTotal.toLocaleString()}</span>
-                    </div>
-                    {discount > 0 && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Discount</span>
-                        <span className="font-medium text-green-600">
-                          -৳{discount.toLocaleString()}
-                        </span>
+                    {/* Free Shipping Progress */}
+                    {getAmountNeededForFreeShipping() > 0 && (
+                      <div className="bg-pearl-50 p-3 rounded-lg">
+                        <div className="flex items-center gap-2 text-pearl-800">
+                          <Truck className="w-5 h-5" />
+                          <p className="text-sm">
+                            Add ৳{getAmountNeededForFreeShipping().toLocaleString()} more
+                            for free shipping
+                          </p>
+                        </div>
                       </div>
                     )}
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Shipping</span>
-                      <span className="font-medium">
-                        {shippingCost === 0 ? (
-                          <span className="text-green-600">Free</span>
-                        ) : (
-                          `৳${shippingCost.toLocaleString()}`
-                        )}
-                      </span>
+
+                    {/* Order Summary */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Subtotal</span>
+                        <span className="font-medium">৳{cartTotal.toLocaleString()}</span>
+                      </div>
+                      {discount > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Discount</span>
+                          <span className="font-medium text-green-600">
+                            -৳{discount.toLocaleString()}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Shipping</span>
+                        <span className="font-medium">
+                          {shippingCost === 0 ? (
+                            <span className="text-green-600">Free</span>
+                          ) : (
+                            `৳${shippingCost.toLocaleString()}`
+                          )}
+                        </span>
+                      </div>
+                      <div className="border-t pt-2 flex justify-between font-medium">
+                        <span>Total</span>
+                        <span>৳{getFinalTotal().toLocaleString()}</span>
+                      </div>
                     </div>
-                    <div className="border-t pt-2 flex justify-between font-medium">
-                      <span>Total</span>
-                      <span>৳{getFinalTotal().toLocaleString()}</span>
-                    </div>
+
+                    {/* Checkout Button */}
+                    <button
+                      onClick={handleCheckout}
+                      className="w-full py-3 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={items.length === 0}
+                    >
+                      <span>Proceed to Checkout</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+
+                    {/* Continue Shopping */}
+                    <button
+                      onClick={() => onOpenChange(false)}
+                      className="w-full py-3 border border-pearl-600 text-pearl-600 rounded-lg hover:bg-pearl-50 transition-colors"
+                    >
+                      Continue Shopping
+                    </button>
                   </div>
-
-                  {/* Checkout Button */}
-                  <button
-                    onClick={() => {
-                      router.push('/checkout')
-                      onOpenChange(false)
-                    }}
-                    className="w-full py-3 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700 transition-colors flex items-center justify-center gap-2"
-                  >
-                    <span>Proceed to Checkout</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-
-                  {/* Continue Shopping */}
-                  <button
-                    onClick={() => onOpenChange(false)}
-                    className="w-full py-3 border border-pearl-600 text-pearl-600 rounded-lg hover:bg-pearl-50 transition-colors"
-                  >
-                    Continue Shopping
-                  </button>
-                </div>
+                )}
               </div>
             </motion.div>
           </>
         )}
       </AnimatePresence>
+
+      {/* Checkout Modal */}
+      <CheckoutModal 
+        open={checkoutModalOpen} 
+        onOpenChange={setCheckoutModalOpen}
+      />
     </>
   )
 } 

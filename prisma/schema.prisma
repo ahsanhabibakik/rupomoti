@@ -20,6 +20,7 @@ model User {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   role           Role      @default(USER)
+  isAdmin        Boolean   @default(false)
 
   accounts       Account[]
   sessions       Session[]
@@ -27,6 +28,7 @@ model User {
   addresses      Address[]
   wishlistItems  WishlistItem[]
   reviews        Review[]
+  customers      Customer[]
 }
 
 model Account {
@@ -65,44 +67,109 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model Product {
+model Category {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  name        String
-  description String
-  price       Float
-  images      String[]
-  category    String
-  stock       Int      @default(0)
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  image       String?
+  parentId    String?  @db.ObjectId
+  parent      Category? @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children    Category[] @relation("CategoryHierarchy")
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  metaTitle   String?
+  metaDescription String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  orderItems  OrderItem[]
+  products    Product[]
+}
+
+model Product {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  slug        String   @unique
+  description String
+  shortDescription String?
+  price       Float
+  comparePrice Float?
+  costPrice   Float?
+  sku         String?  @unique
+  barcode     String?
+  images      String[]
+  categoryId  String   @db.ObjectId
+  category    Category @relation(fields: [categoryId], references: [id])
+  stock       Int      @default(0)
+  weight      Float?
+  dimensions  Json?    // {length, width, height}
+  tags        String[]
+  isActive    Boolean  @default(true)
+  isFeatured  Boolean  @default(false)
+  variants    Json?    // For product variants like size, color
+  seoTitle    String?
+  seoDescription String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orderItems    OrderItem[]
   wishlistItems WishlistItem[]
-  reviews     Review[]
+  reviews       Review[]
+}
+
+model Customer {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  email     String?
+  phone     String
+  address   String
+  city      String?
+  zone      String?  // For delivery zone
+  userId    String?  @db.ObjectId
+  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders    Order[]
+
+  @@unique([phone])
 }
 
 model Order {
-  id            String      @id @default(auto()) @map("_id") @db.ObjectId
-  userId        String      @db.ObjectId
-  status        OrderStatus @default(PENDING)
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  orderNumber   String         @unique
+  customerId    String         @db.ObjectId
+  customer      Customer       @relation(fields: [customerId], references: [id])
+  userId        String?        @db.ObjectId
+  user          User?          @relation(fields: [userId], references: [id])
+  status        OrderStatus    @default(PENDING)
+  paymentStatus PaymentStatus  @default(PENDING)
+  paymentMethod PaymentMethod  @default(CASH_ON_DELIVERY)
+  subtotal      Float
+  deliveryFee   Float
+  discount      Float          @default(0)
   total         Float
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  deliveryZone  DeliveryZone
+  deliveryAddress String
+  orderNote     String?
+  trackingId    String?
+  steadfastInfo Json?          // Steadfast tracking information
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
-  user          User        @relation(fields: [userId], references: [id])
   items         OrderItem[]
-  shippingAddress Address?  @relation(fields: [addressId], references: [id])
-  addressId     String?     @db.ObjectId
 }
 
 model OrderItem {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   orderId   String   @db.ObjectId
   productId String   @db.ObjectId
+  name      String   // Store product name at time of order
+  price     Float    // Store price at time of order
   quantity  Int
-  price     Float
+  image     String   // Store product image at time of order
 
-  order     Order    @relation(fields: [orderId], references: [id])
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product   Product  @relation(fields: [productId], references: [id])
 }
 
@@ -121,7 +188,6 @@ model Address {
   updatedAt   DateTime @updatedAt
 
   user        User     @relation(fields: [userId], references: [id])
-  orders      Order[]
 }
 
 model Review {
@@ -130,6 +196,7 @@ model Review {
   productId String   @db.ObjectId
   rating    Int
   comment   String?
+  isVerified Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -148,6 +215,22 @@ model WishlistItem {
   product   Product  @relation(fields: [productId], references: [id])
 
   @@unique([userId, productId])
+}
+
+model Coupon {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  code          String    @unique
+  type          CouponType
+  value         Float     // Percentage or fixed amount
+  minimumAmount Float?
+  maximumDiscount Float?
+  usageLimit    Int?
+  usedCount     Int       @default(0)
+  isActive      Boolean   @default(true)
+  validFrom     DateTime
+  validUntil    DateTime
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
 model Media {
@@ -185,7 +268,36 @@ enum Role {
 enum OrderStatus {
   PENDING
   PROCESSING
+  CONFIRMED
   SHIPPED
   DELIVERED
   CANCELLED
+  RETURNED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  PARTIAL
+}
+
+enum PaymentMethod {
+  CASH_ON_DELIVERY
+  BANK_TRANSFER
+  MOBILE_BANKING
+  CARD_PAYMENT
+}
+
+enum DeliveryZone {
+  INSIDE_DHAKA
+  OUTSIDE_DHAKA
+  PERIPHERAL_DHAKA
+}
+
+enum CouponType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  FREE_SHIPPING
 }
