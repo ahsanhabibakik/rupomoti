@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Menu, ChevronDown, X, Sparkles } from "lucide-react";
+import { Menu, ChevronDown, X, Sparkles, LogOut, Settings, User, Shield } from "lucide-react";
 import { PiBasketThin } from "react-icons/pi";
 import { VscAccount } from "react-icons/vsc";
 import { BsSearch } from "react-icons/bs";
 import Link from "next/link";
 import Image from "next/image";
+import { useSession, signOut } from "next-auth/react";
 import SearchModal from "@/components/search/SearchModal";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { toggleCart } from "@/redux/slices/cartSlice";
@@ -30,11 +31,13 @@ const categories = [
 ];
 
 export function Navbar() {
+  const { data: session, status } = useSession();
   const [placeholder, setPlaceholder] = useState(placeholderTexts[0]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [closeTimeout, setCloseTimeout] = useState<NodeJS.Timeout | null>(null);
   const [mounted, setMounted] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string>("/images/branding/logo.png");
@@ -61,6 +64,10 @@ export function Navbar() {
     if (!mounted || !cartItems) return 0;
     return cartItems.reduce((total, item) => total + (item.quantity || 0), 0);
   };
+
+  const isAdmin = session?.user?.role === 'ADMIN';
+  const isManager = session?.user?.role === 'MANAGER';
+  const isAdminOrManager = isAdmin || isManager;
 
   const handleOpenCategories = () => {
     if (closeTimeout) {
@@ -90,6 +97,8 @@ export function Navbar() {
     const handleClickOutside = (event: MouseEvent) => {
       const categoriesDropdown = document.getElementById("categories-dropdown");
       const categoriesButton = document.getElementById("categories-button");
+      const userDropdown = document.getElementById("user-dropdown");
+      const userButton = document.getElementById("user-button");
 
       if (isCategoriesOpen && categoriesDropdown && categoriesButton) {
         if (
@@ -99,13 +108,22 @@ export function Navbar() {
           setIsCategoriesOpen(false);
         }
       }
+
+      if (isUserMenuOpen && userDropdown && userButton) {
+        if (
+          !userDropdown.contains(event.target as Node) &&
+          !userButton.contains(event.target as Node)
+        ) {
+          setIsUserMenuOpen(false);
+        }
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isCategoriesOpen]);
+  }, [isCategoriesOpen, isUserMenuOpen]);
 
   return (
     <nav className="bg-gradient-to-r from-primary to-primary-dark text-accent shadow-premium sticky top-0 z-50">
@@ -179,12 +197,38 @@ export function Navbar() {
           </div>
 
           <div className="flex md:hidden items-center gap-2">
-            <Link
-              href="/signin"
-              className="text-accent hover:bg-primary-light/20 p-2 rounded-full transition-colors"
-            >
-              <VscAccount size={20} />
-            </Link>
+            {/* Mobile Account/User Menu */}
+            {session ? (
+              <div className="relative">
+                <button
+                  id="user-button-mobile"
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className="text-accent hover:bg-primary-light/20 p-2 rounded-full transition-colors flex items-center gap-1"
+                >
+                  {session.user?.image ? (
+                    <Image
+                      src={session.user.image}
+                      alt="User"
+                      width={20}
+                      height={20}
+                      className="rounded-full"
+                    />
+                  ) : (
+                    <VscAccount size={20} />
+                  )}
+                  {isAdminOrManager && (
+                    <Shield size={12} className="text-yellow-400" />
+                  )}
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/signin"
+                className="text-accent hover:bg-primary-light/20 p-2 rounded-full transition-colors"
+              >
+                <VscAccount size={20} />
+              </Link>
+            )}
             <button
               onClick={() => dispatch(toggleCart())}
               className="text-accent hover:bg-primary-light/20 p-2 rounded-full relative transition-colors"
@@ -298,12 +342,88 @@ export function Navbar() {
 
         {/* Desktop icons */}
         <div className="hidden md:flex items-center gap-2">
-          <Link
-            href="/signin"
-            className="text-accent hover:bg-primary-light/20 p-2 rounded-full transition-colors"
-          >
-            <VscAccount size={20} />
-          </Link>
+          {session ? (
+            <div className="relative">
+              <button
+                id="user-button"
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                className="text-accent hover:bg-primary-light/20 p-2 rounded-full transition-colors flex items-center gap-2"
+              >
+                {session.user?.image ? (
+                  <Image
+                    src={session.user.image}
+                    alt="User"
+                    width={20}
+                    height={20}
+                    className="rounded-full"
+                  />
+                ) : (
+                  <VscAccount size={20} />
+                )}
+                {isAdminOrManager && (
+                  <Shield size={14} className="text-yellow-400" />
+                )}
+                <ChevronDown size={14} />
+              </button>
+              
+              {isUserMenuOpen && (
+                <div
+                  id="user-dropdown"
+                  className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg py-2 z-50 border"
+                >
+                  <div className="px-4 py-2 border-b">
+                    <p className="text-sm font-medium text-gray-900">{session.user?.name}</p>
+                    <p className="text-xs text-gray-500">{session.user?.email}</p>
+                    {isAdminOrManager && (
+                      <span className="inline-flex items-center gap-1 mt-1 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">
+                        <Shield size={10} />
+                        {isAdmin ? 'Admin' : 'Manager'}
+                      </span>
+                    )}
+                  </div>
+                  
+                  <Link
+                    href="/account"
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => setIsUserMenuOpen(false)}
+                  >
+                    <User size={16} />
+                    My Account
+                  </Link>
+                  
+                  {isAdminOrManager && (
+                    <Link
+                      href="/admin"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <Shield size={16} />
+                      Admin Dashboard
+                    </Link>
+                  )}
+                  
+                  <button
+                    onClick={() => {
+                      signOut({ callbackUrl: '/' });
+                      setIsUserMenuOpen(false);
+                    }}
+                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                  >
+                    <LogOut size={16} />
+                    Sign Out
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link
+              href="/signin"
+              className="text-accent hover:bg-primary-light/20 p-2 rounded-full transition-colors"
+            >
+              <VscAccount size={20} />
+            </Link>
+          )}
+          
           <button
             onClick={() => dispatch(toggleCart())}
             className="text-accent hover:bg-primary-light/20 p-2 rounded-full relative transition-colors"
@@ -322,6 +442,18 @@ export function Navbar() {
       {isMenuOpen && (
         <div className="lg:hidden bg-pearl-light text-charcoal shadow-pearl px-4 pb-4 relative z-10 border-t border-pearl-dark">
           <ul className="space-y-2">
+            {session && isAdminOrManager && (
+              <li>
+                <Link
+                  href="/admin"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="flex items-center gap-2 py-2 text-charcoal hover:text-gold"
+                >
+                  <Shield size={16} />
+                  Admin Dashboard
+                </Link>
+              </li>
+            )}
             <li>
               <Link
                 href="/shop"
@@ -378,6 +510,20 @@ export function Navbar() {
                 Contact
               </Link>
             </li>
+            {session && (
+              <li className="border-t pt-2 mt-2">
+                <button
+                  onClick={() => {
+                    signOut({ callbackUrl: '/' });
+                    setIsMenuOpen(false);
+                  }}
+                  className="flex items-center gap-2 py-2 text-red-600 hover:text-red-700"
+                >
+                  <LogOut size={16} />
+                  Sign Out
+                </button>
+              </li>
+            )}
           </ul>
         </div>
       )}

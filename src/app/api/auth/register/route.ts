@@ -33,12 +33,13 @@ export async function POST(req: Request) {
       data: {
         name,
         email,
-        hashedPassword,
+        password: hashedPassword,
+        role: "USER", // Default role for new users
       },
     });
 
-    // Remove hashedPassword from response
-    const { hashedPassword: _, ...userWithoutPassword } = user;
+    // Remove password from response
+    const { password: _, ...userWithoutPassword } = user;
 
     return NextResponse.json(
       {
