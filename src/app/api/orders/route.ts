@@ -105,28 +105,139 @@ export async function DELETE(request: Request) {
 
 export async function POST(req: Request) {
   try {
-    const { items, user } = await req.json()
-    if (!items || !Array.isArray(items) || items.length === 0) {
-      return NextResponse.json({ error: 'No items in order' }, { status: 400 })
+    const {
+      orderNumber,
+      customer,
+      items,
+      subtotal,
+      deliveryFee,
+      total,
+      deliveryZone,
+      deliveryAddress,
+      orderNote,
+      paymentMethod,
+      userId
+    } = await req.json()
+
+    // Validate required fields
+    if (!orderNumber || !customer || !items || !Array.isArray(items) || items.length === 0) {
+      return NextResponse.json({ 
+        error: 'Missing required fields: orderNumber, customer, or items' 
+      }, { status: 400 })
     }
-    const order = await prisma.order.create({
-      data: {
-        userEmail: user?.email || null,
-        userMobile: user?.mobile || null,
-        items: {
-          create: items.map((item: any) => ({
-            productId: item.id,
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity,
-            image: item.image,
-          })),
+
+    if (!customer.name || !customer.phone || !customer.address) {
+      return NextResponse.json({ 
+        error: 'Customer name, phone, and address are required' 
+      }, { status: 400 })
+    }
+
+    if (!deliveryZone || !deliveryAddress) {
+      return NextResponse.json({ 
+        error: 'Delivery zone and address are required' 
+      }, { status: 400 })
+    }
+
+    try {
+      // Create or find customer
+      let customerRecord = await prisma.customer.findUnique({
+        where: { phone: customer.phone }
+      })
+
+      if (!customerRecord) {
+        customerRecord = await prisma.customer.create({
+          data: {
+            name: customer.name,
+            phone: customer.phone,
+            email: customer.email,
+            address: customer.address,
+            zone: deliveryZone,
+            userId: userId || undefined
+          }
+        })
+      } else {
+        // Update existing customer with latest info
+        customerRecord = await prisma.customer.update({
+          where: { id: customerRecord.id },
+          data: {
+            name: customer.name,
+            email: customer.email,
+            address: customer.address,
+            zone: deliveryZone,
+            userId: userId || customerRecord.userId
+          }
+        })
+      }
+
+      // Create the order
+      const order = await prisma.order.create({
+        data: {
+          orderNumber,
+          customerId: customerRecord.id,
+          userId: userId || undefined,
+          status: 'PENDING',
+          paymentStatus: 'PENDING',
+          paymentMethod: paymentMethod || 'CASH_ON_DELIVERY',
+          subtotal,
+          deliveryFee,
+          discount: 0,
+          total,
+          deliveryZone,
+          deliveryAddress,
+          orderNote: orderNote || undefined,
+          items: {
+            create: items.map((item: any) => ({
+              productId: item.productId,
+              name: item.name,
+              price: item.price,
+              quantity: item.quantity,
+              image: item.image,
+            })),
+          },
         },
-      },
-      include: { items: true },
-    })
-    return NextResponse.json(order)
-  } catch (error) {
-    return NextResponse.json({ error: 'Error creating order' }, { status: 500 })
+        include: { 
+          customer: true,
+          items: {
+            include: {
+              product: true
+            }
+          }
+        },
+      })
+
+      console.log('Order created successfully:', order.orderNumber)
+
+      return NextResponse.json({
+        success: true,
+        order: {
+          id: order.id,
+          orderNumber: order.orderNumber,
+          status: order.status,
+          total: order.total,
+          customer: {
+            name: order.customer.name,
+            phone: order.customer.phone,
+            email: order.customer.email
+          },
+          createdAt: order.createdAt
+        }
+      })
+    } catch (dbError: any) {
+      console.error('Database error:', dbError)
+      
+      // Handle specific Prisma errors
+      if (dbError.code === 'P2002') {
+        return NextResponse.json({ 
+          error: 'Order number already exists. Please try again.' 
+        }, { status: 400 })
+      }
+      
+      throw dbError
+    }
+  } catch (error: any) {
+    console.error('Error creating order:', error)
+    return NextResponse.json({ 
+      error: error.message || 'Failed to create order' 
+    }, { status: 500 })
   }
 } 
