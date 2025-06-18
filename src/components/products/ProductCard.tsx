@@ -85,7 +85,7 @@ export function ProductCard({
               'object-cover transition-transform duration-300',
               isHovered ? 'scale-110' : 'scale-100'
             )}
-            onLoadingComplete={() => setIsImageLoading(false)}
+            onLoad={() => setIsImageLoading(false)}
           />
           {isNew && (
             <Badge className="absolute left-2 top-2 bg-primary text-accent">New</Badge>

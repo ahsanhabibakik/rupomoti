@@ -150,6 +150,33 @@ model WishlistItem {
   @@unique([userId, productId])
 }
 
+model Media {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  url         String
+  alt         String?
+  type        String   // 'image', 'video', 'document'
+  section     String   // 'hero-slider', 'logo', 'banner', 'gallery', 'product'
+  position    Int      @default(0) // For ordering within a section
+  isActive    Boolean  @default(true)
+  cloudinaryId String? // Cloudinary public_id for deletion
+  metadata    Json?    // Additional data like dimensions, file size, etc.
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model MediaSection {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String   @unique // 'hero-slider', 'logo', 'banner', etc.
+  title       String   // Display name
+  description String?
+  maxItems    Int      @default(5) // Maximum number of items allowed
+  isActive    Boolean  @default(true)
+  settings    Json?    // Section-specific settings
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 enum Role {
   USER
   ADMIN
