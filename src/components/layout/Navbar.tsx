@@ -37,12 +37,24 @@ export function Navbar() {
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [closeTimeout, setCloseTimeout] = useState<NodeJS.Timeout | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string>("/images/branding/logo.png");
 
   const dispatch = useAppDispatch();
   const cartItems = useAppSelector((state) => state.cart.items);
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/media?section=logo")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0 && data[0].url) {
+          setLogoUrl(data[0].url);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const getCartCount = () => {
@@ -153,7 +165,7 @@ export function Navbar() {
             <Link href="/" className="flex items-center">
               <div className="flex items-center gap-2">
                 <Image
-                  src="/images/branding/logo.png"
+                  src={logoUrl}
                   alt="Rupomoti Logo"
                   width={32}
                   height={32}
@@ -192,7 +204,7 @@ export function Navbar() {
           <Link href="/" className="flex items-center">
             <div className="flex items-center gap-2">
               <Image
-                src="/images/branding/logo.png"
+                src={logoUrl}
                 alt="Rupomoti Logo"
                 width={40}
                 height={40}

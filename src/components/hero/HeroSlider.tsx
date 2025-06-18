@@ -5,7 +5,7 @@ import Image from "next/image";
 import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 
-const slides = [
+const fallbackSlides = [
   {
     id: 1,
     image: "/images/hero/slider1.jpeg",
@@ -33,6 +33,7 @@ const slides = [
 ];
 
 export function HeroSlider() {
+  const [slides, setSlides] = useState(fallbackSlides);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
@@ -41,12 +42,33 @@ export function HeroSlider() {
   const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
+    // Fetch hero-slider images from media API
+    fetch("/api/media?section=hero-slider")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setSlides(
+            data.map((item, idx) => ({
+              id: item.id || idx,
+              image: item.url,
+              title: item.name || `Slide ${idx + 1}`,
+              subtitle: item.alt || "",
+              link: item.metadata?.link || "#",
+              cta: item.metadata?.cta || "Shop Now",
+            }))
+          );
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
     if (!isAutoPlaying) return;
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, [isAutoPlaying]);
+  }, [isAutoPlaying, slides.length]);
 
   const prevSlide = () => {
     setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
