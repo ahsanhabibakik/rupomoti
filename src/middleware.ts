@@ -5,12 +5,12 @@ import type { NextRequest } from 'next/server'
 export default withAuth({
   callbacks: {
     authorized: ({ token }) => {
-      // Allow access if user has admin role
-      return token?.role === 'ADMIN'
+      // Allow access if user has admin or manager role
+      return token?.role === 'ADMIN' || token?.role === 'MANAGER'
     }
   },
   pages: {
-    signIn: '/admin/login'
+    signIn: '/signin'
   }
 })
 

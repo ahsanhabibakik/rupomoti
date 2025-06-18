@@ -43,6 +43,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           role: user.role,
+          image: user.image,
         };
       },
     }),
@@ -52,8 +53,8 @@ export const authOptions: NextAuthOptions = {
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
-    signIn: "/admin/login",
-    error: "/admin/login",
+    signIn: "/signin",
+    error: "/signin",
   },
   callbacks: {
     async jwt({ token, user, account }) {
@@ -78,6 +79,26 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string;
       }
       return session;
+    },
+    async signIn({ user, account, profile }) {
+      if (account?.provider === "google") {
+        // Create user if doesn't exist
+        const existingUser = await prisma.user.findUnique({
+          where: { email: user.email! },
+        });
+        
+        if (!existingUser) {
+          await prisma.user.create({
+            data: {
+              email: user.email!,
+              name: user.name,
+              image: user.image,
+              role: "USER", // Default role for Google sign-ins
+            },
+          });
+        }
+      }
+      return true;
     },
   },
   debug: process.env.NODE_ENV === 'development',

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { signIn, useSession } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { FcGoogle } from "react-icons/fc";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -10,12 +10,28 @@ import Image from "next/image";
 
 export default function SignIn() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { data: session, status } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (status === "authenticated" && session?.user) {
+      const role = session.user.role;
+      if (role === "ADMIN" || role === "MANAGER") {
+        router.push(callbackUrl.includes("/admin") ? callbackUrl : "/admin");
+      } else {
+        router.push(callbackUrl === "/" ? "/account" : callbackUrl);
+      }
+    }
+  }, [session, status, router, callbackUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,9 +47,9 @@ export default function SignIn() {
 
       if (result?.error) {
         setError("Invalid email or password");
-      } else {
-        router.push("/account");
-        router.refresh();
+      } else if (result?.ok) {
+        // Let the useEffect handle redirect based on user role
+        window.location.reload();
       }
     } catch (error) {
       setError("Something went wrong. Please try again.");
@@ -45,7 +61,9 @@ export default function SignIn() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      await signIn("google", { callbackUrl: "/account" });
+      await signIn("google", { 
+        callbackUrl: callbackUrl === "/" ? "/account" : callbackUrl 
+      });
     } catch (error) {
       setError("Failed to sign in with Google");
     } finally {
@@ -53,13 +71,25 @@ export default function SignIn() {
     }
   };
 
+  // Show loading if already authenticated
+  if (status === "authenticated") {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pearl-50 to-pearl-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pearl-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Redirecting...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pearl-50 to-pearl-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md mx-auto">
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
             <Image
-              src="/logo.png"
+              src="/images/branding/logo.png"
               alt="Rupomoti Logo"
               width={120}
               height={120}
@@ -105,6 +135,7 @@ export default function SignIn() {
                     setFormData({ ...formData, email: e.target.value })
                   }
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-pearl-500 focus:border-pearl-500"
+                  placeholder="admin@rupomoti.com"
                 />
               </div>
             </div>
@@ -202,6 +233,15 @@ export default function SignIn() {
               >
                 Sign up
               </Link>
+            </p>
+          </div>
+
+          {/* Demo Credentials */}
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+            <h3 className="text-sm font-medium text-blue-800 mb-2">Demo Credentials:</h3>
+            <p className="text-xs text-blue-700">
+              Email: admin@rupomoti.com<br />
+              Password: admin123
             </p>
           </div>
         </motion.div>

@@ -85,7 +85,7 @@ export default function SignUp() {
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
             <Image
-              src="/logo.png"
+              src="/images/branding/logo.png"
               alt="Rupomoti Logo"
               width={120}
               height={120}

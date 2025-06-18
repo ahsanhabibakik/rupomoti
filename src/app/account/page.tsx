@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from 'react'
-import { useSession } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
@@ -12,8 +12,10 @@ import {
   LogOut,
   CreditCard,
   MapPin,
+  Shield,
 } from 'lucide-react'
 import Image from 'next/image'
+import Link from 'next/link'
 
 const tabs = [
   { id: 'profile', label: 'Profile', icon: User },
@@ -42,6 +44,10 @@ export default function AccountPage() {
     return null
   }
 
+  const isAdmin = session?.user?.role === 'ADMIN'
+  const isManager = session?.user?.role === 'MANAGER'
+  const isAdminOrManager = isAdmin || isManager
+
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -63,10 +69,26 @@ export default function AccountPage() {
                     {session?.user?.name}
                   </h2>
                   <p className="text-sm text-gray-500">{session?.user?.email}</p>
+                  {isAdminOrManager && (
+                    <span className="inline-flex items-center gap-1 mt-1 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">
+                      <Shield size={10} />
+                      {isAdmin ? 'Admin' : 'Manager'}
+                    </span>
+                  )}
                 </div>
               </div>
 
               <nav className="space-y-1">
+                {isAdminOrManager && (
+                  <Link
+                    href="/admin"
+                    className="w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                  >
+                    <Shield className="w-5 h-5" />
+                    <span>Admin Dashboard</span>
+                  </Link>
+                )}
+
                 {tabs.map((tab) => {
                   const Icon = tab.icon
                   return (
@@ -141,6 +163,21 @@ export default function AccountPage() {
                           className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm bg-gray-50 text-gray-500"
                         />
                       </div>
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="role"
+                        className="block text-sm font-medium text-gray-700"
+                      >
+                        Account Type
+                      </label>
+                      <input
+                        type="text"
+                        id="role"
+                        value={session?.user?.role || 'USER'}
+                        disabled
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm bg-gray-50 text-gray-500"
+                      />
                     </div>
                     <div>
                       <label
