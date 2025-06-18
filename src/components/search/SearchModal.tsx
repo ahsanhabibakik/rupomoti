@@ -21,7 +21,7 @@ interface Product {
   discount: number;
 }
 
-export function SearchModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+export default function SearchModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(productsData.products);
   const [activeCategory, setActiveCategory] = useState("all");
