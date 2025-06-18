@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Upload, Edit, Trash2, Image as ImageIcon } from 'lucide-react'
+import { Upload, Edit, Trash2, Image as ImageIcon, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -59,6 +59,8 @@ const SECTIONS = [
 
 export function MediaManager() {
   const [media, setMedia] = useState<Media[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isUploading, setIsUploading] = useState(false)
   const [selectedSection, setSelectedSection] = useState('hero-slider')
   const [isUploadOpen, setIsUploadOpen] = useState(false)
   const [uploadData, setUploadData] = useState({
@@ -74,14 +76,19 @@ export function MediaManager() {
 
   const fetchMedia = async () => {
     try {
+      setIsLoading(true)
       const response = await fetch('/api/media')
       if (response.ok) {
         const data = await response.json()
         setMedia(data)
+      } else {
+        toast.error('Failed to load media')
       }
     } catch (error) {
       console.error('Error fetching media:', error)
       toast.error('Failed to load media')
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -99,6 +106,7 @@ export function MediaManager() {
     }
 
     try {
+      setIsUploading(true)
       const formData = new FormData()
       formData.append('file', uploadData.file)
       formData.append('name', uploadData.name)
@@ -123,6 +131,8 @@ export function MediaManager() {
     } catch (error) {
       console.error('Error uploading:', error)
       toast.error('Upload failed')
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -149,12 +159,23 @@ export function MediaManager() {
 
   const filteredMedia = media.filter(m => m.section === selectedSection).sort((a, b) => a.position - b.position)
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="flex items-center gap-2">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span>Loading media...</span>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Media Manager</h1>
-          <p className="text-neutral-light">Manage your website's images and media content</p>
+          <p className="text-neutral-light">Manage your website&apos;s images and media content</p>
         </div>
         <Button onClick={() => setIsUploadOpen(true)} className="w-full sm:w-auto">
           <Upload className="w-4 h-4 mr-2" />
@@ -299,11 +320,20 @@ export function MediaManager() {
             </div>
 
             <div className="flex gap-2">
-              <Button onClick={handleUpload} className="flex-1">
-                <Upload className="w-4 h-4 mr-2" />
-                Upload
+              <Button onClick={handleUpload} disabled={isUploading} className="flex-1">
+                {isUploading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload
+                  </>
+                )}
               </Button>
-              <Button variant="outline" onClick={() => setIsUploadOpen(false)}>
+              <Button variant="outline" onClick={() => setIsUploadOpen(false)} disabled={isUploading}>
                 Cancel
               </Button>
             </div>
@@ -312,4 +342,4 @@ export function MediaManager() {
       </Dialog>
     </div>
   )
-}
+} 
