@@ -6,6 +6,7 @@ import { PiBasketThin } from "react-icons/pi";
 import { VscAccount } from "react-icons/vsc";
 import { BsSearch } from "react-icons/bs";
 import Link from "next/link";
+import Image from "next/image";
 import SearchModal from "@/components/search/SearchModal";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { toggleCart } from "@/redux/slices/cartSlice";
@@ -151,7 +152,13 @@ export function Navbar() {
           <div className="block md:hidden absolute left-1/2 transform -translate-x-1/2">
             <Link href="/" className="flex items-center">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-6 h-6 text-accent" />
+                <Image
+                  src="/images/branding/logo.png"
+                  alt="Rupomoti Logo"
+                  width={32}
+                  height={32}
+                  className="w-8 h-8"
+                />
                 <span className="text-xl font-bold bg-gradient-to-r from-accent to-base bg-clip-text text-transparent">
                   Rupomoti
                 </span>
@@ -184,7 +191,13 @@ export function Navbar() {
         <div className="hidden md:flex items-center">
           <Link href="/" className="flex items-center">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-8 h-8 text-accent" />
+              <Image
+                src="/images/branding/logo.png"
+                alt="Rupomoti Logo"
+                width={40}
+                height={40}
+                className="w-10 h-10"
+              />
               <span className="text-2xl font-bold bg-gradient-to-r from-accent to-base bg-clip-text text-transparent">
                 Rupomoti
               </span>
