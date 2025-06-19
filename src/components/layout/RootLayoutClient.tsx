@@ -1,7 +1,7 @@
 'use client'
 
 import { Navbar } from "@/components/layout/Navbar"
-import { Footer } from "@/components/layout/Footer"
+import Footer from "@/components/layout/Footer"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 
 export function RootLayoutClient({

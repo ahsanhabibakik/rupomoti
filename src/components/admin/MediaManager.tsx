@@ -154,7 +154,7 @@ export function MediaManager() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Media Manager</h1>
-          <p className="text-neutral-light">Manage your website's images and media content</p>
+          <p className="text-neutral-light">Manage your website&apos;s images and media content</p>
         </div>
         <Button onClick={() => setIsUploadOpen(true)} className="w-full sm:w-auto">
           <Upload className="w-4 h-4 mr-2" />

@@ -19,6 +19,42 @@ const config = {
     },
     extend: {
       colors: {
+        // --- Pearl Essence Theme Colors ---
+        // Pearl White (Base) - Primary page background, product cards, hero sections
+        pearlWhite: {
+          DEFAULT: "#FDF9F4", // Pearl White (Base)
+          // DEFAULT: "#FFFDFA", // Alternative: slightly lighter
+        },
+        // Champagne Sheen (Light Accent) - Soft panels, info boxes, subtle gradients
+        champagneSheen: {
+          DEFAULT: "#E8DCC8", // Champagne Sheen (Light Accent)
+          // DEFAULT: "#F5E6D3", // Alternative: more pinkish
+        },
+        // Warm Oyster Gold - Headings, borders, icon strokes, button outlines
+        warmOysterGold: {
+          DEFAULT: "#C8B38A", // Warm Oyster Gold
+          // DEFAULT: "#E8CBAF", // Alternative: more gold
+        },
+        // Mink Taupe (Text) - Primary body text
+        minkTaupe: {
+          DEFAULT: "#8C7760", // Mink Taupe (Text)
+          // DEFAULT: "#6C757D", // Alternative: more gray
+        },
+        // Cocoa Brown (Depth) - CTA text, nav links, hover states
+        cocoaBrown: {
+          DEFAULT: "#4A2E21", // Cocoa Brown (Depth)
+          // DEFAULT: "#2D1B13", // Alternative: deeper brown
+        },
+        // Rose-Gold Accent - Sale badges, highlights
+        roseGoldAccent: {
+          DEFAULT: "#D7AFA4", // Rose-Gold Accent
+          // DEFAULT: "#F7CAC9", // Alternative: more pink
+        },
+        // Soft Mist Blue (Cool Lift) - Light background sections
+        softMistBlue: {
+          DEFAULT: "#D0E0E7", // Soft Mist Blue (Cool Lift)
+          // DEFAULT: "#E6F0F3", // Alternative: lighter blue
+        },
         // Premium Jewelry Color Palette
         primary: {
           DEFAULT: "#0D1E78", // Deep Sapphire Blue

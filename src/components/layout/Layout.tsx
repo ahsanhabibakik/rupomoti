@@ -2,7 +2,7 @@
 
 import { ReactNode } from 'react'
 import { Navbar } from './Navbar'
-import { Footer } from './Footer'
+import Footer from './Footer'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 interface LayoutProps {

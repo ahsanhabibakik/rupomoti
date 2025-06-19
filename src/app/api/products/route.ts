@@ -3,47 +3,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { prisma } from '@/lib/prisma'
 
-export async function GET(req) {
-  try {
-    const { searchParams } = new URL(req.url)
-    const search = searchParams.get('search') || ''
-    const categories = searchParams.getAll('categories')
-    const minPrice = parseFloat(searchParams.get('minPrice') || '0')
-    const maxPrice = parseFloat(searchParams.get('maxPrice') || '1000000')
-    const sort = searchParams.get('sort') || 'newest'
-
-    const where = {
-      AND: [
-        search ? {
-          OR: [
-            { name: { contains: search, mode: 'insensitive' } },
-            { description: { contains: search, mode: 'insensitive' } },
-          ],
-        } : {},
-        categories.length > 0 ? { category: { slug: { in: categories } } } : {},
-        { price: { gte: minPrice, lte: maxPrice } },
-      ],
-    }
-
-    let orderBy = { createdAt: 'desc' }
-    if (sort === 'price-low') orderBy = { price: 'asc' }
-    if (sort === 'price-high') orderBy = { price: 'desc' }
-    if (sort === 'popular') orderBy = { popularity: 'desc' }
-
-    const products = await prisma.product.findMany({
-      where,
-      include: { category: true },
-      orderBy,
-    })
-
-    return NextResponse.json(products)
-  } catch (error) {
-    console.error('Error fetching products:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch products' },
-      { status: 500 }
-    )
-  }
+export async function GET() {
+  return NextResponse.json({ message: "Products API placeholder" });
 }
 
 export async function POST(request: Request) {
