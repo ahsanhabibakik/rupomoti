@@ -17,9 +17,6 @@ importers:
       '@hookform/resolvers':
         specifier: ^3.3.4
         version: 3.10.0(react-hook-form@7.58.1(react@18.3.1))
-      '@prisma/client':
-        specifier: ^6.10.0
-        version: 6.10.0(prisma@6.10.0(typescript@5.8.3))(typescript@5.8.3)
       '@radix-ui/react-avatar':
         specifier: ^1.0.4
         version: 1.1.10(@types/react-dom@18.3.7(@types/react@18.3.23))(@types/react@18.3.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -71,9 +68,6 @@ importers:
       axios:
         specifier: ^1.10.0
         version: 1.10.0
-      bcryptjs:
-        specifier: ^2.4.3
-        version: 2.4.3
       class-variance-authority:
         specifier: ^0.7.0
         version: 0.7.1
@@ -141,8 +135,11 @@ importers:
         specifier: ^3.25.67
         version: 3.25.67
     devDependencies:
+      '@prisma/client':
+        specifier: ^6.10.0
+        version: 6.10.0(prisma@6.10.0(typescript@5.8.3))(typescript@5.8.3)
       '@types/bcryptjs':
-        specifier: ^2.4.0
+        specifier: ^2.4.6
         version: 2.4.6
       '@types/node':
         specifier: ^20
@@ -156,6 +153,9 @@ importers:
       autoprefixer:
         specifier: ^10.0.1
         version: 10.4.21(postcss@8.5.5)
+      bcryptjs:
+        specifier: ^2.4.3
+        version: 2.4.3
       eslint:
         specifier: ^8
         version: 8.57.1

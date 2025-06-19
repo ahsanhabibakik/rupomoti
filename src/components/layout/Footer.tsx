@@ -76,69 +76,69 @@ export default function Footer() {
   }
 
   return (
-    <footer className="bg-pearl-dark text-white relative overflow-hidden">
+    <footer className="bg-deep-mocha text-pearl-white relative overflow-hidden">
       {/* Decorative pearl/sparkle pattern */}
       <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none select-none">
         {/* Top row of sparkles */}
         <div className="absolute top-4 left-4 transform rotate-12">
-          <Sparkles size={24} />
+          <Sparkles size={24} className="text-champagne-gold" />
         </div>
         <div className="absolute top-4 left-1/4 transform rotate-45">
-          <Sparkles size={20} />
+          <Sparkles size={20} className="text-champagne-gold" />
         </div>
         <div className="absolute top-4 left-1/2 transform rotate-90">
-          <Sparkles size={22} />
+          <Sparkles size={22} className="text-champagne-gold" />
         </div>
         <div className="absolute top-4 left-3/4 transform rotate-135">
-          <Sparkles size={18} />
+          <Sparkles size={18} className="text-champagne-gold" />
         </div>
         <div className="absolute top-4 right-4 transform -rotate-12">
-          <Sparkles size={24} />
+          <Sparkles size={24} className="text-champagne-gold" />
         </div>
         {/* Middle row of sparkles */}
         <div className="absolute top-1/2 left-4 transform -rotate-45">
-          <Sparkles size={20} />
+          <Sparkles size={20} className="text-champagne-gold" />
         </div>
         <div className="absolute top-1/2 left-1/4 transform -rotate-90">
-          <Sparkles size={22} />
+          <Sparkles size={22} className="text-champagne-gold" />
         </div>
         <div className="absolute top-1/2 left-1/2 transform -rotate-135">
-          <Sparkles size={18} />
+          <Sparkles size={18} className="text-champagne-gold" />
         </div>
         <div className="absolute top-1/2 left-3/4 transform -rotate-180">
-          <Sparkles size={20} />
+          <Sparkles size={20} className="text-champagne-gold" />
         </div>
         <div className="absolute top-1/2 right-4 transform rotate-45">
-          <Sparkles size={24} />
+          <Sparkles size={24} className="text-champagne-gold" />
         </div>
         {/* Bottom row of sparkles */}
         <div className="absolute bottom-4 left-4 transform rotate-45">
-          <Sparkles size={20} />
+          <Sparkles size={20} className="text-champagne-gold" />
         </div>
         <div className="absolute bottom-4 left-1/4 transform rotate-90">
-          <Sparkles size={22} />
+          <Sparkles size={22} className="text-champagne-gold" />
         </div>
         <div className="absolute bottom-4 left-1/2 transform rotate-135">
-          <Sparkles size={18} />
+          <Sparkles size={18} className="text-champagne-gold" />
         </div>
         <div className="absolute bottom-4 left-3/4 transform rotate-180">
-          <Sparkles size={20} />
+          <Sparkles size={20} className="text-champagne-gold" />
         </div>
         <div className="absolute bottom-4 right-4 transform -rotate-45">
-          <Sparkles size={24} />
+          <Sparkles size={24} className="text-champagne-gold" />
         </div>
         {/* Additional scattered sparkles */}
         <div className="absolute top-1/3 left-1/3 transform rotate-30">
-          <Sparkles size={26} />
+          <Sparkles size={26} className="text-champagne-gold" />
         </div>
         <div className="absolute top-2/3 right-1/3 transform -rotate-30">
-          <Sparkles size={26} />
+          <Sparkles size={26} className="text-champagne-gold" />
         </div>
         <div className="absolute top-1/4 right-1/4 transform rotate-60">
-          <Sparkles size={22} />
+          <Sparkles size={22} className="text-champagne-gold" />
         </div>
         <div className="absolute bottom-1/4 left-1/4 transform -rotate-60">
-          <Sparkles size={22} />
+          <Sparkles size={22} className="text-champagne-gold" />
         </div>
       </div>
 
@@ -155,7 +155,7 @@ export default function Footer() {
                 className="w-16 h-16"
               />
             </Link>
-            <p className="text-pearl-light max-w-md">
+            <p className="text-pearl-white max-w-md">
               Crafting timeless pieces of pearl elegance. Your trusted destination for fine pearl jewelry that tells your unique story.
             </p>
             <div className="flex space-x-4">
@@ -164,7 +164,7 @@ export default function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram"
-                className="text-pearl-light hover:text-white transition-colors cursor-pointer focus:outline-none"
+                className="text-pearl-white hover:text-champagne-gold transition-colors cursor-pointer focus:outline-none"
               >
                 <Instagram size={20} />
               </a>
@@ -173,7 +173,7 @@ export default function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Facebook"
-                className="text-pearl-light hover:text-white transition-colors cursor-pointer focus:outline-none"
+                className="text-pearl-white hover:text-champagne-gold transition-colors cursor-pointer focus:outline-none"
               >
                 <Facebook size={20} />
               </a>
@@ -182,7 +182,7 @@ export default function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Twitter"
-                className="text-pearl-light hover:text-white transition-colors cursor-pointer focus:outline-none"
+                className="text-pearl-white hover:text-champagne-gold transition-colors cursor-pointer focus:outline-none"
               >
                 <Twitter size={20} />
               </a>
@@ -191,41 +191,41 @@ export default function Footer() {
 
           {/* Quick Links */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-pearl">Explore</h3>
+            <h3 className="text-lg font-semibold text-pearl-white">Explore</h3>
             <ul className="space-y-2">
               <li>
                 <Link
                   href="/shop"
-                  className="text-pearl-light hover:text-white transition-colors flex items-center gap-2"
+                  className="text-pearl-white hover:text-champagne-gold transition-colors flex items-center gap-2"
                 >
-                  <Sparkles size={16} />
+                  <Sparkles size={16} className="text-champagne-gold" />
                   Shop Jewelry
                 </Link>
               </li>
               <li>
                 <Link
                   href="/care-maintenance"
-                  className="text-pearl-light hover:text-white transition-colors flex items-center gap-2"
+                  className="text-pearl-white hover:text-champagne-gold transition-colors flex items-center gap-2"
                 >
-                  <Sparkles size={16} />
+                  <Sparkles size={16} className="text-champagne-gold" />
                   Care & Maintenance
                 </Link>
               </li>
               <li>
                 <Link
                   href="/blog"
-                  className="text-pearl-light hover:text-white transition-colors flex items-center gap-2"
+                  className="text-pearl-white hover:text-champagne-gold transition-colors flex items-center gap-2"
                 >
-                  <Sparkles size={16} />
+                  <Sparkles size={16} className="text-champagne-gold" />
                   Blog
                 </Link>
               </li>
               <li>
                 <Link
                   href="/about"
-                  className="text-pearl-light hover:text-white transition-colors flex items-center gap-2"
+                  className="text-pearl-white hover:text-champagne-gold transition-colors flex items-center gap-2"
                 >
-                  <Sparkles size={16} />
+                  <Sparkles size={16} className="text-champagne-gold" />
                   About Us
                 </Link>
               </li>
@@ -234,21 +234,21 @@ export default function Footer() {
 
           {/* Contact Info */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-pearl">Get in Touch</h3>
+            <h3 className="text-lg font-semibold text-pearl-white">Get in Touch</h3>
             <ul className="space-y-3">
-              <li className="flex items-center gap-2 text-pearl-light">
-                <MapPin size={18} />
+              <li className="flex items-center gap-2 text-pearl-white">
+                <MapPin size={18} className="text-champagne-gold" />
                 <span>House 1217, Road 10, Avenue 10, Mirpur DOHS, Dhaka</span>
               </li>
-              <li className="flex items-center gap-2 text-pearl-light">
+              <li className="flex items-center gap-2 text-pearl-white">
                 <Phone size={18} />
-                <span>01518926700</span>
+                <span>01765703237</span>
               </li>
-              <li className="flex items-center gap-2 text-pearl-light">
+              <li className="flex items-center gap-2 text-pearl-white">
                 <Phone size={18} />
-                <span>01773995858</span>
+                <span>01516567541</span>
               </li>
-              <li className="flex items-center gap-2 text-pearl-light">
+              <li className="flex items-center gap-2 text-pearl-white">
                 <Mail size={18} />
                 <span>support@rupomoti.com</span>
               </li>
@@ -257,15 +257,15 @@ export default function Footer() {
 
           {/* Newsletter */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-pearl">Stay Updated</h3>
-            <p className="text-pearl-light">
+            <h3 className="text-lg font-semibold text-pearl-white">Stay Updated</h3>
+            <p className="text-pearl-white">
               Subscribe to our newsletter for pearl care tips and exclusive offers.
             </p>
             <form className="flex flex-col gap-2" onSubmit={handleSubmit}>
               <input
                 type="email"
                 placeholder="Your email address"
-                className="px-4 py-2 rounded bg-pearl border border-pearl-light text-white placeholder-pearl/70 focus:outline-none focus:ring-2 focus:ring-gold"
+                className="px-4 py-2 rounded bg-pearl border border-pearl-white text-pearl-white placeholder-pearl/70 focus:outline-none focus:ring-2 focus:ring-gold"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
@@ -292,25 +292,25 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="border-t border-pearl mt-8 pt-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-pearl-light text-sm">
+            <p className="text-pearl-white text-sm">
               © {new Date().getFullYear()} Rupomoti. All rights reserved.
             </p>
             <div className="flex gap-6 text-sm">
               <Link
                 href="/privacy"
-                className="text-pearl-light hover:text-white transition-colors"
+                className="text-pearl-white hover:text-white transition-colors"
               >
                 Privacy Policy
               </Link>
               <Link
                 href="/terms"
-                className="text-pearl-light hover:text-white transition-colors"
+                className="text-pearl-white hover:text-white transition-colors"
               >
                 Terms of Service
               </Link>
               <Link
                 href="/shipping-returns"
-                className="text-pearl-light hover:text-white transition-colors"
+                className="text-pearl-white hover:text-white transition-colors"
               >
                 Shipping & Returns
               </Link>

@@ -3,12 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, ShoppingCart, Trash2, Plus, Minus, ShoppingBag, Tag, Truck, Info, Heart, Clock, ArrowRight } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { formatPrice } from '@/lib/utils'
-import Image from 'next/image'
-import { CheckoutModal } from '@/components/checkout/CheckoutModal'
+import { X, ShoppingBag, Trash2, Plus, Minus, Tag, Truck, Clock, ArrowRight } from 'lucide-react'
 import { useAppSelector, useAppDispatch } from '@/redux/hooks'
 import {
   selectCartItems,
@@ -23,6 +18,12 @@ import {
   removeFromSaved,
 } from '@/redux/slices/cartSlice'
 import Link from 'next/link'
+import Image from 'next/image'
+import dynamic from 'next/dynamic'
+
+const CheckoutModal = dynamic(() => import('./CheckoutModal').then(mod => mod.CheckoutModal), {
+  ssr: false,
+})
 
 interface CartDrawerProps {
   open: boolean
@@ -41,7 +42,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   const [inputCouponCode, setInputCouponCode] = useState('')
   const [freeShippingThreshold] = useState(50000) // Free shipping above 50,000 BDT
   const [showAddedToCart, setShowAddedToCart] = useState({})
-  const [checkoutModalOpen, setCheckoutModalOpen] = useState(false)
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false)
 
   useEffect(() => {
     // Calculate shipping cost based on cart total
@@ -53,7 +54,6 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   }, [cartTotal, freeShippingThreshold, dispatch])
 
   const applyCoupon = () => {
-    // Simple coupon logic - you can enhance this
     if (inputCouponCode.toLowerCase() === 'welcome10') {
       dispatch(
         applyCouponAction({
@@ -73,7 +73,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
     return amountNeeded > 0 ? amountNeeded : 0
   }
 
-  const handleSaveForLater = (itemId) => {
+  const handleSaveForLater = (itemId: string) => {
     dispatch(saveForLater(itemId))
     setShowAddedToCart({ ...showAddedToCart, [itemId]: true })
     setTimeout(() => {
@@ -81,11 +81,11 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
     }, 2000)
   }
 
-  const handleCheckout = () => {
-    if (items.length === 0) {
-      return
-    }
-    setCheckoutModalOpen(true)
+  const handleCheckoutClick = () => {
+    onOpenChange(false) // Close cart drawer first
+    setTimeout(() => {
+      setShowCheckoutModal(true) // Then show checkout modal
+    }, 300) // Wait for cart drawer animation to complete
   }
 
   return (
@@ -98,7 +98,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[998] transition-opacity duration-300"
+              className="fixed inset-0 bg-cocoa-brown/30 backdrop-blur-sm z-[998] transition-opacity duration-300"
               onClick={() => onOpenChange(false)}
             />
 
@@ -108,46 +108,45 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 20 }}
-              className="fixed right-0 top-0 h-full w-full sm:w-96 bg-white shadow-xl z-[999]"
+              className="fixed right-0 top-0 h-full w-full sm:w-96 bg-pearl-white shadow-xl z-[999]"
+              style={{ backgroundColor: '#fff', opacity: 1 }}
             >
               <div className="h-full flex flex-col">
                 {/* Header with gradient background */}
-                <div className="p-4 bg-gradient-to-r from-pearl-500 to-pearl-600 text-white flex justify-between items-center">
+                <div className="p-4 bg-gradient-to-r from-warm-oyster-gold to-champagne-sheen text-cocoa-brown flex justify-between items-center">
                   <h2 className="text-xl font-semibold">Shopping Cart</h2>
                   <button
                     onClick={() => onOpenChange(false)}
-                    className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                    className="p-2 hover:bg-cocoa-brown/10 rounded-full transition-colors"
                   >
                     <X className="w-5 h-5" />
                   </button>
                 </div>
 
-                {/* Cart Items with improved styling */}
+                {/* Cart Items */}
                 <div className="flex-1 overflow-y-auto p-4">
                   {items.length === 0 && savedForLater.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-center">
-                      <ShoppingBag className="w-16 h-16 text-gray-400 mb-4" />
-                      <p className="text-gray-600">Your cart is empty</p>
+                      <ShoppingBag className="w-16 h-16 text-champagne-sheen mb-4" />
+                      <p className="text-mink-taupe">Your cart is empty</p>
                       <Link
                         href="/shop"
-                        className="mt-4 text-pearl-600 hover:text-pearl-700 font-medium"
+                        className="mt-4 text-warm-oyster-gold hover:text-cocoa-brown font-medium"
                         onClick={() => onOpenChange(false)}
                       >
                         Continue Shopping
                       </Link>
                     </div>
                   ) : (
-                    <div className="h-full flex flex-col items-center justify-center text-center">
+                    <div className="space-y-4">
                       {/* Cart Items */}
                       {items.length > 0 && (
-                        <div className="w-full">
-                          <h3 className="font-medium text-gray-900 mb-4">
-                            Cart Items
-                          </h3>
+                        <div>
+                          <h3 className="font-medium text-cocoa-brown mb-4">Cart Items</h3>
                           {items.map((item) => (
                             <div
                               key={item.id}
-                              className="flex gap-4 p-4 bg-gray-50 rounded-lg relative group hover:shadow-md transition-all duration-300 mb-4"
+                              className="flex gap-4 p-4 bg-champagne-sheen/40 rounded-lg relative group hover:shadow-md transition-all duration-300 mb-4"
                             >
                               <div className="relative w-20 h-20 flex-shrink-0">
                                 <Image
@@ -159,17 +158,15 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                               </div>
                               <div className="flex-1">
                                 <div className="flex justify-between">
-                                  <h3 className="font-medium text-gray-900">
-                                    {item.name}
-                                  </h3>
+                                  <h3 className="font-medium text-cocoa-brown">{item.name}</h3>
                                   <button
                                     onClick={() => dispatch(removeFromCart(item.id))}
-                                    className="text-gray-400 hover:text-red-500 transition-colors"
+                                    className="text-mink-taupe hover:text-rose-gold-accent transition-colors"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </button>
                                 </div>
-                                <p className="text-sm text-gray-600 mb-2">
+                                <p className="text-sm text-mink-taupe mb-2">
                                   ৳{item.price.toLocaleString()}
                                 </p>
                                 <div className="flex items-center gap-2">
@@ -182,11 +179,11 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                                         })
                                       )
                                     }
-                                    className="p-2 hover:bg-gray-200 rounded-lg border border-gray-300 text-gray-700 hover:text-gray-900 transition-colors"
+                                    className="p-2 hover:bg-pearl-white rounded-lg border border-warm-oyster-gold text-cocoa-brown hover:text-warm-oyster-gold transition-colors"
                                   >
                                     <Minus className="w-4 h-4" />
                                   </button>
-                                  <span className="w-8 text-center font-medium text-gray-900">
+                                  <span className="w-8 text-center font-medium text-cocoa-brown">
                                     {item.quantity}
                                   </span>
                                   <button
@@ -198,14 +195,14 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                                         })
                                       )
                                     }
-                                    className="p-2 hover:bg-gray-200 rounded-lg border border-gray-300 text-gray-700 hover:text-gray-900 transition-colors"
+                                    className="p-2 hover:bg-pearl-white rounded-lg border border-warm-oyster-gold text-cocoa-brown hover:text-warm-oyster-gold transition-colors"
                                   >
                                     <Plus className="w-4 h-4" />
                                   </button>
                                 </div>
                                 <button
                                   onClick={() => handleSaveForLater(item.id)}
-                                  className="mt-2 text-sm text-pearl-600 hover:text-pearl-700 flex items-center gap-1 transition-colors"
+                                  className="mt-2 text-sm text-rose-gold-accent hover:text-cocoa-brown flex items-center gap-1 transition-colors"
                                 >
                                   <Clock className="w-4 h-4" />
                                   Save for later
@@ -219,13 +216,11 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                       {/* Saved for Later Items */}
                       {savedForLater.length > 0 && (
                         <div>
-                          <h3 className="font-medium text-gray-900 mb-4">
-                            Saved for Later
-                          </h3>
+                          <h3 className="font-medium text-cocoa-brown mb-4">Saved for Later</h3>
                           {savedForLater.map((item) => (
                             <div
                               key={item.id}
-                              className="flex gap-4 p-4 bg-gray-50 rounded-lg relative group hover:shadow-md transition-all duration-300 mb-4"
+                              className="flex gap-4 p-4 bg-champagne-sheen/40 rounded-lg relative group hover:shadow-md transition-all duration-300 mb-4"
                             >
                               <div className="relative w-20 h-20 flex-shrink-0">
                                 <Image
@@ -237,22 +232,20 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                               </div>
                               <div className="flex-1">
                                 <div className="flex justify-between">
-                                  <h3 className="font-medium text-gray-900">
-                                    {item.name}
-                                  </h3>
+                                  <h3 className="font-medium text-cocoa-brown">{item.name}</h3>
                                   <button
                                     onClick={() => dispatch(removeFromSaved(item.id))}
-                                    className="text-gray-400 hover:text-red-500 transition-colors"
+                                    className="text-mink-taupe hover:text-rose-gold-accent transition-colors"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </button>
                                 </div>
-                                <p className="text-sm text-gray-600 mb-2">
+                                <p className="text-sm text-mink-taupe mb-2">
                                   ৳{item.price.toLocaleString()}
                                 </p>
                                 <button
                                   onClick={() => dispatch(moveToCart(item.id))}
-                                  className="mt-2 text-sm text-pearl-600 hover:text-pearl-700 flex items-center gap-1 transition-colors"
+                                  className="text-sm text-warm-oyster-gold hover:text-cocoa-brown flex items-center gap-1 transition-colors"
                                 >
                                   <ArrowRight className="w-4 h-4" />
                                   Move to cart
@@ -270,17 +263,17 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                 {items.length > 0 && (
                   <div className="border-t p-4 space-y-4">
                     {/* Coupon Code */}
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 mb-2">
                       <input
                         type="text"
                         placeholder="Enter coupon code"
                         value={inputCouponCode}
                         onChange={(e) => setInputCouponCode(e.target.value)}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pearl-500"
+                        className="flex-1 px-2 py-1 border border-warm-oyster-gold rounded-lg focus:outline-none focus:ring-2 focus:ring-warm-oyster-gold text-sm"
                       />
                       <button
                         onClick={applyCoupon}
-                        className="px-4 py-2 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700 transition-colors"
+                        className="px-4 py-1 bg-warm-oyster-gold text-cocoa-brown font-bold border-2 border-warm-oyster-gold rounded-lg shadow-sm hover:bg-champagne-sheen transition-colors text-sm"
                       >
                         Apply
                       </button>
@@ -288,8 +281,8 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
 
                     {/* Free Shipping Progress */}
                     {getAmountNeededForFreeShipping() > 0 && (
-                      <div className="bg-pearl-50 p-3 rounded-lg">
-                        <div className="flex items-center gap-2 text-pearl-800">
+                      <div className="bg-soft-mist-blue p-3 rounded-lg">
+                        <div className="flex items-center gap-2 text-cocoa-brown">
                           <Truck className="w-5 h-5" />
                           <p className="text-sm">
                             Add ৳{getAmountNeededForFreeShipping().toLocaleString()} more
@@ -302,19 +295,19 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                     {/* Order Summary */}
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Subtotal</span>
+                        <span className="text-mink-taupe">Subtotal</span>
                         <span className="font-medium">৳{cartTotal.toLocaleString()}</span>
                       </div>
                       {discount > 0 && (
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">Discount</span>
-                          <span className="font-medium text-green-600">
+                          <span className="text-mink-taupe">Discount</span>
+                          <span className="font-medium text-rose-gold-accent">
                             -৳{discount.toLocaleString()}
                           </span>
                         </div>
                       )}
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Shipping</span>
+                        <span className="text-mink-taupe">Shipping</span>
                         <span className="font-medium">
                           {shippingCost === 0 ? (
                             <span className="text-green-600">Free</span>
@@ -329,23 +322,26 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                       </div>
                     </div>
 
-                    {/* Checkout Button */}
+                    {/* Checkout Button - premium look */}
                     <button
-                      onClick={handleCheckout}
-                      className="w-full py-3 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={handleCheckoutClick}
+                      className="w-full py-3 bg-warm-oyster-gold text-cocoa-brown font-bold text-base rounded-lg shadow-lg border-2 border-warm-oyster-gold hover:bg-champagne-sheen transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mb-2"
                       disabled={items.length === 0}
                     >
                       <span>Proceed to Checkout</span>
-                      <ArrowRight className="w-4 h-4" />
+                      <ArrowRight className="w-5 h-5" />
                     </button>
 
-                    {/* Continue Shopping */}
-                    <button
-                      onClick={() => onOpenChange(false)}
-                      className="w-full py-3 border border-pearl-600 text-pearl-600 rounded-lg hover:bg-pearl-50 transition-colors"
-                    >
-                      Continue Shopping
-                    </button>
+                    {/* Continue Shopping - centered, gold, underlined */}
+                    <div className="flex justify-center">
+                      <Link
+                        href="/shop"
+                        className="text-warm-oyster-gold text-sm underline hover:text-cocoa-brown transition-colors mt-1 mb-0 text-center"
+                        style={{ padding: 0, margin: 0 }}
+                      >
+                        Continue Shopping
+                      </Link>
+                    </div>
                   </div>
                 )}
               </div>
@@ -354,11 +350,15 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
         )}
       </AnimatePresence>
 
-      {/* Checkout Modal */}
-      <CheckoutModal 
-        open={checkoutModalOpen} 
-        onOpenChange={setCheckoutModalOpen}
-      />
+      {/* Render CheckoutModal */}
+      {typeof window !== 'undefined' && (
+        <div id="modal-root">
+          <CheckoutModal
+            open={showCheckoutModal}
+            onOpenChange={setShowCheckoutModal}
+          />
+        </div>
+      )}
     </>
   )
 } 

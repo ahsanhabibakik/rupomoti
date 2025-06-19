@@ -199,22 +199,38 @@ export default function ShopPage() {
             {priceRange[1].toLocaleString()} ×
           </Badge>
         )}
-        {search && (
-          <Badge
-            variant="secondary"
-            className="cursor-pointer"
-            onClick={() => { setSearch(''); setSearchInput('') }}
-          >
-            Search: {search} ×
-          </Badge>
-        )}
       </div>
 
-      {/* Products Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {products.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
+      {/* Main Content */}
+      <div className="flex gap-6">
+        {/* Desktop Filters */}
+        <div className="hidden sm:block w-64 flex-shrink-0">
+          <FilterSection />
+        </div>
+
+        {/* Products Grid */}
+        <div className="flex-1">
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {[...Array(8)].map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-gray-100 animate-pulse rounded-lg aspect-square"
+                />
+              ))}
+            </div>
+          ) : products.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-lg text-muted-foreground">No products found</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

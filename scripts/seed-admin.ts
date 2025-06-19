@@ -1,64 +1,39 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Role } from '@prisma/client'
 import { hash } from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
 async function main() {
   try {
-    console.log('🌱 Seeding admin user...')
+    // Create admin user with hashed password
+    const hashedPassword = await hash('admin123', 12)
     
-    const email = 'admin@rupomoti.com'
-    const password = 'admin123' // Change this in production!
-
-    // Check if admin user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    })
-
-    if (existingUser) {
-      console.log('✅ Admin user already exists:', existingUser.email)
-      
-      // Update role to ADMIN if not already
-      if (existingUser.role !== 'ADMIN') {
-        const updated = await prisma.user.update({
-          where: { id: existingUser.id },
-          data: { 
-            role: 'ADMIN',
-            isAdmin: true 
-          }
-        })
-        console.log('✅ Updated user role to ADMIN:', updated.email)
-      }
-      return
-    }
-
-    // Create admin user
-    const hashedPassword = await hash(password, 12)
-    const user = await prisma.user.create({
-      data: {
-        email,
+    const admin = await prisma.user.upsert({
+      where: { email: 'admin@rupomoti.com' },
+      update: {
+        role: Role.ADMIN,
+        isAdmin: true,
+      },
+      create: {
+        email: 'admin@rupomoti.com',
         name: 'Admin',
         password: hashedPassword,
-        role: 'ADMIN',
-        isAdmin: true
-      }
+        role: Role.ADMIN,
+        isAdmin: true,
+        emailVerified: new Date(),
+      },
     })
 
-    console.log('✅ Admin user created successfully:', user.email)
-    console.log('📧 Email:', email)
-    console.log('🔑 Password:', password)
-    console.log('⚠️  Please change the default password in production!')
+    console.log('✅ Admin user created successfully')
+    console.log('Email:', admin.email)
+    console.log('Password: admin123')
+    console.log('You can now login to the admin panel')
   } catch (error) {
-    console.error('❌ Error seeding admin user:', error)
-    throw error
+    console.error('Error seeding admin:', error)
+    process.exit(1)
+  } finally {
+    await prisma.$disconnect()
   }
 }
 
-main()
-  .catch((e) => {
-    console.error(e)
-    process.exit(1)
-  })
-  .finally(async () => {
-    await prisma.$disconnect()
-  }) 
+main() 

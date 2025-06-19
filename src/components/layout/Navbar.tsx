@@ -126,44 +126,44 @@ export function Navbar() {
   }, [isCategoriesOpen, isUserMenuOpen]);
 
   return (
-    <nav className="bg-gradient-to-r from-primary to-primary-dark text-accent shadow-premium sticky top-0 z-50">
+    <nav className="bg-deep-mocha text-pearl-white shadow-premium sticky top-0 z-50">
       {/* Pearl pattern background */}
       <div className="absolute top-0 left-0 w-full h-full opacity-10">
         <div className="absolute top-2 left-2 transform rotate-12">
-          <Sparkles size={20} className="text-accent" />
+          <Sparkles size={20} className="text-champagne-gold" />
         </div>
         <div className="absolute top-2 left-1/4 transform rotate-45">
-          <Sparkles size={16} className="text-accent" />
+          <Sparkles size={16} className="text-champagne-gold" />
         </div>
         <div className="absolute top-2 left-1/2 transform rotate-90">
-          <Sparkles size={18} className="text-accent" />
+          <Sparkles size={18} className="text-champagne-gold" />
         </div>
         <div className="absolute top-2 left-3/4 transform rotate-135">
-          <Sparkles size={14} className="text-accent" />
+          <Sparkles size={14} className="text-champagne-gold" />
         </div>
         <div className="absolute top-2 right-2 transform -rotate-12">
-          <Sparkles size={20} className="text-accent" />
+          <Sparkles size={20} className="text-champagne-gold" />
         </div>
         <div className="absolute bottom-2 left-2 transform -rotate-45">
-          <Sparkles size={16} className="text-accent" />
+          <Sparkles size={16} className="text-champagne-gold" />
         </div>
         <div className="absolute bottom-2 left-1/4 transform -rotate-90">
-          <Sparkles size={18} className="text-accent" />
+          <Sparkles size={18} className="text-champagne-gold" />
         </div>
         <div className="absolute bottom-2 left-1/2 transform -rotate-135">
-          <Sparkles size={14} className="text-accent" />
+          <Sparkles size={14} className="text-champagne-gold" />
         </div>
         <div className="absolute bottom-2 left-3/4 transform -rotate-180">
-          <Sparkles size={16} className="text-accent" />
+          <Sparkles size={16} className="text-champagne-gold" />
         </div>
         <div className="absolute bottom-2 right-2 transform rotate-45">
-          <Sparkles size={20} className="text-accent" />
+          <Sparkles size={20} className="text-champagne-gold" />
         </div>
         <div className="absolute top-1/2 left-1/4 transform rotate-30">
-          <Sparkles size={22} className="text-accent" />
+          <Sparkles size={22} className="text-champagne-gold" />
         </div>
         <div className="absolute top-1/2 right-1/4 transform -rotate-30">
-          <Sparkles size={22} className="text-accent" />
+          <Sparkles size={22} className="text-champagne-gold" />
         </div>
       </div>
 
@@ -172,30 +172,25 @@ export function Navbar() {
         <div className="w-full md:w-auto flex items-center justify-between md:justify-start gap-2 relative">
           <div className="flex items-center gap-2">
             <button
-              className="block md:hidden text-accent hover:bg-primary-light/20 p-2 rounded-full transition-colors"
+              className="block md:hidden text-pearl-white hover:text-champagne-gold p-2 rounded-full transition-colors"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
-
           <div className="block md:hidden absolute left-1/2 transform -translate-x-1/2">
             <Link href="/" className="flex items-center">
               <div className="flex items-center gap-2">
                 <Image
                   src={logoUrl}
                   alt="Rupomoti Logo"
-                  width={48}
-                  height={48}
-                  className="w-12 h-12"
+                  width={120}
+                  height={40}
+                  className="h-10 w-auto"
                 />
-                <span className="text-xl font-bold bg-gradient-to-r from-accent to-base bg-clip-text text-transparent">
-                  
-                </span>
               </div>
             </Link>
           </div>
-
           <div className="flex md:hidden items-center gap-2">
             {/* Mobile Account/User Menu */}
             {session ? (
@@ -203,7 +198,7 @@ export function Navbar() {
                 <button
                   id="user-button-mobile"
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="text-accent hover:bg-primary-light/20 p-2 rounded-full transition-colors flex items-center gap-1"
+                  className="text-pearl-white hover:bg-cocoa-brown/80 p-2 rounded-full transition-colors flex items-center gap-1"
                 >
                   {session.user?.image ? (
                     <Image
@@ -224,14 +219,14 @@ export function Navbar() {
             ) : (
               <Link
                 href="/signin"
-                className="text-accent hover:bg-primary-light/20 p-2 rounded-full transition-colors"
+                className="text-pearl-white hover:bg-cocoa-brown/80 p-2 rounded-full transition-colors"
               >
                 <VscAccount size={20} />
               </Link>
             )}
             <button
               onClick={() => dispatch(toggleCart())}
-              className="text-accent hover:bg-primary-light/20 p-2 rounded-full relative transition-colors"
+              className="text-pearl-white hover:bg-cocoa-brown/80 p-2 rounded-full relative transition-colors"
             >
               <PiBasketThin size={20} />
               {getCartCount() > 0 && (
@@ -242,7 +237,6 @@ export function Navbar() {
             </button>
           </div>
         </div>
-
         {/* Desktop logo */}
         <div className="hidden md:flex items-center">
           <Link href="/" className="flex items-center">
@@ -250,19 +244,17 @@ export function Navbar() {
               <Image
                 src={logoUrl}
                 alt="Rupomoti Logo"
-                width={80}
-                height={80}
-                className="w-16 h-16"
+                width={180}
+                height={60}
+                className="h-10 md:h-12 w-auto"
               />
-              <span className="text-2xl font-bold bg-gradient-to-r from-accent to-base bg-clip-text text-transparent">
-                
-              </span>
             </div>
           </Link>
         </div>
 
+
         {/* Desktop navigation */}
-        <div className="hidden md:flex items-center space-x-3 text-accent">
+        <div className="hidden md:flex items-center space-x-3 text-pearl-white">
           <Link
             href="/shop"
             className="hover:text-base transition-colors text-sm font-medium"
@@ -318,13 +310,13 @@ export function Navbar() {
           </Link>
         </div>
 
-        {/* Search bar */}
+            {/* Search bar */}
         <div className="w-full md:flex-1 md:max-w-xl md:mx-2 mt-2 md:mt-0">
           <div className="relative">
             <input
               type="text"
               placeholder={placeholder}
-              className="w-full px-4 py-2 pl-10 pr-4 rounded-lg bg-pearl-light/10 text-pearl placeholder-pearl/70 focus:outline-none focus:ring-2 focus:ring-gold text-sm md:text-base cursor-pointer border border-pearl-dark/30"
+              className="w-full px-4 py-2 pl-10 pr-4 rounded-lg bg-pearl-white text-cocoa-brown placeholder-mink-taupe focus:outline-none focus:ring-2 focus:ring-champagne-gold text-sm md:text-base cursor-pointer border border-champagne-gold"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setIsSearchOpen(true)}
@@ -332,14 +324,14 @@ export function Navbar() {
             />
             <button
               type="button"
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-pearl/70 hover:text-pearl"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-cocoa-brown hover:text-champagne-gold"
               onClick={() => setIsSearchOpen(true)}
             >
               <BsSearch size={18} />
             </button>
           </div>
         </div>
-
+        
         {/* Desktop icons */}
         <div className="hidden md:flex items-center gap-2">
           {session ? (
@@ -347,7 +339,7 @@ export function Navbar() {
               <button
                 id="user-button"
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className="text-accent hover:bg-primary-light/20 p-2 rounded-full transition-colors flex items-center gap-2"
+                className="text-pearl-white hover:bg-cocoa-brown/80 p-2 rounded-full transition-colors flex items-center gap-2"
               >
                 {session.user?.image ? (
                   <Image
@@ -418,7 +410,7 @@ export function Navbar() {
           ) : (
             <Link
               href="/signin"
-              className="text-accent hover:bg-primary-light/20 p-2 rounded-full transition-colors"
+              className="text-pearl-white hover:bg-cocoa-brown/80 p-2 rounded-full transition-colors"
             >
               <VscAccount size={20} />
             </Link>
@@ -426,7 +418,7 @@ export function Navbar() {
           
           <button
             onClick={() => dispatch(toggleCart())}
-            className="text-accent hover:bg-primary-light/20 p-2 rounded-full relative transition-colors"
+            className="text-pearl-white hover:bg-cocoa-brown/80 p-2 rounded-full relative transition-colors"
           >
             <PiBasketThin size={20} />
             {getCartCount() > 0 && (

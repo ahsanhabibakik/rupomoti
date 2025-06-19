@@ -7,8 +7,7 @@ import { Heart, ShoppingCart, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useAppDispatch } from '@/redux/hooks'
-import { addToCart } from '@/redux/slices/cartSlice'
-import { setCartDrawerOpen } from '@/redux/slices/uiSlice'
+import { addToCart, toggleCart } from '@/redux/slices/cartSlice'
 import { useWishlist } from '@/hooks/useWishlist'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -55,7 +54,7 @@ export function ProductCard({
       quantity: 1
     }
     dispatch(addToCart(cartItem))
-    dispatch(setCartDrawerOpen(true))
+    dispatch(toggleCart())
     toast.success(`${name} has been added to your cart.`)
   }
 

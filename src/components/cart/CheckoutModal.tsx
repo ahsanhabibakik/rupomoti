@@ -1,358 +1,168 @@
 'use client'
 
 import { useState } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Textarea } from '@/components/ui/textarea'
-import { useCart } from '@/hooks/useCart'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
-import { Check, MapPin, Phone, User, Wallet, ShoppingCart, CreditCard, Loader2 } from 'lucide-react'
-import Image from 'next/image'
-import { showToast } from '@/lib/toast'
-import { useSelector, useDispatch } from 'react-redux'
-import { RootState } from '@/redux/store'
-import { clearCart } from '@/redux/slices/cartSlice'
+import { Dialog, DialogContent, DialogOverlay, DialogPortal } from '@/components/ui/dialog'
+import { Truck, CreditCard, Banknote, Smartphone, User, MapPin, StickyNote, CheckCircle } from 'lucide-react'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import * as z from 'zod'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
-import { cn } from '@/lib/utils'
-
-const checkoutSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  phone: z.string().min(11, 'Phone number must be at least 11 digits'),
-  address: z.string().min(1, 'Address is required'),
-  paymentMethod: z.enum(['cash', 'bkash', 'nagad', 'rocket']),
-  transactionId: z.string().optional(),
-})
-
-type CheckoutFormValues = z.infer<typeof checkoutSchema>
 
 interface CheckoutModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
+const DELIVERY_OPTIONS = [
+  { label: 'Inside Dhaka', value: 'dhaka', price: 60 },
+  { label: 'Near Dhaka', value: 'near_dhaka', price: 90 },
+  { label: 'Outside Dhaka', value: 'outside_dhaka', price: 120 },
+]
+
+const PAYMENT_OPTIONS = [
+  {
+    label: 'bKash',
+    value: 'bkash',
+    icon: <Smartphone className="w-5 h-5 text-warm-oyster-gold" />,
+  },
+  {
+    label: 'Bank Transfer',
+    value: 'bank',
+    icon: <CreditCard className="w-5 h-5 text-warm-oyster-gold" />,
+  },
+  {
+    label: 'Cash on Delivery',
+    value: 'cod',
+    icon: <Banknote className="w-5 h-5 text-warm-oyster-gold" />,
+  },
+]
+
 export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
-  const { items, total } = useSelector((state: RootState) => state.cart)
-  const dispatch = useDispatch()
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [success, setSuccess] = useState(false)
+  const [step, setStep] = useState(1)
+  const [delivery, setDelivery] = useState('dhaka')
+  const [payment, setPayment] = useState('cod')
+  const { register, handleSubmit, formState: { errors } } = useForm()
+  const [submitted, setSubmitted] = useState(false)
 
-  const form = useForm<CheckoutFormValues>({
-    resolver: zodResolver(checkoutSchema),
-    defaultValues: {
-      name: '',
-      phone: '',
-      address: '',
-      paymentMethod: 'cash',
-      transactionId: '',
-    },
-  })
+  const onSubmit = (data) => {
+    setSubmitted(true)
+    setStep(3)
+    // Here you would send order to backend
+  }
 
-  const deliveryCharge = items.length > 0 ? 100 : 0
-  const totalWithDelivery = total + deliveryCharge
+  const progress = [
+    { label: 'Delivery', active: step === 1 || step > 1 },
+    { label: 'Details', active: step === 2 || step > 2 },
+    { label: 'Done', active: step === 3 },
+  ]
 
-  const handleSubmit = async (data: CheckoutFormValues) => {
-    setIsSubmitting(true)
-    try {
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items,
-          total: totalWithDelivery,
-          deliveryCharge,
-          customer: {
-            name: data.name,
-            phone: data.phone,
-            address: data.address,
-          },
-          payment: {
-            method: data.paymentMethod,
-            transactionId: data.transactionId,
-          },
-        }),
-      })
-
-      if (!response.ok) throw new Error('Order failed')
-      
-      dispatch(clearCart())
-      setSuccess(true)
-      showToast.success('Order placed successfully!')
-      onOpenChange(false)
-    } catch (err) {
-      showToast.error('Failed to place order. Please try again.')
-    } finally {
-      setIsSubmitting(false)
-    }
+  if (typeof window === 'undefined') {
+    return null
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="fixed top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] sm:max-w-[600px] w-[95vw] max-h-[90vh] flex flex-col p-0 bg-background border shadow-lg rounded-lg">
-        <DialogHeader className="px-6 py-4 border-b sticky top-0 bg-background z-10">
-          <DialogTitle className="text-xl font-semibold">Complete Your Order</DialogTitle>
-        </DialogHeader>
-
-        <ScrollArea className="flex-1">
-          <div className="px-6">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 py-4">
-                {/* Order Summary */}
-                <div className="bg-muted/50 rounded-lg p-4">
-                  <h3 className="font-medium mb-4 flex items-center gap-2">
-                    <ShoppingCart className="h-5 w-5" />
-                    Order Summary
-                  </h3>
-                  <div className="space-y-4">
-                    {items.map((item) => (
-                      <div key={item.id} className="flex gap-4 pb-4 border-b last:border-0">
-                        <div className="relative h-16 w-16 rounded-md overflow-hidden flex-shrink-0">
-                          <Image
-                            src={item.image}
-                            alt={item.name}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium line-clamp-1">{item.name}</h4>
-                          <div className="text-sm text-muted-foreground">
-                            <span>৳{item.price.toLocaleString()}</span>
-                            <span className="mx-2">×</span>
-                            <span>{item.quantity}</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+      <DialogPortal>
+        <DialogOverlay className="fixed inset-0 bg-black/80 z-[1000]" />
+        <DialogContent className="fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-[calc(100%-2rem)] sm:w-full max-w-md h-[calc(100vh-4rem)] sm:h-auto sm:max-h-[90vh] bg-pearl-white p-0 rounded-2xl shadow-2xl overflow-hidden z-[1001]">
+          {/* Progress Steps */}
+          <div className="sticky top-0 bg-pearl-white border-b px-6 py-4">
+            <div className="flex justify-between items-center">
+              {progress.map((p, i) => (
+                <div key={p.label} className="flex-1 flex flex-col items-center">
+                  <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-lg mb-1 ${p.active ? 'bg-warm-oyster-gold text-cocoa-brown' : 'bg-mink-taupe text-pearl-white'}`}>
+                    {i+1}
                   </div>
+                  <span className={`text-xs font-medium ${p.active ? 'text-cocoa-brown' : 'text-mink-taupe'}`}>
+                    {p.label}
+                  </span>
                 </div>
-
-                {/* Contact Information */}
-                <div className="space-y-4">
-                  <h3 className="font-medium flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    Contact Information
-                  </h3>
-                  <div className="grid gap-4">
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Full Name</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                              <Input placeholder="Enter your full name" className="pl-9" {...field} />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="phone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Phone Number</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                              <Input placeholder="Enter your phone number" className="pl-9" {...field} />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="address"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Delivery Address</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                              <Textarea
-                                placeholder="Enter your delivery address"
-                                className="resize-none pl-9"
-                                {...field}
-                              />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                {/* Payment Method */}
-                <div className="space-y-4">
-                  <h3 className="font-medium flex items-center gap-2">
-                    <CreditCard className="h-5 w-5" />
-                    Payment Method
-                  </h3>
-                  <FormField
-                    control={form.control}
-                    name="paymentMethod"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <RadioGroup
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                            className="grid grid-cols-2 gap-4"
-                          >
-                            <div>
-                              <RadioGroupItem
-                                value="cash"
-                                id="cash"
-                                className="peer sr-only"
-                              />
-                              <Label
-                                htmlFor="cash"
-                                className={cn(
-                                  "flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary",
-                                  "transition-colors duration-200"
-                                )}
-                              >
-                                <Wallet className="mb-3 h-6 w-6" />
-                                Cash on Delivery
-                              </Label>
-                            </div>
-                            <div>
-                              <RadioGroupItem
-                                value="bkash"
-                                id="bkash"
-                                className="peer sr-only"
-                              />
-                              <Label
-                                htmlFor="bkash"
-                                className={cn(
-                                  "flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary",
-                                  "transition-colors duration-200"
-                                )}
-                              >
-                                <CreditCard className="mb-3 h-6 w-6" />
-                                bKash
-                              </Label>
-                            </div>
-                            <div>
-                              <RadioGroupItem
-                                value="nagad"
-                                id="nagad"
-                                className="peer sr-only"
-                              />
-                              <Label
-                                htmlFor="nagad"
-                                className={cn(
-                                  "flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary",
-                                  "transition-colors duration-200"
-                                )}
-                              >
-                                <CreditCard className="mb-3 h-6 w-6" />
-                                Nagad
-                              </Label>
-                            </div>
-                            <div>
-                              <RadioGroupItem
-                                value="rocket"
-                                id="rocket"
-                                className="peer sr-only"
-                              />
-                              <Label
-                                htmlFor="rocket"
-                                className={cn(
-                                  "flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary",
-                                  "transition-colors duration-200"
-                                )}
-                              >
-                                <CreditCard className="mb-3 h-6 w-6" />
-                                Rocket
-                              </Label>
-                            </div>
-                          </RadioGroup>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {form.watch('paymentMethod') !== 'cash' && (
-                    <FormField
-                      control={form.control}
-                      name="transactionId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Transaction ID</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter transaction ID" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
-                </div>
-
-                {/* Order Total */}
-                <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Subtotal</span>
-                    <span>৳{(total ?? 0).toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Delivery Charge</span>
-                    <span>৳{(deliveryCharge ?? 0).toLocaleString()}</span>
-                  </div>
-                  <Separator className="my-2" />
-                  <div className="flex justify-between font-medium text-lg">
-                    <span>Total</span>
-                    <span>৳{(totalWithDelivery ?? 0).toLocaleString()}</span>
-                  </div>
-                </div>
-              </form>
-            </Form>
+              ))}
+            </div>
           </div>
-        </ScrollArea>
 
-        <div className="sticky bottom-0 bg-background border-t p-6">
-          <Button
-            type="submit"
-            className="w-full h-12 text-base font-medium bg-primary hover:bg-primary/90"
-            disabled={isSubmitting}
-            onClick={form.handleSubmit(handleSubmit)}
-          >
-            {isSubmitting ? (
-              <div className="flex items-center gap-2">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <span>Processing...</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Check className="h-5 w-5" />
-                <span>Place Order</span>
+          {/* Scrollable Content */}
+          <div className="overflow-y-auto flex-1 h-[calc(100%-5rem)]">
+            {step === 1 && (
+              <div className="p-6">
+                <form onSubmit={e => { e.preventDefault(); setStep(2) }} className="space-y-6">
+                  <div>
+                    <label className="block text-cocoa-brown font-semibold mb-2">Delivery Location</label>
+                    <div className="flex flex-col gap-2">
+                      {DELIVERY_OPTIONS.map(opt => (
+                        <label key={opt.value} className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${delivery === opt.value ? 'border-warm-oyster-gold bg-champagne-sheen/40' : 'border-mink-taupe bg-pearl-white'}` }>
+                          <Truck className="w-5 h-5 text-warm-oyster-gold" />
+                          <input type="radio" name="delivery" value={opt.value} checked={delivery === opt.value} onChange={() => setDelivery(opt.value)} className="accent-warm-oyster-gold" />
+                          <span className="flex-1 text-cocoa-brown font-medium">{opt.label}</span>
+                          <span className="text-cocoa-brown font-bold">৳{opt.price}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-cocoa-brown font-semibold mb-2">Payment Method</label>
+                    <div className="flex flex-col gap-2">
+                      {PAYMENT_OPTIONS.map(opt => (
+                        <label key={opt.value} className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${payment === opt.value ? 'border-warm-oyster-gold bg-champagne-sheen/40' : 'border-mink-taupe bg-pearl-white'}` }>
+                          {opt.icon}
+                          <input type="radio" name="payment" value={opt.value} checked={payment === opt.value} onChange={() => setPayment(opt.value)} className="accent-warm-oyster-gold" />
+                          <span className="flex-1 text-cocoa-brown font-medium">{opt.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <button type="submit" className="w-full py-3 bg-warm-oyster-gold text-cocoa-brown font-bold rounded-lg shadow-lg border-2 border-warm-oyster-gold hover:bg-champagne-sheen transition-colors text-base">Next</button>
+                </form>
               </div>
             )}
-          </Button>
-        </div>
-      </DialogContent>
+
+            {step === 2 && (
+              <div className="p-6">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-cocoa-brown font-semibold mb-1">Name</label>
+                      <input {...register('name', { required: 'Name is required' })} className="w-full px-3 py-2 border-2 border-warm-oyster-gold rounded-lg focus:outline-none focus:ring-2 focus:ring-warm-oyster-gold text-cocoa-brown" placeholder="Full Name" />
+                      {errors.name && <span className="text-rose-gold-accent text-xs">{errors.name.message}</span>}
+                    </div>
+                    <div>
+                      <label className="block text-cocoa-brown font-semibold mb-1">Phone</label>
+                      <input {...register('phone', { required: 'Phone is required', pattern: { value: /^01[3-9]\d{8}$/, message: 'Enter a valid Bangladeshi phone number' } })} className="w-full px-3 py-2 border-2 border-warm-oyster-gold rounded-lg focus:outline-none focus:ring-2 focus:ring-warm-oyster-gold text-cocoa-brown" placeholder="01XXXXXXXXX" />
+                      {errors.phone && <span className="text-rose-gold-accent text-xs">{errors.phone.message}</span>}
+                    </div>
+                    <div>
+                      <label className="block text-cocoa-brown font-semibold mb-1">Delivery Address</label>
+                      <textarea {...register('address', { required: 'Address is required' })} className="w-full px-3 py-2 border-2 border-warm-oyster-gold rounded-lg focus:outline-none focus:ring-2 focus:ring-warm-oyster-gold text-cocoa-brown" placeholder="Full delivery address" rows={3} />
+                      {errors.address && <span className="text-rose-gold-accent text-xs">{errors.address.message}</span>}
+                    </div>
+                    <div>
+                      <label className="block text-cocoa-brown font-semibold mb-1">Order Note <span className="text-mink-taupe">(optional)</span></label>
+                      <textarea {...register('note')} className="w-full px-3 py-2 border-2 border-mink-taupe rounded-lg focus:outline-none focus:ring-2 focus:ring-mink-taupe text-cocoa-brown" placeholder="Any special instructions?" rows={2} />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => setStep(1)} className="flex-1 py-3 bg-mink-taupe text-pearl-white font-bold rounded-lg border-2 border-mink-taupe hover:bg-cocoa-brown transition-colors text-base">Back</button>
+                    <button type="submit" className="flex-1 py-3 bg-warm-oyster-gold text-cocoa-brown font-bold rounded-lg shadow-lg border-2 border-warm-oyster-gold hover:bg-champagne-sheen transition-colors text-base">Confirm Order</button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div className="p-8 flex flex-col items-center justify-center text-center">
+                <CheckCircle className="w-16 h-16 text-warm-oyster-gold mb-4" />
+                <h2 className="text-2xl font-bold text-cocoa-brown mb-2">Thank you for your order!</h2>
+                <p className="text-mink-taupe mb-4">
+                  We've received your order and will contact you soon. You can track your order from your account.
+                </p>
+                <button 
+                  onClick={() => { setStep(1); onOpenChange(false); }} 
+                  className="w-full py-3 bg-warm-oyster-gold text-cocoa-brown font-bold rounded-lg shadow-lg border-2 border-warm-oyster-gold hover:bg-champagne-sheen transition-colors text-base"
+                >
+                  Close
+                </button>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </DialogPortal>
     </Dialog>
   )
-} 
+}

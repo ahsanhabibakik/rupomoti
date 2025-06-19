@@ -4,8 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { useAppDispatch } from '@/redux/hooks'
-import { addToCart } from '@/redux/slices/cartSlice'
-import { setCartDrawerOpen } from '@/redux/slices/uiSlice'
+import { addToCart, toggleCart } from '@/redux/slices/cartSlice'
 import { showToast } from '@/lib/toast'
 import { cn } from '@/lib/utils'
 
@@ -33,8 +32,10 @@ export default function ProductPage({ params }: { params: { id: string } }) {
       name: product.name,
       price: product.price,
       image: product.images[0],
+      quantity: 1,
+      category: 'necklaces', // Placeholder, update as needed
     }))
-    dispatch(setCartDrawerOpen(true))
+    dispatch(toggleCart())
     showToast.success(`${product.name} has been added to your cart.`)
   }
 

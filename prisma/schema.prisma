@@ -88,33 +88,22 @@ model Category {
 
 model Product {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  name        String
-  slug        String   @unique
+  name        String   @unique
   description String
-  shortDescription String?
   price       Float
-  comparePrice Float?
-  costPrice   Float?
-  sku         String?  @unique
-  barcode     String?
   images      String[]
   categoryId  String   @db.ObjectId
   category    Category @relation(fields: [categoryId], references: [id])
-  stock       Int      @default(0)
-  weight      Float?
-  dimensions  Json?    // {length, width, height}
-  tags        String[]
-  isActive    Boolean  @default(true)
-  isFeatured  Boolean  @default(false)
-  variants    Json?    // For product variants like size, color
-  seoTitle    String?
-  seoDescription String?
+  inStock     Boolean  @default(true)
+  featured    Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
-  orderItems    OrderItem[]
+  
+  orderItems  OrderItem[]
+  reviews     Review[]
   wishlistItems WishlistItem[]
-  reviews       Review[]
+
+  @@map("products")
 }
 
 model Customer {
