@@ -1,7 +1,18 @@
 'use client'
 
 import Link from 'next/link'
-import { Facebook, Instagram, Twitter, Sparkles } from 'lucide-react'
+import Image from 'next/image'
+import {
+  Sparkles,
+  Phone,
+  Mail,
+  MapPin,
+  Instagram,
+  Facebook,
+  Twitter,
+  Send,
+} from 'lucide-react'
+import { useState } from 'react'
 
 const footerLinks = {
   shop: [
@@ -36,110 +47,275 @@ const socialLinks = [
   { name: 'Twitter', icon: Twitter, href: 'https://twitter.com/rupomoti' },
 ]
 
-export function Footer() {
+export default function Footer() {
+  const [email, setEmail] = useState("")
+  const [status, setStatus] = useState<null | "success" | "error">(null)
+  const [loading, setLoading] = useState(false)
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true)
+    setStatus(null)
+    try {
+      const res = await fetch("/api/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      })
+      if (res.ok) {
+        setStatus("success")
+        setEmail("")
+      } else {
+        setStatus("error")
+      }
+    } catch {
+      setStatus("error")
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
-    <footer className="border-t border-pearl-dark bg-pearl-light">
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="xl:grid xl:grid-cols-5 xl:gap-8">
-          <div className="space-y-8 xl:col-span-2">
-            <Link href="/" className="flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-gold" />
-              <span className="text-2xl font-bold bg-gradient-to-r from-gold to-sapphire bg-clip-text text-transparent">
-                Rupomoti
-              </span>
+    <footer className="bg-pearl-dark text-white relative overflow-hidden">
+      {/* Decorative pearl/sparkle pattern */}
+      <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none select-none">
+        {/* Top row of sparkles */}
+        <div className="absolute top-4 left-4 transform rotate-12">
+          <Sparkles size={24} />
+        </div>
+        <div className="absolute top-4 left-1/4 transform rotate-45">
+          <Sparkles size={20} />
+        </div>
+        <div className="absolute top-4 left-1/2 transform rotate-90">
+          <Sparkles size={22} />
+        </div>
+        <div className="absolute top-4 left-3/4 transform rotate-135">
+          <Sparkles size={18} />
+        </div>
+        <div className="absolute top-4 right-4 transform -rotate-12">
+          <Sparkles size={24} />
+        </div>
+        {/* Middle row of sparkles */}
+        <div className="absolute top-1/2 left-4 transform -rotate-45">
+          <Sparkles size={20} />
+        </div>
+        <div className="absolute top-1/2 left-1/4 transform -rotate-90">
+          <Sparkles size={22} />
+        </div>
+        <div className="absolute top-1/2 left-1/2 transform -rotate-135">
+          <Sparkles size={18} />
+        </div>
+        <div className="absolute top-1/2 left-3/4 transform -rotate-180">
+          <Sparkles size={20} />
+        </div>
+        <div className="absolute top-1/2 right-4 transform rotate-45">
+          <Sparkles size={24} />
+        </div>
+        {/* Bottom row of sparkles */}
+        <div className="absolute bottom-4 left-4 transform rotate-45">
+          <Sparkles size={20} />
+        </div>
+        <div className="absolute bottom-4 left-1/4 transform rotate-90">
+          <Sparkles size={22} />
+        </div>
+        <div className="absolute bottom-4 left-1/2 transform rotate-135">
+          <Sparkles size={18} />
+        </div>
+        <div className="absolute bottom-4 left-3/4 transform rotate-180">
+          <Sparkles size={20} />
+        </div>
+        <div className="absolute bottom-4 right-4 transform -rotate-45">
+          <Sparkles size={24} />
+        </div>
+        {/* Additional scattered sparkles */}
+        <div className="absolute top-1/3 left-1/3 transform rotate-30">
+          <Sparkles size={26} />
+        </div>
+        <div className="absolute top-2/3 right-1/3 transform -rotate-30">
+          <Sparkles size={26} />
+        </div>
+        <div className="absolute top-1/4 right-1/4 transform rotate-60">
+          <Sparkles size={22} />
+        </div>
+        <div className="absolute bottom-1/4 left-1/4 transform -rotate-60">
+          <Sparkles size={22} />
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 py-12 relative z-10">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          {/* Brand Section */}
+          <div className="space-y-4">
+            <Link href="/" className="flex items-center">
+              <Image
+                src="/images/branding/logo.png"
+                alt="Rupomoti Logo"
+                width={80}
+                height={80}
+                className="w-16 h-16"
+              />
             </Link>
-            <p className="text-sm text-slate max-w-md">
+            <p className="text-pearl-light max-w-md">
               Crafting timeless pieces of pearl elegance. Your trusted destination for fine pearl jewelry that tells your unique story.
             </p>
-            <div className="flex space-x-6">
-              {socialLinks.map((item) => {
-                const Icon = item.icon
-                return (
-                  <a
-                    key={item.name}
-                    href={item.href}
-                    className="text-slate hover:text-gold transition-colors duration-200"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <span className="sr-only">{item.name}</span>
-                    <Icon className="h-6 w-6" />
-                  </a>
-                )
-              })}
+            <div className="flex space-x-4">
+              <a
+                href="https://instagram.com/rupomoti"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram"
+                className="text-pearl-light hover:text-white transition-colors cursor-pointer focus:outline-none"
+              >
+                <Instagram size={20} />
+              </a>
+              <a
+                href="https://facebook.com/rupomoti"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Facebook"
+                className="text-pearl-light hover:text-white transition-colors cursor-pointer focus:outline-none"
+              >
+                <Facebook size={20} />
+              </a>
+              <a
+                href="https://twitter.com/rupomoti"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Twitter"
+                className="text-pearl-light hover:text-white transition-colors cursor-pointer focus:outline-none"
+              >
+                <Twitter size={20} />
+              </a>
             </div>
           </div>
-          <div className="mt-16 grid grid-cols-2 gap-8 xl:col-span-3 xl:mt-0">
-            <div className="md:grid md:grid-cols-2 md:gap-8">
-              <div>
-                <h3 className="text-sm font-semibold text-charcoal">Shop</h3>
-                <ul role="list" className="mt-4 space-y-4">
-                  {footerLinks.shop.map((item) => (
-                    <li key={item.name}>
-                      <Link
-                        href={item.href}
-                        className="text-sm text-slate hover:text-gold transition-colors duration-200"
-                      >
-                        {item.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="mt-10 md:mt-0">
-                <h3 className="text-sm font-semibold text-charcoal">Support</h3>
-                <ul role="list" className="mt-4 space-y-4">
-                  {footerLinks.support.map((item) => (
-                    <li key={item.name}>
-                      <Link
-                        href={item.href}
-                        className="text-sm text-slate hover:text-gold transition-colors duration-200"
-                      >
-                        {item.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-            <div className="md:grid md:grid-cols-2 md:gap-8">
-              <div>
-                <h3 className="text-sm font-semibold text-charcoal">Company</h3>
-                <ul role="list" className="mt-4 space-y-4">
-                  {footerLinks.company.map((item) => (
-                    <li key={item.name}>
-                      <Link
-                        href={item.href}
-                        className="text-sm text-slate hover:text-gold transition-colors duration-200"
-                      >
-                        {item.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="mt-10 md:mt-0">
-                <h3 className="text-sm font-semibold text-charcoal">Legal</h3>
-                <ul role="list" className="mt-4 space-y-4">
-                  {footerLinks.legal.map((item) => (
-                    <li key={item.name}>
-                      <Link
-                        href={item.href}
-                        className="text-sm text-slate hover:text-gold transition-colors duration-200"
-                      >
-                        {item.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
+
+          {/* Quick Links */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-pearl">Explore</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link
+                  href="/shop"
+                  className="text-pearl-light hover:text-white transition-colors flex items-center gap-2"
+                >
+                  <Sparkles size={16} />
+                  Shop Jewelry
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/care-maintenance"
+                  className="text-pearl-light hover:text-white transition-colors flex items-center gap-2"
+                >
+                  <Sparkles size={16} />
+                  Care & Maintenance
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/blog"
+                  className="text-pearl-light hover:text-white transition-colors flex items-center gap-2"
+                >
+                  <Sparkles size={16} />
+                  Blog
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/about"
+                  className="text-pearl-light hover:text-white transition-colors flex items-center gap-2"
+                >
+                  <Sparkles size={16} />
+                  About Us
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Contact Info */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-pearl">Get in Touch</h3>
+            <ul className="space-y-3">
+              <li className="flex items-center gap-2 text-pearl-light">
+                <MapPin size={18} />
+                <span>House 1217, Road 10, Avenue 10, Mirpur DOHS, Dhaka</span>
+              </li>
+              <li className="flex items-center gap-2 text-pearl-light">
+                <Phone size={18} />
+                <span>01518926700</span>
+              </li>
+              <li className="flex items-center gap-2 text-pearl-light">
+                <Phone size={18} />
+                <span>01773995858</span>
+              </li>
+              <li className="flex items-center gap-2 text-pearl-light">
+                <Mail size={18} />
+                <span>support@rupomoti.com</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Newsletter */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-pearl">Stay Updated</h3>
+            <p className="text-pearl-light">
+              Subscribe to our newsletter for pearl care tips and exclusive offers.
+            </p>
+            <form className="flex flex-col gap-2" onSubmit={handleSubmit}>
+              <input
+                type="email"
+                placeholder="Your email address"
+                className="px-4 py-2 rounded bg-pearl border border-pearl-light text-white placeholder-pearl/70 focus:outline-none focus:ring-2 focus:ring-gold"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+                disabled={loading}
+              />
+              <button
+                type="submit"
+                className="flex items-center justify-center gap-2 bg-gold hover:bg-gold/90 text-pearl-dark py-2 px-4 rounded transition-colors disabled:opacity-60"
+                disabled={loading}
+              >
+                <Send size={16} />
+                {loading ? "Subscribing..." : "Subscribe"}
+              </button>
+              {status === "success" && (
+                <span className="text-green-400 text-sm mt-1">Thank you for subscribing!</span>
+              )}
+              {status === "error" && (
+                <span className="text-red-400 text-sm mt-1">Something went wrong. Please try again.</span>
+              )}
+            </form>
           </div>
         </div>
-        <div className="mt-12 border-t border-pearl-dark pt-8">
-          <p className="text-sm text-slate">
-            © {new Date().getFullYear()} Rupomoti. All rights reserved. Crafting pearl jewelry excellence since 2024.
-          </p>
+
+        {/* Bottom Bar */}
+        <div className="border-t border-pearl mt-8 pt-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-pearl-light text-sm">
+              © {new Date().getFullYear()} Rupomoti. All rights reserved.
+            </p>
+            <div className="flex gap-6 text-sm">
+              <Link
+                href="/privacy"
+                className="text-pearl-light hover:text-white transition-colors"
+              >
+                Privacy Policy
+              </Link>
+              <Link
+                href="/terms"
+                className="text-pearl-light hover:text-white transition-colors"
+              >
+                Terms of Service
+              </Link>
+              <Link
+                href="/shipping-returns"
+                className="text-pearl-light hover:text-white transition-colors"
+              >
+                Shipping & Returns
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </footer>

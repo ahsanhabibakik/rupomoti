@@ -1,31 +1,66 @@
-/* Premium Jewelry Color Palette for Rupomoti */
+/* Pearl Essence Color Theme for Rupomoti
+   Each color variable is commented for its intended use. To change a color, simply update the value below or uncomment an alternative. */
 
 :root {
-  /* Primary Colors */
-  --primary: #0D1E78; /* Deep Sapphire Blue */
-  --primary-light: #1A237E;
-  --primary-dark: #000051;
+
+
   
-  /* Accent Colors */
-  --accent: #E8CBAF; /* Champagne Gold */
-  --accent-light: #F5E6D3;
-  --accent-dark: #D4B483;
-  
-  /* Base Colors */
-  --base: #FDF9F4; /* Ivory / Pearl White */
-  --base-light: #FFFDFA;
-  --base-dark: #F8F6F0;
-  
-  /* Neutral Colors */
-  --neutral: #4A2E21; /* Soft Cocoa Brown */
-  --neutral-light: #8B6E4F;
-  --neutral-dark: #2D1B13;
-  
-  /* Highlight Colors */
-  --highlight: #F5E7DD; /* Pearl Pink / Rose Beige */
-  --highlight-light: #FDF9F4;
-  --highlight-dark: #E6D5C7;
+
+
+  /* --- Pearl White (Base) ---
+     Primary page background, product cards, hero sections—lets jewellery glow without harsh stark-white. */
+  --pearl-white: #FDF9F4; /* Pearl White (Base) */
+  /* --pearl-white: #FFFDFA; // Alternative: slightly lighter */
+
+  /* --- Champagne Sheen (Light Accent) ---
+     Soft panels, info boxes, subtle gradients mimicking pearl iridescence. */
+  --champagne-sheen: #E8DCC8; /* Champagne Sheen (Light Accent) */
+  /* --champagne-sheen: #F5E6D3; // Alternative: more pinkish */
+
+  /* --- Warm Oyster Gold ---
+     Headings, borders, icon strokes, subtle button outlines (AA contrast on Pearl White). */
+  --warm-oyster-gold: #C8B38A; /* Warm Oyster Gold */
+  /* --warm-oyster-gold: #E8CBAF; // Alternative: more gold */
+
+  /* --- Mink Taupe (Text) ---
+     Primary body text on Pearl White (contrast ≈ 7.5 : 1). Feels softer than black yet fully legible. */
+  --mink-taupe: #8C7760; /* Mink Taupe (Text) */
+  /* --mink-taupe: #6C757D; // Alternative: more gray */
+
+  /* --- Cocoa Brown (Depth) ---
+     CTA text, nav links, hover states; anchors palette and pairs beautifully with gold hardware. */
+  --cocoa-brown: #4A2E21; /* Cocoa Brown (Depth) */
+  /* --cocoa-brown: #2D1B13; // Alternative: deeper brown */
+
+  /* --- Rose-Gold Accent ---
+     Seasonal highlights, sale badges, subtle gradients for feminine touch. */
+  --rose-gold-accent: #D7AFA4; /* Rose-Gold Accent */
+  /* --rose-gold-accent: #F7CAC9; // Alternative: more pink */
+
+  /* --- Soft Mist Blue (Cool Lift) ---
+     Very light background sections, balancing the warm tones; evokes pearls' cool undertones. */
+  --soft-mist-blue: #D0E0E7; /* Soft Mist Blue (Cool Lift) */
+  /* --soft-mist-blue: #E6F0F3; // Alternative: lighter blue */
 }
+
+/* Example usage utility classes for easy reference */
+.bg-pearl-white { background-color: var(--pearl-white); }
+.bg-champagne-sheen { background-color: var(--champagne-sheen); }
+.bg-warm-oyster-gold { background-color: var(--warm-oyster-gold); }
+.bg-mink-taupe { background-color: var(--mink-taupe); }
+.bg-cocoa-brown { background-color: var(--cocoa-brown); }
+.bg-rose-gold-accent { background-color: var(--rose-gold-accent); }
+.bg-soft-mist-blue { background-color: var(--soft-mist-blue); }
+
+.text-pearl-white { color: var(--pearl-white); }
+.text-champagne-sheen { color: var(--champagne-sheen); }
+.text-warm-oyster-gold { color: var(--warm-oyster-gold); }
+.text-mink-taupe { color: var(--mink-taupe); }
+.text-cocoa-brown { color: var(--cocoa-brown); }
+.text-rose-gold-accent { color: var(--rose-gold-accent); }
+.text-soft-mist-blue { color: var(--soft-mist-blue); }
+
+/* Add similar classes for border, etc. as needed */
 
 /* Background Colors */
 .bg-premium-primary { background-color: var(--primary); }
