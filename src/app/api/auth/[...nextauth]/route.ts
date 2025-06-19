@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs"
 import CredentialsProvider from "next-auth/providers/credentials"
 import GoogleProvider from "next-auth/providers/google"
 import NextAuth from "next-auth/next"
+import { authConfig } from "./auth-config"
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -30,13 +31,13 @@ export const authOptions: NextAuthOptions = {
           },
         })
 
-        if (!user || !user?.hashedPassword) {
+        if (!user || !user?.password) {
           throw new Error("Invalid credentials")
         }
 
         const isCorrectPassword = await bcrypt.compare(
           credentials.password,
-          user.hashedPassword
+          user.password
         )
 
         if (!isCorrectPassword) {
@@ -48,7 +49,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   pages: {
-    signIn: "/signin",
+    signIn: "/admin/login",
   },
   debug: process.env.NODE_ENV === "development",
   session: {
@@ -57,6 +58,6 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 }
 
-const handler = NextAuth(authOptions)
+const handler = NextAuth(authConfig)
 
 export { handler as GET, handler as POST } 
