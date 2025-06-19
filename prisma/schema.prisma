@@ -6,12 +6,12 @@ generator client {
 }
 
 datasource db {
-  provider = "mongodb"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  id             String    @id @default(cuid())
   name           String?
   email          String    @unique
   emailVerified  DateTime?
@@ -32,17 +32,17 @@ model User {
 }
 
 model Account {
-  id                String  @id @default(auto()) @map("_id") @db.ObjectId
-  userId            String  @db.ObjectId
+  id                String  @id @default(cuid())
+  userId            String
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.String
-  access_token      String? @db.String
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.String
+  id_token          String?
   session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -51,15 +51,15 @@ model Account {
 }
 
 model Session {
-  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  id           String   @id @default(cuid())
   sessionToken String   @unique
-  userId       String   @db.ObjectId
+  userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  id         String   @id @default(cuid())
   identifier String
   token      String   @unique
   expires    DateTime
@@ -68,12 +68,12 @@ model VerificationToken {
 }
 
 model Category {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  id          String   @id @default(cuid())
   name        String   @unique
   slug        String   @unique
   description String?
   image       String?
-  parentId    String?  @db.ObjectId
+  parentId    String?
   parent      Category? @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   children    Category[] @relation("CategoryHierarchy")
   isActive    Boolean  @default(true)
@@ -87,7 +87,7 @@ model Category {
 }
 
 model Product {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  id          String   @id @default(cuid())
   name        String
   slug        String   @unique
   description String
@@ -97,16 +97,16 @@ model Product {
   costPrice   Float?
   sku         String?  @unique
   barcode     String?
-  images      String[]
-  categoryId  String   @db.ObjectId
+  images      String   // JSON string for SQLite
+  categoryId  String
   category    Category @relation(fields: [categoryId], references: [id])
   stock       Int      @default(0)
   weight      Float?
-  dimensions  Json?    // {length, width, height}
-  tags        String[]
+  dimensions  String?  // JSON string for SQLite
+  tags        String   // JSON string for SQLite
   isActive    Boolean  @default(true)
   isFeatured  Boolean  @default(false)
-  variants    Json?    // For product variants like size, color
+  variants    String?  // JSON string for SQLite
   seoTitle    String?
   seoDescription String?
   createdAt   DateTime @default(now())
@@ -118,29 +118,27 @@ model Product {
 }
 
 model Customer {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  id        String   @id @default(cuid())
   name      String
   email     String?
-  phone     String
+  phone     String   @unique
   address   String
   city      String?
   zone      String?  // For delivery zone
-  userId    String?  @db.ObjectId
+  userId    String?
   user      User?    @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   orders    Order[]
-
-  @@unique([phone])
 }
 
 model Order {
-  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  id            String         @id @default(cuid())
   orderNumber   String         @unique
-  customerId    String         @db.ObjectId
+  customerId    String
   customer      Customer       @relation(fields: [customerId], references: [id])
-  userId        String?        @db.ObjectId
+  userId        String?
   user          User?          @relation(fields: [userId], references: [id])
   status        OrderStatus    @default(PENDING)
   paymentStatus PaymentStatus  @default(PENDING)
@@ -153,7 +151,7 @@ model Order {
   deliveryAddress String
   orderNote     String?
   trackingId    String?
-  steadfastInfo Json?          // Steadfast tracking information
+  steadfastInfo String?        // JSON string for SQLite
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
@@ -161,9 +159,9 @@ model Order {
 }
 
 model OrderItem {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  orderId   String   @db.ObjectId
-  productId String   @db.ObjectId
+  id        String   @id @default(cuid())
+  orderId   String
+  productId String
   name      String   // Store product name at time of order
   price     Float    // Store price at time of order
   quantity  Int
@@ -174,8 +172,8 @@ model OrderItem {
 }
 
 model Address {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId      String   @db.ObjectId
+  id          String   @id @default(cuid())
+  userId      String
   name        String
   phone       String
   street      String
@@ -191,9 +189,9 @@ model Address {
 }
 
 model Review {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String   @db.ObjectId
-  productId String   @db.ObjectId
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
   rating    Int
   comment   String?
   isVerified Boolean @default(false)
@@ -205,9 +203,9 @@ model Review {
 }
 
 model WishlistItem {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String   @db.ObjectId
-  productId String   @db.ObjectId
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -218,7 +216,7 @@ model WishlistItem {
 }
 
 model Coupon {
-  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  id            String    @id @default(cuid())
   code          String    @unique
   type          CouponType
   value         Float     // Percentage or fixed amount
@@ -234,7 +232,7 @@ model Coupon {
 }
 
 model Media {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  id          String   @id @default(cuid())
   name        String
   url         String
   alt         String?
@@ -243,19 +241,19 @@ model Media {
   position    Int      @default(0) // For ordering within a section
   isActive    Boolean  @default(true)
   cloudinaryId String? // Cloudinary public_id for deletion
-  metadata    Json?    // Additional data like dimensions, file size, etc.
+  metadata    String?  // JSON string for SQLite
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
 model MediaSection {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  id          String   @id @default(cuid())
   name        String   @unique // 'hero-slider', 'logo', 'banner', etc.
   title       String   // Display name
   description String?
   maxItems    Int      @default(5) // Maximum number of items allowed
   isActive    Boolean  @default(true)
-  settings    Json?    // Section-specific settings
+  settings    String?  // JSON string for SQLite
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

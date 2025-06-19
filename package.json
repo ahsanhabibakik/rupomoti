@@ -9,6 +9,7 @@
     "lint": "next lint",
     "setup-auth": "node scripts/setup-auth.js",
     "seed-admin": "npx tsx scripts/seed-admin.ts",
+    "seed-data": "npx tsx scripts/seed-sample-data.ts",
     "db:generate": "npx prisma generate",
     "db:push": "npx prisma db push",
     "db:studio": "npx prisma studio"

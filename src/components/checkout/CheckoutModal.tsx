@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Package, CreditCard, Banknote, MapPin, User, Phone, MapPinIcon, MessageSquare, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -13,7 +13,7 @@ import Image from 'next/image'
 import { useAppSelector, useAppDispatch } from '@/redux/hooks'
 import { selectCartItems, clearCart } from '@/redux/slices/cartSlice'
 import { showToast } from '@/lib/toast'
-// import { useSession } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
 
 interface CheckoutModalProps {
   open: boolean
@@ -61,6 +61,12 @@ const PAYMENT_METHODS = [
     description: 'Transfer to our bank account',
     icon: CreditCard,
   },
+  {
+    id: 'MOBILE_BANKING',
+    name: 'Mobile Banking (bKash)',
+    description: 'Pay via bKash mobile wallet',
+    icon: Phone,
+  },
 ]
 
 interface FormData {
@@ -74,23 +80,33 @@ interface FormErrors {
   name?: string
   phone?: string
   address?: string
+  note?: string
 }
 
 export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   const dispatch = useAppDispatch()
-  // const { data: session } = useSession()
-  const session: any = null // Temporary - will implement session later
+  const { data: session } = useSession()
   const items = useAppSelector(selectCartItems)
   const [deliveryZone, setDeliveryZone] = useState<DeliveryZoneKey>('INSIDE_DHAKA')
   const [paymentMethod, setPaymentMethod] = useState('CASH_ON_DELIVERY')
   const [formData, setFormData] = useState<FormData>({
-    name: session?.user?.name || '',
+    name: '',
     phone: '',
     address: '',
     note: '',
   })
   const [errors, setErrors] = useState<FormErrors>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Update form data when session changes
+  useEffect(() => {
+    if (session?.user) {
+      setFormData(prev => ({
+        ...prev,
+        name: session.user.name || '',
+      }))
+    }
+  }, [session])
 
   const subtotal = items.reduce((total, item) => total + item.price * item.quantity, 0)
   const deliveryFee = DELIVERY_ZONES[deliveryZone].fee
@@ -481,4 +497,4 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
       )}
     </AnimatePresence>
   )
-} 
+}
