@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Dialog, DialogContent, DialogOverlay, DialogPortal } from '@/components/ui/dialog'
 import { Truck, CreditCard, Banknote, Smartphone, CheckCircle } from 'lucide-react'
-import { useForm } from 'react-hook-form'
+import { useForm, FieldValues, SubmitHandler } from 'react-hook-form'
 
 interface CheckoutModalProps {
   open: boolean
@@ -32,7 +32,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   const deliveryCharge = DELIVERY_OPTIONS.find(opt => opt.value === delivery)?.price || 0
   const total = subtotal + deliveryCharge
 
-  const onSubmit = (data) => {
+  const onSubmit: SubmitHandler<FieldValues> = (data) => {
     const fullOrder = {
       ...data,
       delivery,
@@ -107,17 +107,17 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 <div>
                   <label className="block font-semibold text-gray-700 mb-1">Name</label>
                   <input {...register('name', { required: 'Name is required' })} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-400" placeholder="Your full name" />
-                  {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
+                  {typeof errors.name?.message === 'string' && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
                 </div>
                 <div>
                   <label className="block font-semibold text-gray-700 mb-1">Phone</label>
                   <input {...register('phone', { required: 'Phone is required' })} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-400" placeholder="01XXXXXXXXX" />
-                  {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>}
+                  {typeof errors.phone?.message === 'string' && <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>}
                 </div>
                 <div>
                   <label className="block font-semibold text-gray-700 mb-1">Address</label>
                   <textarea {...register('address', { required: 'Address is required' })} rows={2} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-400" placeholder="Full delivery address" />
-                  {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address.message}</p>}
+                  {typeof errors.address?.message === 'string' && <p className="text-red-500 text-sm mt-1">{errors.address.message}</p>}
                 </div>
                 <div>
                   <label className="block font-semibold text-gray-700 mb-1">Note (Optional)</label>
