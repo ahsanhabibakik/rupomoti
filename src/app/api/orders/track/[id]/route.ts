@@ -12,6 +12,13 @@ export async function GET(
     const session = await getServerSession(authOptions);
     const trackingId = params.id;
 
+    if (!trackingId) {
+      return NextResponse.json(
+        { error: 'Order number is required' },
+        { status: 400 }
+      );
+    }
+
     // Find order by tracking ID or order number
     const order = await prisma.order.findFirst({
       where: {
@@ -94,11 +101,39 @@ export async function GET(
       }
     });
 
-    return NextResponse.json(updatedOrder);
+    // Return formatted order details
+    const orderDetails = {
+      orderNumber: updatedOrder.orderNumber,
+      status: updatedOrder.status,
+      paymentMethod: updatedOrder.paymentMethod,
+      paymentStatus: updatedOrder.paymentStatus,
+      total: updatedOrder.total,
+      subtotal: updatedOrder.subtotal,
+      deliveryFee: updatedOrder.deliveryFee,
+      discount: updatedOrder.discount,
+      createdAt: updatedOrder.createdAt,
+      customer: {
+        name: updatedOrder.customer.name,
+        phone: updatedOrder.customer.phone,
+        address: updatedOrder.deliveryAddress
+      },
+      deliveryZone: updatedOrder.deliveryZone,
+      orderNote: updatedOrder.orderNote,
+      steadfastInfo: updatedOrder.steadfastInfo,
+      items: updatedOrder.items.map(item => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        image: item.image
+      }))
+    };
+
+    return NextResponse.json(orderDetails);
   } catch (error) {
-    console.error('Error tracking order:', error);
+    console.error('Error fetching order details:', error);
     return NextResponse.json(
-      { error: 'Failed to track order' },
+      { error: 'Failed to fetch order details' },
       { status: 500 }
     );
   }

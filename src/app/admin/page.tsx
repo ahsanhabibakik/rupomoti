@@ -2,90 +2,129 @@
 
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { useProducts } from '@/hooks/useProducts'
-import { useOrders } from '@/hooks/useOrders'
-import { useCategories } from '@/hooks/useCategories'
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
+import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { 
+  LineChart, 
+  Line, 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell,
+  Cell 
 } from 'recharts'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { 
+  DollarSign, 
+  ShoppingCart, 
+  Package, 
+  Users, 
+  TrendingUp, 
+  Download,
+  Calendar,
+  Award,
+  Tag,
+  Eye
+} from 'lucide-react'
+import { formatPrice } from '@/lib/utils'
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8']
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82ca9d']
+
+interface DashboardStats {
+  totalRevenue: number
+  totalOrders: number
+  totalProducts: number
+  totalCustomers: number
+  averageOrderValue: number
+  pendingOrders: number
+  confirmedOrders: number
+  shippedOrders: number
+  deliveredOrders: number
+}
+
+interface SalesDataPoint {
+  date: string
+  sales: number
+  orders: number
+}
+
+interface ProductSales {
+  name: string
+  revenue: number
+  quantity: number
+}
+
+interface CategorySales {
+  name: string
+  value: number
+  percentage: number
+}
 
 export default function DashboardPage() {
-  const { data: products, isLoading: productsLoading } = useProducts()
-  const { data: orders, isLoading: ordersLoading } = useOrders()
-  const { data: categories, isLoading: categoriesLoading } = useCategories()
-  const [salesData, setSalesData] = useState<any[]>([])
-  const [categoryData, setCategoryData] = useState<any[]>([])
-  const [topProducts, setTopProducts] = useState<any[]>([])
+  const [stats, setStats] = useState<DashboardStats>({
+    totalRevenue: 0,
+    totalOrders: 0,
+    totalProducts: 0,
+    totalCustomers: 0,
+    averageOrderValue: 0,
+    pendingOrders: 0,
+    confirmedOrders: 0,
+    shippedOrders: 0,
+    deliveredOrders: 0,
+  })
+  
+  const [salesData, setSalesData] = useState<SalesDataPoint[]>([])
+  const [topProducts, setTopProducts] = useState<ProductSales[]>([])
+  const [categoryData, setCategoryData] = useState<CategorySales[]>([])
+  const [loading, setLoading] = useState(true)
+  const [dateRange, setDateRange] = useState('30d')
 
   useEffect(() => {
-    if (orders && Array.isArray(orders)) {
-      // Group orders by date and calculate total sales
-      const salesByDate = orders.reduce((acc: any, order: any) => {
-        const date = new Date(order.createdAt).toLocaleDateString('bn-BD')
-        acc[date] = (acc[date] || 0) + order.total
-        return acc
-      }, {})
+    fetchDashboardData()
+  }, [dateRange])
 
-      // Convert to array format for chart
-      const chartData = Object.entries(salesByDate).map(([date, total]) => ({
-        date,
-        total,
-      }))
-
-      // Sort by date
-      chartData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      setSalesData(chartData)
-
-      // Calculate top products
-      const productSales = orders.reduce((acc: any, order: any) => {
-        order.items.forEach((item: any) => {
-          if (!acc[item.product.id]) {
-            acc[item.product.id] = {
-              name: item.product.name,
-              total: 0,
-              quantity: 0,
-            }
-          }
-          acc[item.product.id].total += item.price * item.quantity
-          acc[item.product.id].quantity += item.quantity
-        })
-        return acc
-      }, {})
-
-      setTopProducts(
-        Object.values(productSales)
-          .sort((a: any, b: any) => b.total - a.total)
-          .slice(0, 5)
-      )
+  const fetchDashboardData = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch(`/api/admin/dashboard?range=${dateRange}`)
+      if (response.ok) {
+        const data = await response.json()
+        setStats(data.stats)
+        setSalesData(data.salesData)
+        setTopProducts(data.topProducts)
+        setCategoryData(data.categoryData)
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error)
+    } finally {
+      setLoading(false)
     }
-  }, [orders])
+  }
 
-  useEffect(() => {
-    if (products && categories && Array.isArray(categories)) {
-      const data = categories.map((category: any) => ({
-        name: category.name,
-        value: category._count?.products || 0,
-      }))
-      setCategoryData(data)
+  const handleExport = async (type: 'pdf' | 'csv') => {
+    try {
+      const response = await fetch(`/api/admin/reports/export?type=${type}&range=${dateRange}`)
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.style.display = 'none'
+        a.href = url
+        a.download = `sales-report-${dateRange}.${type}`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+      }
+    } catch (error) {
+      console.error('Error exporting report:', error)
     }
-  }, [products, categories])
+  }
 
-  // Show loading state if any data is still loading
-  if (productsLoading || ordersLoading || categoriesLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="h-32 w-32 animate-spin rounded-full border-b-2 border-primary"></div>
@@ -93,219 +132,324 @@ export default function DashboardPage() {
     )
   }
 
-  const totalSales = Array.isArray(orders) ? orders.reduce((sum: number, order: any) => sum + order.total, 0) : 0
-  const totalOrders = Array.isArray(orders) ? orders.length : 0
-  const totalProducts = Array.isArray(products) ? products.length : 0
-  const totalCategories = Array.isArray(categories) ? categories.length : 0
-
-  const pendingOrders = Array.isArray(orders) ? orders.filter((order: any) => order.status === 'PENDING').length : 0
-  const processingOrders = Array.isArray(orders) ? orders.filter((order: any) => order.status === 'PROCESSING').length : 0
-  const shippedOrders = Array.isArray(orders) ? orders.filter((order: any) => order.status === 'SHIPPED').length : 0
-  const deliveredOrders = Array.isArray(orders) ? orders.filter((order: any) => order.status === 'DELIVERED').length : 0
-
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Dashboard</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <p className="text-gray-600">Welcome back! Here's what's happening with your store.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <select
+            value={dateRange}
+            onChange={(e) => setDateRange(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option value="7d">Last 7 days</option>
+            <option value="30d">Last 30 days</option>
+            <option value="90d">Last 90 days</option>
+            <option value="1y">Last year</option>
+          </select>
+          <Button onClick={() => handleExport('csv')} variant="outline">
+            <Download className="w-4 h-4 mr-2" />
+            Export CSV
+          </Button>
+          <Button onClick={() => handleExport('pdf')}>
+            <Download className="w-4 h-4 mr-2" />
+            Export PDF
+          </Button>
+        </div>
+      </div>
 
+      {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">Total Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {new Intl.NumberFormat('bn-BD', {
-                style: 'currency',
-                currency: 'BDT'
-              }).format(totalSales)}
+            <div className="text-2xl font-bold">{formatPrice(stats.totalRevenue)}</div>
+            <p className="text-xs text-gray-600">
+              {stats.totalOrders > 0 && `Avg: ${formatPrice(stats.averageOrderValue)} per order`}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">Total Orders</CardTitle>
+            <ShoppingCart className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalOrders}</div>
+            <div className="flex items-center gap-2 text-xs text-gray-600">
+              <span className="text-yellow-600">⏳ {stats.pendingOrders} pending</span>
+              <span className="text-green-600">✅ {stats.deliveredOrders} delivered</span>
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">Products</CardTitle>
+            <Package className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalOrders}</div>
+            <div className="text-2xl font-bold">{stats.totalProducts}</div>
+            <p className="text-xs text-gray-600">
+              Active products in catalog
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">Customers</CardTitle>
+            <Users className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalProducts}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Categories</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalCategories}</div>
+            <div className="text-2xl font-bold">{stats.totalCustomers}</div>
+            <p className="text-xs text-gray-600">
+              Unique customers
+            </p>
           </CardContent>
         </Card>
       </div>
 
+      {/* Charts and Analytics */}
       <Tabs defaultValue="sales" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="sales">Sales Analytics</TabsTrigger>
-          <TabsTrigger value="products">Product Analytics</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-1 md:grid-cols-4">
+          <TabsTrigger value="sales">Sales Overview</TabsTrigger>
+          <TabsTrigger value="products">Top Products</TabsTrigger>
+          <TabsTrigger value="categories">Categories</TabsTrigger>
           <TabsTrigger value="orders">Order Status</TabsTrigger>
         </TabsList>
 
         <TabsContent value="sales">
           <Card>
             <CardHeader>
-              <CardTitle>Sales Overview</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                Sales Trend ({dateRange})
+              </CardTitle>
             </CardHeader>
-            <CardContent className="h-[400px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={salesData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip
-                    formatter={(value) =>
-                      new Intl.NumberFormat('bn-BD', {
-                        style: 'currency',
-                        currency: 'BDT'
-                      }).format(value as number)
-                    }
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="total"
-                    stroke="#8884d8"
-                    name="Sales"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+            <CardContent>
+              <div className="h-[400px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={salesData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fontSize: 12 }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={60}
+                    />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip
+                      formatter={(value, name) => [
+                        name === 'sales' ? formatPrice(value as number) : value,
+                        name === 'sales' ? 'Revenue' : 'Orders'
+                      ]}
+                      labelFormatter={(label) => `Date: ${label}`}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="sales"
+                      stroke="#0088FE"
+                      strokeWidth={2}
+                      name="sales"
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="orders"
+                      stroke="#00C49F"
+                      strokeWidth={2}
+                      name="orders"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="products">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Products by Category</CardTitle>
-              </CardHeader>
-              <CardContent className="h-[300px]">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Award className="h-5 w-5 text-primary" />
+                Top Selling Products
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[400px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={categoryData}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      label
-                    >
-                      {categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Top Selling Products</CardTitle>
-              </CardHeader>
-              <CardContent className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={topProducts}>
+                  <BarChart data={topProducts} margin={{ left: 20, right: 20, top: 20, bottom: 60 }}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip
-                      formatter={(value) =>
-                        new Intl.NumberFormat('bn-BD', {
-                          style: 'currency',
-                          currency: 'BDT'
-                        }).format(value as number)
-                      }
+                    <XAxis 
+                      dataKey="name" 
+                      tick={{ fontSize: 12 }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={80}
                     />
-                    <Bar dataKey="total" fill="#8884d8" name="Sales" />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip
+                      formatter={(value, name) => [
+                        name === 'revenue' ? formatPrice(value as number) : value,
+                        name === 'revenue' ? 'Revenue' : 'Quantity Sold'
+                      ]}
+                    />
+                    <Bar dataKey="revenue" fill="#8884d8" name="revenue" />
                   </BarChart>
                 </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="categories">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Tag className="h-5 w-5 text-primary" />
+                Sales by Category
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={categoryData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={100}
+                        label={({ name, percentage }) => `${name} (${percentage}%)`}
+                      >
+                        {categoryData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => formatPrice(value as number)} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="space-y-4">
+                  <h3 className="font-medium">Category Breakdown</h3>
+                  {categoryData.map((category, index) => (
+                    <div key={category.name} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="w-4 h-4 rounded-full" 
+                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                        />
+                        <span className="font-medium">{category.name}</span>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold">{formatPrice(category.value)}</p>
+                        <p className="text-sm text-gray-600">{category.percentage}%</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="orders">
           <Card>
             <CardHeader>
-              <CardTitle>Order Status</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5 text-primary" />
+                Order Status Overview
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">Pending</span>
-                  <div className="flex items-center">
-                    <div className="w-32 h-2 bg-gray-200 rounded-full mr-2">
-                      <div
-                        className="h-full bg-yellow-400 rounded-full"
-                        style={{
-                          width: `${(pendingOrders / totalOrders) * 100}%`,
-                        }}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="p-4 border rounded-lg bg-yellow-50">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-yellow-800">Pending</p>
+                      <p className="text-2xl font-bold text-yellow-900">{stats.pendingOrders}</p>
+                    </div>
+                    <div className="w-12 h-12 bg-yellow-200 rounded-full flex items-center justify-center">
+                      <Calendar className="h-6 w-6 text-yellow-700" />
+                    </div>
+                  </div>
+                  <div className="mt-2">
+                    <div className="w-full bg-yellow-200 rounded-full h-2">
+                      <div 
+                        className="bg-yellow-600 h-2 rounded-full" 
+                        style={{ width: `${(stats.pendingOrders / stats.totalOrders) * 100}%` }}
                       />
                     </div>
-                    <span className="text-yellow-600">{pendingOrders}</span>
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">Processing</span>
-                  <div className="flex items-center">
-                    <div className="w-32 h-2 bg-gray-200 rounded-full mr-2">
-                      <div
-                        className="h-full bg-blue-400 rounded-full"
-                        style={{
-                          width: `${(processingOrders / totalOrders) * 100}%`,
-                        }}
+                <div className="p-4 border rounded-lg bg-blue-50">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-blue-800">Confirmed</p>
+                      <p className="text-2xl font-bold text-blue-900">{stats.confirmedOrders}</p>
+                    </div>
+                    <div className="w-12 h-12 bg-blue-200 rounded-full flex items-center justify-center">
+                      <ShoppingCart className="h-6 w-6 text-blue-700" />
+                    </div>
+                  </div>
+                  <div className="mt-2">
+                    <div className="w-full bg-blue-200 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full" 
+                        style={{ width: `${(stats.confirmedOrders / stats.totalOrders) * 100}%` }}
                       />
                     </div>
-                    <span className="text-blue-600">{processingOrders}</span>
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">Shipped</span>
-                  <div className="flex items-center">
-                    <div className="w-32 h-2 bg-gray-200 rounded-full mr-2">
-                      <div
-                        className="h-full bg-purple-400 rounded-full"
-                        style={{
-                          width: `${(shippedOrders / totalOrders) * 100}%`,
-                        }}
+                <div className="p-4 border rounded-lg bg-purple-50">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-purple-800">Shipped</p>
+                      <p className="text-2xl font-bold text-purple-900">{stats.shippedOrders}</p>
+                    </div>
+                    <div className="w-12 h-12 bg-purple-200 rounded-full flex items-center justify-center">
+                      <Package className="h-6 w-6 text-purple-700" />
+                    </div>
+                  </div>
+                  <div className="mt-2">
+                    <div className="w-full bg-purple-200 rounded-full h-2">
+                      <div 
+                        className="bg-purple-600 h-2 rounded-full" 
+                        style={{ width: `${(stats.shippedOrders / stats.totalOrders) * 100}%` }}
                       />
                     </div>
-                    <span className="text-purple-600">{shippedOrders}</span>
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">Delivered</span>
-                  <div className="flex items-center">
-                    <div className="w-32 h-2 bg-gray-200 rounded-full mr-2">
-                      <div
-                        className="h-full bg-green-400 rounded-full"
-                        style={{
-                          width: `${(deliveredOrders / totalOrders) * 100}%`,
-                        }}
+                <div className="p-4 border rounded-lg bg-green-50">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-green-800">Delivered</p>
+                      <p className="text-2xl font-bold text-green-900">{stats.deliveredOrders}</p>
+                    </div>
+                    <div className="w-12 h-12 bg-green-200 rounded-full flex items-center justify-center">
+                      <TrendingUp className="h-6 w-6 text-green-700" />
+                    </div>
+                  </div>
+                  <div className="mt-2">
+                    <div className="w-full bg-green-200 rounded-full h-2">
+                      <div 
+                        className="bg-green-600 h-2 rounded-full" 
+                        style={{ width: `${(stats.deliveredOrders / stats.totalOrders) * 100}%` }}
                       />
                     </div>
-                    <span className="text-green-600">{deliveredOrders}</span>
                   </div>
                 </div>
               </div>

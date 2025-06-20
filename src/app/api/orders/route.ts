@@ -111,12 +111,14 @@ export async function POST(req: Request) {
       items,
       subtotal,
       deliveryFee,
+      discount = 0,
       total,
       deliveryZone,
       deliveryAddress,
       orderNote,
       paymentMethod,
-      userId
+      userId,
+      couponId
     } = await req.json()
 
     // Validate required fields
@@ -169,6 +171,18 @@ export async function POST(req: Request) {
         })
       }
 
+      // If coupon is used, increment its usage count
+      if (couponId) {
+        await prisma.coupon.update({
+          where: { id: couponId },
+          data: {
+            usedCount: {
+              increment: 1
+            }
+          }
+        })
+      }
+
       // Create the order
       const order = await prisma.order.create({
         data: {
@@ -180,7 +194,7 @@ export async function POST(req: Request) {
           paymentMethod: paymentMethod || 'CASH_ON_DELIVERY',
           subtotal,
           deliveryFee,
-          discount: 0,
+          discount,
           total,
           deliveryZone,
           deliveryAddress,
