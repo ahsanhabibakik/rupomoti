@@ -2,63 +2,56 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { prisma } from '@/lib/prisma'
+import { NextRequest } from 'next/server'
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search')
     const categories = searchParams.getAll('categories')
-    const minPrice = Number(searchParams.get('minPrice')) || 0
-    const maxPrice = Number(searchParams.get('maxPrice')) || 100000
-    const sort = searchParams.get('sort') || 'newest'
+    const minPrice = searchParams.get('minPrice')
+    const maxPrice = searchParams.get('maxPrice')
+    const sortBy = searchParams.get('sort') || 'newest'
 
-    // Build the where clause
-    const where = {
-      AND: [
-        {
-          price: {
-            gte: minPrice,
-            lte: maxPrice,
-          },
-        },
-        // Add category filter if categories are selected
-        ...(categories.length > 0
-          ? [
-              {
-                category: {
-                  slug: {
-                    in: categories,
-                  },
-                },
-              },
-            ]
-          : []),
-        // Add search filter if search term exists
-        ...(search
-          ? [
-              {
-                OR: [
-                  { name: { contains: search, mode: 'insensitive' } },
-                  { description: { contains: search, mode: 'insensitive' } },
-                ],
-              },
-            ]
-          : []),
-      ],
+    const where: any = {
+      inStock: true, // Only fetch published products
     }
 
-    // Build the orderBy clause
-    let orderBy = {}
-    switch (sort) {
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+        { sku: { contains: search, mode: 'insensitive' } },
+      ]
+    }
+
+    if (categories.length > 0) {
+      where.categoryId = { in: categories }
+    }
+
+    if (minPrice || maxPrice) {
+      where.price = {}
+      if (minPrice) where.price.gte = parseFloat(minPrice)
+      if (maxPrice) where.price.lte = parseFloat(maxPrice)
+    }
+
+    let orderBy: any = {}
+    switch (sortBy) {
       case 'price-low':
         orderBy = { price: 'asc' }
         break
       case 'price-high':
         orderBy = { price: 'desc' }
         break
+      case 'popular':
+        // This would require a popularity metric, e.g., view count or sales
+        // For now, let's sort by creation date as a fallback
+        orderBy = { createdAt: 'desc' }
+        break
       case 'newest':
       default:
         orderBy = { createdAt: 'desc' }
+        break
     }
 
     const products = await prisma.product.findMany({
@@ -71,11 +64,8 @@ export async function GET(request: Request) {
 
     return NextResponse.json(products)
   } catch (error) {
-    console.error('Error fetching products:', error)
-    return NextResponse.json(
-      { error: 'Error fetching products' },
-      { status: 500 }
-    )
+    console.error('[PRODUCTS_GET]', error)
+    return new NextResponse('Internal Server Error', { status: 500 })
   }
 }
 

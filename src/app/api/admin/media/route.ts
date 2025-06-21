@@ -24,11 +24,27 @@ const uploadToCloudinary = (buffer: Buffer, folder: string, resource_type: 'imag
 };
 
 export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const section = searchParams.get('section');
+  
+  // Publicly accessible sections
+  const publicSections = ['logo', 'hero', 'homepage-features'];
+
   try {
+    if (section && publicSections.includes(section)) {
+      const media = await prisma.media.findMany({
+        where: { section: section },
+        orderBy: { position: 'asc' },
+      });
+      return NextResponse.json(media);
+    }
+    
+    // For all other media, require admin authentication
     const session = await getServerSession(authConfig);
     if (!session || !session.user || session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
     const media = await prisma.media.findMany({
       orderBy: [
         { section: 'asc' },

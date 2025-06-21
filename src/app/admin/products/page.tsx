@@ -73,9 +73,30 @@ type Product = {
   createdAt: string;
 };
 
+const initialFormData = {
+  name: '',
+  description: '',
+  price: '',
+  categoryId: '',
+  mainImage: '',
+  images: [] as string[],
+  sku: '',
+  weight: '',
+  dimensions: '',
+  material: '',
+  color: '',
+  brand: '',
+  tags: [] as string[],
+  metaTitle: '',
+  metaDescription: '',
+  isActive: true,
+  featured: false,
+};
+
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [categoriesForFilter, setCategoriesForFilter] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -85,33 +106,24 @@ export default function ProductsPage() {
   // Filters
   const [filters, setFilters] = useState({
     search: '',
-    categoryId: '',
-    status: '',
-    featured: '',
+    categoryId: 'all',
+    status: 'all',
+    featured: 'all',
   });
 
   // Form data
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    price: '',
-    categoryId: '',
-    mainImage: '',
-    images: [] as string[],
-    sku: '',
-    weight: '',
-    dimensions: '',
-    material: '',
-    color: '',
-    brand: '',
-    tags: [] as string[],
-    metaTitle: '',
-    metaDescription: '',
-    isActive: true,
-    featured: false,
-  });
+  const [formData, setFormData] = useState(initialFormData);
 
   const [newTag, setNewTag] = useState('');
+  const [newImage, setNewImage] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+
+  const isFormValid =
+    formData.name &&
+    formData.description &&
+    formData.price &&
+    formData.categoryId &&
+    formData.sku;
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -119,7 +131,12 @@ export default function ProductsPage() {
       const searchParams = new URLSearchParams({
         page: '1',
         limit: '50',
-        ...filters,
+      });
+
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value && value !== 'all') {
+          searchParams.append(key, value);
+        }
       });
 
       const res = await fetch(`/api/admin/products?${searchParams}`);
@@ -127,7 +144,7 @@ export default function ProductsPage() {
       const data = await res.json();
       
       setProducts(data.products || []);
-      setCategories(data.filters?.categories || []);
+      setCategoriesForFilter(data.filters?.categories || []);
     } catch (err: any) {
       setError(err.message);
       showToast.error(err.message);
@@ -135,6 +152,20 @@ export default function ProductsPage() {
       setLoading(false);
     }
   }, [filters]);
+
+  useEffect(() => {
+    const fetchAllCategories = async () => {
+      try {
+        const res = await fetch('/api/admin/categories?all=true');
+        if (!res.ok) throw new Error('Failed to fetch categories for form');
+        const data = await res.json();
+        setAllCategories(data.categories || []);
+      } catch (err: any) {
+        showToast.error(err.message);
+      }
+    };
+    fetchAllCategories();
+  }, []);
 
   useEffect(() => {
     fetchProducts();
@@ -153,6 +184,7 @@ export default function ProductsPage() {
           ...formData,
           price: parseFloat(formData.price),
           weight: formData.weight ? parseFloat(formData.weight) : null,
+          inStock: formData.isActive,
           ...(editingProduct && { id: editingProduct.id }),
         }),
       });
@@ -214,26 +246,9 @@ export default function ProductsPage() {
   };
 
   const resetForm = () => {
-    setFormData({
-      name: '',
-      description: '',
-      price: '',
-      categoryId: '',
-      mainImage: '',
-      images: [],
-      sku: '',
-      weight: '',
-      dimensions: '',
-      material: '',
-      color: '',
-      brand: '',
-      tags: [],
-      metaTitle: '',
-      metaDescription: '',
-      isActive: true,
-      featured: false,
-    });
+    setFormData(initialFormData);
     setNewTag('');
+    setNewImage('');
   };
 
   const openAddDialog = () => {
@@ -253,8 +268,125 @@ export default function ProductsPage() {
     setFormData({ ...formData, tags: formData.tags.filter(tag => tag !== tagToRemove) });
   };
 
+  const addImage = () => {
+    if (newImage.trim() && !formData.images.includes(newImage.trim())) {
+      setFormData({ ...formData, images: [...formData.images, newImage.trim()] });
+      setNewImage('');
+    }
+  };
+
+  const removeImage = (imageToRemove: string) => {
+    setFormData({ ...formData, images: formData.images.filter(img => img !== imageToRemove) });
+  };
+
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleFormChange = (
+    key: string,
+    value: string | boolean | string[],
+  ) => {
+    setFormData((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleSingleImageUpload = async (file: File, fieldToUpdate: keyof typeof formData) => {
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const uploadFormData = new FormData();
+      uploadFormData.append('files', file);
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: uploadFormData,
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Image upload failed');
+      }
+
+      const { urls } = await res.json();
+      if (urls && urls.length > 0) {
+        handleFormChange(fieldToUpdate as string, urls[0]);
+        showToast.success('Image uploaded successfully');
+      } else {
+        throw new Error('Image URL not returned from server.');
+      }
+    } catch (err: any) {
+      showToast.error(err.message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      for (let i = 0; i < files.length; i++) {
+        formData.append('files', files[i]);
+      }
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        throw new Error('Image upload failed');
+      }
+
+      const { urls } = await res.json();
+      setFormData((prev) => ({ ...prev, images: [...prev.images, ...urls] }));
+      showToast.success('Images uploaded successfully');
+    } catch (err: any) {
+      showToast.error(err.message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleSaveAsDraft = async () => {
+    if (!formData.name) {
+      showToast.error('Product name is required to save a draft.');
+      return;
+    }
+
+    try {
+      const url = '/api/admin/products';
+      const method = editingProduct ? 'PUT' : 'POST';
+      
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          price: parseFloat(formData.price) || 0,
+          weight: formData.weight ? parseFloat(formData.weight) : null,
+          inStock: false, // Explicitly save as draft
+          ...(editingProduct && { id: editingProduct.id }),
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to save draft');
+      }
+      
+      showToast.success('Product saved as draft');
+      setIsDialogOpen(false);
+      setEditingProduct(null);
+      resetForm();
+      fetchProducts();
+    } catch (err: any) {
+      showToast.error(err.message);
+    }
   };
 
   if (loading) {
@@ -281,251 +413,242 @@ export default function ProductsPage() {
         </Button>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Filters & Search
-            </CardTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              {showFilters ? 'Hide' : 'Show'} Filters
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {/* Search */}
-          <div className="flex gap-4 mb-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search products by name, description, or SKU..."
-                value={filters.search}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select
-              value={filters.categoryId}
-              onValueChange={(value) => handleFilterChange('categoryId', value)}
-            >
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="All Categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">All Categories</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={filters.status}
-              onValueChange={(value) => handleFilterChange('status', value)}
-            >
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="All Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Advanced Filters */}
-          {showFilters && (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4 border-t">
-              <div>
-                <Label>Featured</Label>
-                <Select
-                  value={filters.featured}
-                  onValueChange={(value) => handleFilterChange('featured', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="All" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All</SelectItem>
-                    <SelectItem value="true">Featured</SelectItem>
-                    <SelectItem value="false">Not Featured</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Products Table */}
-      {error ? (
-        <div className="text-destructive text-center py-8">{error}</div>
-      ) : (
+      <Tabs value={filters.status} onValueChange={(value) => handleFilterChange('status', value)} className="space-y-4">
+        {/* Filters */}
         <Card>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Product</TableHead>
-                <TableHead>SKU</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Featured</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {products.length > 0 ? (
-                products.map((product) => (
-                  <TableRow key={product.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 relative rounded-lg overflow-hidden">
-                          <Image
-                            src={product.mainImage || '/placeholder.png'}
-                            alt={product.name}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                        <div>
-                          <div className="font-medium">{product.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {product.description.substring(0, 50)}...
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Filter className="h-5 w-5" />
+                Filters & Search
+              </CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                {showFilters ? 'Hide' : 'Show'} Filters
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {/* Search */}
+            <div className="flex flex-col md:flex-row gap-4 mb-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search products by name, description, or SKU..."
+                  value={filters.search}
+                  onChange={(e) => handleFilterChange('search', e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select
+                value={filters.categoryId}
+                onValueChange={(value) => handleFilterChange('categoryId', value)}
+              >
+                <SelectTrigger className="w-full md:w-[200px]">
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {categoriesForFilter.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Advanced Filters */}
+            {showFilters && (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4 border-t">
+                <div>
+                  <Label>Featured</Label>
+                  <Select
+                    value={filters.featured}
+                    onValueChange={(value) => handleFilterChange('featured', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="All" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="true">Featured</SelectItem>
+                      <SelectItem value="false">Not Featured</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+          </CardContent>
+          <div className="px-6 pb-6 pt-0">
+            <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 sm:w-auto">
+              <TabsTrigger value="all">All Products</TabsTrigger>
+              <TabsTrigger value="active">Published</TabsTrigger>
+              <TabsTrigger value="inactive">Drafts</TabsTrigger>
+            </TabsList>
+          </div>
+        </Card>
+
+        {/* Products Table */}
+        {error ? (
+          <div className="text-destructive text-center py-8">{error}</div>
+        ) : (
+          <Card>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Product</TableHead>
+                  <TableHead>SKU</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Price</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Featured</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {products.length > 0 ? (
+                  products.map((product) => (
+                    <TableRow key={product.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="h-12 w-12 relative rounded-lg overflow-hidden">
+                            <Image
+                              src={product.mainImage || '/placeholder.png'}
+                              alt={product.name}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                          <div>
+                            <div className="font-medium">{product.name}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {product.description.substring(0, 50)}...
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-mono text-sm">{product.sku}</TableCell>
-                    <TableCell>{product.category?.name || 'Uncategorized'}</TableCell>
-                    <TableCell>৳{product.price.toFixed(2)}</TableCell>
-                    <TableCell>
-                      <Badge variant={product.inStock ? 'default' : 'secondary'}>
-                        {product.inStock ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {product.featured && (
-                        <Badge variant="outline" className="text-yellow-600">
-                          <Star className="h-3 w-3 mr-1" />
-                          Featured
+                      </TableCell>
+                      <TableCell className="font-mono text-sm">{product.sku}</TableCell>
+                      <TableCell>{product.category?.name || 'Uncategorized'}</TableCell>
+                      <TableCell>৳{product.price.toFixed(2)}</TableCell>
+                      <TableCell>
+                        <Badge variant={product.inStock ? 'default' : 'secondary'}>
+                          {product.inStock ? 'Published' : 'Draft'}
                         </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEdit(product)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDelete(product.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      </TableCell>
+                      <TableCell>
+                        {product.featured && (
+                          <Badge variant="outline" className="text-yellow-600">
+                            <Star className="h-3 w-3 mr-1" />
+                            Featured
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEdit(product)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(product.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8">
+                      No products found.
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
-                    No products found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </Card>
-      )}
+                )}
+              </TableBody>
+            </Table>
+          </Card>
+        )}
+      </Tabs>
 
-      {/* Product Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+      {/* Dialog for Add/Edit Product */}
+      <Dialog
+        open={isDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingProduct(null);
+            resetForm();
+          }
+          setIsDialogOpen(open);
+        }}
+      >
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>
               {editingProduct ? 'Edit Product' : 'Add New Product'}
             </DialogTitle>
           </DialogHeader>
-          <ScrollArea className="max-h-[calc(90vh-120px)]">
-            <form onSubmit={handleSubmit} className="space-y-6 p-1">
-              <Tabs defaultValue="basic" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="basic">Basic Info</TabsTrigger>
-                  <TabsTrigger value="images">Images</TabsTrigger>
+          <form onSubmit={handleSubmit}>
+            <ScrollArea className="max-h-[70vh] p-4">
+              <Tabs defaultValue="general" className="space-y-4">
+                <TabsList>
+                  <TabsTrigger value="general">General</TabsTrigger>
+                  <TabsTrigger value="media">Media</TabsTrigger>
                   <TabsTrigger value="details">Details</TabsTrigger>
                   <TabsTrigger value="seo">SEO</TabsTrigger>
                 </TabsList>
-
-                <TabsContent value="basic" className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
+                <TabsContent value="general">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
                       <Label htmlFor="name">Product Name *</Label>
                       <Input
                         id="name"
                         value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        onChange={(e) => handleFormChange('name', e.target.value)}
                         required
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="sku">SKU</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="sku">SKU *</Label>
                       <Input
                         id="sku"
                         value={formData.sku}
-                        onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                        placeholder="Auto-generated if empty"
+                        onChange={(e) => handleFormChange('sku', e.target.value)}
+                        required
                       />
                     </div>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="description">Description *</Label>
-                    <Textarea
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      required
-                      rows={4}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
+                    <div className="space-y-2">
                       <Label htmlFor="price">Price *</Label>
                       <Input
                         id="price"
                         type="number"
-                        step="0.01"
                         value={formData.price}
-                        onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                        onChange={(e) => handleFormChange('price', e.target.value)}
                         required
                       />
                     </div>
-                    <div>
+                    <div className="space-y-2">
                       <Label htmlFor="category">Category *</Label>
                       <Select
                         value={formData.categoryId}
-                        onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
+                        onValueChange={(value) =>
+                          handleFormChange('categoryId', value)
+                        }
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select category" />
+                          <SelectValue placeholder="Select a category" />
                         </SelectTrigger>
                         <SelectContent>
-                          {categories.map((category) => (
+                          {allCategories.map((category) => (
                             <SelectItem key={category.id} value={category.id}>
                               {category.name}
                             </SelectItem>
@@ -533,199 +656,285 @@ export default function ProductsPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div>
-                      <Label htmlFor="weight">Weight (g)</Label>
-                      <Input
-                        id="weight"
-                        type="number"
-                        step="0.1"
-                        value={formData.weight}
-                        onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                    <div className="col-span-full space-y-2">
+                      <Label htmlFor="description">Description *</Label>
+                      <Textarea
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) =>
+                          handleFormChange('description', e.target.value)
+                        }
+                        required
                       />
                     </div>
-                  </div>
-
-                  <div className="flex items-center space-x-4">
                     <div className="flex items-center space-x-2">
                       <Switch
                         id="isActive"
                         checked={formData.isActive}
-                        onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                        onCheckedChange={(checked) =>
+                          handleFormChange('isActive', checked)
+                        }
                       />
-                      <Label htmlFor="isActive">Active</Label>
+                      <Label htmlFor="isActive">Publish Product</Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Switch
                         id="featured"
                         checked={formData.featured}
-                        onCheckedChange={(checked) => setFormData({ ...formData, featured: checked })}
+                        onCheckedChange={(checked) =>
+                          handleFormChange('featured', checked)
+                        }
                       />
                       <Label htmlFor="featured">Featured</Label>
                     </div>
                   </div>
                 </TabsContent>
-
-                <TabsContent value="images" className="space-y-4">
-                  <div>
-                    <Label htmlFor="mainImage">Main Image *</Label>
-                    <Input
-                      id="mainImage"
-                      value={formData.mainImage}
-                      onChange={(e) => setFormData({ ...formData, mainImage: e.target.value })}
-                      placeholder="Main product image URL"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <Label>Additional Images (up to 9)</Label>
+                <TabsContent value="media">
+                  <div className="space-y-6">
                     <div className="space-y-2">
-                      {formData.images.map((image, index) => (
-                        <div key={index} className="flex gap-2">
+                      <Label className="text-lg font-medium">Main Image</Label>
+                      <div className="p-4 border rounded-lg space-y-4 bg-muted/20">
+                        <div className="space-y-2">
+                          <Label htmlFor="mainImage">Main Image URL</Label>
                           <Input
-                            value={image}
-                            onChange={(e) => {
-                              const newImages = [...formData.images];
-                              newImages[index] = e.target.value;
-                              setFormData({ ...formData, images: newImages });
-                            }}
-                            placeholder="Image URL"
+                            id="mainImage"
+                            placeholder="https://example.com/image.png"
+                            value={formData.mainImage}
+                            onChange={(e) =>
+                              handleFormChange('mainImage', e.target.value)
+                            }
                           />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            onClick={() => {
-                              const newImages = formData.images.filter((_, i) => i !== index);
-                              setFormData({ ...formData, images: newImages });
-                            }}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
                         </div>
-                      ))}
-                      {formData.images.length < 9 && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => setFormData({ ...formData, images: [...formData.images, ''] })}
-                        >
-                          <ImageIcon className="h-4 w-4 mr-2" />
-                          Add Image
-                        </Button>
-                      )}
+                        <div className="flex items-center gap-2">
+                          <div className="flex-grow border-t"></div>
+                          <span className="text-xs text-muted-foreground">OR</span>
+                          <div className="flex-grow border-t"></div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="main-image-upload">Upload from Device</Label>
+                          <Input
+                            id="main-image-upload"
+                            type="file"
+                            onChange={(e) => {
+                              if (e.target.files?.[0]) {
+                                handleSingleImageUpload(e.target.files[0], 'mainImage');
+                              }
+                            }}
+                            disabled={isUploading}
+                          />
+                        </div>
+                        {formData.mainImage && (
+                          <div className="w-32 h-32 relative rounded-md overflow-hidden">
+                            <Image
+                              src={formData.mainImage}
+                              alt="Main image preview"
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-lg font-medium">Additional Images</Label>
+                      <div className="p-4 border rounded-lg space-y-4 bg-muted/20">
+                        <div className="space-y-2">
+                          <Label htmlFor="newImage">Add by URL</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              id="newImage"
+                              placeholder="https://example.com/image.png"
+                              value={newImage}
+                              onChange={(e) => setNewImage(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  addImage();
+                                }
+                              }}
+                            />
+                            <Button type="button" onClick={addImage}>
+                              Add URL
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <div className="flex-grow border-t"></div>
+                          <span className="text-xs text-muted-foreground">OR</span>
+                          <div className="flex-grow border-t"></div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="image-upload">Upload from Device</Label>
+                          <Input
+                            id="image-upload"
+                            type="file"
+                            multiple
+                            onChange={handleImageUpload}
+                            disabled={isUploading}
+                          />
+                        </div>
+                        
+                        {isUploading && <p className="text-sm text-muted-foreground">Uploading images...</p>}
+
+                        {formData.images.length > 0 && (
+                          <div className="space-y-2">
+                            <Label>Image Previews</Label>
+                            <div className="flex flex-wrap gap-2 pt-2">
+                              {formData.images.map((img) => (
+                                <div key={img} className="relative w-24 h-24">
+                                  <Image
+                                    src={img}
+                                    alt="Additional image"
+                                    fill
+                                    className="object-cover rounded-md"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="icon"
+                                    className="absolute top-1 right-1 h-6 w-6"
+                                    onClick={() => removeImage(img)}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </TabsContent>
-
-                <TabsContent value="details" className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="material">Material</Label>
-                      <Input
-                        id="material"
-                        value={formData.material}
-                        onChange={(e) => setFormData({ ...formData, material: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="color">Color</Label>
-                      <Input
-                        id="color"
-                        value={formData.color}
-                        onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
+                <TabsContent value="details">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
                       <Label htmlFor="brand">Brand</Label>
                       <Input
                         id="brand"
                         value={formData.brand}
-                        onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                        onChange={(e) => handleFormChange('brand', e.target.value)}
                       />
                     </div>
-                    <div>
+                    <div className="space-y-2">
+                      <Label htmlFor="material">Material</Label>
+                      <Input
+                        id="material"
+                        value={formData.material}
+                        onChange={(e) =>
+                          handleFormChange('material', e.target.value)
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="color">Color</Label>
+                      <Input
+                        id="color"
+                        value={formData.color}
+                        onChange={(e) => handleFormChange('color', e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="weight">Weight (kg)</Label>
+                      <Input
+                        id="weight"
+                        type="number"
+                        value={formData.weight}
+                        onChange={(e) =>
+                          handleFormChange('weight', e.target.value)
+                        }
+                      />
+                    </div>
+                    <div className="col-span-full space-y-2">
                       <Label htmlFor="dimensions">Dimensions</Label>
                       <Input
                         id="dimensions"
+                        placeholder="e.g., 10cm x 5cm x 2cm"
                         value={formData.dimensions}
-                        onChange={(e) => setFormData({ ...formData, dimensions: e.target.value })}
-                        placeholder="LxWxH cm"
+                        onChange={(e) =>
+                          handleFormChange('dimensions', e.target.value)
+                        }
                       />
                     </div>
-                  </div>
-
-                  <div>
-                    <Label>Tags</Label>
-                    <div className="space-y-2">
+                    <div className="col-span-full space-y-2">
+                      <Label>Tags</Label>
                       <div className="flex gap-2">
                         <Input
+                          placeholder="Add a tag"
                           value={newTag}
                           onChange={(e) => setNewTag(e.target.value)}
-                          placeholder="Add a tag"
-                          onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
                         />
                         <Button type="button" onClick={addTag}>
-                          Add
+                          Add Tag
                         </Button>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {formData.tags.map((tag, index) => (
-                          <Badge key={index} variant="secondary" className="gap-1">
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {formData.tags.map((tag) => (
+                          <Badge key={tag} variant="secondary">
                             {tag}
-                            <X
-                              className="h-3 w-3 cursor-pointer"
+                            <button
+                              type="button"
+                              className="ml-2"
                               onClick={() => removeTag(tag)}
-                            />
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
                           </Badge>
                         ))}
                       </div>
                     </div>
                   </div>
                 </TabsContent>
-
-                <TabsContent value="seo" className="space-y-4">
-                  <div>
-                    <Label htmlFor="metaTitle">Meta Title</Label>
-                    <Input
-                      id="metaTitle"
-                      value={formData.metaTitle}
-                      onChange={(e) => setFormData({ ...formData, metaTitle: e.target.value })}
-                      placeholder="SEO title for search engines"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="metaDescription">Meta Description</Label>
-                    <Textarea
-                      id="metaDescription"
-                      value={formData.metaDescription}
-                      onChange={(e) => setFormData({ ...formData, metaDescription: e.target.value })}
-                      placeholder="SEO description for search engines"
-                      rows={3}
-                    />
+                <TabsContent value="seo">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="metaTitle">Meta Title</Label>
+                      <Input
+                        id="metaTitle"
+                        value={formData.metaTitle}
+                        onChange={(e) =>
+                          handleFormChange('metaTitle', e.target.value)
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="metaDescription">Meta Description</Label>
+                      <Textarea
+                        id="metaDescription"
+                        value={formData.metaDescription}
+                        onChange={(e) =>
+                          handleFormChange('metaDescription', e.target.value)
+                        }
+                      />
+                    </div>
                   </div>
                 </TabsContent>
               </Tabs>
-
-              <Separator />
-
-              <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit">
-                  {editingProduct ? 'Update Product' : 'Create Product'}
-                </Button>
-              </div>
-            </form>
-          </ScrollArea>
+            </ScrollArea>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleSaveAsDraft}
+                disabled={!formData.name}
+              >
+                Save as Draft
+              </Button>
+              <Button type="submit" disabled={!isFormValid}>
+                {editingProduct ? 'Update Product' : 'Publish Product'}
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

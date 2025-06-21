@@ -10,31 +10,42 @@ cloudinary.config({
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    const file = formData.get('file') as File;
-    
-    if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+    const files = formData.getAll('files') as File[];
+
+    if (!files || files.length === 0) {
+      return NextResponse.json({ error: 'No files provided' }, { status: 400 });
     }
 
-    // Convert file to buffer
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    const uploadPromises = files.map((file) => {
+      return new Promise<{ secure_url: string }>((resolve, reject) => {
+        file.arrayBuffer().then((bytes) => {
+          const buffer = Buffer.from(bytes);
 
-    // Upload to cloudinary
-    const result = await new Promise((resolve, reject) => {
-      cloudinary.uploader.upload_stream(
-        {
-          resource_type: 'auto',
-          folder: 'rupomoti',
-        },
-        (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
-        }
-      ).end(buffer);
+          cloudinary.uploader
+            .upload_stream(
+              {
+                resource_type: 'auto',
+                folder: 'rupomoti',
+              },
+              (error, result) => {
+                if (error) {
+                  reject(error);
+                } else if (result) {
+                  resolve(result as { secure_url: string });
+                } else {
+                  reject(new Error('Cloudinary upload failed'));
+                }
+              },
+            )
+            .end(buffer);
+        });
+      });
     });
 
-    return NextResponse.json({ url: (result as any).secure_url });
+    const results = await Promise.all(uploadPromises);
+    const urls = results.map((result) => result.secure_url);
+
+    return NextResponse.json({ urls });
   } catch (error) {
     console.error('Upload error:', error);
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 });

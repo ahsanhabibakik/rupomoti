@@ -82,7 +82,7 @@ export function CategoryDialog({
     slug: '',
     description: '',
     image: '',
-    parentId: '',
+    parentId: 'none',
     isActive: true,
     sortOrder: 0,
     metaTitle: '',
@@ -109,7 +109,7 @@ export function CategoryDialog({
         slug: category.slug || '',
         description: category.description || '',
         image: category.image || '',
-        parentId: category.parentId || '',
+        parentId: category.parentId || 'none',
         isActive: category.isActive ?? true,
         sortOrder: category.sortOrder || 0,
         metaTitle: category.metaTitle || '',
@@ -121,7 +121,7 @@ export function CategoryDialog({
         slug: '',
         description: '',
         image: '',
-        parentId: '',
+        parentId: 'none',
         isActive: true,
         sortOrder: 0,
         metaTitle: '',
@@ -188,19 +188,20 @@ export function CategoryDialog({
     setIsSubmitting(true)
 
     try {
-      const url = '/api/categories'
+      const url = '/api/admin/categories'
       const method = isEditing ? 'PUT' : 'POST'
       
-      const payload = isEditing 
-        ? { id: category?.id, ...formData }
-        : formData
+      const payload = {
+        ...formData,
+        parentId: formData.parentId === 'none' ? null : formData.parentId,
+      }
 
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(isEditing ? { id: category.id, ...payload } : payload),
       })
 
       const result = await response.json()
@@ -309,7 +310,7 @@ export function CategoryDialog({
                     <SelectValue placeholder="Select parent category (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No Parent (Top Level)</SelectItem>
+                    <SelectItem value="none">No Parent</SelectItem>
                     {parentOptions
                       .filter(cat => !cat.parentId) // Only show top-level categories as parents
                       .map((cat) => (

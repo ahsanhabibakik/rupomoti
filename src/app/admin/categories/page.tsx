@@ -8,50 +8,96 @@ import { DataTable } from '@/components/ui/data-table'
 import { useCategories } from '@/hooks/useCategories'
 import { CategoryDialog } from '@/components/admin/CategoryDialog'
 
-function CategoryActions({ category }: { category: any }) {
-  const { deleteCategory } = useCategories()
-
-  const handleDelete = async () => {
-    if (window.confirm('Are you sure you want to delete this category?')) {
-      await deleteCategory(category.id)
-    }
-  }
-
+function CategoryActions({
+  category,
+  onEdit,
+  onDelete,
+}: {
+  category: any
+  onEdit: (category: any) => void
+  onDelete: (id: string) => void
+}) {
   return (
     <div className="flex items-center gap-2">
-      <Button variant="outline" size="sm">
+      <Button variant="outline" size="sm" onClick={() => onEdit(category)}>
         Edit
       </Button>
-      <Button variant="destructive" size="sm" onClick={handleDelete}>
+      <Button
+        variant="destructive"
+        size="sm"
+        onClick={() => onDelete(category.id)}
+      >
         Delete
       </Button>
     </div>
   )
 }
 
-const columns = [
-  {
-    accessorKey: 'name',
-    header: 'Name',
-  },
-  {
-    accessorKey: 'description',
-    header: 'Description',
-  },
-  {
-    accessorKey: '_count.products',
-    header: 'Products',
-  },
-  {
-    id: 'actions',
-    cell: ({ row }) => <CategoryActions category={row.original} />,
-  },
-]
-
 export default function CategoriesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [search, setSearch] = useState('')
-  const { data: categories, isLoading, error } = useCategories()
+  const { data, isLoading, error, mutate } = useCategories()
+  const [editingCategory, setEditingCategory] = useState(null)
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this category?')) {
+      // Optimistic UI update
+      const currentCategories = data || []
+      mutate(
+        currentCategories.filter((c) => c.id !== id),
+        false,
+      )
+
+      try {
+        const res = await fetch(`/api/admin/categories?id=${id}`, {
+          method: 'DELETE',
+        })
+        if (!res.ok) throw new Error('Failed to delete category')
+        mutate() // Re-fetch to confirm
+      } catch (err) {
+        // Revert on failure
+        mutate(currentCategories, false)
+        console.error(err)
+      }
+    }
+  }
+
+  const handleEdit = (category: any) => {
+    setEditingCategory(category)
+    setIsDialogOpen(true)
+  }
+
+  const handleOpenDialog = (open: boolean) => {
+    if (!open) {
+      setEditingCategory(null)
+    }
+    setIsDialogOpen(open)
+  }
+
+  const columns = [
+    {
+      accessorKey: 'name',
+      header: 'Name',
+    },
+    {
+      accessorKey: 'description',
+      header: 'Description',
+    },
+    {
+      accessorKey: '_count.products',
+      header: 'Products',
+    },
+    {
+      id: 'actions',
+      cell: ({ row }: { row: { original: any } }) => (
+        <CategoryActions
+          category={row.original}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
+      ),
+    },
+  ]
 
   if (isLoading) {
     return (
@@ -69,8 +115,8 @@ export default function CategoriesPage() {
     )
   }
 
-  const filteredCategories = categories?.filter(category =>
-    category.name.toLowerCase().includes(search.toLowerCase())
+  const filteredCategories = data?.filter((category) =>
+    category.name.toLowerCase().includes(search.toLowerCase()),
   )
 
   return (
@@ -92,14 +138,18 @@ export default function CategoriesPage() {
         />
       </div>
 
-      <DataTable
-        columns={columns}
-        data={filteredCategories || []}
-      />
+      <DataTable columns={columns} data={filteredCategories || []} />
 
       <CategoryDialog
         open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
+        onOpenChange={handleOpenDialog}
+        category={editingCategory}
+        categories={data || []}
+        onSuccess={() => {
+          setIsDialogOpen(false)
+          setEditingCategory(null)
+          mutate() // Re-fetch and re-validate
+        }}
       />
     </div>
   )

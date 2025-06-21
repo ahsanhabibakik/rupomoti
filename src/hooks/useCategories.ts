@@ -15,11 +15,11 @@ export interface Category {
 }
 
 export function useCategories() {
-  const { data, error, mutate } = useSWR<Category[]>('/api/categories', fetcher)
+  const { data, error, mutate } = useSWR<Category[]>('/api/admin/categories', fetcher)
 
   const createCategory = async (categoryData: Omit<Category, 'id' | 'slug'>) => {
     return showToast.promise(
-      fetch('/api/categories', {
+      fetch('/api/admin/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(categoryData),
@@ -41,7 +41,7 @@ export function useCategories() {
 
   const updateCategory = async (id: string, categoryData: Partial<Category>) => {
     return showToast.promise(
-      fetch(`/api/categories/${id}`, {
+      fetch(`/api/admin/categories`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, ...categoryData }),
@@ -63,7 +63,7 @@ export function useCategories() {
 
   const deleteCategory = async (id: string) => {
     return showToast.promise(
-      fetch(`/api/categories/${id}`, {
+      fetch(`/api/admin/categories?id=${id}`, {
         method: 'DELETE',
       }).then(async (res) => {
         if (!res.ok) {
@@ -87,5 +87,6 @@ export function useCategories() {
     createCategory,
     updateCategory,
     deleteCategory,
+    mutate,
   }
 } 
