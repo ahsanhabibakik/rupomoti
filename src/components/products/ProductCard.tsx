@@ -3,12 +3,14 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Heart, ShoppingCart } from 'lucide-react'
+import { Heart, ShoppingCart, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { useCart } from '@/hooks/useCart'
+import { useAppDispatch } from '@/redux/hooks'
+import { addToCart, toggleCart } from '@/redux/slices/cartSlice'
 import { useWishlist } from '@/hooks/useWishlist'
-import { useToast } from '@/hooks/use-toast'
+import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 
 interface ProductCardProps {
   id: string
@@ -33,139 +35,128 @@ export function ProductCard({
   isOutOfStock = false,
   discount = 0,
 }: ProductCardProps) {
-  const { addToCart } = useCart()
+  const dispatch = useAppDispatch()
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist()
-  const { toast } = useToast()
   const [isHovered, setIsHovered] = useState(false)
   const [isImageLoading, setIsImageLoading] = useState(true)
 
+  const safePrice = typeof price === 'number' && !isNaN(price) ? price : 0
+  const discountedPrice = discount > 0 && typeof price === 'number' && !isNaN(price)
+    ? price - (price * discount) / 100
+    : safePrice
+
   const handleAddToCart = () => {
-    addToCart({ id, name, price, image, quantity: 1 })
-    toast({
-      title: 'Added to Cart',
-      description: `${name} has been added to your cart.`,
-    })
+    const cartItem = {
+      id,
+      name,
+      price: discount > 0 ? discountedPrice : safePrice,
+      image,
+      quantity: 1
+    }
+    dispatch(addToCart(cartItem))
+    dispatch(toggleCart())
+    toast.success(`${name} has been added to your cart.`)
   }
 
   const handleWishlistToggle = () => {
-    if (isInWishlist(id)) {
-      removeFromWishlist(id)
-      toast({
-        title: 'Removed from Wishlist',
-        description: `${name} has been removed from your wishlist.`,
-      })
+    if (isInWishlist()) {
+      removeFromWishlist()
+      toast.success(`${name} has been removed from your wishlist.`)
     } else {
-      addToWishlist({ id, name, price, image })
-      toast({
-        title: 'Added to Wishlist',
-        description: `${name} has been added to your wishlist.`,
-      })
+      addToWishlist()
+      toast.success(`${name} has been added to your wishlist.`)
     }
   }
 
-  const discountedPrice = discount > 0 ? price - (price * discount) / 100 : price
-
   return (
-    <div
-      className="group relative flex flex-col overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm transition-all hover:shadow-md"
+    <div 
+      className="group relative flex flex-col h-full overflow-hidden rounded-lg border border-base-dark bg-base-light p-2 sm:p-4 transition-all duration-300 hover:shadow-premium hover:border-accent"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Product Image */}
-      <Link href={`/shop/${id}`} className="relative aspect-[4/5] overflow-hidden">
-        <Image
-          src={image}
-          alt={name}
-          fill
-          className={`object-cover transition-transform duration-500 ${
-            isHovered ? 'scale-110' : 'scale-100'
-          } ${isImageLoading ? 'animate-pulse bg-muted' : ''}`}
-          onLoadingComplete={() => setIsImageLoading(false)}
-          sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 50vw"
-        />
-        {isOutOfStock && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/60">
-            <Badge variant="secondary" className="bg-white text-black">
-              Out of Stock
-            </Badge>
-          </div>
-        )}
-        {isNew && (
-          <Badge className="absolute left-2 top-2 bg-primary">New</Badge>
-        )}
-        {isBestSeller && (
-          <Badge variant="secondary" className="absolute right-2 top-2 bg-secondary text-secondary-foreground">
-            Best Seller
-          </Badge>
-        )}
-        {discount > 0 && (
-          <Badge variant="destructive" className="absolute left-2 top-2 bg-destructive">
-            {discount}% Off
-          </Badge>
-        )}
+      <Link href={`/product/${id}`} className="block">
+        <div className="relative aspect-square overflow-hidden rounded-md">
+          <Image
+            src={image}
+            alt={name}
+            fill
+            className={cn(
+              'object-cover transition-transform duration-300',
+              isHovered ? 'scale-110' : 'scale-100'
+            )}
+            onLoad={() => setIsImageLoading(false)}
+          />
+          {isNew && (
+            <Badge className="absolute left-2 top-2 bg-primary text-accent">New</Badge>
+          )}
+          {isBestSeller && (
+            <Badge className="absolute right-2 top-2 bg-accent text-primary">Best Seller</Badge>
+          )}
+          {isOutOfStock && (
+            <div className="absolute inset-0 flex items-center justify-center bg-base-light/80">
+              <Badge variant="destructive">Out of Stock</Badge>
+            </div>
+          )}
+          {discount > 0 && (
+            <Badge className="absolute top-2 left-2 bg-accent text-primary">-{discount}%</Badge>
+          )}
+        </div>
       </Link>
-
-      {/* Product Info */}
-      <div className="flex flex-1 flex-col p-4">
-        <Link href={`/shop/${id}`} className="flex-1">
-          <h3 className="mb-1 line-clamp-1 text-lg font-semibold transition-colors group-hover:text-primary">
-            {name}
-          </h3>
-          <p className="mb-2 line-clamp-2 text-sm text-muted-foreground">
-            {description}
-          </p>
-        </Link>
-
-        {/* Price and Actions */}
-        <div className="mt-auto flex items-baseline justify-between">
-          <div className="flex flex-col">
+      <div className="flex flex-col flex-1 gap-2 mt-2">
+        <div className="flex flex-wrap gap-2 min-h-[28px]">
+          {isNew && <Badge className="bg-primary text-accent">New</Badge>}
+          {isBestSeller && <Badge className="bg-accent text-primary">Best Seller</Badge>}
+          {discount > 0 && (
+            <Badge className="bg-accent text-primary">-{discount}% OFF</Badge>
+          )}
+        </div>
+        <h3 className="font-medium leading-tight text-base sm:text-lg line-clamp-1 text-neutral">{name}</h3>
+        <p className="text-sm text-neutral-light line-clamp-2 flex-1">{description}</p>
+        <div className="flex items-center justify-between mt-2">
+          <div>
             {discount > 0 ? (
-              <>
-                <span className="text-lg font-bold text-destructive">
-                  ${discountedPrice.toFixed(2)}
-                </span>
-                <span className="text-sm text-muted-foreground line-through">
-                  ${price.toFixed(2)}
-                </span>
-              </>
+              <div className="flex items-baseline gap-2">
+                <span className="font-bold text-lg text-accent">${discountedPrice.toFixed(2)}</span>
+                <span className="text-sm text-neutral-light line-through">${safePrice.toFixed(2)}</span>
+              </div>
             ) : (
-              <span className="text-lg font-bold">${price.toFixed(2)}</span>
+              <span className="font-bold text-lg text-accent">${safePrice.toFixed(2)}</span>
             )}
           </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className={`h-8 w-8 rounded-full transition-colors ${
-                isInWishlist(id)
-                  ? 'bg-destructive/10 text-destructive hover:bg-destructive/20'
-                  : 'hover:bg-muted'
+          {isOutOfStock && (
+            <Badge className="bg-pearl text-neutral pointer-events-none">Out of Stock</Badge>
+          )}
+        </div>
+        <div className="flex gap-2 mt-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className={`h-8 w-8 rounded-full transition-colors ${
+              isInWishlist()
+                ? 'bg-gold/10 text-accent hover:bg-gold/20'
+                : 'hover:bg-pearl text-neutral-light hover:text-neutral'
+            }`}
+            onClick={handleWishlistToggle}
+            aria-label={isInWishlist() ? 'Remove from wishlist' : 'Add to wishlist'}
+          >
+            <Heart
+              className={`h-4 w-4 ${
+                isInWishlist() ? 'fill-gold' : ''
               }`}
-              onClick={handleWishlistToggle}
-              aria-label={isInWishlist(id) ? 'Remove from wishlist' : 'Add to wishlist'}
-            >
-              <Heart
-                className={`h-4 w-4 ${
-                  isInWishlist(id) ? 'fill-destructive' : ''
-                }`}
-              />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-full hover:bg-muted"
-              onClick={handleAddToCart}
-              disabled={isOutOfStock}
-              aria-label="Add to cart"
-            >
-              <ShoppingCart className="h-4 w-4" />
-            </Button>
-          </div>
+            />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full hover:bg-pearl text-neutral-light hover:text-neutral"
+            onClick={handleAddToCart}
+            disabled={isOutOfStock}
+            aria-label="Add to cart"
+          >
+            <ShoppingCart className="h-4 w-4" />
+          </Button>
         </div>
       </div>
     </div>
   )
-}
-
-export default ProductCard 
+} 

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import prisma, { checkDatabaseConnection } from '@/lib/prisma'
+import { prisma, checkDatabaseConnection } from '@/lib/prisma'
 import { checkSteadfastConnection } from '@/lib/steadfast'
 
 export async function GET() {
@@ -56,49 +56,22 @@ export async function GET() {
       console.error('Database connection failed:', error)
       healthStatus.services.database.status = 'error'
       healthStatus.services.database.error = error.message
-    } finally {
-      await prisma.$disconnect()
     }
-
-    // Check Steadfast API connection
-    try {
-      const isConnected = await checkSteadfastConnection()
-      healthStatus.services.steadfast.status = isConnected ? 'connected' : 'error'
-    } catch (error) {
-      console.error('Steadfast API check failed:', error)
-      healthStatus.services.steadfast.status = 'error'
-      healthStatus.services.steadfast.error = error.message
-    }
-
-    // Determine overall status
-    const allServices = [
-      healthStatus.services.database.status,
-      healthStatus.services.steadfast.status
-    ]
-
-    if (allServices.every(status => status === 'connected')) {
-      healthStatus.status = 'healthy'
-    } else if (allServices.some(status => status === 'error')) {
-      healthStatus.status = 'unhealthy'
-    } else {
-      healthStatus.status = 'degraded'
-    }
-
-    // Log the health check results
-    console.log('Health Check Results:', JSON.stringify(healthStatus, null, 2))
-
-    return NextResponse.json(healthStatus, {
-      status: healthStatus.status === 'healthy' ? 200 : 503
-    })
+    // No disconnect here
   } catch (error) {
-    console.error('Health check failed:', error)
-    return NextResponse.json(
-      {
-        status: 'error',
-        timestamp: new Date().toISOString(),
-        error: error.message
-      },
-      { status: 500 }
-    )
+    healthStatus.status = 'error'
+    healthStatus.services.database.status = 'error'
+    healthStatus.services.database.error = error.message
   }
+
+  // Check Steadfast connection
+  try {
+    const steadfastStatus = await checkSteadfastConnection()
+    healthStatus.services.steadfast = steadfastStatus
+  } catch (error) {
+    healthStatus.services.steadfast.status = 'error'
+    healthStatus.services.steadfast.error = error.message
+  }
+
+  return NextResponse.json(healthStatus)
 } 

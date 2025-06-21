@@ -1,0 +1,9 @@
+{
+  "name": "Rupomoti",
+  "short_name": "Rupomoti",
+  "description": "Elegant Pearl Jewelry Collection",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8F6F0",
+  "theme_color": "#1A237E"
+} 

@@ -17,7 +17,7 @@ const nextConfig = {
   },
   experimental: {
     optimizePackageImports: ['lucide-react'],
-    serverComponentsExternalPackages: ['bcrypt', 'mongodb', 'mongoose'],
+    serverComponentsExternalPackages: ['bcrypt', 'mongodb', 'mongoose', '@auth/prisma-adapter'],
   },
   poweredByHeader: false,
   compress: true,
@@ -25,19 +25,6 @@ const nextConfig = {
   distDir: '.next',
   cleanDistDir: true,
   webpack: (config, { isServer }) => {
-    config.watchOptions = {
-      poll: 1000,
-      aggregateTimeout: 300,
-    }
-    // Add custom handling for path resolution
-    config.resolve = {
-      ...config.resolve,
-      fallback: {
-        ...config.resolve.fallback,
-        fs: false,
-        path: false,
-      },
-    }
     // Optimize chunk loading
     config.optimization = {
       ...config.optimization,

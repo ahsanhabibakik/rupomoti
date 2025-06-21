@@ -1,14 +1,43 @@
 @layer utilities {
-  .bg-pearl { background-color: #F8F6F0; }
+  /* Premium Jewelry Color Palette */
+  .bg-primary { background-color: #0D1E78; } /* Deep Sapphire Blue */
+  .bg-primary-light { background-color: #1A237E; }
+  .bg-primary-dark { background-color: #000051; }
+  
+  .bg-accent { background-color: #E8CBAF; } /* Champagne Gold */
+  .bg-accent-light { background-color: #F5E6D3; }
+  .bg-accent-dark { background-color: #D4B483; }
+  
+  .bg-base { background-color: #FDF9F4; } /* Ivory / Pearl White */
+  .bg-base-light { background-color: #FFFDFA; }
+  .bg-base-dark { background-color: #F8F6F0; }
+  
+  .bg-neutral { background-color: #4A2E21; } /* Soft Cocoa Brown */
+  .bg-neutral-light { background-color: #8B6E4F; }
+  .bg-neutral-dark { background-color: #2D1B13; }
+  
+  .bg-highlight { background-color: #F5E7DD; } /* Pearl Pink / Rose Beige */
+  .bg-highlight-light { background-color: #FDF9F4; }
+  .bg-highlight-dark { background-color: #E6D5C7; }
+  
+  /* Text Colors */
+  .text-primary { color: #0D1E78; }
+  .text-accent { color: #E8CBAF; }
+  .text-base { color: #FDF9F4; }
+  .text-neutral { color: #4A2E21; }
+  .text-highlight { color: #F5E7DD; }
+  
+  /* Legacy colors for backward compatibility */
+  .bg-pearl { background-color: #FDF9F4; }
   .bg-pearl-light { background-color: #FFFDFA; }
-  .bg-pearl-dark { background-color: #E6E2D8; }
-  .text-charcoal { color: #222222; }
-  .text-charcoal-light { color: #444444; }
-  .text-charcoal-dark { color: #000000; }
-  .bg-charcoal { background-color: #232323; }
-  .bg-slate { background-color: #6B7280; }
-  .bg-gold { background-color: #E6C674; }
-  .bg-sapphire { background-color: #0F52BA; }
+  .bg-pearl-dark { background-color: #F8F6F0; }
+  .text-charcoal { color: #4A2E21; }
+  .text-charcoal-light { color: #8B6E4F; }
+  .text-charcoal-dark { color: #2D1B13; }
+  .bg-charcoal { background-color: #4A2E21; }
+  .bg-slate { background-color: #666666; }
+  .bg-gold { background-color: #E8CBAF; }
+  .bg-sapphire { background-color: #0D1E78; }
   /* Add more as needed */
 }
 
@@ -18,34 +47,34 @@
 
 @layer base {
   :root {
-    --background: 48 33% 97%;
-    --foreground: 0 0% 13%;
+    --background: 48 33% 97%; /* Ivory / Pearl White */
+    --foreground: 25 35% 20%; /* Soft Cocoa Brown */
 
     --card: 48 33% 97%;
-    --card-foreground: 0 0% 13%;
+    --card-foreground: 25 35% 20%;
  
     --popover: 48 33% 97%;
-    --popover-foreground: 0 0% 13%;
+    --popover-foreground: 25 35% 20%;
  
-    /* Brand Colors - Pearl & Gold */
-    --brand: 35 65% 70%;
-    --brand-foreground: 0 0% 13%;
+    /* Brand Colors - Premium Jewelry */
+    --brand: 35 65% 70%; /* Champagne Gold */
+    --brand-foreground: 240 65% 30%; /* Deep Sapphire Blue */
  
-    /* Primary - Gold */
-    --primary: 35 65% 70%;
-    --primary-foreground: 0 0% 13%;
+    /* Primary - Deep Sapphire Blue */
+    --primary: 240 65% 30%;
+    --primary-foreground: 35 65% 70%;
  
-    /* Secondary - Pearl */
+    /* Secondary - Ivory / Pearl White */
     --secondary: 48 33% 97%;
-    --secondary-foreground: 0 0% 13%;
+    --secondary-foreground: 25 35% 20%;
  
-    /* Muted - Pearl Dark */
-    --muted: 48 33% 90%;
-    --muted-foreground: 0 0% 40%;
+    /* Muted - Pearl Pink / Rose Beige */
+    --muted: 35 45% 90%;
+    --muted-foreground: 25 35% 40%;
  
-    /* Accent - Sapphire */
-    --accent: 240 65% 30%;
-    --accent-foreground: 48 33% 97%;
+    /* Accent - Champagne Gold */
+    --accent: 35 65% 70%;
+    --accent-foreground: 240 65% 30%;
  
     /* Destructive - Rose Gold */
     --destructive: 350 65% 70%;
@@ -84,9 +113,9 @@
     --brand: 35 65% 70%;
     --brand-foreground: 48 33% 97%;
  
-    /* Primary - Gold */
-    --primary: 35 65% 70%;
-    --primary-foreground: 48 33% 97%;
+    /* Primary - Deep Sapphire Blue */
+    --primary: 240 65% 30%;
+    --primary-foreground: 35 65% 70%;
  
     /* Secondary - Pearl Dark */
     --secondary: 240 10% 3.9%;
@@ -96,9 +125,9 @@
     --muted: 240 3.7% 15.9%;
     --muted-foreground: 240 5% 64.9%;
  
-    /* Accent - Sapphire */
-    --accent: 240 65% 30%;
-    --accent-foreground: 48 33% 97%;
+    /* Accent - Champagne Gold */
+    --accent: 35 65% 70%;
+    --accent-foreground: 240 65% 30%;
  
     /* Destructive - Rose Gold */
     --destructive: 350 65% 70%;
@@ -127,14 +156,18 @@
     @apply border-border;
   }
   body {
-    @apply bg-pearl text-charcoal antialiased;
+    @apply bg-base text-neutral antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+    background-image: 
+      radial-gradient(circle at 20% 80%, rgba(253, 249, 244, 0.8) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(232, 203, 175, 0.3) 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, rgba(255, 253, 250, 0.6) 0%, transparent 50%);
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-display text-charcoal;
+    @apply font-display text-neutral;
   }
   p {
-    @apply font-body text-slate;
+    @apply font-body text-neutral-light;
   }
 }
 
@@ -198,11 +231,9 @@
   display: none;
 }
 
-/* Social Media Feed */
+/* Social Feed */
 .social-feed {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1rem;
+  background: linear-gradient(135deg, #F8F6F0 0%, #E6E2D8 100%);
 }
 
 /* Custom Scrollbar */
@@ -211,200 +242,189 @@
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-pearl;
+  background: #F8F6F0;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-gold rounded-full;
+  background: #E6CBA8;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-gold-dark;
+  background: #D4B483;
 }
 
-/* Loading States */
+/* Loading Shimmer */
 .loading-shimmer {
-  @apply relative overflow-hidden;
+  background: linear-gradient(90deg, #F8F6F0 25%, #E6E2D8 50%, #F8F6F0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
 }
 
 .loading-shimmer::after {
   content: '';
-  @apply absolute inset-0 bg-gradient-to-r from-transparent via-pearl-light to-transparent;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: inherit;
   animation: shimmer 2s infinite;
 }
 
-/* Focus States */
+/* Focus Ring */
 .focus-ring {
-  @apply focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2 focus:ring-offset-pearl;
+  @apply focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2;
 }
 
 /* Selection */
 ::selection {
-  @apply bg-gold text-charcoal;
+  background-color: #E6CBA8;
+  color: #222222;
 }
 
+/* Component Styles */
 @layer components {
-  /* Button Variants */
   .btn-primary {
-    @apply bg-gold hover:bg-gold-dark text-charcoal font-medium py-2 px-4 rounded-md transition-all duration-200 
-           shadow-pearl hover:shadow-gold focus:ring-2 focus:ring-gold focus:ring-offset-2 focus:ring-offset-pearl;
+    @apply bg-gold text-charcoal hover:bg-gold-dark transition-colors duration-200 focus-ring;
   }
   
   .btn-secondary {
-    @apply bg-pearl hover:bg-pearl-dark text-charcoal font-medium py-2 px-4 rounded-md transition-all duration-200 
-           border border-gold hover:border-gold-dark shadow-pearl hover:shadow-gold;
+    @apply bg-pearl text-charcoal border border-gold hover:bg-pearl-dark transition-colors duration-200 focus-ring;
   }
   
   .btn-accent {
-    @apply bg-sapphire hover:bg-sapphire-dark text-pearl font-medium py-2 px-4 rounded-md transition-all duration-200 
-           shadow-pearl hover:shadow-sapphire focus:ring-2 focus:ring-sapphire focus:ring-offset-2 focus:ring-offset-pearl;
+    @apply bg-sapphire text-pearl hover:bg-sapphire-dark transition-colors duration-200 focus-ring;
   }
-
+  
   .btn-outline {
-    @apply bg-transparent border-2 border-gold text-gold hover:bg-gold hover:text-charcoal font-medium py-2 px-4 
-           rounded-md transition-all duration-200 focus:ring-2 focus:ring-gold focus:ring-offset-2 focus:ring-offset-pearl;
+    @apply border border-gold text-charcoal hover:bg-gold hover:text-charcoal transition-colors duration-200 focus-ring;
   }
-
-  /* Card Variants */
+  
   .card {
-    @apply bg-pearl rounded-lg shadow-pearl p-6 transition-all duration-200 hover:shadow-gold;
+    @apply bg-pearl-light border border-pearl-dark rounded-lg shadow-pearl;
   }
-
+  
   .card-hover {
-    @apply card hover:scale-[1.02] hover:rotate-[0.5deg];
+    @apply hover:shadow-gold transition-shadow duration-200;
   }
-
+  
   .card-gold {
-    @apply bg-gradient-gold text-pearl rounded-lg shadow-gold p-6 transition-all duration-200 hover:shadow-sapphire;
+    @apply bg-gradient-gold text-charcoal;
   }
-
-  /* Form Elements */
+  
   .input {
-    @apply bg-pearl border border-gold rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gold 
-           focus:border-transparent transition-all duration-200 placeholder:text-slate/50;
+    @apply bg-pearl-light border border-pearl-dark focus:border-gold focus:ring-2 focus:ring-gold/20 transition-colors duration-200;
   }
-
+  
   .input-error {
-    @apply border-destructive focus:ring-destructive;
+    @apply border-red-500 focus:border-red-500 focus:ring-red-500/20;
   }
-
+  
   .label {
-    @apply text-sm font-medium text-charcoal mb-1 block;
+    @apply text-charcoal font-medium;
   }
-
-  /* Navigation */
+  
   .nav-link {
-    @apply text-charcoal hover:text-gold transition-colors duration-200 relative after:absolute after:bottom-0 
-           after:left-0 after:h-0.5 after:w-0 after:bg-gold after:transition-all after:duration-200 
-           hover:after:w-full;
+    @apply text-charcoal hover:text-gold transition-colors duration-200;
   }
   
   .footer-link {
     @apply text-slate hover:text-gold transition-colors duration-200;
   }
-
-  /* Product Cards */
+  
   .product-card {
-    @apply card group overflow-hidden;
+    @apply bg-pearl-light border border-pearl-dark rounded-lg overflow-hidden shadow-pearl hover:shadow-gold transition-all duration-300;
   }
-
+  
   .product-image {
-    @apply relative aspect-square overflow-hidden bg-pearl-light;
+    @apply relative overflow-hidden;
   }
-
+  
   .product-image img {
-    @apply object-cover transition-transform duration-500 group-hover:scale-110;
+    @apply transition-transform duration-300 hover:scale-105;
   }
-
+  
   .product-badge {
-    @apply absolute top-2 right-2 bg-gold text-charcoal text-xs font-medium px-2 py-1 rounded-full;
+    @apply absolute top-2 right-2 bg-gold text-charcoal px-2 py-1 rounded-full text-xs font-medium;
   }
-
+  
   .product-title {
-    @apply font-display text-lg text-charcoal mt-4 mb-1;
+    @apply text-charcoal font-semibold text-lg;
   }
-
+  
   .product-price {
-    @apply text-gold-dark font-medium;
+    @apply text-gold font-bold text-xl;
   }
-
-  /* Category Cards */
+  
   .category-card {
-    @apply relative aspect-square overflow-hidden rounded-lg group;
+    @apply relative overflow-hidden rounded-lg shadow-pearl hover:shadow-gold transition-all duration-300;
   }
-
+  
   .category-overlay {
-    @apply absolute inset-0 bg-gradient-to-t from-charcoal/80 to-transparent opacity-0 group-hover:opacity-100 
-           transition-opacity duration-300;
+    @apply absolute inset-0 bg-gradient-to-t from-charcoal/80 via-charcoal/30 to-transparent;
   }
-
+  
   .category-title {
-    @apply absolute bottom-4 left-4 text-pearl font-display text-xl opacity-0 group-hover:opacity-100 
-           transition-opacity duration-300 transform translate-y-4 group-hover:translate-y-0;
+    @apply absolute bottom-4 left-4 text-pearl font-semibold text-xl;
   }
-
-  /* Loading States */
+  
   .skeleton {
-    @apply animate-pulse bg-pearl-dark/20 rounded-md;
+    @apply bg-pearl-dark animate-pulse rounded;
   }
-
+  
   .skeleton-text {
-    @apply skeleton h-4 w-3/4;
+    @apply h-4 bg-pearl-dark rounded;
   }
-
+  
   .skeleton-image {
-    @apply skeleton aspect-square w-full;
+    @apply h-48 bg-pearl-dark rounded;
   }
-
-  /* Modal Styles */
+  
   .modal-overlay {
-    @apply fixed inset-0 bg-charcoal/50 backdrop-blur-sm z-50;
+    @apply fixed inset-0 bg-charcoal/50 backdrop-blur-sm;
   }
-
+  
   .modal-content {
-    @apply fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-pearl rounded-lg shadow-gold p-6 
-           w-full max-w-lg max-h-[90vh] overflow-y-auto z-50;
+    @apply bg-pearl-light border border-pearl-dark rounded-lg shadow-gold;
   }
-
-  /* Toast Notifications */
+  
   .toast {
-    @apply fixed bottom-4 right-4 bg-pearl text-charcoal px-4 py-2 rounded-lg shadow-gold 
-           transform transition-all duration-300 translate-y-0 opacity-100;
+    @apply bg-pearl-light border border-pearl-dark shadow-gold;
   }
-
+  
   .toast-hide {
-    @apply translate-y-2 opacity-0;
+    @apply opacity-0 transform translate-y-2;
   }
-
-  /* Tooltips */
+  
   .tooltip {
-    @apply absolute bg-charcoal text-pearl px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 
-           transition-opacity duration-200 pointer-events-none whitespace-nowrap;
+    @apply bg-charcoal text-pearl px-2 py-1 rounded text-sm;
   }
-
-  /* Badges */
+  
   .badge {
-    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
+    @apply bg-pearl-dark text-charcoal px-2 py-1 rounded-full text-xs font-medium;
   }
-
+  
   .badge-gold {
-    @apply badge bg-gold text-charcoal;
+    @apply bg-gold text-charcoal;
   }
-
+  
   .badge-pearl {
-    @apply badge bg-pearl text-charcoal border border-gold;
+    @apply bg-pearl text-charcoal;
   }
-
+  
   .badge-sapphire {
-    @apply badge bg-sapphire text-pearl;
+    @apply bg-sapphire text-pearl;
   }
 }
 
-/* Custom Animations */
 @keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 .animate-float {

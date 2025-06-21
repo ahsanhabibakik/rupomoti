@@ -4,7 +4,6 @@ import { useCallback, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { Image as ImageIcon, X, Loader2 } from 'lucide-react'
 import Image from 'next/image'
-import { uploadImage } from '@/lib/cloudinary'
 import { cn } from '@/lib/utils'
 
 interface ImageUploadProps {
@@ -28,7 +27,23 @@ export function ImageUpload({ value = [], onChange, maxFiles = 5 }: ImageUploadP
       setUploadError(null)
 
       try {
-        const uploadPromises = acceptedFiles.map(uploadImage)
+        const uploadPromises = acceptedFiles.map(async (file) => {
+          const formData = new FormData();
+          formData.append('file', file);
+
+          const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (!response.ok) {
+            throw new Error('Upload failed');
+          }
+
+          const data = await response.json();
+          return data.url;
+        });
+        
         const urls = await Promise.all(uploadPromises)
         onChange([...value, ...urls])
       } catch (error) {

@@ -33,6 +33,7 @@ const navigation = [
   { name: 'Categories', href: '/admin/categories', icon: FolderTree },
   { name: 'Orders', href: '/admin/orders', icon: ListOrdered },
   { name: 'Customers', href: '/admin/customers', icon: Users },
+  { name: 'User Management', href: '/admin/users', icon: Shield },
   { name: 'Media', href: '/admin/media', icon: ImageIcon },
   { name: 'Reviews', href: '/admin/reviews', icon: Star },
   { name: 'Coupons', href: '/admin/coupons', icon: Tag },
@@ -109,8 +110,8 @@ export default function AdminLayout({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   useEffect(() => {
-    if (status === 'unauthenticated' && pathname !== '/admin/login') {
-      router.push(`/admin/login?callbackUrl=${encodeURIComponent(pathname)}`)
+    if (status === 'unauthenticated') {
+      router.push(`/signin?callbackUrl=${encodeURIComponent(pathname || '')}`)
     }
   }, [status, router, pathname])
 
@@ -119,12 +120,29 @@ export default function AdminLayout({
   }
 
   if (!session) {
-    return children
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <h1 className="text-2xl font-bold">Admin Access Required</h1>
+        <p className="text-muted-foreground">Please sign in to access the admin dashboard</p>
+        <Link
+          href="/signin"
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+        >
+          Sign In
+        </Link>
+      </div>
+    )
   }
 
-  if (session.user?.role !== 'ADMIN') {
-    router.push('/')
-    return <LoadingSpinner />
+  const userRole = session.user?.role;
+  if (userRole !== 'ADMIN' && userRole !== 'MANAGER') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <h1 className="text-2xl font-bold">Access Denied</h1>
+        <p className="text-muted-foreground">You do not have permission to access this page</p>
+        <p className="text-sm text-gray-500">Admin or Manager access required</p>
+      </div>
+    )
   }
 
   return (

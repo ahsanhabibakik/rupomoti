@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
-import { useCart } from '@/hooks/useCart'
+import { useAppDispatch } from '@/redux/hooks'
+import { addToCart, toggleCart } from '@/redux/slices/cartSlice'
 import { showToast } from '@/lib/toast'
 import { cn } from '@/lib/utils'
 
@@ -23,15 +24,18 @@ const product = {
 
 export default function ProductPage({ params }: { params: { id: string } }) {
   const [selectedImage, setSelectedImage] = useState(0)
-  const { add } = useCart()
+  const dispatch = useAppDispatch()
 
   const handleAddToCart = () => {
-    add({
+    dispatch(addToCart({
       id: product.id,
       name: product.name,
       price: product.price,
       image: product.images[0],
-    })
+      quantity: 1,
+      category: 'necklaces', // Placeholder, update as needed
+    }))
+    dispatch(toggleCart())
     showToast.success(`${product.name} has been added to your cart.`)
   }
 

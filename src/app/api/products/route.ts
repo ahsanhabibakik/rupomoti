@@ -1,16 +1,71 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
-import prisma from '@/lib/prisma'
+import { prisma } from '@/lib/prisma'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url)
+    const search = searchParams.get('search')
+    const categories = searchParams.getAll('categories')
+    const minPrice = Number(searchParams.get('minPrice')) || 0
+    const maxPrice = Number(searchParams.get('maxPrice')) || 100000
+    const sort = searchParams.get('sort') || 'newest'
+
+    // Build the where clause
+    const where = {
+      AND: [
+        {
+          price: {
+            gte: minPrice,
+            lte: maxPrice,
+          },
+        },
+        // Add category filter if categories are selected
+        ...(categories.length > 0
+          ? [
+              {
+                category: {
+                  slug: {
+                    in: categories,
+                  },
+                },
+              },
+            ]
+          : []),
+        // Add search filter if search term exists
+        ...(search
+          ? [
+              {
+                OR: [
+                  { name: { contains: search, mode: 'insensitive' } },
+                  { description: { contains: search, mode: 'insensitive' } },
+                ],
+              },
+            ]
+          : []),
+      ],
+    }
+
+    // Build the orderBy clause
+    let orderBy = {}
+    switch (sort) {
+      case 'price-low':
+        orderBy = { price: 'asc' }
+        break
+      case 'price-high':
+        orderBy = { price: 'desc' }
+        break
+      case 'newest':
+      default:
+        orderBy = { createdAt: 'desc' }
+    }
+
     const products = await prisma.product.findMany({
+      where,
+      orderBy,
       include: {
         category: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
       },
     })
 
@@ -18,7 +73,7 @@ export async function GET() {
   } catch (error) {
     console.error('Error fetching products:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch products' },
+      { error: 'Error fetching products' },
       { status: 500 }
     )
   }

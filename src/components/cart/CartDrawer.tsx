@@ -1,167 +1,364 @@
 'use client'
 
-import { useState } from 'react'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from '@/components/ui/sheet'
-import { Button } from '@/components/ui/button'
-import { useCart } from '@/hooks/useCart'
-import { ShoppingCart, Plus, Minus, X } from 'lucide-react'
-import { CheckoutModal } from './CheckoutModal'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { motion, AnimatePresence } from 'framer-motion'
+import { X, ShoppingBag, Trash2, Plus, Minus, Tag, Truck, Clock, ArrowRight } from 'lucide-react'
+import { useAppSelector, useAppDispatch } from '@/redux/hooks'
+import {
+  selectCartItems,
+  removeFromCart,
+  updateQuantity,
+  clearCart,
+  toggleCart,
+  applyCoupon as applyCouponAction,
+  setShippingCost as setShippingCostAction,
+  saveForLater,
+  moveToCart,
+  removeFromSaved,
+} from '@/redux/slices/cartSlice'
+import Link from 'next/link'
 import Image from 'next/image'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
-import { showToast } from '@/lib/toast'
-import React from 'react'
+import dynamic from 'next/dynamic'
 
-const CartTrigger = React.forwardRef<
-  HTMLButtonElement,
-  React.ButtonHTMLAttributes<HTMLButtonElement> & { itemCount: number }
->(({ itemCount, ...props }, ref) => (
-  <Button
-    ref={ref}
-    variant="outline"
-    size="icon"
-    className="relative"
-    {...props}
-  >
-    <ShoppingCart className="h-5 w-5" />
-    {itemCount > 0 && (
-      <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground w-5 h-5 rounded-full text-xs flex items-center justify-center">
-        {itemCount}
-      </span>
-    )}
-  </Button>
-))
-CartTrigger.displayName = "CartTrigger"
+const CheckoutModal = dynamic(() => import('./CheckoutModal').then(mod => mod.CheckoutModal), {
+  ssr: false,
+})
 
-export function CartDrawer() {
-  const { items, total, itemCount, remove: removeItem, updateQuantity } = useCart()
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
-  const [isOpen, setIsOpen] = useState(false)
+interface CartDrawerProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}
 
-  const subtotal = total
-  const shipping = items.length > 0 ? 100 : 0
-  const totalWithShipping = subtotal + shipping
+export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
+  const router = useRouter()
+  const dispatch = useAppDispatch()
+  const items = useAppSelector(selectCartItems)
+  const savedForLater = useAppSelector((state) => state.cart.savedForLater)
+  const cartTotal = useAppSelector((state) => state.cart.total)
+  const shippingCost = useAppSelector((state) => state.cart.shippingCost)
+  const discount = useAppSelector((state) => state.cart.discount)
+  const couponCode = useAppSelector((state) => state.cart.couponCode)
+  const [inputCouponCode, setInputCouponCode] = useState('')
+  const [freeShippingThreshold] = useState(50000) // Free shipping above 50,000 BDT
+  const [showAddedToCart, setShowAddedToCart] = useState({})
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false)
 
-  const handleRemoveItem = (id: string, name: string) => {
-    removeItem(id)
-    showToast.info(`${name} has been removed from your cart.`)
+  useEffect(() => {
+    // Calculate shipping cost based on cart total
+    if (cartTotal >= freeShippingThreshold) {
+      dispatch(setShippingCostAction(0))
+    } else {
+      dispatch(setShippingCostAction(100)) // Standard shipping cost
+    }
+  }, [cartTotal, freeShippingThreshold, dispatch])
+
+  const applyCoupon = () => {
+    if (inputCouponCode.toLowerCase() === 'welcome10') {
+      dispatch(
+        applyCouponAction({
+          code: inputCouponCode,
+          discount: cartTotal * 0.1, // 10% discount
+        })
+      )
+    }
   }
 
-  const handleUpdateQuantity = (id: string, newQuantity: number, name: string) => {
-    updateQuantity(id, newQuantity)
-    if (newQuantity === 0) {
-      showToast.info(`${name} has been removed from your cart.`)
-    } else {
-      showToast.success(`${name} quantity has been updated to ${newQuantity}.`)
-    }
+  const getFinalTotal = () => {
+    return cartTotal - discount + shippingCost
+  }
+
+  const getAmountNeededForFreeShipping = () => {
+    const amountNeeded = freeShippingThreshold - cartTotal
+    return amountNeeded > 0 ? amountNeeded : 0
+  }
+
+  const handleSaveForLater = (itemId: string) => {
+    dispatch(saveForLater(itemId))
+    setShowAddedToCart({ ...showAddedToCart, [itemId]: true })
+    setTimeout(() => {
+      setShowAddedToCart({ ...showAddedToCart, [itemId]: false })
+    }, 2000)
+  }
+
+  const handleCheckoutClick = () => {
+    onOpenChange(false) // Close cart drawer first
+    setTimeout(() => {
+      setShowCheckoutModal(true) // Then show checkout modal
+    }, 300) // Wait for cart drawer animation to complete
   }
 
   return (
     <>
-      <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetTrigger asChild>
-          <CartTrigger itemCount={items.length} />
-        </SheetTrigger>
-        <SheetContent className="flex flex-col w-full sm:max-w-lg p-0">
-          <SheetHeader className="px-6 py-4 border-b">
-            <SheetTitle>Shopping Cart ({items.length})</SheetTitle>
-          </SheetHeader>
+      <AnimatePresence>
+        {open && (
+          <>
+            {/* Overlay with blur effect */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-cocoa-brown/30 backdrop-blur-sm z-[998] transition-opacity duration-300"
+              onClick={() => onOpenChange(false)}
+            />
 
-          {items.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-4">
-              <ShoppingCart className="w-12 h-12 text-muted-foreground" />
-              <div className="space-y-1">
-                <h3 className="font-medium text-lg">Your cart is empty</h3>
-                <p className="text-sm text-muted-foreground">Add items to your cart to continue shopping</p>
-              </div>
-              <SheetClose asChild>
-                <Button onClick={() => setIsOpen(false)}>Continue Shopping</Button>
-              </SheetClose>
-            </div>
-          ) : (
-            <div className="flex flex-col h-[calc(100vh-6rem)]">
-              <ScrollArea className="flex-1">
-                <div className="px-6 divide-y">
-                  {items.map((item) => (
-                    <div key={item.id} className="py-4 flex gap-4">
-                      <div className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
-                        <Image
-                          src={item.image}
-                          alt={item.name}
-                          fill
-                          className="object-cover"
-                          priority={false}
-                        />
-                      </div>
-                      <div className="flex-1 space-y-1">
-                        <h4 className="font-medium line-clamp-2">{item.name}</h4>
-                        <p className="text-sm text-muted-foreground">৳{item.price.toLocaleString()}</p>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => handleUpdateQuantity(item.id, Math.max(0, item.quantity - 1), item.name)}
-                          >
-                            <Minus className="h-4 w-4" />
-                          </Button>
-                          <span className="w-8 text-center">{item.quantity}</span>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => handleUpdateQuantity(item.id, item.quantity + 1, item.name)}
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
+            {/* Sidebar */}
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 20 }}
+              className="fixed right-0 top-0 h-full w-full sm:w-96 bg-pearl-white shadow-xl z-[999]"
+              style={{ backgroundColor: '#fff', opacity: 1 }}
+            >
+              <div className="h-full flex flex-col">
+                {/* Header with gradient background */}
+                <div className="p-4 bg-gradient-to-r from-warm-oyster-gold to-champagne-sheen text-cocoa-brown flex justify-between items-center">
+                  <h2 className="text-xl font-semibold">Shopping Cart</h2>
+                  <button
+                    onClick={() => onOpenChange(false)}
+                    className="p-2 hover:bg-cocoa-brown/10 rounded-full transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Cart Items */}
+                <div className="flex-1 overflow-y-auto p-4">
+                  {items.length === 0 && savedForLater.length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center text-center">
+                      <ShoppingBag className="w-16 h-16 text-champagne-sheen mb-4" />
+                      <p className="text-mink-taupe">Your cart is empty</p>
+                      <Link
+                        href="/shop"
+                        className="mt-4 text-warm-oyster-gold hover:text-cocoa-brown font-medium"
+                        onClick={() => onOpenChange(false)}
+                      >
+                        Continue Shopping
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* Cart Items */}
+                      {items.length > 0 && (
+                        <div>
+                          <h3 className="font-medium text-cocoa-brown mb-4">Cart Items</h3>
+                          {items.map((item) => (
+                            <div
+                              key={item.id}
+                              className="flex gap-4 p-4 bg-champagne-sheen/40 rounded-lg relative group hover:shadow-md transition-all duration-300 mb-4"
+                            >
+                              <div className="relative w-20 h-20 flex-shrink-0">
+                                <Image
+                                  src={item.image}
+                                  alt={item.name}
+                                  fill
+                                  className="object-cover rounded-lg"
+                                />
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex justify-between">
+                                  <h3 className="font-medium text-cocoa-brown">{item.name}</h3>
+                                  <button
+                                    onClick={() => dispatch(removeFromCart(item.id))}
+                                    className="text-mink-taupe hover:text-rose-gold-accent transition-colors"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                                <p className="text-sm text-mink-taupe mb-2">
+                                  ৳{item.price.toLocaleString()}
+                                </p>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() =>
+                                      dispatch(
+                                        updateQuantity({
+                                          id: item.id,
+                                          quantity: item.quantity - 1,
+                                        })
+                                      )
+                                    }
+                                    className="p-2 hover:bg-pearl-white rounded-lg border border-warm-oyster-gold text-cocoa-brown hover:text-warm-oyster-gold transition-colors"
+                                  >
+                                    <Minus className="w-4 h-4" />
+                                  </button>
+                                  <span className="w-8 text-center font-medium text-cocoa-brown">
+                                    {item.quantity}
+                                  </span>
+                                  <button
+                                    onClick={() =>
+                                      dispatch(
+                                        updateQuantity({
+                                          id: item.id,
+                                          quantity: item.quantity + 1,
+                                        })
+                                      )
+                                    }
+                                    className="p-2 hover:bg-pearl-white rounded-lg border border-warm-oyster-gold text-cocoa-brown hover:text-warm-oyster-gold transition-colors"
+                                  >
+                                    <Plus className="w-4 h-4" />
+                                  </button>
+                                </div>
+                                <button
+                                  onClick={() => handleSaveForLater(item.id)}
+                                  className="mt-2 text-sm text-rose-gold-accent hover:text-cocoa-brown flex items-center gap-1 transition-colors"
+                                >
+                                  <Clock className="w-4 h-4" />
+                                  Save for later
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Saved for Later Items */}
+                      {savedForLater.length > 0 && (
+                        <div>
+                          <h3 className="font-medium text-cocoa-brown mb-4">Saved for Later</h3>
+                          {savedForLater.map((item) => (
+                            <div
+                              key={item.id}
+                              className="flex gap-4 p-4 bg-champagne-sheen/40 rounded-lg relative group hover:shadow-md transition-all duration-300 mb-4"
+                            >
+                              <div className="relative w-20 h-20 flex-shrink-0">
+                                <Image
+                                  src={item.image}
+                                  alt={item.name}
+                                  fill
+                                  className="object-cover rounded-lg"
+                                />
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex justify-between">
+                                  <h3 className="font-medium text-cocoa-brown">{item.name}</h3>
+                                  <button
+                                    onClick={() => dispatch(removeFromSaved(item.id))}
+                                    className="text-mink-taupe hover:text-rose-gold-accent transition-colors"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                                <p className="text-sm text-mink-taupe mb-2">
+                                  ৳{item.price.toLocaleString()}
+                                </p>
+                                <button
+                                  onClick={() => dispatch(moveToCart(item.id))}
+                                  className="text-sm text-warm-oyster-gold hover:text-cocoa-brown flex items-center gap-1 transition-colors"
+                                >
+                                  <ArrowRight className="w-4 h-4" />
+                                  Move to cart
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer - Only show when there are items */}
+                {items.length > 0 && (
+                  <div className="border-t p-4 space-y-4">
+                    {/* Coupon Code */}
+                    <div className="flex gap-2 mb-2">
+                      <input
+                        type="text"
+                        placeholder="Enter coupon code"
+                        value={inputCouponCode}
+                        onChange={(e) => setInputCouponCode(e.target.value)}
+                        className="flex-1 px-2 py-1 border border-warm-oyster-gold rounded-lg focus:outline-none focus:ring-2 focus:ring-warm-oyster-gold text-sm"
+                      />
+                      <button
+                        onClick={applyCoupon}
+                        className="px-4 py-1 bg-warm-oyster-gold text-cocoa-brown font-bold border-2 border-warm-oyster-gold rounded-lg shadow-sm hover:bg-champagne-sheen transition-colors text-sm"
+                      >
+                        Apply
+                      </button>
+                    </div>
+
+                    {/* Free Shipping Progress */}
+                    {getAmountNeededForFreeShipping() > 0 && (
+                      <div className="bg-soft-mist-blue p-3 rounded-lg">
+                        <div className="flex items-center gap-2 text-cocoa-brown">
+                          <Truck className="w-5 h-5" />
+                          <p className="text-sm">
+                            Add ৳{getAmountNeededForFreeShipping().toLocaleString()} more
+                            for free shipping
+                          </p>
                         </div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                        onClick={() => handleRemoveItem(item.id, item.name)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                    )}
+
+                    {/* Order Summary */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-mink-taupe">Subtotal</span>
+                        <span className="font-medium">৳{cartTotal.toLocaleString()}</span>
+                      </div>
+                      {discount > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-mink-taupe">Discount</span>
+                          <span className="font-medium text-rose-gold-accent">
+                            -৳{discount.toLocaleString()}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-sm">
+                        <span className="text-mink-taupe">Shipping</span>
+                        <span className="font-medium">
+                          {shippingCost === 0 ? (
+                            <span className="text-green-600">Free</span>
+                          ) : (
+                            `৳${shippingCost.toLocaleString()}`
+                          )}
+                        </span>
+                      </div>
+                      <div className="border-t pt-2 flex justify-between font-medium">
+                        <span>Total</span>
+                        <span>৳{getFinalTotal().toLocaleString()}</span>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </ScrollArea>
 
-              <div className="p-6 border-t space-y-4 bg-background">
-                <div className="space-y-1.5">
-                  <div className="flex justify-between">
-                    <span className="text-sm">Subtotal</span>
-                    <span>৳{subtotal.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">Shipping</span>
-                    <span>৳{shipping.toLocaleString()}</span>
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between font-medium">
-                    <span>Total</span>
-                    <span>৳{totalWithShipping.toLocaleString()}</span>
-                  </div>
-                </div>
+                    {/* Checkout Button - premium look */}
+                    <button
+                      onClick={handleCheckoutClick}
+                      className="w-full py-3 bg-warm-oyster-gold text-cocoa-brown font-bold text-base rounded-lg shadow-lg border-2 border-warm-oyster-gold hover:bg-champagne-sheen transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mb-2"
+                      disabled={items.length === 0}
+                    >
+                      <span>Proceed to Checkout</span>
+                      <ArrowRight className="w-5 h-5" />
+                    </button>
 
-                <Button className="w-full" onClick={() => {
-                  setIsOpen(false)
-                  setIsCheckoutOpen(true)
-                }}>
-                  Proceed to Checkout
-                </Button>
+                    {/* Continue Shopping - centered, gold, underlined */}
+                    <div className="flex justify-center">
+                      <Link
+                        href="/shop"
+                        className="text-warm-oyster-gold text-sm underline hover:text-cocoa-brown transition-colors mt-1 mb-0 text-center"
+                        style={{ padding: 0, margin: 0 }}
+                      >
+                        Continue Shopping
+                      </Link>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          )}
-        </SheetContent>
-      </Sheet>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
-      <CheckoutModal
-        open={isCheckoutOpen}
-        onOpenChange={setIsCheckoutOpen}
-      />
+      {/* Render CheckoutModal */}
+      {typeof window !== 'undefined' && (
+        <div id="modal-root">
+          <CheckoutModal
+            open={showCheckoutModal}
+            onOpenChange={setShowCheckoutModal}
+          />
+        </div>
+      )}
     </>
   )
 } 

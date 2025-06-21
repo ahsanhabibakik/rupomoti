@@ -1,0 +1,156 @@
+/* Updated Pearl & Gold Premium Color Palette for Rupomoti */
+:root {
+  /* --- Pearl White (Page Base) --- */
+  --pearl-white: #FDF9F4; /* Section backgrounds, product cards, hero areas */
+
+  /* --- Cocoa Brown (Primary Text) --- */
+  --cocoa-brown: #4A2E21; /* Body copy, links, headings */
+
+  /* --- Champagne Gold (Accent) --- */
+  --champagne-gold: #B79C78; /* H1–H3, icon lines, subtle borders */
+
+  /* --- Deep Mocha (Nav & Footer BG) --- */
+  --deep-mocha: #241B16; /* Header bar, footer band, dark-mode sections */
+
+  /* --- Rose-Gold Tint --- */
+  --rose-gold-tint: #D7AFA4; /* Sale badges, hover states, subtle gradients */
+
+  /* --- Champagne Sheen (Panel Fill) --- */
+  --champagne-sheen: #EAE4D8; /* Info cards, alternating rows, CTA highlights */
+
+  /* --- Warm Oyster Gold ---
+     Headings, borders, icon strokes, subtle button outlines (AA contrast on Pearl White). */
+  --warm-oyster-gold: #C8B38A; /* Warm Oyster Gold */
+  /* --warm-oyster-gold: #E8CBAF; // Alternative: more gold */
+
+  /* --- Mink Taupe (Text) ---
+     Primary body text on Pearl White (contrast ≈ 7.5 : 1). Feels softer than black yet fully legible. */
+  --mink-taupe: #8C7760; /* Mink Taupe (Text) */
+  /* --mink-taupe: #6C757D; // Alternative: more gray */
+
+  /* --- Rose-Gold Accent ---
+     Seasonal highlights, sale badges, subtle gradients for feminine touch. */
+  --rose-gold-accent: #D7AFA4; /* Rose-Gold Accent */
+  /* --rose-gold-accent: #F7CAC9; // Alternative: more pink */
+
+  /* --- Soft Mist Blue (Cool Lift) ---
+     Very light background sections, balancing the warm tones; evokes pearls' cool undertones. */
+  --soft-mist-blue: #D0E0E7; /* Soft Mist Blue (Cool Lift) */
+  /* --soft-mist-blue: #E6F0F3; // Alternative: lighter blue */
+}
+
+/* Utility classes for backgrounds */
+.bg-pearl-white { background-color: var(--pearl-white); }
+.bg-cocoa-brown { background-color: var(--cocoa-brown); }
+.bg-champagne-gold { background-color: var(--champagne-gold); }
+.bg-deep-mocha { background-color: var(--deep-mocha); }
+.bg-rose-gold-tint { background-color: var(--rose-gold-tint); }
+.bg-champagne-sheen { background-color: var(--champagne-sheen); }
+
+/* Utility classes for text */
+.text-pearl-white { color: var(--pearl-white); }
+.text-cocoa-brown { color: var(--cocoa-brown); }
+.text-champagne-gold { color: var(--champagne-gold); }
+.text-deep-mocha { color: var(--deep-mocha); }
+.text-rose-gold-tint { color: var(--rose-gold-tint); }
+.text-champagne-sheen { color: var(--champagne-sheen); }
+
+/* Utility classes for borders */
+.border-champagne-gold { border-color: var(--champagne-gold); }
+.border-deep-mocha { border-color: var(--deep-mocha); }
+
+/* Example gradient for hero-panel fade */
+.bg-pearlescent-gradient {
+  background: linear-gradient(180deg, #FDF9F4 0%, #EAE4D8 100%);
+}
+
+/* Example usage utility classes for easy reference */
+.bg-warm-oyster-gold { background-color: var(--warm-oyster-gold); }
+.bg-mink-taupe { background-color: var(--mink-taupe); }
+.bg-rose-gold-accent { background-color: var(--rose-gold-accent); }
+.bg-soft-mist-blue { background-color: var(--soft-mist-blue); }
+
+.text-warm-oyster-gold { color: var(--warm-oyster-gold); }
+.text-mink-taupe { color: var(--mink-taupe); }
+.text-rose-gold-accent { color: var(--rose-gold-accent); }
+.text-soft-mist-blue { color: var(--soft-mist-blue); }
+
+/* Add similar classes for border, etc. as needed */
+
+/* Background Colors */
+.bg-premium-primary { background-color: var(--primary); }
+.bg-premium-primary-light { background-color: var(--primary-light); }
+.bg-premium-primary-dark { background-color: var(--primary-dark); }
+
+.bg-premium-accent { background-color: var(--accent); }
+.bg-premium-accent-light { background-color: var(--accent-light); }
+.bg-premium-accent-dark { background-color: var(--accent-dark); }
+
+.bg-premium-base { background-color: var(--base); }
+.bg-premium-base-light { background-color: var(--base-light); }
+.bg-premium-base-dark { background-color: var(--base-dark); }
+
+.bg-premium-neutral { background-color: var(--neutral); }
+.bg-premium-neutral-light { background-color: var(--neutral-light); }
+.bg-premium-neutral-dark { background-color: var(--neutral-dark); }
+
+.bg-premium-highlight { background-color: var(--highlight); }
+.bg-premium-highlight-light { background-color: var(--highlight-light); }
+.bg-premium-highlight-dark { background-color: var(--highlight-dark); }
+
+/* Text Colors */
+.text-premium-primary { color: var(--primary); }
+.text-premium-accent { color: var(--accent); }
+.text-premium-base { color: var(--base); }
+.text-premium-neutral { color: var(--neutral); }
+.text-premium-highlight { color: var(--highlight); }
+
+/* Border Colors */
+.border-premium-primary { border-color: var(--primary); }
+.border-premium-accent { border-color: var(--accent); }
+.border-premium-base { border-color: var(--base); }
+.border-premium-neutral { border-color: var(--neutral); }
+.border-premium-highlight { border-color: var(--highlight); }
+
+/* Gradient Backgrounds */
+.bg-gradient-premium-primary {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+}
+
+.bg-gradient-premium-accent {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+}
+
+.bg-gradient-premium-base {
+  background: linear-gradient(135deg, var(--base) 0%, var(--highlight) 100%);
+}
+
+/* Premium Shadows */
+.shadow-premium {
+  box-shadow: 0 8px 32px 0 rgba(13, 30, 120, 0.15);
+}
+
+.shadow-premium-accent {
+  box-shadow: 0 4px 20px 0 rgba(232, 203, 175, 0.3);
+}
+
+/* Premium Animations */
+@keyframes premium-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-premium-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(232, 203, 175, 0.4), transparent);
+  background-size: 200% 100%;
+  animation: premium-shimmer 2s infinite;
+}
+
+@keyframes premium-sparkle {
+  0%, 100% { opacity: 0; transform: scale(0) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1) rotate(180deg); }
+}
+
+.animate-premium-sparkle {
+  animation: premium-sparkle 1.5s ease-in-out infinite;
+} 

@@ -1,81 +1,171 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { RootState } from '../store'
+import { RootState } from '@/redux/store'
 
-interface CartItem {
+export interface CartItem {
   id: string
   name: string
   price: number
-  quantity: number
   image: string
+  quantity: number
+  category: string
   variantId?: string
   variantName?: string
 }
 
 interface CartState {
   items: CartItem[]
+  savedForLater: CartItem[]
+  isCartOpen: boolean
   total: number
-  itemCount: number
+  shippingCost: number
+  discount: number
+  couponCode: string | null
 }
 
 const initialState: CartState = {
   items: [],
+  savedForLater: [],
+  isCartOpen: false,
   total: 0,
-  itemCount: 0
+  shippingCost: 100, // Default shipping cost
+  discount: 0,
+  couponCode: null,
 }
 
-export const cartSlice = createSlice({
+const cartSlice = createSlice({
   name: 'cart',
   initialState,
   reducers: {
     addToCart: (state, action: PayloadAction<CartItem>) => {
       const existingItem = state.items.find(
-        item => item.id === action.payload.id && item.variantId === action.payload.variantId
+        (item) =>
+          item.id === action.payload.id &&
+          item.variantId === action.payload.variantId
       )
 
       if (existingItem) {
-        existingItem.quantity += 1
+        existingItem.quantity += action.payload.quantity
       } else {
-        state.items.push({ ...action.payload, quantity: 1 })
+        state.items.push(action.payload)
       }
 
-      state.total = state.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
-      state.itemCount = state.items.reduce((sum, item) => sum + item.quantity, 0)
-    },
-    removeFromCart: (state, action: PayloadAction<{ id: string; variantId?: string }>) => {
-      state.items = state.items.filter(
-        item => !(item.id === action.payload.id && item.variantId === action.payload.variantId)
+      // Recalculate total
+      state.total = state.items.reduce(
+        (total, item) => total + item.price * item.quantity,
+        0
       )
-      state.total = state.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
-      state.itemCount = state.items.reduce((sum, item) => sum + item.quantity, 0)
     },
+
+    removeFromCart: (state, action: PayloadAction<string>) => {
+      state.items = state.items.filter((item) => item.id !== action.payload)
+      state.total = state.items.reduce(
+        (total, item) => total + item.price * item.quantity,
+        0
+      )
+    },
+
     updateQuantity: (
       state,
-      action: PayloadAction<{ id: string; variantId?: string; quantity: number }>
+      action: PayloadAction<{ id: string; quantity: number }>
     ) => {
-      const item = state.items.find(
-        item => item.id === action.payload.id && item.variantId === action.payload.variantId
-      )
+      const item = state.items.find((item) => item.id === action.payload.id)
       if (item) {
         item.quantity = Math.max(0, action.payload.quantity)
         if (item.quantity === 0) {
-          state.items = state.items.filter(i => i !== item)
+          state.items = state.items.filter((i) => i.id !== action.payload.id)
         }
       }
-      state.total = state.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
-      state.itemCount = state.items.reduce((sum, item) => sum + item.quantity, 0)
+      state.total = state.items.reduce(
+        (total, item) => total + item.price * item.quantity,
+        0
+      )
     },
+
     clearCart: (state) => {
       state.items = []
       state.total = 0
-      state.itemCount = 0
-    }
-  }
+      state.discount = 0
+      state.couponCode = null
+      state.shippingCost = 100
+    },
+
+    toggleCart: (state) => {
+      state.isCartOpen = !state.isCartOpen
+    },
+
+    setShippingCost: (state, action: PayloadAction<number>) => {
+      state.shippingCost = action.payload
+    },
+
+    applyCoupon: (
+      state,
+      action: PayloadAction<{ code: string; discount: number }>
+    ) => {
+      state.couponCode = action.payload.code
+      state.discount = action.payload.discount
+    },
+
+    removeCoupon: (state) => {
+      state.couponCode = null
+      state.discount = 0
+    },
+
+    saveForLater: (state, action: PayloadAction<string>) => {
+      const item = state.items.find((item) => item.id === action.payload)
+      if (item) {
+        state.savedForLater.push({ ...item })
+        state.items = state.items.filter((i) => i.id !== action.payload)
+        state.total = state.items.reduce(
+          (total, item) => total + item.price * item.quantity,
+          0
+        )
+      }
+    },
+
+    moveToCart: (state, action: PayloadAction<string>) => {
+      const item = state.savedForLater.find((item) => item.id === action.payload)
+      if (item) {
+        state.items.push({ ...item })
+        state.savedForLater = state.savedForLater.filter(
+          (i) => i.id !== action.payload
+        )
+        state.total = state.items.reduce(
+          (total, item) => total + item.price * item.quantity,
+          0
+        )
+      }
+    },
+
+    removeFromSaved: (state, action: PayloadAction<string>) => {
+      state.savedForLater = state.savedForLater.filter(
+        (item) => item.id !== action.payload
+      )
+    },
+  },
 })
 
-export const { addToCart, removeFromCart, updateQuantity, clearCart } = cartSlice.actions
+export const {
+  addToCart,
+  removeFromCart,
+  updateQuantity,
+  clearCart,
+  toggleCart,
+  setShippingCost,
+  applyCoupon,
+  removeCoupon,
+  saveForLater,
+  moveToCart,
+  removeFromSaved,
+} = cartSlice.actions
 
+// Selectors
 export const selectCartItems = (state: RootState) => state.cart.items
-export const selectCartTotal = (state: RootState) => state.cart.total
-export const selectCartItemCount = (state: RootState) => state.cart.itemCount
+export const selectCartItemCount = (state: RootState) =>
+  state.cart.items.reduce((total, item) => total + item.quantity, 0)
+export const selectCartTotal = (state: RootState) =>
+  state.cart.items.reduce(
+    (total, item) => total + item.price * item.quantity,
+    0
+  )
 
 export default cartSlice.reducer 

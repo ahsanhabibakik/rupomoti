@@ -1,76 +1,42 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { RootState } from '../store'
+import { RootState } from '@/redux/store'
 
 interface UIState {
-  sidebarOpen: boolean
-  cartDrawerOpen: boolean
-  loading: {
-    [key: string]: boolean
-  }
-  notifications: {
-    id: string
-    type: 'success' | 'error' | 'info' | 'warning'
-    message: string
-  }[]
+  isCartDrawerOpen: boolean
+  isMobileMenuOpen: boolean
+  isSearchOpen: boolean
 }
 
 const initialState: UIState = {
-  sidebarOpen: false,
-  cartDrawerOpen: false,
-  loading: {},
-  notifications: []
+  isCartDrawerOpen: false,
+  isMobileMenuOpen: false,
+  isSearchOpen: false,
 }
 
 export const uiSlice = createSlice({
   name: 'ui',
   initialState,
   reducers: {
-    toggleSidebar: (state) => {
-      state.sidebarOpen = !state.sidebarOpen
-    },
-    setSidebarOpen: (state, action: PayloadAction<boolean>) => {
-      state.sidebarOpen = action.payload
-    },
-    toggleCartDrawer: (state) => {
-      state.cartDrawerOpen = !state.cartDrawerOpen
-    },
     setCartDrawerOpen: (state, action: PayloadAction<boolean>) => {
-      state.cartDrawerOpen = action.payload
+      state.isCartDrawerOpen = action.payload
     },
-    setLoading: (state, action: PayloadAction<{ key: string; value: boolean }>) => {
-      state.loading[action.payload.key] = action.payload.value
+    setMobileMenuOpen: (state, action: PayloadAction<boolean>) => {
+      state.isMobileMenuOpen = action.payload
     },
-    addNotification: (
-      state,
-      action: PayloadAction<{
-        type: 'success' | 'error' | 'info' | 'warning'
-        message: string
-      }>
-    ) => {
-      state.notifications.push({
-        id: Date.now().toString(),
-        ...action.payload
-      })
+    setSearchOpen: (state, action: PayloadAction<boolean>) => {
+      state.isSearchOpen = action.payload
     },
-    removeNotification: (state, action: PayloadAction<string>) => {
-      state.notifications = state.notifications.filter((n) => n.id !== action.payload)
-    }
-  }
+  },
 })
 
-export const {
-  toggleSidebar,
-  setSidebarOpen,
-  toggleCartDrawer,
-  setCartDrawerOpen,
-  setLoading,
-  addNotification,
-  removeNotification
-} = uiSlice.actions
+export const { setCartDrawerOpen, setMobileMenuOpen, setSearchOpen } =
+  uiSlice.actions
 
-export const selectSidebarOpen = (state: RootState) => state.ui.sidebarOpen
-export const selectCartDrawerOpen = (state: RootState) => state.ui.cartDrawerOpen
-export const selectLoading = (key: string) => (state: RootState) => state.ui.loading[key]
-export const selectNotifications = (state: RootState) => state.ui.notifications
+// Selectors
+export const selectIsCartDrawerOpen = (state: RootState) =>
+  state.ui.isCartDrawerOpen
+export const selectIsMobileMenuOpen = (state: RootState) =>
+  state.ui.isMobileMenuOpen
+export const selectIsSearchOpen = (state: RootState) => state.ui.isSearchOpen
 
 export default uiSlice.reducer 

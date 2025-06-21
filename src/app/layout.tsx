@@ -1,9 +1,6 @@
 import { Inter } from 'next/font/google'
 import { RootLayoutClient } from '@/components/layout/RootLayoutClient'
-import { AuthProvider } from '@/components/providers/AuthProvider'
-import { CartProvider } from '@/components/providers/CartProvider'
-import { ReduxProvider } from '@/components/providers/ReduxProvider'
-import { Toaster } from '@/components/ui/toaster'
+import { Providers } from './providers'
 import './globals.css'
 import { Metadata } from 'next'
 
@@ -72,16 +69,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <AuthProvider>
-          <ReduxProvider>
-            <CartProvider>
-              <RootLayoutClient>
-                {children}
-              </RootLayoutClient>
-              <Toaster />
-            </CartProvider>
-          </ReduxProvider>
-        </AuthProvider>
+        <Providers>
+          <RootLayoutClient>{children}</RootLayoutClient>
+        </Providers>
+        <div id="portal-root" />
       </body>
     </html>
   )
