@@ -26,7 +26,6 @@ import {
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { ConnectionStatus } from '@/components/ConnectionStatus'
 
 const navigation = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
@@ -76,9 +75,6 @@ function Sidebar({ className }: { className?: string }) {
       </nav>
 
       <div className="p-4 space-y-4">
-        <Suspense fallback={<div className="h-8 animate-pulse bg-gray-200 rounded" />}>
-          <ConnectionStatus />
-        </Suspense>
         <Button
           variant="ghost"
           className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"

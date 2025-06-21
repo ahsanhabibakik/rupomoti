@@ -34,7 +34,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   const router = useRouter()
   const dispatch = useAppDispatch()
   const items = useAppSelector(selectCartItems)
-  const savedForLater = useAppSelector((state) => state.cart.savedForLater)
+  const savedForLater = useAppSelector((state) => state.cart.savedForLater) || []
   const cartTotal = useAppSelector((state) => state.cart.total)
   const shippingCost = useAppSelector((state) => state.cart.shippingCost)
   const discount = useAppSelector((state) => state.cart.discount)
@@ -125,7 +125,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
 
                 {/* Cart Items */}
                 <div className="flex-1 overflow-y-auto p-4">
-                  {items.length === 0 && savedForLater.length === 0 ? (
+                  {items.length === 0 && (savedForLater?.length || 0) === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-center">
                       <ShoppingBag className="w-16 h-16 text-champagne-sheen mb-4" />
                       <p className="text-mink-taupe">Your cart is empty</p>
@@ -214,7 +214,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                       )}
 
                       {/* Saved for Later Items */}
-                      {savedForLater.length > 0 && (
+                      {savedForLater && savedForLater.length > 0 && (
                         <div>
                           <h3 className="font-medium text-cocoa-brown mb-4">Saved for Later</h3>
                           {savedForLater.map((item) => (
