@@ -21,7 +21,16 @@ export function ProductDetails({ product }: ProductDetailsProps) {
   const dispatch = useAppDispatch()
 
   const handleAddToCart = () => {
-    dispatch(addToCart(product))
+    const cartItem = {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.images[0], // Use first image as main image
+      quantity: quantity,
+      category: product.category,
+    }
+    
+    dispatch(addToCart(cartItem))
     dispatch(toggleCart())
     showToast.success(`${product.name} has been added to your cart.`)
   }

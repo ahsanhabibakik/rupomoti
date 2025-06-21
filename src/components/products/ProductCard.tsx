@@ -18,6 +18,7 @@ interface ProductCardProps {
   description: string
   price: number
   image: string
+  category?: string
   isNew?: boolean
   isBestSeller?: boolean
   isOutOfStock?: boolean
@@ -30,6 +31,7 @@ export function ProductCard({
   description,
   price,
   image,
+  category = 'Uncategorized',
   isNew = false,
   isBestSeller = false,
   isOutOfStock = false,
@@ -51,7 +53,8 @@ export function ProductCard({
       name,
       price: discount > 0 ? discountedPrice : safePrice,
       image,
-      quantity: 1
+      quantity: 1,
+      category
     }
     dispatch(addToCart(cartItem))
     dispatch(toggleCart())
@@ -116,11 +119,11 @@ export function ProductCard({
           <div>
             {discount > 0 ? (
               <div className="flex items-baseline gap-2">
-                <span className="font-bold text-lg text-accent">${discountedPrice.toFixed(2)}</span>
-                <span className="text-sm text-neutral-light line-through">${safePrice.toFixed(2)}</span>
+                <span className="font-bold text-lg text-accent">৳{discountedPrice.toFixed(2)}</span>
+                <span className="text-sm text-neutral-light line-through">৳{safePrice.toFixed(2)}</span>
               </div>
             ) : (
-              <span className="font-bold text-lg text-accent">${safePrice.toFixed(2)}</span>
+              <span className="font-bold text-lg text-accent">৳{safePrice.toFixed(2)}</span>
             )}
           </div>
           {isOutOfStock && (

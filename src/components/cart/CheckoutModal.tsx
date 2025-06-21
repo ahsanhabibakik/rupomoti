@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { Dialog, DialogContent, DialogOverlay, DialogPortal } from '@/components/ui/dialog'
 import { Truck, CreditCard, Banknote, Smartphone, CheckCircle } from 'lucide-react'
 import { useForm, FieldValues, SubmitHandler } from 'react-hook-form'
+import { useAppSelector, useAppDispatch } from '@/redux/hooks'
+import { clearCart } from '@/redux/slices/cartSlice'
 
 interface CheckoutModalProps {
   open: boolean
@@ -23,23 +25,58 @@ const PAYMENT_OPTIONS = [
 ]
 
 export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
+  const dispatch = useAppDispatch()
+  const items = useAppSelector((state) => state.cart.items)
+  const cartTotal = useAppSelector((state) => state.cart.total)
+  const discount = useAppSelector((state) => state.cart.discount)
+  const shippingCost = useAppSelector((state) => state.cart.shippingCost)
+  
   const [delivery, setDelivery] = useState('dhaka')
   const [payment, setPayment] = useState('cod')
   const { register, handleSubmit, formState: { errors } } = useForm()
   const [submitted, setSubmitted] = useState(false)
 
-  const subtotal = 1500 // replace with real subtotal
+  const subtotal = cartTotal
   const deliveryCharge = DELIVERY_OPTIONS.find(opt => opt.value === delivery)?.price || 0
-  const total = subtotal + deliveryCharge
+  const total = subtotal - discount + deliveryCharge
 
-  const onSubmit: SubmitHandler<FieldValues> = (data) => {
-    const fullOrder = {
-      ...data,
-      delivery,
-      payment,
+  const onSubmit: SubmitHandler<FieldValues> = async (data) => {
+    try {
+      const fullOrder = {
+        ...data,
+        delivery,
+        payment,
+        items,
+        subtotal,
+        discount,
+        deliveryCharge,
+        total,
+        orderDate: new Date().toISOString(),
+      }
+      
+      console.log('Submitting order:', fullOrder)
+      
+      // Here you would typically send the order to your API
+      // const response = await fetch('/api/orders', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(fullOrder),
+      // })
+      
+      // if (response.ok) {
+      //   dispatch(clearCart())
+      //   setSubmitted(true)
+      // } else {
+      //   throw new Error('Failed to submit order')
+      // }
+      
+      // For now, just simulate success
+      dispatch(clearCart())
+      setSubmitted(true)
+    } catch (error) {
+      console.error('Error submitting order:', error)
+      alert('Failed to submit order. Please try again.')
     }
-    console.log('Submitting order:', fullOrder)
-    setSubmitted(true)
   }
 
   if (typeof window === 'undefined') return null
@@ -54,17 +91,29 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
               {/* Ordered Product Summary */}
               <div className="space-y-2">
                 <h3 className="font-bold text-lg text-gray-800">Order Summary</h3>
+                {items.map((item) => (
+                  <div key={item.id} className="flex justify-between text-sm text-gray-700">
+                    <span>{item.name} x {item.quantity}</span>
+                    <span>৳{(item.price * item.quantity).toLocaleString()}</span>
+                  </div>
+                ))}
                 <div className="flex justify-between text-sm text-gray-700">
                   <span>Subtotal</span>
-                  <span>৳{subtotal}</span>
+                  <span>৳{subtotal.toLocaleString()}</span>
                 </div>
+                {discount > 0 && (
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span>Discount</span>
+                    <span>-৳{discount.toLocaleString()}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm text-gray-700">
                   <span>Delivery Charge</span>
                   <span>৳{deliveryCharge}</span>
                 </div>
                 <div className="flex justify-between font-bold text-md text-gray-900 border-t pt-2">
                   <span>Total</span>
-                  <span>৳{total}</span>
+                  <span>৳{total.toLocaleString()}</span>
                 </div>
               </div>
 
@@ -126,7 +175,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
               </div>
 
               <button type="submit" className="w-full py-3 bg-yellow-500 text-white font-bold rounded-lg hover:bg-yellow-600 transition-colors text-base">
-                Confirm Order — ৳{total}
+                Confirm Order — ৳{total.toLocaleString()}
               </button>
             </form>
           ) : (
