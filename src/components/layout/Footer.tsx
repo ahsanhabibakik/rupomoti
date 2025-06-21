@@ -151,8 +151,8 @@ export default function Footer() {
                 src="/images/branding/logo.png"
                 alt="Rupomoti Logo"
                 width={80}
-                height={80}
-                className="w-16 h-16"
+                height={40}
+                className="w-auto h-10"
               />
             </Link>
             <p className="text-pearl-white max-w-md">

@@ -11,9 +11,14 @@ const nextConfig = {
         hostname: 'images.unsplash.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
+      },
     ],
     unoptimized: process.env.NODE_ENV === 'development',
-    domains: ['images.unsplash.com', 'plus.unsplash.com'],
+    domains: ['images.unsplash.com', 'plus.unsplash.com', 'res.cloudinary.com'],
   },
   experimental: {
     optimizePackageImports: ['lucide-react'],

@@ -247,8 +247,7 @@ export function Navbar() {
                 alt="Rupomoti Logo"
                 width={180}
                 height={60}
-                className="h-10 md:h-12 w-auto"
-                priority
+                className="h-8 md:h-10 w-auto"
               />
             </div>
           </Link>
