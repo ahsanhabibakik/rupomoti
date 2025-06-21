@@ -66,7 +66,9 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <HeroSlider />
+      <section className="bg-transparent">
+        <HeroSlider />
+      </section>
 
       {/* Categories Section */}
       <section className="py-12 px-4 sm:py-16 bg-gradient-to-b from-base to-base-light">
