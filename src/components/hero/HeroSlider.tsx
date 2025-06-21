@@ -9,6 +9,7 @@ const fallbackSlides = [
   {
     id: 1,
     image: "/images/hero/slider1.jpeg",
+    mobileImage: "/images/hero/slider1.jpeg",
     title: "",
     subtitle: "",
     link: "/shop/necklaces",
@@ -17,6 +18,7 @@ const fallbackSlides = [
   {
     id: 2,
     image: "/images/hero/slider2.jpeg",
+    mobileImage: "/images/hero/slider2.jpeg",
     title: "",
     subtitle: "",
     link: "",
@@ -24,6 +26,7 @@ const fallbackSlides = [
   {
     id: 3,
     image: "/images/hero/slider3.jpg",
+    mobileImage: "/images/hero/slider3.jpg",
     title: "",
     subtitle: "",
     link: "/shop/rings",
@@ -32,6 +35,7 @@ const fallbackSlides = [
   {
     id: 4,
     image: "/images/hero/slider4.jpg",
+    mobileImage: "/images/hero/slider4.jpg",
     title: "",
     subtitle: "",
     link: "/shop/rings",
@@ -50,7 +54,7 @@ export function HeroSlider() {
 
   useEffect(() => {
     // Fetch hero-slider images from media API
-    fetch("/api/media?section=hero-slider")
+    fetch("/api/public/media/hero-slider")
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
@@ -58,6 +62,7 @@ export function HeroSlider() {
             data.map((item, idx) => ({
               id: item.id || idx,
               image: item.url,
+              mobileImage: item.metadata?.mobileUrl || item.url,
               title: item.name || `Slide ${idx + 1}`,
               subtitle: item.alt || "",
               link: item.metadata?.link || "#",
@@ -140,10 +145,10 @@ export function HeroSlider() {
   };
 
   return (
-    <div className="relative">
+    <div className="relative py-4">
       {/* Hero Slider */}
       <div
-        className="mt-2 relative h-[50vh] sm:h-[60vh] md:h-[70vh] overflow-hidden select-none rounded-lg"
+        className="max-w-screen-xl mx-2  md:mx-auto mt-2 relative h-60 sm:h-72 md:h-80 overflow-hidden select-none rounded-2xl"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -157,48 +162,57 @@ export function HeroSlider() {
         style={{ touchAction: "pan-y" }}
       >
         {slides.map((slide, index) => (
-          <div
+          <Link
+            href={slide.link}
             key={slide.id}
             className={`absolute inset-0 transition-opacity duration-1000 z-0 ${
               index === currentSlide ? "opacity-100 z-10" : "opacity-0"
             }`}
           >
+            {/* Desktop Image */}
             <Image
               src={slide.image}
               alt={`Slide ${slide.id}`}
               fill
-              className="object-cover pointer-events-none"
+              className="object-cover pointer-events-none hidden md:block"
+              priority={index === 0}
+              draggable={false}
+            />
+            {/* Mobile Image */}
+            <Image
+              src={slide.mobileImage}
+              alt={`Slide ${slide.id}`}
+              fill
+              className="object-cover pointer-events-none block md:hidden"
               priority={index === 0}
               draggable={false}
             />
             
             {/* Overlay with content */}
-            <div className="absolute inset-0 bg-gradient-to-r from-neutral/60 via-neutral/30 to-transparent">
+            <div className="absolute inset-0">
               <div className="absolute inset-0 flex items-center">
                 <div className="container mx-auto px-4">
-                  <div className="max-w-2xl">
+                  {/* <div className="max-w-2xl">
                     <div className="flex items-center gap-2 mb-4">
-                      <Sparkles className="w-6 h-6 text-accent" />
-                      <span className="text-accent font-medium">Premium Pearls</span>
+                      <Sparkles className="w-6 h-6 text-accent drop-shadow-lg" />
+                      <span className="text-accent font-medium drop-shadow-lg">Premium Pearls</span>
                     </div>
-                    <h1 className="text-4xl md:text-6xl font-display text-base mb-4 leading-tight">
+                    <h1 className="text-3xl sm:text-4xl md:text-6xl font-display text-white drop-shadow-lg mb-4 leading-tight">
                       {slide.title}
                     </h1>
-                    <p className="text-lg md:text-xl text-base/90 mb-8 max-w-lg">
+                    <p className="text-base sm:text-lg md:text-xl text-white/90 drop-shadow-lg mb-8 max-w-lg">
                       {slide.subtitle}
                     </p>
-                    <Link
-                      href={slide.link}
+                    <div
                       className="inline-flex items-center gap-2 bg-accent text-primary px-8 py-4 rounded-full font-semibold hover:bg-accent-dark transition-colors duration-200 shadow-accent"
                     >
                       {slide.cta}
-                      <ChevronRight className="w-5 h-5" />
-                    </Link>
-                  </div>
+                    </div>
+                  </div> */}
                 </div>
               </div>
             </div>
-          </div>
+          </Link>
         ))}
 
         {/* Navigation Arrows */}

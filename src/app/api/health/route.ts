@@ -34,7 +34,7 @@ export async function GET() {
         { name: 'Customer', query: () => prisma.customer.count() },
         { name: 'Media', query: () => prisma.media.count() },
         { name: 'Coupon', query: () => prisma.coupon.count() },
-        { name: 'Settings', query: () => prisma.settings.count() }
+        { name: 'Setting', query: () => prisma.setting.count() }
       ]
 
       for (const collection of collections) {
