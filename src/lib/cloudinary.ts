@@ -1,15 +1,10 @@
-import { v2 as cloudinary } from 'cloudinary';
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-  secure: true
-});
-
+// Client-side Cloudinary utilities
 export async function uploadImage(file: File) {
   try {
+    if (!process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME) {
+      throw new Error('Cloudinary cloud name is not configured');
+    }
+
     const formData = new FormData();
     formData.append('file', file);
     formData.append('upload_preset', 'rupomoti_products');
@@ -22,13 +17,15 @@ export async function uploadImage(file: File) {
       { quality: 'auto' }
     ]));
 
-    const response = await fetch(`https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload`, {
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
       method: 'POST',
       body: formData
     });
 
     if (!response.ok) {
-      throw new Error('Upload failed');
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || 'Upload failed');
     }
 
     const result = await response.json();
@@ -39,17 +36,30 @@ export async function uploadImage(file: File) {
       height: result.height,
       format: result.format
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error uploading to Cloudinary:', error);
-    throw error;
+    throw new Error(error.message || 'Failed to upload image');
   }
 }
 
 export async function deleteImage(publicId: string) {
   try {
-    await cloudinary.uploader.destroy(publicId);
-  } catch (error) {
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ publicId }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to delete image');
+    }
+
+    return await response.json();
+  } catch (error: any) {
     console.error('Error deleting from Cloudinary:', error);
-    throw error;
+    throw new Error(error.message || 'Failed to delete image');
   }
 }

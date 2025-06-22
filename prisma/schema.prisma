@@ -29,6 +29,7 @@ model User {
   wishlistItems  WishlistItem[]
   reviews        Review[]
   customers      Customer[]
+  blogPosts      BlogPost[]
 }
 
 model Account {
@@ -86,11 +87,20 @@ model Category {
   products    Product[]
 }
 
+enum ProductLabel {
+  NONE
+  NEW_ARRIVAL
+  BEST_SELLER
+  POPULAR
+  FEATURED
+}
+
 model Product {
   id              String   @id @default(auto()) @map("_id") @db.ObjectId
   name            String   @unique
   description     String
   price           Float
+  salePrice       Float?
   images          Json     // Array of image objects with URLs and metadata
   mainImage       String   // Primary product image URL
   featuredImage   String?  // Image for featured display
@@ -109,6 +119,7 @@ model Product {
   featured        Boolean  @default(false)
   newArrival      Boolean  @default(false)
   bestSeller      Boolean  @default(false)
+  productLabel    ProductLabel @default(NONE)
   status          ProductStatus @default(ACTIVE)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -182,18 +193,17 @@ enum AuthType {
 }
 
 model ShippingProvider {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  name        String
-  type        String   // 'pathao' or 'redx' or 'steadfast'
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  averageDeliveryTime  Float    @default(0) // in days
-  successRate          Float    @default(0) // percentage
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
+  name                String
+  type                String   // 'pathao' or 'redx' or 'steadfast'
+  isActive           Boolean  @default(true)
+  averageDeliveryTime Float    @default(0) // in days
+  successRate         Float    @default(0) // percentage
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
-  orders               Order[]
+  orders              Order[]
+  coupons            Coupon[]
 }
 
 enum CouponStatus {
@@ -254,6 +264,8 @@ model Order {
   updatedAt     DateTime       @updatedAt
 
   items         OrderItem[]
+  coupon        Coupon?        @relation(fields: [couponId], references: [id])
+  couponId      String?        @db.ObjectId
 }
 
 enum ShippingStatus {
@@ -321,22 +333,6 @@ model WishlistItem {
   product   Product  @relation(fields: [productId], references: [id])
 
   @@unique([userId, productId])
-}
-
-model Coupon {
-  id            String    @id @default(auto()) @map("_id") @db.ObjectId
-  code          String    @unique
-  type          CouponType
-  value         Float     // Percentage or fixed amount
-  minimumAmount Float?
-  maximumDiscount Float?
-  usageLimit    Int?
-  usedCount     Int       @default(0)
-  isActive      Boolean   @default(true)
-  validFrom     DateTime
-  validUntil    DateTime
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
 }
 
 model Media {

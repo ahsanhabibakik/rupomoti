@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Table,
   TableBody,
@@ -44,6 +44,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { showToast } from '@/lib/toast';
+import { uploadImage } from '@/lib/cloudinary';
 
 type Category = {
   id: string;
@@ -55,6 +56,7 @@ type Product = {
   name: string;
   description: string;
   price: number;
+  salePrice?: number;
   mainImage: string;
   images: string[];
   sku: string;
@@ -68,10 +70,19 @@ type Product = {
   metaDescription?: string;
   inStock: boolean;
   featured: boolean;
+  status?: 'DRAFT' | 'PUBLISHED';
   categoryId: string;
   category: Category;
   createdAt: string;
 };
+
+const PRODUCT_LABELS = [
+  { value: 'NONE', label: 'None' },
+  { value: 'NEW_ARRIVAL', label: 'New Arrival' },
+  { value: 'BEST_SELLER', label: 'Best Seller' },
+  { value: 'POPULAR', label: 'Popular' },
+  { value: 'FEATURED', label: 'Featured' }
+];
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -79,6 +90,9 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const additionalImagesRef = useRef<HTMLInputElement>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   
@@ -90,11 +104,29 @@ export default function ProductsPage() {
     featured: '',
   });
 
+  // Add this effect to load categories
+useEffect(() => {
+  const loadCategories = async () => {
+    try {
+      const response = await fetch('/api/admin/categories');
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data);
+      }
+    } catch (error) {
+      console.error('Failed to load categories:', error);
+    }
+  };
+
+  loadCategories();
+}, []);
+
   // Form data
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     price: '',
+    salePrice: '',
     categoryId: '',
     mainImage: '',
     images: [] as string[],
@@ -109,7 +141,20 @@ export default function ProductsPage() {
     metaDescription: '',
     isActive: true,
     featured: false,
+    productLabel: 'NONE',
+    status: 'PUBLISHED' as 'DRAFT' | 'PUBLISHED',
   });
+
+  // Calculate discount percentage
+  const calculateDiscount = () => {
+    if (!formData.salePrice || !formData.price) return 0;
+    const price = parseFloat(formData.price);
+    const salePrice = parseFloat(formData.salePrice);
+    if (price <= 0 || salePrice >= price) return 0;
+    return Math.round(((price - salePrice) / price) * 100);
+  };
+
+  const discountPercentage = calculateDiscount();
 
   const [newTag, setNewTag] = useState('');
 
@@ -140,21 +185,30 @@ export default function ProductsPage() {
     fetchProducts();
   }, [fetchProducts]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent | any, isDraft: boolean = false) => {
+    if (e && e.preventDefault) e.preventDefault();
+    
     try {
       const url = '/api/admin/products';
       const method = editingProduct ? 'PUT' : 'POST';
       
+      // If we're getting form data directly (from Save as Draft), use it
+      const formDataToSubmit = e && typeof e === 'object' && !e.preventDefault 
+        ? { ...e, status: isDraft ? 'DRAFT' : 'PUBLISHED' } 
+        : { ...formData, status: isDraft ? 'DRAFT' : 'PUBLISHED' };
+      
+      const payload = {
+        ...formDataToSubmit,
+        price: parseFloat(formDataToSubmit.price),
+        salePrice: formDataToSubmit.salePrice ? parseFloat(formDataToSubmit.salePrice) : null,
+        weight: formDataToSubmit.weight ? parseFloat(formDataToSubmit.weight) : null,
+        ...(editingProduct && { id: editingProduct.id }),
+      };
+      
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          price: parseFloat(formData.price),
-          weight: formData.weight ? parseFloat(formData.weight) : null,
-          ...(editingProduct && { id: editingProduct.id }),
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -195,6 +249,7 @@ export default function ProductsPage() {
       name: product.name,
       description: product.description,
       price: product.price.toString(),
+      salePrice: product.salePrice?.toString() || '',
       categoryId: product.categoryId,
       mainImage: product.mainImage,
       images: product.images.filter(img => img !== product.mainImage),
@@ -209,8 +264,67 @@ export default function ProductsPage() {
       metaDescription: product.metaDescription || '',
       isActive: product.inStock,
       featured: product.featured,
+      status: product.status || 'PUBLISHED',
+      productLabel: 'NONE',
     });
     setIsDialogOpen(true);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, isMainImage = false) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      showToast.error('Please upload an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      showToast.error('Image size should be less than 5MB');
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      const result = await uploadImage(file);
+      
+      if (isMainImage) {
+        setFormData(prev => ({
+          ...prev,
+          mainImage: result.url
+        }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          images: [...prev.images, result.url]
+        }));
+      }
+      
+      showToast.success('Image uploaded successfully');
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      showToast.error('Failed to upload image');
+    } finally {
+      setIsUploading(false);
+      // Reset the file input
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  const removeImage = (url: string, isMainImage = false) => {
+    if (isMainImage) {
+      setFormData(prev => ({
+        ...prev,
+        mainImage: ''
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        images: prev.images.filter(img => img !== url)
+      }));
+    }
   };
 
   const resetForm = () => {
@@ -218,6 +332,7 @@ export default function ProductsPage() {
       name: '',
       description: '',
       price: '',
+      salePrice: '',
       categoryId: '',
       mainImage: '',
       images: [],
@@ -232,6 +347,8 @@ export default function ProductsPage() {
       metaDescription: '',
       isActive: true,
       featured: false,
+      status: 'PUBLISHED',
+      productLabel: 'NONE',
     });
     setNewTag('');
   };
@@ -392,8 +509,9 @@ export default function ProductsPage() {
                           <Image
                             src={product.mainImage || '/placeholder.png'}
                             alt={product.name}
-                            fill
-                            className="object-cover"
+                            width={48}
+                            height={48}
+                            style={{ objectFit: 'cover', width: '100%', height: '100%' }}
                           />
                         </div>
                         <div>
@@ -503,17 +621,43 @@ export default function ProductsPage() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-4 gap-4">
                     <div>
-                      <Label htmlFor="price">Price *</Label>
+                      <Label htmlFor="price">Regular Price *</Label>
                       <Input
                         id="price"
                         type="number"
+                        min="0"
                         step="0.01"
                         value={formData.price}
                         onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                         required
                       />
+                    </div>
+                    <div>
+                      <Label htmlFor="salePrice">Sale Price</Label>
+                      <Input
+                        id="salePrice"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={formData.salePrice}
+                        onChange={(e) => setFormData({ ...formData, salePrice: e.target.value })}
+                        className={formData.salePrice && parseFloat(formData.salePrice) >= parseFloat(formData.price || '0') ? 'border-red-500' : ''}
+                      />
+                      {formData.salePrice && parseFloat(formData.salePrice) >= parseFloat(formData.price || '0') && (
+                        <p className="text-xs text-red-500 mt-1">Sale price must be less than regular price</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label>Discount</Label>
+                      <div className="h-10 flex items-center px-3 rounded-md border border-input bg-background text-sm">
+                        {discountPercentage > 0 ? (
+                          <span className="text-green-600 font-medium">{discountPercentage}% OFF</span>
+                        ) : (
+                          <span className="text-muted-foreground">No discount</span>
+                        )}
+                      </div>
                     </div>
                     <div>
                       <Label htmlFor="category">Category *</Label>
@@ -533,12 +677,15 @@ export default function ProductsPage() {
                         </SelectContent>
                       </Select>
                     </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
                     <div>
                       <Label htmlFor="weight">Weight (g)</Label>
                       <Input
                         id="weight"
                         type="number"
                         step="0.1"
+                        min="0"
                         value={formData.weight}
                         onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
                       />
@@ -565,56 +712,112 @@ export default function ProductsPage() {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="images" className="space-y-4">
-                  <div>
-                    <Label htmlFor="mainImage">Main Image *</Label>
-                    <Input
-                      id="mainImage"
-                      value={formData.mainImage}
-                      onChange={(e) => setFormData({ ...formData, mainImage: e.target.value })}
-                      placeholder="Main product image URL"
-                      required
-                    />
+                <TabsContent value="images" className="space-y-6">
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Main Image *</Label>
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={(e) => handleImageUpload(e, true)}
+                        accept="image/*"
+                        className="hidden"
+                        disabled={isUploading}
+                      />
+                      <div className="mt-2 flex items-center gap-4">
+                        {formData.mainImage ? (
+                          <div className="relative group">
+                            <Image
+                              src={formData.mainImage}
+                              alt="Main product"
+                              width={128}
+                              height={128}
+                              className="rounded-md border"
+                              style={{ objectFit: 'cover' }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeImage(formData.mainImage, true)}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                              disabled={isUploading}
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div 
+                            className="h-32 w-32 border-2 border-dashed rounded-md flex items-center justify-center cursor-pointer hover:border-primary transition-colors"
+                            onClick={() => fileInputRef.current?.click()}
+                          >
+                            {isUploading ? (
+                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                            ) : (
+                              <div className="text-center p-2">
+                                <ImageIcon className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
+                                <span className="text-xs text-muted-foreground">Upload Main Image</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        <div className="text-sm text-muted-foreground">
+                          <p>Recommended size: 800x800px</p>
+                          <p>Max file size: 5MB</p>
+                          <p>Formats: JPG, PNG, WEBP</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
-                  <div>
-                    <Label>Additional Images (up to 9)</Label>
-                    <div className="space-y-2">
-                      {formData.images.map((image, index) => (
-                        <div key={index} className="flex gap-2">
-                          <Input
-                            value={image}
-                            onChange={(e) => {
-                              const newImages = [...formData.images];
-                              newImages[index] = e.target.value;
-                              setFormData({ ...formData, images: newImages });
-                            }}
-                            placeholder="Image URL"
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            onClick={() => {
-                              const newImages = formData.images.filter((_, i) => i !== index);
-                              setFormData({ ...formData, images: newImages });
-                            }}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                      {formData.images.length < 9 && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => setFormData({ ...formData, images: [...formData.images, ''] })}
-                        >
-                          <ImageIcon className="h-4 w-4 mr-2" />
-                          Add Image
-                        </Button>
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Additional Images (up to {9 - formData.images.length} remaining)</Label>
+                      <input
+                        type="file"
+                        ref={additionalImagesRef}
+                        onChange={(e) => handleImageUpload(e, false)}
+                        accept="image/*"
+                        className="hidden"
+                        disabled={isUploading || formData.images.length >= 9}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => additionalImagesRef.current?.click()}
+                        disabled={isUploading || formData.images.length >= 9}
+                        className="mt-2"
+                      >
+                        <ImageIcon className="h-4 w-4 mr-2" />
+                        {isUploading ? 'Uploading...' : 'Add Additional Images'}
+                      </Button>
+                      {formData.images.length >= 9 && (
+                        <p className="text-xs text-muted-foreground mt-1">Maximum 9 additional images reached</p>
                       )}
                     </div>
+
+                    {formData.images.length > 0 && (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                        {formData.images.map((image, index) => (
+                          <div key={index} className="relative group">
+                            <Image
+                              src={image}
+                              alt={`Product ${index + 1}`}
+                              width={128}
+                              height={128}
+                              className="rounded-md border"
+                              style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeImage(image)}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                              disabled={isUploading}
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </TabsContent>
 
@@ -712,18 +915,40 @@ export default function ProductsPage() {
 
               <Separator />
 
-              <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit">
-                  {editingProduct ? 'Update Product' : 'Create Product'}
-                </Button>
-              </div>
+              <div className="flex justify-between items-center mt-6">
+  <div className="text-sm text-muted-foreground">
+    {formData.status === 'DRAFT' && (
+      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+        Draft
+      </span>
+    )}
+  </div>
+  <div className="flex gap-2">
+    <Button
+      type="button"
+      variant="outline"
+      onClick={() => setIsDialogOpen(false)}
+    >
+      Cancel
+    </Button>
+    <Button
+      type="button"
+      variant="outline"
+      onClick={() => handleSubmit(null, true)}
+      disabled={!formData.name || !formData.price || !formData.categoryId}
+    >
+      Save as Draft
+    </Button>
+    <Button
+      type="button"
+      onClick={() => handleSubmit(null, false)}
+      disabled={!formData.name || !formData.price || !formData.categoryId || !formData.mainImage}
+    >
+      {editingProduct ? 'Update Product' : 'Publish Product'}
+    </Button>
+  </div>
+</div>
+              
             </form>
           </ScrollArea>
         </DialogContent>

@@ -89,7 +89,6 @@ export default function OrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [processingOrder, setProcessingOrder] = useState<string | null>(null)
-  const [shippingProviders, setShippingProviders] = useState([])
 
   const fetchShippingProviders = useCallback(async () => {
     try {

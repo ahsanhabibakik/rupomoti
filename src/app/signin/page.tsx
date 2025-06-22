@@ -88,13 +88,7 @@ export default function SignIn() {
       <div className="max-w-md mx-auto">
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
-            <Image
-              src="/images/branding/logo.png"
-              alt="Rupomoti Logo"
-              width={120}
-              height={120}
-              className="mx-auto"
-            />
+            
           </Link>
           <h2 className="mt-6 text-3xl font-bold text-gray-900">
             Welcome back

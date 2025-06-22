@@ -1,371 +1,425 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
 import { useToast } from '@/components/ui/use-toast'
+import { Loader2 } from 'lucide-react'
 
-interface ShippingProvider {
-  id: string
-  name: string
-  code: string
-  apiKey: string
-  apiSecret: string
-  isActive: boolean
-  apiUrl: string
-  apiVersion: string
-  authType: string
-  webhookUrl: string
-  orderCount: number
-  completedOrders: number
-  failedOrders: number
-  pendingOrders: number
-  averageDeliveryTime: number
-  successRate: number
-}
+const providerSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  code: z.string().min(1, 'Code is required'),
+  type: z.enum(['pathao', 'redx', 'steadfast']),
+  credentials: z.object({
+    apiKey: z.string().min(1, 'API Key is required'),
+    apiSecret: z.string().optional(),
+    secretKey: z.string().optional(),
+    storeId: z.string().optional(),
+    webhookSecret: z.string().optional(),
+  }),
+  isActive: z.boolean(),
+})
+
+type ProviderFormData = z.infer<typeof providerSchema>
 
 export default function ShippingProvidersPage() {
+  const [providers, setProviders] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [isOpen, setIsOpen] = useState(false)
+  const [editingProvider, setEditingProvider] = useState<any>(null)
   const { toast } = useToast()
-  const [shippingProviders, setShippingProviders] = useState<ShippingProvider[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [editingProvider, setEditingProvider] = useState<ShippingProvider | null>(null)
-  const [newProvider, setNewProvider] = useState<Omit<ShippingProvider, 'id'>>({
-    name: '',
-    code: '',
-    apiKey: '',
-    apiSecret: '',
-    isActive: true,
-    apiUrl: '',
-    apiVersion: '',
-    authType: 'BASIC',
-    webhookUrl: '',
-    orderCount: 0,
-    completedOrders: 0,
-    failedOrders: 0,
-    pendingOrders: 0,
-    averageDeliveryTime: 0,
-    successRate: 0
+
+  const form = useForm<ProviderFormData>({
+    resolver: zodResolver(providerSchema),
+    defaultValues: {
+      isActive: true,
+      credentials: {},
+    },
   })
 
-  const fetchShippingProviders = useCallback(async () => {
+  useEffect(() => {
+    fetchProviders()
+  }, [fetchProviders])
+
+  const fetchProviders = useCallback(async () => {
     try {
-      setIsLoading(true)
       const response = await fetch('/api/admin/shipping-providers')
       const data = await response.json()
-
-      if (!response.ok) throw new Error(data.error)
-
-      setShippingProviders(data.providers)
+      setProviders(data.providers)
     } catch (error) {
-      console.error('Error fetching shipping providers:', error)
+      console.error('Error fetching providers:', error)
       toast({
         title: 'Error',
         description: 'Failed to fetch shipping providers',
         variant: 'destructive',
       })
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }, [toast])
 
-  useEffect(() => {
-    fetchShippingProviders()
-  }, [fetchShippingProviders])
-
-  const handleCreateProvider = async () => {
+  const onSubmit = async (data: ProviderFormData) => {
     try {
-      const response = await fetch('/api/admin/shipping-providers', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...newProvider,
-          isActive: true,
-          orderCount: 0,
-          completedOrders: 0,
-          failedOrders: 0,
-          pendingOrders: 0,
-          averageDeliveryTime: 0,
-          successRate: 0
-        }),
+      const url = editingProvider ? `/api/admin/shipping-providers` : '/api/admin/shipping-providers'
+      const method = editingProvider ? 'PUT' : 'POST'
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingProvider ? { ...data, id: editingProvider.id } : data),
       })
 
-      const data = await response.json()
-
-      if (!response.ok) throw new Error(data.error)
-
-      setShippingProviders(prev => [...prev, data.provider])
-      setNewProvider({
-        name: '',
-        code: '',
-        apiKey: '',
-        apiSecret: '',
-        isActive: true,
-        apiUrl: '',
-        apiVersion: '',
-        authType: 'BASIC',
-        webhookUrl: '',
-        orderCount: 0,
-        completedOrders: 0,
-        failedOrders: 0,
-        pendingOrders: 0,
-        averageDeliveryTime: 0,
-        successRate: 0
-      })
+      if (!response.ok) throw new Error('Failed to save provider')
 
       toast({
         title: 'Success',
-        description: 'Shipping provider created successfully',
-        variant: 'default'
+        description: `Provider ${editingProvider ? 'updated' : 'created'} successfully`,
       })
+
+      setIsOpen(false)
+      fetchProviders()
+      form.reset()
+      setEditingProvider(null)
     } catch (error) {
-      console.error('Error creating shipping provider:', error)
+      console.error('Error saving provider:', error)
       toast({
         title: 'Error',
-        description: 'Failed to create shipping provider',
-        variant: 'destructive'
+        description: `Failed to ${editingProvider ? 'update' : 'create'} provider`,
+        variant: 'destructive',
       })
     }
   }
 
-  const handleDeleteProvider = async (id: string) => {
+  const handleEdit = (provider: any) => {
+    setEditingProvider(provider)
+    form.reset({
+      name: provider.name,
+      code: provider.code,
+      type: provider.type,
+      credentials: provider.credentials || {},
+      isActive: provider.isActive,
+    })
+    setIsOpen(true)
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this provider?')) return
+
     try {
-      const response = await fetch(`/api/admin/shipping-providers/${id}`, {
+      const response = await fetch(`/api/admin/shipping-providers?id=${id}`, {
         method: 'DELETE',
       })
 
-      const data = await response.json()
+      if (!response.ok) throw new Error('Failed to delete provider')
 
-      if (!response.ok) throw new Error(data.error)
-
-      setShippingProviders(prev => prev.filter((p) => p.id !== id))
       toast({
         title: 'Success',
-        description: 'Shipping provider deleted successfully',
-        variant: 'default'
+        description: 'Provider deleted successfully',
       })
+
+      fetchProviders()
     } catch (error) {
-      console.error('Error deleting shipping provider:', error)
+      console.error('Error deleting provider:', error)
       toast({
         title: 'Error',
-        description: 'Failed to delete shipping provider',
-        variant: 'destructive'
-      })
-    }
-  }
-
-  const handleViewOrders = async (id: string) => {
-    try {
-      const response = await fetch(`/api/admin/shipping-providers/${id}/orders`)
-      const data = await response.json()
-
-      if (!response.ok) throw new Error(data.error)
-
-      console.log('Provider orders:', data.orders)
-      // TODO: Implement proper view orders UI
-    } catch (error) {
-      console.error('Error viewing orders:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to view orders',
-        variant: 'destructive'
+        description: 'Failed to delete provider',
+        variant: 'destructive',
       })
     }
   }
 
   return (
-    <div className="space-y-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>Create New Shipping Provider</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form className="space-y-6">
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  value={newProvider.name}
-                  onChange={(e) =>
-                    setNewProvider({ ...newProvider, name: e.target.value })
-                  }
-                />
-              </div>
-              <div>
-                <Label htmlFor="code">Code</Label>
-                <Input
-                  id="code"
-                  value={newProvider.code}
-                  onChange={(e) =>
-                    setNewProvider({ ...newProvider, code: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <Label htmlFor="apiUrl">API URL</Label>
-                <Input
-                  id="apiUrl"
-                  value={newProvider.apiUrl}
-                  onChange={(e) =>
-                    setNewProvider({ ...newProvider, apiUrl: e.target.value })
-                  }
-                />
-              </div>
-              <div>
-                <Label htmlFor="apiVersion">API Version</Label>
-                <Input
-                  id="apiVersion"
-                  value={newProvider.apiVersion}
-                  onChange={(e) =>
-                    setNewProvider({ ...newProvider, apiVersion: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <Label htmlFor="authType">Auth Type</Label>
-                <Select
-                  value={newProvider.authType}
-                  onValueChange={(value) =>
-                    setNewProvider({ ...newProvider, authType: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select auth type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="BASIC">Basic</SelectItem>
-                    <SelectItem value="OAUTH2">OAuth 2.0</SelectItem>
-                    <SelectItem value="API_KEY">API Key</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="isActive"
-                  checked={newProvider.isActive}
-                  onCheckedChange={(checked) =>
-                    setNewProvider({ ...newProvider, isActive: checked })
-                  }
-                />
-                <Label htmlFor="isActive">Active</Label>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <Label htmlFor="apiKey">API Key</Label>
-                <Input
-                  id="apiKey"
-                  type="password"
-                  value={newProvider.apiKey}
-                  onChange={(e) =>
-                    setNewProvider({ ...newProvider, apiKey: e.target.value })
-                  }
-                />
-              </div>
-              <div>
-                <Label htmlFor="apiSecret">API Secret</Label>
-                <Input
-                  id="apiSecret"
-                  type="password"
-                  value={newProvider.apiSecret}
-                  onChange={(e) =>
-                    setNewProvider({ ...newProvider, apiSecret: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="webhookUrl">Webhook URL</Label>
-              <Input
-                id="webhookUrl"
-                value={newProvider.webhookUrl}
-                onChange={(e) =>
-                  setNewProvider({ ...newProvider, webhookUrl: e.target.value })
-                }
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Shipping Providers</h1>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={() => {
+              setEditingProvider(null)
+              form.reset({
+                name: '',
+                code: '',
+                type: 'steadfast',
+                credentials: {},
+                isActive: true,
+              })
+            }}>
+              Add Provider
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {editingProvider ? 'Edit Provider' : 'Add Provider'}
+              </DialogTitle>
+            </DialogHeader>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
 
-            <div className="flex justify-end">
-              <Button type="button" onClick={handleCreateProvider}>
-                Create Provider
+              <FormField
+                control={form.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Code</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Type</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select provider type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="steadfast">Steadfast</SelectItem>
+                        <SelectItem value="redx">RedX</SelectItem>
+                        <SelectItem value="pathao">Pathao</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="credentials.apiKey"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>API Key</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="password" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {form.watch('type') === 'pathao' && (
+                <FormField
+                  control={form.control}
+                  name="credentials.apiSecret"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>API Secret</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="password" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {form.watch('type') === 'steadfast' && (
+                <FormField
+                  control={form.control}
+                  name="credentials.secretKey"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Secret Key</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="password" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              <FormField
+                control={form.control}
+                name="credentials.storeId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Store ID</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="credentials.webhookSecret"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Webhook Secret</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="password" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="isActive"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between">
+                    <FormLabel>Active</FormLabel>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button type="submit" className="w-full">
+                {editingProvider ? 'Update' : 'Create'} Provider
               </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Shipping Providers</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div>Loading...</div>
-          ) : (
-            <div className="space-y-4">
-              {shippingProviders.map((provider) => (
-                <div
-                  key={provider.id}
-                  className="flex items-center justify-between p-4 border rounded-lg"
-                >
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <h3 className="font-medium">{provider.name}</h3>
-                      <Badge
-                        variant={provider.isActive ? 'default' : 'secondary'}
+      {loading ? (
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      ) : (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Code</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {providers.map((provider) => (
+                <TableRow key={provider.id}>
+                  <TableCell>{provider.name}</TableCell>
+                  <TableCell>{provider.code}</TableCell>
+                  <TableCell className="capitalize">{provider.type}</TableCell>
+                  <TableCell>
+                    <Switch
+                      checked={provider.isActive}
+                      onCheckedChange={async (checked) => {
+                        try {
+                          const response = await fetch('/api/admin/shipping-providers', {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              ...provider,
+                              isActive: checked,
+                            }),
+                          })
+
+                          if (!response.ok) throw new Error('Failed to update status')
+
+                          toast({
+                            title: 'Success',
+                            description: 'Provider status updated successfully',
+                          })
+
+                          fetchProviders()
+                        } catch (error) {
+                          console.error('Error updating status:', error)
+                          toast({
+                            title: 'Error',
+                            description: 'Failed to update provider status',
+                            variant: 'destructive',
+                          })
+                        }
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(provider)}
                       >
-                        {provider.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
+                        Edit
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(provider.id)}
+                      >
+                        Delete
+                      </Button>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {provider.code} • {provider.apiUrl}
-                    </p>
-                  </div>
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleViewOrders(provider.id)}
-                    >
-                      View Orders
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setEditingProvider(provider)}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDeleteProvider(provider.id)}
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </div>
+                  </TableCell>
+                </TableRow>
               ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   )
 }

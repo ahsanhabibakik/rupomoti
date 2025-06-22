@@ -301,15 +301,15 @@ export function CategoryDialog({
                   Parent Category
                 </Label>
                 <Select
-                  value={formData.parentId}
-                  onValueChange={(value) => handleInputChange('parentId', value)}
+                  value={formData.parentId || 'no-parent'}
+                  onValueChange={(value) => handleInputChange('parentId', value === 'no-parent' ? '' : value)}
                   disabled={isSubmitting}
                 >
                   <SelectTrigger className={errors.parentId ? 'border-red-500' : ''}>
                     <SelectValue placeholder="Select parent category (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No Parent (Top Level)</SelectItem>
+                    <SelectItem value="no-parent">No Parent (Top Level)</SelectItem>
                     {parentOptions
                       .filter(cat => !cat.parentId) // Only show top-level categories as parents
                       .map((cat) => (
