@@ -51,13 +51,21 @@ export function Navbar() {
 
   useEffect(() => {
     fetch("/api/media?section=logo")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error('Logo not found');
+        }
+        return res.json();
+      })
       .then((data) => {
         if (Array.isArray(data) && data.length > 0 && data[0].url) {
           setLogoUrl(data[0].url);
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        // Keep using the default logo from public folder
+        console.log('Using default logo from public folder');
+      });
   }, []);
 
   const getCartCount = () => {
