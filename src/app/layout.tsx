@@ -4,6 +4,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
 import { AuthProvider } from '@/components/auth-provider';
+import { RootLayoutClient } from '@/components/layout/RootLayoutClient';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -43,7 +44,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head />
       <body className={inter.className}>
         <ThemeProvider
           attribute="class"
@@ -52,7 +52,11 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            {children}
+            <div className="min-h-screen flex flex-col">
+              <RootLayoutClient>
+                {children}
+              </RootLayoutClient>
+            </div>
             <Toaster />
           </AuthProvider>
         </ThemeProvider>
