@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -29,11 +29,7 @@ export default function BlogPostsPage() {
   })
   const { toast } = useToast()
 
-  useEffect(() => {
-    fetchBlogPosts()
-  }, [])
-
-  const fetchBlogPosts = async () => {
+  const fetchBlogPosts = useCallback(async () => {
     try {
       const posts = await prisma.blogPost.findMany()
       setBlogPosts(posts)
@@ -47,7 +43,11 @@ export default function BlogPostsPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [toast])
+
+  useEffect(() => {
+    fetchBlogPosts()
+  }, [fetchBlogPosts])
 
   const handleCreatePost = async () => {
     try {

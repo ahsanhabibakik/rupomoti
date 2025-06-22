@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { createShippingProvider } from '@/lib/shipping/factory';
 
 export async function POST(request: Request, { params }: { params: { orderId: string } }) {

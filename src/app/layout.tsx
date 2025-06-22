@@ -5,12 +5,13 @@ import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
 import { AuthProvider } from '@/components/auth-provider';
 import { RootLayoutClient } from '@/components/layout/RootLayoutClient';
+import { Providers } from '@/components/providers';
 
 const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
   preload: true,
-  fallback: ['system-ui', 'arial'],
+  fallback: ['system-ui, arial'],
   adjustFontFallback: true,
 });
 
@@ -45,21 +46,23 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <AuthProvider>
-            <div className="min-h-screen flex flex-col">
-              <RootLayoutClient>
-                {children}
-              </RootLayoutClient>
-            </div>
-            <Toaster />
-          </AuthProvider>
-        </ThemeProvider>
+        <Providers>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <AuthProvider>
+              <div className="min-h-screen flex flex-col bg-background">
+                <RootLayoutClient>
+                  {children}
+                </RootLayoutClient>
+              </div>
+              <Toaster />
+            </AuthProvider>
+          </ThemeProvider>
+        </Providers>
       </body>
     </html>
   );

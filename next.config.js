@@ -23,7 +23,6 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react'],
     serverComponentsExternalPackages: ['bcrypt', 'mongodb', 'mongoose', '@auth/prisma-adapter'],
-    serverActions: true,
   },
   poweredByHeader: false,
   compress: true,
@@ -55,10 +54,12 @@ const nextConfig = {
         },
       },
     }
-    config.module.rules.push({
-      test: /\.css$/,
-      use: ['style-loader', 'css-loader'],
-    });
+    if (!isServer) {
+      config.module.rules.push({
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader'],
+      });
+    }
     return config
   },
   // Add pageExtensions to explicitly define valid page extensions

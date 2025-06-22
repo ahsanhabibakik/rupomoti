@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ShippingProviderForm } from '@/components/shipping/ShippingProviderForm';
@@ -24,11 +24,7 @@ export default function ShippingProvidersPage() {
   const [editingProvider, setEditingProvider] = useState<ShippingProvider | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchProviders();
-  }, []);
-
-  const fetchProviders = async () => {
+  const fetchProviders = useCallback(async () => {
     try {
       const res = await fetch('/api/shipping/providers');
       const data = await res.json();
@@ -41,7 +37,11 @@ export default function ShippingProvidersPage() {
         variant: 'destructive'
       });
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchProviders();
+  }, [fetchProviders]);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this provider?')) return;

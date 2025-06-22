@@ -37,15 +37,19 @@ export function RootLayoutClient({
     setIsMounted(true)
   }, [])
 
+  if (!isMounted) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <div className="h-16 bg-background" /> {/* Navbar placeholder */}
+        <div className="flex-1" />
+        <div className="h-16 bg-background" /> {/* Footer placeholder */}
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
-      {isMounted ? (
-        <ClientContent>{children}</ClientContent>
-      ) : (
-        <div className="min-h-screen flex flex-col">
-          <div className="flex-1" />
-        </div>
-      )}
+      <ClientContent>{children}</ClientContent>
     </div>
   )
 } 

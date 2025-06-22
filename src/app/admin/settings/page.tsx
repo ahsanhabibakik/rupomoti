@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -27,11 +27,7 @@ export default function SettingsPage() {
     resolver: zodResolver(z.object({})),
   });
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await fetch('/api/admin/settings');
@@ -51,7 +47,11 @@ export default function SettingsPage() {
       console.error(error);
     }
     setIsLoading(false);
-  };
+  }, [form]);
+
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
 
   const onSubmit = async (data: any) => {
     try {
