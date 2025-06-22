@@ -43,38 +43,41 @@ import Image from 'next/image'
 interface Order {
   id: string
   orderNumber: string
+  status: string
   customer: {
     name: string
     email: string
     phone: string
-    address: string
   }
-  total: number
-  status: string
-  paymentStatus: string
-  createdAt: string
   items: Array<{
+    id: string
     name: string
-    price: number
     quantity: number
-    image: string
+    price: number
   }>
+  total: number
+  shippingProviderId?: string
+  trackingId?: string
+  shippingStatus?: string
   shippingProvider?: {
     name: string
-    code: string
-  }
-  shippingStatus?: string
-  shippingInfo?: {
-    trackingId?: string
-    providerStatus?: string
-    lastUpdate?: string
-    lastMessage?: string
+    type: string
+    steadfastInfo?: {
+      orderId: string
+      trackingNumber: string
+      status: string
+      lastUpdate: string
+      lastMessage: string
+    }
   }
 }
 
 export default function OrdersPage() {
   const router = useRouter()
   const [orders, setOrders] = useState<Order[]>([])
+  const [shippingProviders, setShippingProviders] = useState<any[]>([])
+  const [selectedProvider, setSelectedProvider] = useState<Record<string, string>>({})
+  const [isLoading, setIsLoading] = useState<Record<string, boolean>>({})
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)

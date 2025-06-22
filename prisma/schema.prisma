@@ -182,20 +182,12 @@ enum AuthType {
 }
 
 model ShippingProvider {
-  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
-  name                  String   @unique
-  code                  String   @unique
-  apiUrl               String
-  apiVersion           String
-  authType             AuthType @default(BASIC)
-  apiKey               String
-  apiSecret            String
-  webhookUrl           String?
-  isActive             Boolean  @default(true)
-  orderCount           Int      @default(0)
-  completedOrders      Int      @default(0)
-  failedOrders         Int      @default(0)
-  pendingOrders        Int      @default(0)
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  type        String   // 'pathao' or 'redx' or 'steadfast'
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   averageDeliveryTime  Float    @default(0) // in days
   successRate          Float    @default(0) // percentage
   createdAt            DateTime @default(now())
