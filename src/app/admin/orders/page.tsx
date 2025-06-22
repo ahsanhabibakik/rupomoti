@@ -59,10 +59,14 @@ interface Order {
     quantity: number
     image: string
   }>
-  steadfastInfo?: {
+  shippingProvider?: {
+    name: string
+    code: string
+  }
+  shippingStatus?: string
+  shippingInfo?: {
     trackingId?: string
-    consignmentId?: string
-    status?: string
+    providerStatus?: string
     lastUpdate?: string
     lastMessage?: string
   }
@@ -82,6 +86,20 @@ export default function OrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [processingOrder, setProcessingOrder] = useState<string | null>(null)
+  const [shippingProviders, setShippingProviders] = useState([])
+
+  const fetchShippingProviders = useCallback(async () => {
+    try {
+      const response = await fetch('/api/admin/shipping-providers')
+      const data = await response.json()
+
+      if (!response.ok) throw new Error(data.error)
+
+      setShippingProviders(data.providers)
+    } catch (error) {
+      console.error('Error fetching shipping providers:', error)
+    }
+  }, [])
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -95,7 +113,7 @@ export default function OrdersPage() {
       if (filters.startDate) searchParams.append('startDate', filters.startDate.toISOString())
       if (filters.endDate) searchParams.append('endDate', filters.endDate.toISOString())
 
-      const response = await fetch(`/api/admin/orders?${searchParams}`)
+      const response = await fetch(`/api/admin/orders?${searchParams.toString()}`)
       const data = await response.json()
 
       if (!response.ok) throw new Error(data.error)
@@ -103,8 +121,11 @@ export default function OrdersPage() {
       setOrders(data.orders)
       setTotalPages(data.pages)
     } catch (error) {
-      showToast.error('Failed to fetch orders')
       console.error('Error fetching orders:', error)
+      // Make sure showToast is defined or use your preferred error handling
+      if (typeof showToast !== 'undefined') {
+        showToast.error('Failed to fetch orders')
+      }
     } finally {
       setLoading(false)
     }
@@ -112,7 +133,8 @@ export default function OrdersPage() {
 
   useEffect(() => {
     fetchOrders()
-  }, [fetchOrders])
+    fetchShippingProviders()
+  }, [fetchOrders, fetchShippingProviders])
 
   const handleOrderAction = async (orderId: string, action: string, data?: any) => {
     try {
@@ -141,7 +163,15 @@ export default function OrdersPage() {
   }
 
   const handleCreateShipment = async (order: Order) => {
-    await handleOrderAction(order.id, 'create_shipment')
+    await handleOrderAction(order.id, 'create_shipment', {
+      shippingProviderCode: order.shippingProvider?.code,
+      shippingInfo: {
+        trackingId: `SHIP-${order.id}-${Date.now()}`,
+        providerStatus: 'PENDING',
+        lastUpdate: new Date().toISOString(),
+        lastMessage: 'Shipment created successfully'
+      }
+    })
   }
 
   const handleUpdateStatus = async (orderId: string, status: string) => {
@@ -155,7 +185,29 @@ export default function OrdersPage() {
       CONFIRMED: 'default',
       SHIPPED: 'info',
       DELIVERED: 'success',
+      FAILED: 'destructive',
+      RETURNED: 'destructive',
       CANCELLED: 'destructive',
+    } as const
+
+    return (
+      <Badge variant={variants[status as keyof typeof variants] || 'default'}>
+        {status}
+      </Badge>
+    )
+  }
+
+  const getShippingStatusBadge = (status: string | undefined) => {
+    if (!status) return null
+
+    const variants = {
+      PENDING: 'warning',
+      PICKED_UP: 'default',
+      IN_TRANSIT: 'info',
+      OUT_FOR_DELIVERY: 'info',
+      DELIVERED: 'success',
+      FAILED: 'destructive',
+      RETURNED: 'destructive',
     } as const
 
     return (
@@ -193,7 +245,7 @@ export default function OrdersPage() {
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All</SelectItem>
+              <SelectItem value="all-orders">All</SelectItem>
               <SelectItem value="PENDING">Pending</SelectItem>
               <SelectItem value="PROCESSING">Processing</SelectItem>
               <SelectItem value="CONFIRMED">Confirmed</SelectItem>
@@ -396,37 +448,41 @@ export default function OrdersPage() {
                                   </div>
                                 </div>
 
-                                {/* Steadfast Information */}
-                                {order.steadfastInfo && (
+                                {/* Shipping Information */}
+                                {order.shippingInfo && (
                                   <>
                                     <Separator />
                                     <div>
-                                      <h3 className="font-medium mb-2">Delivery Information</h3>
+                                      <h3 className="font-medium mb-2">Shipping Information</h3>
                                       <div className="grid gap-2 text-sm">
-                                        {order.steadfastInfo.trackingId && (
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Tracking ID</span>
-                                            <span>{order.steadfastInfo.trackingId}</span>
+                                        {order.shippingInfo?.trackingId && (
+                                          <div className="flex items-center gap-2">
+                                            <Truck className="h-4 w-4" />
+                                            <span>Tracking ID: {order.shippingInfo.trackingId}</span>
                                           </div>
                                         )}
-                                        {order.steadfastInfo.status && (
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Status</span>
-                                            <span>{order.steadfastInfo.status}</span>
+                                        {order.shippingStatus && (
+                                          <div className="flex items-center gap-2">
+                                            <CheckCircle className="h-4 w-4" />
+                                            <span>Shipping Status: {order.shippingStatus}</span>
                                           </div>
                                         )}
-                                        {order.steadfastInfo.lastUpdate && (
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Last Update</span>
-                                            <span>
-                                              {format(new Date(order.steadfastInfo.lastUpdate), 'PPP')}
-                                            </span>
+                                        {order.shippingInfo?.lastUpdate && (
+                                          <div className="flex items-center gap-2">
+                                            <CalendarIcon className="h-4 w-4" />
+                                            <span>Last Update: {format(new Date(order.shippingInfo.lastUpdate), 'MMM d, yyyy')}</span>
                                           </div>
                                         )}
-                                        {order.steadfastInfo.lastMessage && (
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Latest Update</span>
-                                            <span>{order.steadfastInfo.lastMessage}</span>
+                                        {order.shippingInfo?.lastMessage && (
+                                          <div className="flex items-center gap-2">
+                                            <AlertCircle className="h-4 w-4" />
+                                            <span>Last Message: {order.shippingInfo.lastMessage}</span>
+                                          </div>
+                                        )}
+                                        {order.shippingProvider && (
+                                          <div className="flex items-center gap-2">
+                                            <Package className="h-4 w-4" />
+                                            <span>Provider: {order.shippingProvider.name}</span>
                                           </div>
                                         )}
                                       </div>
@@ -454,23 +510,39 @@ export default function OrdersPage() {
                                 </Button>
                               )}
 
-                              {order.status === 'CONFIRMED' && !order.steadfastInfo?.trackingId && (
-                                <Button
-                                  onClick={() => handleCreateShipment(order)}
-                                  disabled={processingOrder === order.id}
-                                >
-                                  {processingOrder === order.id ? (
-                                    <>
-                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                      Creating Shipment...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Package className="mr-2 h-4 w-4" />
-                                      Create Shipment
-                                    </>
-                                  )}
-                                </Button>
+                              {order.status === 'CONFIRMED' && !order.shippingInfo?.trackingId && (
+                                <div className="flex items-center gap-2">
+                                  <Select
+                                    value={order.shippingProvider?.code || ''}
+                                    onValueChange={(value) => 
+                                      handleOrderAction(order.id, 'assign_shipping_provider', { shippingProviderCode: value })
+                                    }
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select Shipping Provider" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {shippingProviders.map((provider) => (
+                                        <SelectItem key={provider.id} value={provider.code}>
+                                          {provider.name} ({provider.code})
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <Button
+                                    onClick={() => handleCreateShipment(order)}
+                                    disabled={processingOrder === order.id}
+                                  >
+                                    {processingOrder === order.id ? (
+                                      <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Creating Shipment...
+                                      </>
+                                    ) : (
+                                      'Create Shipment'
+                                    )}
+                                  </Button>
+                                </div>
                               )}
 
                               {order.steadfastInfo?.trackingId && (
