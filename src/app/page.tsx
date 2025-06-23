@@ -90,21 +90,25 @@ export default function HomePage() {
                   className="group relative overflow-hidden rounded-xl sm:rounded-2xl shadow-premium hover:shadow-accent transition-all duration-300"
                 >
                   <div className="aspect-[4/5] relative">
-                    <Image
-                      src={category.image}
-                      alt={category.name}
-                      className="object-cover transition-transform duration-500 group-hover:scale-110"
-                      fill
-                      sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 50vw"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-neutral/80 via-neutral/30 to-transparent" />
+                    <div className="relative w-full h-full">
+                      <div className="relative w-full h-full">
+                        <Image
+                          src={category.image}
+                          alt={category.name}
+                          className="object-cover transition-transform duration-500 group-hover:scale-110"
+                          fill
+                          sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 50vw"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-neutral/80 via-neutral/30 to-transparent" />
+                      </div>
+                    </div>
                   </div>
                   <div className="absolute inset-0 p-3 sm:p-6 flex flex-col justify-end text-base">
                     <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
                       <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-accent" />
                       <Badge className="bg-accent/20 text-accent text-xs sm:text-sm">{category.count} items</Badge>
                     </div>
-                    <h3 className="text-base sm:text-xl font-semibold mb-1 sm:mb-2">{category.name}</h3>
+                    <h3 className="text-base sm:text-xl font-semibold text-base mb-1 sm:mb-2">{category.name}</h3>
                     <p className="text-xs sm:text-sm text-base/80 opacity-0 group-hover:opacity-100 transition-opacity line-clamp-2">
                       {category.description}
                     </p>

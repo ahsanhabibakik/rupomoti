@@ -18,6 +18,11 @@ const config = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['var(--font-inter)'],
+        serif: ['var(--font-playfair)'],
+        display: ['var(--font-cormorant)'],
+      },
       colors: {
         // --- Pearl Essence Theme Colors ---
         // Pearl White (Base) - Primary page background, product cards, hero sections
@@ -69,14 +74,16 @@ const config = {
         },
         // Premium Jewelry Color Palette
         primary: {
-          DEFAULT: "#0D1E78", // Deep Sapphire Blue
-          light: "#1A237E",
-          dark: "#000051",
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+        },
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
         },
         accent: {
-          DEFAULT: "#E8CBAF", // Champagne Gold
-          light: "#F5E6D3",
-          dark: "#D4B483",
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
         },
         base: {
           DEFAULT: "#FDF9F4", // Ivory / Pearl White
@@ -159,12 +166,6 @@ const config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-      },
-      fontFamily: {
-        sans: ['var(--font-inter)'],
-        serif: ['var(--font-playfair)', 'var(--font-cormorant)', 'serif'],
-        display: ['var(--font-playfair)', 'serif'],
-        body: ['var(--font-inter)', 'sans-serif'],
       },
       borderRadius: {
         lg: "var(--radius)",

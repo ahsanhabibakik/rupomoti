@@ -148,7 +148,7 @@ export function HeroSlider() {
     <div className="relative py-4">
       {/* Hero Slider */}
       <div
-        className="max-w-screen-xl mx-2  md:mx-auto mt-2 relative h-60 sm:h-72 md:h-80 overflow-hidden select-none rounded-2xl"
+        className="max-w-screen-xl mx-2 md:mx-auto mt-2 relative h-60 sm:h-72 md:h-80 overflow-hidden select-none rounded-2xl"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -169,24 +169,30 @@ export function HeroSlider() {
               index === currentSlide ? "opacity-100 z-10" : "opacity-0"
             }`}
           >
-            {/* Desktop Image */}
-            <Image
-              src={slide.image}
-              alt={`Slide ${slide.id}`}
-              fill
-              className="object-cover pointer-events-none hidden md:block"
-              priority={index === 0}
-              draggable={false}
-            />
-            {/* Mobile Image */}
-            <Image
-              src={slide.mobileImage}
-              alt={`Slide ${slide.id}`}
-              fill
-              className="object-cover pointer-events-none block md:hidden"
-              priority={index === 0}
-              draggable={false}
-            />
+            <div className="relative w-full h-full">
+              {/* Desktop Image */}
+              <div className="relative w-full h-full hidden md:block">
+                <Image
+                  src={slide.image}
+                  alt={`Slide ${slide.id}`}
+                  fill
+                  className="object-cover pointer-events-none"
+                  priority={index === 0}
+                  draggable={false}
+                />
+              </div>
+              {/* Mobile Image */}
+              <div className="relative w-full h-full block md:hidden">
+                <Image
+                  src={slide.mobileImage}
+                  alt={`Slide ${slide.id}`}
+                  fill
+                  className="object-cover pointer-events-none"
+                  priority={index === 0}
+                  draggable={false}
+                />
+              </div>
+            </div>
             
             {/* Overlay with content */}
             <div className="absolute inset-0">

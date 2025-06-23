@@ -1,3 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221 83% 26%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 34 53% 80%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221 83% 26%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 34 53% 80%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+  }
+
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    background-image: 
+      radial-gradient(circle at 20% 80%, rgba(253, 249, 244, 0.8) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(232, 203, 175, 0.3) 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, rgba(255, 253, 250, 0.6) 0%, transparent 50%);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display text-foreground;
+  }
+
+  p {
+    @apply font-body text-foreground-light;
+  }
+}
+
 @layer utilities {
   /* Premium Jewelry Color Palette */
   .bg-primary { background-color: #0D1E78; } /* Deep Sapphire Blue */
@@ -39,136 +111,6 @@
   .bg-gold { background-color: #E8CBAF; }
   .bg-sapphire { background-color: #0D1E78; }
   /* Add more as needed */
-}
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@layer base {
-  :root {
-    --background: 48 33% 97%; /* Ivory / Pearl White */
-    --foreground: 25 35% 20%; /* Soft Cocoa Brown */
-
-    --card: 48 33% 97%;
-    --card-foreground: 25 35% 20%;
- 
-    --popover: 48 33% 97%;
-    --popover-foreground: 25 35% 20%;
- 
-    /* Brand Colors - Premium Jewelry */
-    --brand: 35 65% 70%; /* Champagne Gold */
-    --brand-foreground: 240 65% 30%; /* Deep Sapphire Blue */
- 
-    /* Primary - Deep Sapphire Blue */
-    --primary: 240 65% 30%;
-    --primary-foreground: 35 65% 70%;
- 
-    /* Secondary - Ivory / Pearl White */
-    --secondary: 48 33% 97%;
-    --secondary-foreground: 25 35% 20%;
- 
-    /* Muted - Pearl Pink / Rose Beige */
-    --muted: 35 45% 90%;
-    --muted-foreground: 25 35% 40%;
- 
-    /* Accent - Champagne Gold */
-    --accent: 35 65% 70%;
-    --accent-foreground: 240 65% 30%;
- 
-    /* Destructive - Rose Gold */
-    --destructive: 350 65% 70%;
-    --destructive-foreground: 0 0% 13%;
-
-    /* Success - Emerald */
-    --success: 160 65% 30%;
-    --success-foreground: 48 33% 97%;
-
-    /* Info - Sapphire Light */
-    --info: 240 65% 50%;
-    --info-foreground: 48 33% 97%;
-
-    /* Warning - Gold Dark */
-    --warning: 35 65% 50%;
-    --warning-foreground: 48 33% 97%;
- 
-    --border: 35 65% 70%;
-    --input: 35 65% 70%;
-    --ring: 35 65% 70%;
- 
-    --radius: 0.5rem;
-  }
- 
-  .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 48 33% 97%;
- 
-    --card: 240 10% 3.9%;
-    --card-foreground: 48 33% 97%;
- 
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 48 33% 97%;
- 
-    /* Brand Colors - Dark Mode */
-    --brand: 35 65% 70%;
-    --brand-foreground: 48 33% 97%;
- 
-    /* Primary - Deep Sapphire Blue */
-    --primary: 240 65% 30%;
-    --primary-foreground: 35 65% 70%;
- 
-    /* Secondary - Pearl Dark */
-    --secondary: 240 10% 3.9%;
-    --secondary-foreground: 48 33% 97%;
- 
-    /* Muted - Dark Gray */
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
- 
-    /* Accent - Champagne Gold */
-    --accent: 35 65% 70%;
-    --accent-foreground: 240 65% 30%;
- 
-    /* Destructive - Rose Gold */
-    --destructive: 350 65% 70%;
-    --destructive-foreground: 48 33% 97%;
-
-    /* Success - Emerald */
-    --success: 160 65% 30%;
-    --success-foreground: 48 33% 97%;
-
-    /* Info - Sapphire Light */
-    --info: 240 65% 50%;
-    --info-foreground: 48 33% 97%;
-
-    /* Warning - Gold Dark */
-    --warning: 35 65% 50%;
-    --warning-foreground: 48 33% 97%;
- 
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 35 65% 70%;
-  }
-}
- 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-base text-neutral antialiased;
-    font-feature-settings: "rlig" 1, "calt" 1;
-    background-image: 
-      radial-gradient(circle at 20% 80%, rgba(253, 249, 244, 0.8) 0%, transparent 50%),
-      radial-gradient(circle at 80% 20%, rgba(232, 203, 175, 0.3) 0%, transparent 50%),
-      radial-gradient(circle at 40% 40%, rgba(255, 253, 250, 0.6) 0%, transparent 50%);
-  }
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-display text-neutral;
-  }
-  p {
-    @apply font-body text-neutral-light;
-  }
 }
 
 /* Animations */
@@ -419,16 +361,28 @@
 }
 
 @keyframes float {
-  0%, 100% {
+  0% {
     transform: translateY(0px);
   }
   50% {
     transform: translateY(-10px);
   }
+  100% {
+    transform: translateY(0px);
+  }
 }
 
 .animate-float {
   animation: float 3s ease-in-out infinite;
+}
+
+/* Custom Utilities */
+.text-balance {
+  text-wrap: balance;
+}
+
+.text-pretty {
+  text-wrap: pretty;
 }
 
 /* Add a @layer utilities block to define custom classes (like bg-pearl) so that Tailwind recognizes them. */

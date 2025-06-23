@@ -79,30 +79,32 @@ export function ProductCard({
     >
       <Link href={`/product/${id}`} className="block">
         <div className="relative aspect-square overflow-hidden rounded-md">
-          <Image
-            src={image}
-            alt={name}
-            fill
-            className={cn(
-              'object-cover transition-transform duration-300',
-              isHovered ? 'scale-110' : 'scale-100'
+          <div className="relative w-full h-full">
+            <Image
+              src={image}
+              alt={name}
+              fill
+              className={cn(
+                'object-cover transition-transform duration-300',
+                isHovered ? 'scale-110' : 'scale-100'
+              )}
+              onLoad={() => setIsImageLoading(false)}
+            />
+            {isNew && (
+              <Badge className="absolute left-2 top-2 bg-primary text-accent">New</Badge>
             )}
-            onLoad={() => setIsImageLoading(false)}
-          />
-          {isNew && (
-            <Badge className="absolute left-2 top-2 bg-primary text-accent">New</Badge>
-          )}
-          {isBestSeller && (
-            <Badge className="absolute right-2 top-2 bg-accent text-primary">Best Seller</Badge>
-          )}
-          {isOutOfStock && (
-            <div className="absolute inset-0 flex items-center justify-center bg-base-light/80">
-              <Badge variant="destructive">Out of Stock</Badge>
-            </div>
-          )}
-          {discount > 0 && (
-            <Badge className="absolute top-2 left-2 bg-accent text-primary">-{discount}%</Badge>
-          )}
+            {isBestSeller && (
+              <Badge className="absolute right-2 top-2 bg-accent text-primary">Best Seller</Badge>
+            )}
+            {isOutOfStock && (
+              <div className="absolute inset-0 flex items-center justify-center bg-base-light/80">
+                <Badge variant="destructive">Out of Stock</Badge>
+              </div>
+            )}
+            {discount > 0 && (
+              <Badge className="absolute top-2 left-2 bg-accent text-primary">-{discount}%</Badge>
+            )}
+          </div>
         </div>
       </Link>
       <div className="flex flex-col flex-1 gap-2 mt-2">

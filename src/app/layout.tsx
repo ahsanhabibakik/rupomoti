@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Playfair_Display, Cormorant } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
@@ -10,9 +10,19 @@ import { Providers } from '@/components/providers';
 const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
-  preload: true,
-  fallback: ['system-ui, arial'],
-  adjustFontFallback: true,
+  variable: '--font-inter',
+});
+
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-playfair',
+});
+
+const cormorant = Cormorant({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-cormorant',
 });
 
 export const metadata: Metadata = {
@@ -35,7 +45,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={`${inter.variable} ${playfair.variable} ${cormorant.variable} font-sans`}>
         <Providers>
           <ThemeProvider
             attribute="class"
