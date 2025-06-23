@@ -69,9 +69,11 @@ export default function CategoriesPage() {
     )
   }
 
-  const filteredCategories = categories?.filter(category =>
-    category.name.toLowerCase().includes(search.toLowerCase())
-  )
+  const filteredCategories = categories && search
+    ? categories.filter(category =>
+        category.name.toLowerCase().includes(search.toLowerCase())
+      )
+    : categories || []
 
   return (
     <div className="space-y-6">

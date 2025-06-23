@@ -48,7 +48,19 @@ const config = {
         // Rose-Gold Accent - Sale badges, highlights
         roseGoldAccent: {
           DEFAULT: "#D7AFA4", // Rose-Gold Accent
-          // DEFAULT: "#F7CAC9", // Alternative: more pink
+        },
+        // Status colors
+        warning: {
+          DEFAULT: "#FFB02E", // Amber
+          foreground: "#1F1F1F"
+        },
+        info: {
+          DEFAULT: "#3B82F6", // Blue
+          foreground: "#FFFFFF"
+        },
+        success: {
+          DEFAULT: "#10B981", // Green
+          foreground: "#FFFFFF"
         },
         // Soft Mist Blue (Cool Lift) - Light background sections
         softMistBlue: {

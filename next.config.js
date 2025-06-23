@@ -54,6 +54,12 @@ const nextConfig = {
         },
       },
     }
+    if (!isServer) {
+      config.module.rules.push({
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader'],
+      });
+    }
     return config
   },
   // Add pageExtensions to explicitly define valid page extensions

@@ -21,6 +21,7 @@ export async function GET(request: Request) {
     const featured = searchParams.get('featured') || '';
     const sortBy = searchParams.get('sortBy') || 'createdAt';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
+    const productLabel = searchParams.get('productLabel');
 
     // Build where clause
     const where: any = {};
@@ -53,6 +54,10 @@ export async function GET(request: Request) {
     
     if (featured) {
       where.featured = featured === 'true';
+    }
+
+    if (productLabel) {
+      where.productLabel = productLabel;
     }
 
     // Build order by clause
@@ -124,6 +129,7 @@ export async function POST(request: Request) {
       isActive = true,
       featured = false,
       featuredImage,
+      productLabel = 'NONE',
     } = body;
 
     // Validation
@@ -162,6 +168,7 @@ export async function POST(request: Request) {
         inStock: isActive,
         featured,
         featuredImage: featuredImage || mainImage,
+        productLabel,
       },
       include: {
         category: true,
@@ -203,6 +210,7 @@ export async function PUT(request: Request) {
       isActive,
       featured,
       featuredImage,
+      productLabel,
     } = body;
 
     // Validation
@@ -242,6 +250,7 @@ export async function PUT(request: Request) {
         inStock: isActive,
         featured,
         featuredImage: featuredImage || mainImage,
+        productLabel,
       },
       include: {
         category: true,

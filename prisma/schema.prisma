@@ -29,6 +29,7 @@ model User {
   wishlistItems  WishlistItem[]
   reviews        Review[]
   customers      Customer[]
+  blogPosts      BlogPost[]
 }
 
 model Account {
@@ -86,15 +87,24 @@ model Category {
   products    Product[]
 }
 
+enum ProductLabel {
+  NONE
+  NEW_ARRIVAL
+  BEST_SELLER
+  POPULAR
+  FEATURED
+}
+
 model Product {
   id              String   @id @default(auto()) @map("_id") @db.ObjectId
   name            String   @unique
   description     String
   price           Float
-  images          String[] // Array of image URLs
-  mainImage       String   // Primary product image
+  salePrice       Float?
+  images          Json     // Array of image objects with URLs and metadata
+  mainImage       String?   // Primary product image URL
   featuredImage   String?  // Image for featured display
-  sku             String   @unique // Stock Keeping Unit
+  sku             String?   @unique // Stock Keeping Unit - making it optional
   weight          Float?   // Weight in grams
   dimensions      String?  // Format: "LxWxH cm"
   material        String?  // Product material
@@ -107,6 +117,10 @@ model Product {
   category        Category @relation(fields: [categoryId], references: [id])
   inStock         Boolean  @default(true)
   featured        Boolean  @default(false)
+  newArrival      Boolean  @default(false)
+  bestSeller      Boolean  @default(false)
+  productLabel    ProductLabel @default(NONE)
+  status          ProductStatus @default(ACTIVE)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   
@@ -115,6 +129,95 @@ model Product {
   wishlistItems   WishlistItem[]
 
   @@map("products")
+}
+
+model BlogPost {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String   @unique
+  slug        String   @unique
+  content     String
+  excerpt     String?
+  featuredImage String?
+  metaTitle   String?
+  metaDescription String?
+  metaKeywords String?
+  status      BlogStatus @default(DRAFT)
+  category    BlogCategory @default(NEWS)
+  authorId    String?    @db.ObjectId
+  author      User?      @relation(fields: [authorId], references: [id])
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  publishedAt DateTime?
+
+  @@map("blog_posts")
+}
+
+enum BlogStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum BlogCategory {
+  NEWS
+  TRENDS
+  REVIEWS
+  HOW_TO
+  STYLE_GUIDE
+}
+
+model Coupon {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  code        String   @unique
+  type        CouponType
+  value       Float
+  minPurchase Float?
+  maxDiscount Float?
+  validFrom   DateTime
+  validTo     DateTime
+  usageLimit  Int?
+  usedCount   Int      @default(0)
+  status      CouponStatus @default(ACTIVE)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  shippingProviderId String? @db.ObjectId
+  shippingProvider ShippingProvider? @relation(fields: [shippingProviderId], references: [id])
+
+  orders      Order[]
+}
+
+enum AuthType {
+  BASIC
+  TOKEN
+  OAUTH
+}
+
+model ShippingProvider {
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
+  name                String
+  type                String   // 'pathao' or 'redx' or 'steadfast'
+  isActive           Boolean  @default(true)
+  averageDeliveryTime Float    @default(0) // in days
+  successRate         Float    @default(0) // percentage
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  orders              Order[]
+  coupons            Coupon[]
+}
+
+enum CouponStatus {
+  ACTIVE
+  EXPIRED
+  USED_UP
+  INACTIVE
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+  OUT_OF_STOCK
+  ARCHIVED
 }
 
 model Customer {
@@ -153,11 +256,26 @@ model Order {
   deliveryAddress String
   orderNote     String?
   trackingId    String?
-  steadfastInfo Json?          // Steadfast tracking information
+  shippingProviderId String?    @db.ObjectId
+  shippingProvider   ShippingProvider? @relation(fields: [shippingProviderId], references: [id])
+  shippingStatus    ShippingStatus?   @default(PENDING)
+  shippingInfo      Json?            // Shipping provider specific information
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
   items         OrderItem[]
+  coupon        Coupon?        @relation(fields: [couponId], references: [id])
+  couponId      String?        @db.ObjectId
+}
+
+enum ShippingStatus {
+  PENDING
+  PICKED_UP
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  FAILED
+  RETURNED
 }
 
 model OrderItem {
@@ -215,22 +333,6 @@ model WishlistItem {
   product   Product  @relation(fields: [productId], references: [id])
 
   @@unique([userId, productId])
-}
-
-model Coupon {
-  id            String    @id @default(auto()) @map("_id") @db.ObjectId
-  code          String    @unique
-  type          CouponType
-  value         Float     // Percentage or fixed amount
-  minimumAmount Float?
-  maximumDiscount Float?
-  usageLimit    Int?
-  usedCount     Int       @default(0)
-  isActive      Boolean   @default(true)
-  validFrom     DateTime
-  validUntil    DateTime
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
 }
 
 model Media {

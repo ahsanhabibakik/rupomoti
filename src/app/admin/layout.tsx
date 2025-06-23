@@ -37,7 +37,7 @@ const navigation = [
   { name: 'Media', href: '/admin/media', icon: ImageIcon },
   { name: 'Reviews', href: '/admin/reviews', icon: Star },
   { name: 'Coupons', href: '/admin/coupons', icon: Tag },
-  { name: 'Shipping', href: '/admin/shipping', icon: Truck },
+  { name: 'Shipping Providers', href: '/admin/shipping-providers', icon: Truck },
   { name: 'Reports', href: '/admin/reports', icon: FileText },
   { name: 'Notifications', href: '/admin/notifications', icon: Bell },
   { name: 'Settings', href: '/admin/settings', icon: Settings },
