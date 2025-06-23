@@ -49,17 +49,20 @@ export const authConfig: AuthOptions = {
           };
         } catch (error) {
           console.error('Error in credentials provider:', error);
-          throw new Error("Invalid credentials");
+          throw new Error("Authentication failed");
         }
       }
     })
   ],
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 24 * 60 * 60, // 24 hours
   },
   pages: {
     signIn: '/admin/login',
     error: '/admin/login',
+    signOut: '/admin/login',
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -75,6 +78,13 @@ export const authConfig: AuthOptions = {
         (session.user as any).isAdmin = token.isAdmin;
       }
       return session;
+    },
+    async redirect({ url, baseUrl }) {
+      // Allows relative callback URLs
+      if (url.startsWith("/")) return `${baseUrl}${url}`
+      // Allows callback URLs on the same origin
+      else if (new URL(url).origin === baseUrl) return url
+      return baseUrl
     },
   },
 }; 

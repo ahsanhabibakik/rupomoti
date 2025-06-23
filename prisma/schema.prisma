@@ -104,7 +104,7 @@ model Product {
   images          Json     // Array of image objects with URLs and metadata
   mainImage       String?   // Primary product image URL
   featuredImage   String?  // Image for featured display
-  sku             String   @unique // Stock Keeping Unit
+  sku             String?   @unique // Stock Keeping Unit - making it optional
   weight          Float?   // Weight in grams
   dimensions      String?  // Format: "LxWxH cm"
   material        String?  // Product material

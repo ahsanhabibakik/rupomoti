@@ -67,6 +67,13 @@ export default function HomePage() {
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
       <section className="bg-transparent">
+        <div className="relative w-full h-[500px]">
+          <Image
+            src="/images/hero/slider1.jpeg"
+            alt="Hero Slider 1"
+            fill
+            className="object-cover"
+          />
         <HeroSlider />
       </section>
 
