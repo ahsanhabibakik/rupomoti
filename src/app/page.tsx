@@ -61,20 +61,15 @@ export default function HomePage() {
       image: '/images/pearl/jewelery4.jpeg',
       description: 'Delicate pearl bracelets that complement any style'
     }
-  ]
+  ];
 
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
       <section className="bg-transparent">
         <div className="relative w-full h-[500px]">
-          <Image
-            src="/images/hero/slider1.jpeg"
-            alt="Hero Slider 1"
-            fill
-            className="object-cover"
-          />
-        <HeroSlider />
+          <HeroSlider />
+        </div>
       </section>
 
       {/* Categories Section */}
@@ -87,7 +82,7 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
             {categories.map((category) => {
-              const Icon = category.icon
+              const Icon = category.icon;
               return (
                 <Link
                   key={category.id}
@@ -115,7 +110,7 @@ export default function HomePage() {
                     </p>
                   </div>
                 </Link>
-              )
+              );
             })}
           </div>
         </div>
@@ -208,5 +203,5 @@ export default function HomePage() {
         </div>
       </section>
     </div>
-  )
+  );
 }
