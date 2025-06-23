@@ -13,17 +13,18 @@ export async function GET(request: Request) {
       );
     }
 
-    const media = await prisma.media.findFirst({
+    const media = await prisma.media.findMany({
       where: {
         section: section,
+        isActive: true,
+      },
+      orderBy: {
+        position: 'asc',
       },
     });
 
-    if (!media) {
-      return NextResponse.json(
-        { error: 'Media not found' },
-        { status: 404 }
-      );
+    if (!media || media.length === 0) {
+      return NextResponse.json([], { status: 200 });
     }
 
     return NextResponse.json(media);

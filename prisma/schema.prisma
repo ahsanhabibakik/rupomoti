@@ -102,7 +102,7 @@ model Product {
   price           Float
   salePrice       Float?
   images          Json     // Array of image objects with URLs and metadata
-  mainImage       String   // Primary product image URL
+  mainImage       String?   // Primary product image URL
   featuredImage   String?  // Image for featured display
   sku             String   @unique // Stock Keeping Unit
   weight          Float?   // Weight in grams

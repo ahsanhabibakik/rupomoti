@@ -41,6 +41,7 @@ export function Navbar() {
   const [closeTimeout, setCloseTimeout] = useState<NodeJS.Timeout | null>(null);
   const [mounted, setMounted] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string>("/images/branding/logo.png");
+  const [logoError, setLogoError] = useState(false);
 
   const dispatch = useAppDispatch();
   const cartItems = useAppSelector((state) => state.cart.items);
@@ -50,22 +51,24 @@ export function Navbar() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/media?section=logo")
-      .then((res) => {
+    const loadLogo = async () => {
+      try {
+        const res = await fetch("/api/media?section=logo");
         if (!res.ok) {
           throw new Error('Logo not found');
         }
-        return res.json();
-      })
-      .then((data) => {
+        const data = await res.json();
         if (Array.isArray(data) && data.length > 0 && data[0].url) {
           setLogoUrl(data[0].url);
+          setLogoError(false);
         }
-      })
-      .catch(() => {
-        // Keep using the default logo from public folder
+      } catch (error) {
         console.log('Using default logo from public folder');
-      });
+        setLogoError(true);
+      }
+    };
+
+    loadLogo();
   }, []);
 
   const getCartCount = () => {
@@ -133,6 +136,21 @@ export function Navbar() {
     };
   }, [isCategoriesOpen, isUserMenuOpen]);
 
+  const renderLogo = () => (
+    <Image
+      src={logoUrl}
+      alt="Rupomoti Logo"
+      width={logoError ? 120 : 180}
+      height={logoError ? 40 : 60}
+      className={`h-${logoError ? '8' : '10'} w-auto`}
+      onError={() => {
+        setLogoUrl("/images/branding/logo.png");
+        setLogoError(true);
+      }}
+      priority
+    />
+  );
+
   return (
     <nav className="bg-deep-mocha text-pearl-white shadow-premium sticky top-0 z-50">
       {/* Pearl pattern background */}
@@ -189,13 +207,7 @@ export function Navbar() {
           <div className="block md:hidden absolute left-1/2 transform -translate-x-1/2">
             <Link href="/" className="flex items-center">
               <div className="flex items-center gap-2">
-                <Image
-                  src={logoUrl}
-                  alt="Rupomoti Logo"
-                  width={120}
-                  height={40}
-                  className="h-10 w-auto"
-                />
+                {renderLogo()}
               </div>
             </Link>
           </div>
@@ -249,13 +261,7 @@ export function Navbar() {
         <div className="hidden md:flex items-center">
           <Link href="/" className="flex items-center">
             <div className="flex items-center gap-2">
-              <Image
-                src={logoUrl}
-                alt="Rupomoti Logo"
-                width={180}
-                height={60}
-                className="h-8 md:h-10 w-auto"
-              />
+              {renderLogo()}
             </div>
           </Link>
         </div>
