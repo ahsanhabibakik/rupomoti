@@ -104,6 +104,7 @@ model Product {
   isFeatured      Boolean  @default(false)
   isNewArrival    Boolean  @default(false)
   isPopular       Boolean  @default(false)
+  status          ProductStatus @default(ACTIVE)
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -125,6 +126,7 @@ model Customer {
   zone      String?  // For delivery zone
   userId    String?  @db.ObjectId
   user      User?    @relation(fields: [userId], references: [id])
+  description String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -319,4 +321,10 @@ enum CouponType {
   PERCENTAGE
   FIXED_AMOUNT
   FREE_SHIPPING
+}
+
+enum ProductStatus {
+  ACTIVE
+  TRASHED
+  ARCHIVED
 }
