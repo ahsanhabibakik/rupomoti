@@ -18,7 +18,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const { id, name, price, salePrice, images, isNewArrival, isPopular, isFeatured } = product
+  const { id, name, price, salePrice, images, isNewArrival, isPopular, isFeatured, stock } = product
   const discount = price && salePrice ? Math.round(((price - salePrice) / price) * 100) : 0
   const dispatch = useAppDispatch()
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist()
@@ -29,6 +29,8 @@ export function ProductCard({ product }: ProductCardProps) {
   const discountedPrice = discount > 0 && typeof price === 'number' && !isNaN(price)
     ? price - (price * discount) / 100
     : safePrice
+
+  const isOutOfStock = typeof stock === 'number' ? stock <= 0 : false;
 
   const handleAddToCart = () => {
     const cartItem = {
@@ -107,7 +109,7 @@ export function ProductCard({ product }: ProductCardProps) {
             size="icon"
             className="h-8 w-8 rounded-full hover:bg-pearl text-neutral-light hover:text-neutral"
             onClick={handleAddToCart}
-            disabled={!salePrice && isOutOfStock}
+            disabled={isOutOfStock}
             aria-label="Add to cart"
           >
             <ShoppingCart className="h-4 w-4" />
