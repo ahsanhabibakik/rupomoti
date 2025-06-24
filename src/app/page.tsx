@@ -247,7 +247,7 @@ export default async function HomePage() {
       {/* CTA Section */}
       <section className="py-20 bg-gradient-to-r from-pearl-600 to-pearl-700">
         <div className="container mx-auto max-w-4xl text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+          <h2 className="text-4xl md:text-5xl font-bold  mb-6">
             Discover Your Perfect Pearl
           </h2>
           <p className="text-xl text-pearl-100 mb-10 max-w-3xl mx-auto leading-relaxed">
