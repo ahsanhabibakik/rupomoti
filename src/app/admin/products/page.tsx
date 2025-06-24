@@ -135,7 +135,7 @@ export default function ProductsPage() {
           <Select value={filters.isFeatured} onValueChange={(v) => handleFilterChange('isFeatured', v)}>
             <SelectTrigger><SelectValue placeholder="Featured Status" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All</SelectItem>
+              <SelectItem value="all-featured">All</SelectItem>
               <SelectItem value="true">Featured</SelectItem>
               <SelectItem value="false">Not Featured</SelectItem>
             </SelectContent>
@@ -143,7 +143,7 @@ export default function ProductsPage() {
           <Select value={filters.isNewArrival} onValueChange={(v) => handleFilterChange('isNewArrival', v)}>
             <SelectTrigger><SelectValue placeholder="New Arrival Status" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All</SelectItem>
+              <SelectItem value="all-new-arrival">All</SelectItem>
               <SelectItem value="true">New Arrival</SelectItem>
               <SelectItem value="false">Not New Arrival</SelectItem>
             </SelectContent>
@@ -151,7 +151,7 @@ export default function ProductsPage() {
           <Select value={filters.isPopular} onValueChange={(v) => handleFilterChange('isPopular', v)}>
             <SelectTrigger><SelectValue placeholder="Popular Status" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All</SelectItem>
+              <SelectItem value="all-popular">All</SelectItem>
               <SelectItem value="true">Popular</SelectItem>
               <SelectItem value="false">Not Popular</SelectItem>
             </SelectContent>
