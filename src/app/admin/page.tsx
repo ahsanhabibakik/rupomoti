@@ -48,6 +48,7 @@ import {
   Search,
   Download,
   RefreshCw,
+  Truck,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { Badge } from '@/components/ui/badge'
