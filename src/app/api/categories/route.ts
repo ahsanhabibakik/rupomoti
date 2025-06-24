@@ -3,15 +3,41 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { prisma } from '@/lib/prisma'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const pageSize = parseInt(searchParams.get('pageSize') || '10', 10);
+    const search = searchParams.get('search') || '';
+
+    const where: any = {};
+    if (search) {
+      where.name = {
+        contains: search,
+        mode: 'insensitive',
+      };
+    }
+
+    const totalCategories = await prisma.category.count({ where });
     const categories = await prisma.category.findMany({
+      where,
       orderBy: {
         name: 'asc'
+      },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      include: {
+        _count: {
+          select: { products: true }
+        }
       }
-    })
+    });
 
-    return NextResponse.json(categories)
+    return NextResponse.json({
+      categories,
+      totalCount: totalCategories,
+      totalPages: Math.ceil(totalCategories / pageSize),
+    });
   } catch (error) {
     console.error('Error fetching categories:', error)
     return NextResponse.json(
