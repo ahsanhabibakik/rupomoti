@@ -82,6 +82,8 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [totalCount, setTotalCount] = useState(0)
   const [filters, setFilters] = useState({
     status: '',
     startDate: null as Date | null,
@@ -97,10 +99,10 @@ export default function OrdersPage() {
       setLoading(true)
       const searchParams = new URLSearchParams({
         page: page.toString(),
-        limit: '10',
+        pageSize: pageSize.toString(),
       })
 
-      if (filters.status) searchParams.append('status', filters.status)
+      if (filters.status && filters.status !== 'all-orders') searchParams.append('status', filters.status)
       if (filters.startDate) searchParams.append('startDate', filters.startDate.toISOString())
       if (filters.endDate) searchParams.append('endDate', filters.endDate.toISOString())
 
@@ -110,14 +112,15 @@ export default function OrdersPage() {
       if (!response.ok) throw new Error(data.error)
 
       setOrders(data.orders)
-      setTotalPages(data.pages)
+      setTotalPages(data.totalPages)
+      setTotalCount(data.totalCount)
     } catch (error) {
       showToast.error('Failed to fetch orders')
       console.error('Error fetching orders:', error)
     } finally {
       setLoading(false)
     }
-  }, [page, filters])
+  }, [page, filters, pageSize])
 
   useEffect(() => {
     fetchOrders()
@@ -197,7 +200,10 @@ export default function OrdersPage() {
         <div className="flex items-center gap-4">
           <Select
             value={filters.status}
-            onValueChange={(value) => setFilters({ ...filters, status: value })}
+            onValueChange={(value) => {
+              setFilters({ ...filters, status: value })
+              setPage(1)
+            }}
           >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter by status" />
@@ -239,6 +245,7 @@ export default function OrdersPage() {
                     startDate: range?.from || null,
                     endDate: range?.to || null,
                   })
+                  setPage(1);
                 }}
                 numberOfMonths={2}
               />
@@ -552,23 +559,51 @@ export default function OrdersPage() {
           </div>
 
           <div className="flex items-center justify-between">
-            <Button
-              variant="outline"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-            >
-              Previous
-            </Button>
-            <span>
-              Page {page} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-            >
-              Next
-            </Button>
+            <div className="text-sm text-muted-foreground">
+              Showing {Math.min(pageSize * (page - 1) + 1, totalCount)}
+              -
+              {Math.min(pageSize * page, totalCount)} of {totalCount} orders.
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm">Rows per page:</span>
+                <Select
+                  value={pageSize.toString()}
+                  onValueChange={(value) => {
+                    setPageSize(Number(value));
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-20">
+                    <SelectValue placeholder={pageSize} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[10, 20, 30, 50, 100, 200].map(size => (
+                      <SelectItem key={size} value={size.toString()}>{size}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                >
+                  Previous
+                </Button>
+                <span>
+                  Page {page} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
           </div>
         </>
       )}
