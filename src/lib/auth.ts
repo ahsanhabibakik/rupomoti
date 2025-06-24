@@ -42,6 +42,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           role: user.role,
+          isAdmin: user.isAdmin,
           image: user.image,
         } as User;
       },
@@ -60,6 +61,7 @@ export const authOptions: NextAuthOptions = {
       if (user) { // On sign-in, `user` object is present
         token.id = user.id;
         token.role = user.role;
+        token.isAdmin = user.isAdmin;
       } else { // On subsequent requests, fetch user data from DB
         if (token.email) {
           const dbUser = await prisma.user.findUnique({ where: { email: token.email } });
@@ -75,6 +77,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
+        session.user.isAdmin = token.isAdmin as boolean;
       }
       return session;
     },

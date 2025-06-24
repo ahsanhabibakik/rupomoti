@@ -76,7 +76,7 @@ export function ProductCard({ product }: ProductCardProps) {
       className="product-card-enhanced bg-base border border-accent-light rounded-xl shadow-premium transition-premium flex flex-col overflow-hidden"
     >
       {/* Image Container */}
-      <Link href={`/product/${id}`} className="block relative aspect-[4/5] w-full overflow-hidden">
+      <Link href={`/product/${id}`} className="block relative aspect-square w-full overflow-hidden">
         <Image
           src={images[0] || '/placeholder.png'}
           alt={name || 'Unnamed Product'}
@@ -116,69 +116,75 @@ export function ProductCard({ product }: ProductCardProps) {
         )}
       </Link>
       {/* Content */}
-      <div className="flex-1 flex flex-col p-3 gap-1">
-        <Link href={`/product/${id}`} className="block">
-          <h3 className="text-base font-semibold text-neutral mb-1 line-clamp-2 hover:text-primary transition-colors max-w-[90%] md:text-sm text-ellipsis md:line-clamp-1 md:max-w-[95%]">
-            {/* long name for optimization */}
-            {name || 'Unnamed Product'}
-          </h3>
-        </Link>
-        {/* Rating */}
-        {rating && (
-          <div className="flex items-center gap-1 mb-1">
-            {renderStars(rating)}
-            <span className="text-xs text-gray-500 ml-1">({rating})</span>
+      <div className="flex-1 flex flex-col p-2.5">
+        <div> {/* Content that stays at the top */}
+          <Link href={`/product/${id}`} className="block">
+            <h3 className="text-sm font-semibold text-neutral mb-1.5 min-h-[40px] line-clamp-2 hover:text-primary transition-colors">
+              {name || 'Unnamed Product'}
+            </h3>
+          </Link>
+          {/* Rating - wrapper ensures consistent height */}
+          <div className="h-5 mb-1.5 flex items-center gap-1">
+            {rating && rating > 0 && (
+              <>
+                {renderStars(rating)}
+                <span className="text-xs text-gray-500 ml-1">({rating.toFixed(1)})</span>
+              </>
+            )}
           </div>
-        )}
-        {/* Price */}
-        <div className="flex items-baseline gap-2 mb-1">
-          <span className={cn(
-            "text-lg font-bold text-primary",
-            salePrice ? "text-red-600" : "text-primary"
-          )}>
-            ৳{salePrice ? salePrice.toLocaleString() : price?.toLocaleString()}
-          </span>
-          {salePrice && (
-            <span className="text-xs text-gray-500 line-through">
-              ৳{price?.toLocaleString()}
-            </span>
-          )}
-        </div>
-        {/* Stock Status */}
-        {typeof stock === 'number' && (
-          <div className="flex items-center justify-between text-xs mb-1">
-            <span className="text-gray-600">Stock</span>
+          {/* Price */}
+          <div className="flex items-baseline gap-2 mb-1.5">
             <span className={cn(
-              "font-medium",
-              stock > 10 ? "text-green-600" : stock > 0 ? "text-orange-600" : "text-red-600"
+              "text-md font-bold",
+              salePrice ? "text-red-600" : "text-primary"
             )}>
-              {stock > 10 ? `${stock}` : stock > 0 ? `Only ${stock}` : 'Out'}
+              ৳{salePrice ? salePrice.toLocaleString() : price?.toLocaleString()}
             </span>
+            {salePrice && (
+              <span className="text-xs text-gray-500 line-through">
+                ৳{price?.toLocaleString()}
+              </span>
+            )}
           </div>
-        )}
-        {/* Action Buttons */}
-        <div className="flex gap-2 mt-2">
-          <Button
-            onClick={handleAddToCart}
-            disabled={isOutOfStock}
-            className="flex-1 bg-primary hover:bg-primary-dark text-accent rounded-lg py-1 md:py-2 text-xs font-medium shadow"
-          >
-            <ShoppingCart className="w-3 h-3 md:w-4 md:h-4 mr-1" />
-            Add to Cart
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-9 w-9 rounded-lg border-gray-300 hover:border-gray-400 hover:bg-gray-50"
-            onClick={handleWishlistToggle}
-          >
-            <Heart
-              className={cn(
-                "h-4 w-4 transition-all duration-300",
-                isInWishlist() ? "fill-red-500 text-red-500" : "text-gray-600 hover:text-red-500"
-              )}
-            />
-          </Button>
+        </div>
+        
+        <div className="mt-auto pt-1.5"> {/* Wrapper to push content below to the bottom */}
+          {/* Stock Status */}
+          {typeof stock === 'number' && (
+            <div className="flex items-center justify-between text-xs mb-1.5">
+              <span className="text-gray-600">Stock:</span>
+              <span className={cn(
+                "font-medium",
+                stock > 10 ? "text-green-600" : stock > 0 ? "text-orange-600" : "text-red-600"
+              )}>
+                {stock > 0 ? `${stock} left` : 'Out of Stock'}
+              </span>
+            </div>
+          )}
+          {/* Action Buttons */}
+          <div className="flex gap-1.5">
+            <Button
+              onClick={handleAddToCart}
+              disabled={isOutOfStock}
+              className="h-9 flex-1 bg-primary hover:bg-primary-dark text-accent rounded-lg text-xs font-medium shadow"
+            >
+              <ShoppingCart className="w-4 h-4 mr-1.5" />
+              Add to Cart
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 rounded-lg border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+              onClick={handleWishlistToggle}
+            >
+              <Heart
+                className={cn(
+                  "h-4 w-4 transition-all duration-300",
+                  isInWishlist() ? "fill-red-500 text-red-500" : "text-gray-600 hover:text-red-500"
+                )}
+              />
+            </Button>
+          </div>
         </div>
       </div>
     </div>
