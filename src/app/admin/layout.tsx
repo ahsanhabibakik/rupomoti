@@ -22,6 +22,8 @@ import {
   FileText,
   Bell,
   Shield,
+  Moon,
+  Sun,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -50,7 +52,9 @@ function Sidebar({ className }: { className?: string }) {
   return (
     <div className={cn("flex flex-col h-full", className)}>
       <div className="flex items-center justify-center h-16 px-4 border-b">
-        <h1 className="text-xl font-bold text-primary">Rupomoti Admin</h1>
+        <Link href="/" className="flex items-center gap-2 group">
+          <span className="text-xl font-bold text-primary group-hover:underline">Rupomoti Admin</span>
+        </Link>
       </div>
 
       <nav className="flex-1 px-2 py-4 space-y-1">
@@ -105,12 +109,33 @@ export default function AdminLayout({
   const router = useRouter()
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [theme, setTheme] = useState('light')
+  const [showNotifications, setShowNotifications] = useState(false)
+  const notifications = [
+    { id: 1, text: 'New order placed by John Doe' },
+    { id: 2, text: 'Stock low: Classic Pearl Necklace' },
+    { id: 3, text: 'New review on "Elegant Pearl Earrings"' },
+    { id: 4, text: 'Order #1233 marked as shipped' },
+  ]
 
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push(`/signin?callbackUrl=${encodeURIComponent(pathname || '')}`)
     }
   }, [status, router, pathname])
+
+  useEffect(() => {
+    const stored = typeof window !== 'undefined' ? localStorage.getItem('theme') : null
+    if (stored) setTheme(stored)
+    document.documentElement.classList.toggle('dark', stored === 'dark')
+  }, [])
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark'
+    setTheme(newTheme)
+    if (typeof window !== 'undefined') localStorage.setItem('theme', newTheme)
+    document.documentElement.classList.toggle('dark', newTheme === 'dark')
+  }
 
   if (status === 'loading') {
     return (
@@ -147,12 +172,43 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Mobile menu button */}
+    <div className="min-h-screen bg-gray-50 dark:bg-neutral-900 dark:text-white">
+      {/* Notification bell and dark mode toggle */}
+      <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
+        <div className="relative">
+          <button
+            onClick={() => setShowNotifications((v) => !v)}
+            className="p-2 rounded-full bg-white/80 dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 shadow hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors relative"
+            aria-label="Show notifications"
+          >
+            <Bell className="h-5 w-5 text-primary" />
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 font-bold">{notifications.length}</span>
+          </button>
+          {showNotifications && (
+            <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg shadow-lg p-2">
+              <div className="font-semibold mb-2 text-primary">Notifications</div>
+              <ul className="text-sm space-y-1">
+                {notifications.map((n) => (
+                  <li key={n.id} className="py-1 px-2 rounded hover:bg-primary/10 dark:hover:bg-primary/20 cursor-pointer">{n.text}</li>
+                ))}
+              </ul>
+              <button onClick={() => setShowNotifications(false)} className="mt-2 text-xs text-gray-500 hover:underline">Close</button>
+            </div>
+          )}
+        </div>
+        <button
+          onClick={toggleTheme}
+          className="p-2 rounded-full bg-white/80 dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 shadow hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors"
+          aria-label="Toggle dark mode"
+        >
+          {theme === 'dark' ? <Sun className="h-5 w-5 text-yellow-400" /> : <Moon className="h-5 w-5 text-gray-700" />}
+        </button>
+      </div>
+      {/* Mobile menu button - always visible on mobile */}
       <div className="lg:hidden fixed top-4 left-4 z-50">
         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
           <SheetTrigger asChild>
-            <Button variant="outline" size="icon">
+            <Button variant="outline" size="icon" className="shadow-md border border-gray-300 bg-white/90">
               <Menu className="h-6 w-6" />
             </Button>
           </SheetTrigger>
@@ -169,7 +225,7 @@ export default function AdminLayout({
 
       {/* Main content */}
       <div className="lg:pl-64">
-        <main className="p-8">
+        <main className="p-4 sm:p-6 md:p-8 max-w-full">
           <Suspense fallback={<LoadingSpinner />}>
             {children}
           </Suspense>

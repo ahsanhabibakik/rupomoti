@@ -52,7 +52,7 @@ export default function ShopPage() {
       params.append('sort', sortBy)
       const res = await fetch(`/api/products?${params.toString()}`)
       const data = await res.json()
-      setProducts(data)
+      setProducts(data.products || [])
       setLoading(false)
     }
     fetchProducts()

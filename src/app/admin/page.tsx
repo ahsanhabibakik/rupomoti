@@ -20,6 +20,8 @@ import {
   Cell,
 } from 'recharts'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Plus, ListOrdered, Users, Package, TrendingUp, Activity, UserPlus, Clock, PackageMinus } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8']
 
@@ -30,6 +32,14 @@ export default function DashboardPage() {
   const [salesData, setSalesData] = useState<any[]>([])
   const [categoryData, setCategoryData] = useState<any[]>([])
   const [topProducts, setTopProducts] = useState<any[]>([])
+  const { toast } = useToast()
+
+  // Mock analytics data
+  const todaysSales = 12500
+  const newCustomers = 7
+  const pendingOrders = Array.isArray(orders) ? orders.filter((order: any) => order.status === 'PENDING').length : 0
+  const processingOrders = Array.isArray(orders) ? orders.filter((order: any) => order.status === 'PROCESSING').length : 0
+  const lowStockProducts = 2
 
   useEffect(() => {
     if (orders && Array.isArray(orders)) {
@@ -98,8 +108,6 @@ export default function DashboardPage() {
   const totalProducts = Array.isArray(products) ? products.length : 0
   const totalCategories = Array.isArray(categories) ? categories.length : 0
 
-  const pendingOrders = Array.isArray(orders) ? orders.filter((order: any) => order.status === 'PENDING').length : 0
-  const processingOrders = Array.isArray(orders) ? orders.filter((order: any) => order.status === 'PROCESSING').length : 0
   const shippedOrders = Array.isArray(orders) ? orders.filter((order: any) => order.status === 'SHIPPED').length : 0
   const deliveredOrders = Array.isArray(orders) ? orders.filter((order: any) => order.status === 'DELIVERED').length : 0
 
@@ -107,7 +115,62 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Dashboard</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Analytics Mini-Widgets */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+        <div className="flex flex-col items-center justify-center p-3 bg-gradient-to-br from-primary/10 to-white rounded-xl border border-primary/20 shadow-sm">
+          <TrendingUp className="h-6 w-6 text-primary mb-1" />
+          <span className="text-lg font-bold">৳{todaysSales.toLocaleString('bn-BD')}</span>
+          <span className="text-xs text-muted-foreground">Today's Sales</span>
+        </div>
+        <div className="flex flex-col items-center justify-center p-3 bg-gradient-to-br from-green-100 to-white rounded-xl border border-green-200 shadow-sm">
+          <UserPlus className="h-6 w-6 text-green-600 mb-1" />
+          <span className="text-lg font-bold">{newCustomers}</span>
+          <span className="text-xs text-muted-foreground">New Customers</span>
+        </div>
+        <div className="flex flex-col items-center justify-center p-3 bg-gradient-to-br from-yellow-100 to-white rounded-xl border border-yellow-200 shadow-sm">
+          <Clock className="h-6 w-6 text-yellow-600 mb-1" />
+          <span className="text-lg font-bold">{pendingOrders}</span>
+          <span className="text-xs text-muted-foreground">Pending Orders</span>
+        </div>
+        <div className="flex flex-col items-center justify-center p-3 bg-gradient-to-br from-red-100 to-white rounded-xl border border-red-200 shadow-sm">
+          <PackageMinus className="h-6 w-6 text-red-600 mb-1" />
+          <span className="text-lg font-bold">{lowStockProducts}</span>
+          <span className="text-xs text-muted-foreground">Low Stock</span>
+        </div>
+      </div>
+
+      {/* Demo Toast Button */}
+      <div className="mb-4">
+        <button
+          onClick={() => toast({ title: 'Success!', description: 'This is a demo toast notification.', variant: 'success' })}
+          className="px-4 py-2 bg-primary text-white rounded-lg shadow hover:bg-primary/90 transition"
+        >
+          Show Toast
+        </button>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+        <a href="/admin/products" className="flex flex-col items-center justify-center p-4 bg-white rounded-lg shadow hover:shadow-lg transition group border border-gray-100">
+          <Plus className="h-6 w-6 text-primary mb-2 group-hover:scale-110 transition-transform" />
+          <span className="text-sm font-medium">Add Product</span>
+        </a>
+        <a href="/admin/orders" className="flex flex-col items-center justify-center p-4 bg-white rounded-lg shadow hover:shadow-lg transition group border border-gray-100">
+          <ListOrdered className="h-6 w-6 text-primary mb-2 group-hover:scale-110 transition-transform" />
+          <span className="text-sm font-medium">View Orders</span>
+        </a>
+        <a href="/admin/customers" className="flex flex-col items-center justify-center p-4 bg-white rounded-lg shadow hover:shadow-lg transition group border border-gray-100">
+          <Users className="h-6 w-6 text-primary mb-2 group-hover:scale-110 transition-transform" />
+          <span className="text-sm font-medium">Customers</span>
+        </a>
+        <a href="/admin/reports" className="flex flex-col items-center justify-center p-4 bg-white rounded-lg shadow hover:shadow-lg transition group border border-gray-100">
+          <TrendingUp className="h-6 w-6 text-primary mb-2 group-hover:scale-110 transition-transform" />
+          <span className="text-sm font-medium">Reports</span>
+        </a>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
@@ -148,6 +211,20 @@ export default function DashboardPage() {
             <div className="text-2xl font-bold">{totalCategories}</div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Recent Activity */}
+      <div className="bg-white rounded-lg shadow p-4 mt-4 border border-gray-100">
+        <div className="flex items-center gap-2 mb-2">
+          <Activity className="h-5 w-5 text-primary" />
+          <span className="font-semibold">Recent Activity</span>
+        </div>
+        <ul className="text-sm text-muted-foreground space-y-1">
+          <li>Order #1234 was placed by John Doe (৳5,000)</li>
+          <li>Product "Classic Pearl Necklace" was added</li>
+          <li>Order #1233 was marked as shipped</li>
+          <li>Customer "Jane Smith" signed up</li>
+        </ul>
       </div>
 
       <Tabs defaultValue="sales" className="space-y-6">
