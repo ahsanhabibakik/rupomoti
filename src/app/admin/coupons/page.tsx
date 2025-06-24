@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,6 +20,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
+import { CouponDialog } from '@/components/admin/CouponDialog'
+import { toast } from '@/lib/toast'
 
 const columns = [
   {
@@ -115,27 +117,51 @@ const columns = [
   },
 ]
 
+const STATUS_TABS = [
+  { label: 'Active', value: 'ACTIVE' },
+  { label: 'Expired', value: 'EXPIRED' },
+  { label: 'Used', value: 'USED' },
+  { label: 'Inactive', value: 'INACTIVE' },
+]
+
 export default function CouponsPage() {
   const [search, setSearch] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [coupons, setCoupons] = useState([])
   const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState('ACTIVE')
+  const [editingCoupon, setEditingCoupon] = useState<any>(null)
 
-  // MOCK DATA FETCHING
-  useState(() => {
-    const mockCoupons = [
-      { id: '1', code: 'SUMMER20', type: 'PERCENTAGE', value: 20, minPurchase: 1000, usageLimit: 100, usedCount: 25, validUntil: '2024-08-31', status: 'ACTIVE' },
-      { id: '2', code: 'NEW500', type: 'FIXED', value: 500, minPurchase: 2500, usageLimit: null, usedCount: 10, validUntil: null, status: 'ACTIVE' },
-    ];
-    setCoupons(mockCoupons as any);
-    setLoading(false);
-  });
+  useEffect(() => {
+    fetchCoupons()
+  }, [])
 
-  // TODO: Implement coupon management hooks
+  const fetchCoupons = async () => {
+    try {
+      const response = await fetch('/api/coupons')
+      const data = await response.json()
+      setCoupons(data)
+      setLoading(false)
+    } catch (error) {
+      console.error('Error fetching coupons:', error)
+      setLoading(false)
+    }
+  }
+
   const handleStatusChange = async (couponId: string, status: string) => {
     try {
-      // TODO: Implement status change API call
-      console.log('Changing coupon status:', couponId, status)
+      const response = await fetch(`/api/coupons/${couponId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status }),
+      })
+      if (response.ok) {
+        fetchCoupons()
+      } else {
+        console.error('Error changing coupon status')
+      }
     } catch (error) {
       console.error('Error changing coupon status:', error)
     }
@@ -144,13 +170,40 @@ export default function CouponsPage() {
   const handleDelete = async (couponId: string) => {
     if (window.confirm('Are you sure you want to delete this coupon?')) {
       try {
-        // TODO: Implement delete API call
-        console.log('Deleting coupon:', couponId)
+        const response = await fetch(`/api/coupons/${couponId}`, {
+          method: 'DELETE',
+        })
+        if (response.ok) {
+          fetchCoupons()
+        } else {
+          console.error('Error deleting coupon')
+        }
       } catch (error) {
         console.error('Error deleting coupon:', error)
       }
     }
   }
+
+  const handleAdd = () => {
+    setEditingCoupon(null)
+    setIsDialogOpen(true)
+  }
+
+  const handleEdit = (coupon: any) => {
+    setEditingCoupon(coupon)
+    setIsDialogOpen(true)
+  }
+
+  // Filter coupons by status
+  const filteredCoupons = coupons.filter((coupon: any) => {
+    if (activeTab === 'EXPIRED') {
+      return new Date(coupon.validUntil) < new Date() && coupon.status === 'ACTIVE'
+    }
+    if (activeTab === 'USED') {
+      return coupon.usedCount > 0
+    }
+    return coupon.status === activeTab
+  })
 
   if (loading) {
     return (
@@ -160,45 +213,81 @@ export default function CouponsPage() {
     )
   }
 
-  const filteredCoupons = coupons.filter((coupon: any) =>
-    coupon.code.toLowerCase().includes(search.toLowerCase())
-  )
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Coupons</h1>
-        <Button onClick={() => setIsDialogOpen(true)}>
+        <Button onClick={handleAdd}>
           <Plus className="w-4 h-4 mr-2" />
           Add Coupon
         </Button>
       </div>
 
       <div className="flex items-center gap-4">
+        {STATUS_TABS.map(tab => (
+          <Button
+            key={tab.value}
+            variant={activeTab === tab.value ? 'default' : 'outline'}
+            onClick={() => setActiveTab(tab.value)}
+          >
+            {tab.label}
+          </Button>
+        ))}
         <Input
           placeholder="Search coupons..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="max-w-sm"
+          className="max-w-sm ml-auto"
         />
       </div>
 
       <DataTable
-        columns={columns}
-        data={filteredCoupons}
+        columns={columns.map(col =>
+          col.id === 'actions'
+            ? {
+                ...col,
+                cell: ({ row }: any) => {
+                  const coupon = row.original
+                  return (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(coupon)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleStatusChange(coupon.id, coupon.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE')}
+                      >
+                        {coupon.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(coupon.id)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  )
+                },
+              }
+            : col
+        )}
+        data={filteredCoupons.filter((coupon: any) =>
+          coupon.code.toLowerCase().includes(search.toLowerCase())
+        )}
       />
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New Coupon</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {/* TODO: Implement coupon creation form */}
-            <p>Coupon creation form will be implemented here</p>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <CouponDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        coupon={editingCoupon}
+        onClose={fetchCoupons}
+      />
     </div>
   )
 } 
