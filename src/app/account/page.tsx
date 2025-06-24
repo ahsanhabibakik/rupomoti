@@ -17,6 +17,8 @@ import {
   Edit,
   Trash2,
   Plus,
+  Save,
+  MessageSquare
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -51,8 +53,14 @@ export default function AccountPage() {
   const [addressForm, setAddressForm] = useState({
     name: '', phone: '', street: '', city: '', state: '', postalCode: '', country: 'Bangladesh'
   })
+  const [paymentForm, setPaymentForm] = useState({
+    cardholderName: '', cardNumber: '', expiryMonth: '', expiryYear: '', cvv: '', isDefault: false
+  })
   const [showAddressModal, setShowAddressModal] = useState(false)
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [showProfileEdit, setShowProfileEdit] = useState(false)
   const [editingAddress, setEditingAddress] = useState<any>(null)
+  const [editingPayment, setEditingPayment] = useState<any>(null)
   
   const [loading, setLoading] = useState({
     profile: false,
@@ -81,7 +89,11 @@ export default function AccountPage() {
         .then((r) => r.json())
         .then((data) => {
           setProfile(data)
-          setProfileForm({ name: data.name || '', phone: data.phone || '', email: data.email || '' })
+          setProfileForm({ 
+            name: data.name || '', 
+            phone: data.phone || '', 
+            email: data.email || '' 
+          })
         })
         .catch(() => setError((e) => ({ ...e, profile: 'Failed to load profile' })))
         .finally(() => setLoading((l) => ({ ...l, profile: false })))
@@ -94,8 +106,14 @@ export default function AccountPage() {
       setLoading((l) => ({ ...l, orders: true }))
       fetch('/api/orders/user')
         .then((r) => r.json())
-        .then(setOrders)
-        .catch(() => setError((e) => ({ ...e, orders: 'Failed to load orders' })))
+        .then((data) => {
+          // Ensure orders is always an array
+          setOrders(Array.isArray(data) ? data : [])
+        })
+        .catch(() => {
+          setError((e) => ({ ...e, orders: 'Failed to load orders' }))
+          setOrders([]) // Ensure it's an array even on error
+        })
         .finally(() => setLoading((l) => ({ ...l, orders: false })))
     }
   }, [activeTab])
@@ -106,8 +124,14 @@ export default function AccountPage() {
       setLoading((l) => ({ ...l, wishlist: true }))
       fetch('/api/wishlist')
         .then((r) => r.json())
-        .then(setWishlist)
-        .catch(() => setError((e) => ({ ...e, wishlist: 'Failed to load wishlist' })))
+        .then((data) => {
+          // Ensure wishlist is always an array
+          setWishlist(Array.isArray(data) ? data : [])
+        })
+        .catch(() => {
+          setError((e) => ({ ...e, wishlist: 'Failed to load wishlist' }))
+          setWishlist([]) // Ensure it's an array even on error
+        })
         .finally(() => setLoading((l) => ({ ...l, wishlist: false })))
     }
   }, [activeTab])
@@ -196,6 +220,7 @@ export default function AccountPage() {
         showToast.error(errorData.message || 'Failed to update profile')
       }
     } catch (error) {
+      console.error('Profile update error:', error)
       showToast.error('Failed to update profile')
     }
   }
@@ -305,6 +330,68 @@ export default function AccountPage() {
     return !reviews.some(r => r.productId === productId)
   }
 
+  // Payment Method CRUD
+  const handleAddPaymentMethod = () => {
+    setEditingPayment(null)
+    setPaymentForm({
+      cardholderName: '', cardNumber: '', expiryMonth: '', expiryYear: '', cvv: '', isDefault: false
+    })
+    setShowPaymentModal(true)
+  }
+
+  const handleEditPaymentMethod = (payment: any) => {
+    setEditingPayment(payment)
+    setPaymentForm({
+      cardholderName: payment.cardholderName,
+      cardNumber: payment.cardNumber,
+      expiryMonth: payment.expiryMonth,
+      expiryYear: payment.expiryYear,
+      cvv: '', // Don&apos;t populate CVV for security
+      isDefault: payment.isDefault
+    })
+    setShowPaymentModal(true)
+  }
+
+  const handleSavePaymentMethod = async (e: any) => {
+    e.preventDefault()
+    try {
+      const res = await fetch('/api/payment-methods', {
+        method: editingPayment ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingPayment ? { id: editingPayment.id, ...paymentForm } : paymentForm),
+      })
+      if (res.ok) {
+        const newPayment = await res.json()
+        if (editingPayment) {
+          setPayments(payments.map(p => p.id === editingPayment.id ? newPayment : p))
+        } else {
+          setPayments([newPayment, ...payments])
+        }
+        setShowPaymentModal(false)
+        showToast.success(`Payment method ${editingPayment ? 'updated' : 'added'} successfully!`)
+      }
+    } catch (error) {
+      showToast.error(`Failed to ${editingPayment ? 'update' : 'add'} payment method`)
+    }
+  }
+
+  const handleDeletePaymentMethod = async (paymentId: string) => {
+    if (!confirm('Are you sure you want to delete this payment method?')) return
+    try {
+      const res = await fetch('/api/payment-methods', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: paymentId }),
+      })
+      if (res.ok) {
+        setPayments(payments.filter(p => p.id !== paymentId))
+        showToast.success('Payment method deleted successfully!')
+      }
+    } catch (error) {
+      showToast.error('Failed to delete payment method')
+    }
+  }
+
   if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -403,138 +490,302 @@ export default function AccountPage() {
             >
               {activeTab === 'profile' && (
                 loading.profile ? (
-                  <div>Loading profile...</div>
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pearl-600"></div>
+                  </div>
                 ) : error.profile ? (
-                  <div className="text-red-500">{error.profile}</div>
+                  <div className="text-center py-8">
+                    <div className="text-red-500 mb-4">{error.profile}</div>
+                    <button 
+                      onClick={() => window.location.reload()}
+                      className="px-4 py-2 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700"
+                    >
+                      Try Again
+                    </button>
+                  </div>
                 ) : profile ? (
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-6">
-                      Profile Information
-                    </h3>
-                    <form onSubmit={handleProfileUpdate} className="space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                          <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                            Full Name
-                          </label>
-                          <input
-                            type="text"
-                            id="name"
-                            value={profileForm.name}
-                            onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
-                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-pearl-500 focus:border-pearl-500"
-                          />
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-xl font-semibold text-gray-900">
+                        Profile Information
+                      </h3>
+                      <button
+                        onClick={() => setShowProfileEdit(!showProfileEdit)}
+                        className="px-4 py-2 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700 flex items-center gap-2"
+                      >
+                        <Edit className="w-4 h-4" />
+                        {showProfileEdit ? 'Cancel' : 'Edit Profile'}
+                      </button>
+                    </div>
+                    
+                    {!showProfileEdit ? (
+                      <div className="bg-gray-50 rounded-lg p-6 space-y-4">
+                        <div className="flex items-center space-x-4">
+                          <div className="relative w-20 h-20">
+                            <Image
+                              src={profile.image || '/images/default-avatar.png'}
+                              alt="Profile"
+                              fill
+                              className="rounded-full object-cover"
+                            />
+                          </div>
+                          <div>
+                            <h4 className="text-lg font-medium text-gray-900">{profile.name}</h4>
+                            <p className="text-gray-600">{profile.email}</p>
+                            {profile.phone && <p className="text-gray-600">{profile.phone}</p>}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                            <p className="text-gray-900">{profile.name}</p>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                            <p className="text-gray-900">{profile.email}</p>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                            <p className="text-gray-900">{profile.phone || 'Not provided'}</p>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Member Since</label>
+                            <p className="text-gray-900">{new Date(profile.createdAt).toLocaleDateString()}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <form onSubmit={handleProfileUpdate} className="bg-white border rounded-lg p-6 space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                              Full Name
+                            </label>
+                            <input
+                              type="text"
+                              id="name"
+                              value={profileForm.name}
+                              onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pearl-500 focus:border-transparent"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                              Email Address
+                            </label>
+                            <input
+                              type="email"
+                              id="email"
+                              value={profileForm.email}
+                              onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pearl-500 focus:border-transparent"
+                              required
+                            />
+                          </div>
                         </div>
                         <div>
-                          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                            Email Address
+                          <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                            Phone Number
                           </label>
                           <input
-                            type="email"
-                            id="email"
-                            value={profileForm.email}
-                            onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
-                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-pearl-500 focus:border-pearl-500"
+                            type="tel"
+                            id="phone"
+                            value={profileForm.phone}
+                            onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pearl-500 focus:border-transparent"
+                            placeholder="+880 1XXX XXX XXX"
                           />
                         </div>
-                      </div>
-                      <div>
-                        <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                          Phone Number
-                        </label>
-                        <input
-                          type="tel"
-                          id="phone"
-                          value={profileForm.phone}
-                          onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-pearl-500 focus:border-pearl-500"
-                        />
-                      </div>
-                      <div className="flex justify-end">
-                        <button
-                          type="submit"
-                          className="px-4 py-2 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pearl-500"
-                        >
-                          Save Changes
-                        </button>
-                      </div>
-                    </form>
+                        <div className="flex justify-end space-x-3">
+                          <button
+                            type="button"
+                            onClick={() => setShowProfileEdit(false)}
+                            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="submit"
+                            className="px-4 py-2 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700 flex items-center gap-2"
+                          >
+                            <Save className="w-4 h-4" />
+                            Save Changes
+                          </button>
+                        </div>
+                      </form>
+                    )}
                   </div>
                 ) : null
               )}
 
               {activeTab === 'orders' && (
                 loading.orders ? (
-                  <div>Loading orders...</div>
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pearl-600"></div>
+                  </div>
                 ) : error.orders ? (
-                  <div className="text-red-500">{error.orders}</div>
+                  <div className="text-center py-8">
+                    <div className="text-red-500 mb-4">{error.orders}</div>
+                    <button 
+                      onClick={() => window.location.reload()}
+                      className="px-4 py-2 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700"
+                    >
+                      Try Again
+                    </button>
+                  </div>
                 ) : (
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-6">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-6">
                       Order History
                     </h3>
-                    <div className="space-y-4">
-                      {orders.length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">
-                          <Package className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-                          <p>No orders found.</p>
-                        </div>
-                      ) : (
-                        orders.map((order: any) => (
-                          <div key={order.id} className="border rounded-lg p-4">
-                            <div className="flex justify-between items-start mb-4">
-                              <div>
-                                <p className="text-sm text-gray-500">Order #{order.orderNumber}</p>
-                                <p className="text-sm font-medium text-gray-900">
-                                  Placed on {new Date(order.createdAt).toLocaleDateString()}
-                                </p>
+                    
+                    {orders.length === 0 ? (
+                      <div className="text-center py-12 bg-gray-50 rounded-lg">
+                        <Package className="mx-auto h-16 w-16 text-gray-300 mb-4" />
+                        <h4 className="text-lg font-medium text-gray-900 mb-2">No orders yet</h4>
+                        <p className="text-gray-600 mb-6">Start shopping to see your order history</p>
+                        <Link href="/shop">
+                          <button className="px-6 py-3 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700">
+                            Start Shopping
+                          </button>
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="space-y-6">
+                        {orders.map((order: any) => (
+                          <div key={order.id} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                            {/* Order Header */}
+                            <div className="bg-gray-50 px-6 py-4 border-b">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <h4 className="font-medium text-gray-900">Order #{order.orderNumber}</h4>
+                                  <p className="text-sm text-gray-600">
+                                    Placed on {new Date(order.createdAt).toLocaleDateString('en-US', {
+                                      year: 'numeric',
+                                      month: 'long',
+                                      day: 'numeric'
+                                    })}
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                                    order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
+                                    order.status === 'SHIPPED' ? 'bg-blue-100 text-blue-800' :
+                                    order.status === 'PROCESSING' ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-gray-100 text-gray-800'
+                                  }`}>
+                                    {order.status}
+                                  </span>
+                                  <p className="text-lg font-semibold text-gray-900 mt-1">
+                                    ৳{order.total.toLocaleString()}
+                                  </p>
+                                </div>
                               </div>
-                              <span className={`px-3 py-1 text-sm font-medium rounded-full ${
-                                order.status === 'DELIVERED' ? 'text-green-600 bg-green-50' :
-                                order.status === 'SHIPPED' ? 'text-blue-600 bg-blue-50' :
-                                'text-yellow-600 bg-yellow-50'
-                              }`}>
-                                {order.status}
-                              </span>
                             </div>
-                            
-                            <div className="space-y-3">
-                              {order.items?.map((item: any) => (
-                                <div key={item.id} className="flex items-center space-x-4">
-                                  <div className="relative w-20 h-20">
-                                    <Image
-                                      src={item.image || '/images/placeholder.jpg'}
-                                      alt={item.name}
-                                      fill
-                                      className="rounded-lg object-cover"
-                                    />
+
+                            {/* Order Items */}
+                            <div className="p-6">
+                              <div className="space-y-4">
+                                {order.items?.map((item: any) => (
+                                  <div key={item.id} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                                    <div className="relative w-20 h-20 flex-shrink-0">
+                                      <Image
+                                        src={item.product?.images?.[0] || '/images/placeholder.jpg'}
+                                        alt={item.product?.name || 'Product'}
+                                        fill
+                                        className="rounded-lg object-cover"
+                                      />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <h5 className="font-medium text-gray-900 truncate">
+                                        {item.product?.name || 'Product'}
+                                      </h5>
+                                      <p className="text-sm text-gray-500">
+                                        Quantity: {item.quantity} × ৳{item.price}
+                                      </p>
+                                      <p className="text-sm font-medium text-gray-900">
+                                        Total: ৳{(item.quantity * item.price).toLocaleString()}
+                                      </p>
+                                    </div>
+                                    <div className="flex flex-col items-end space-y-2">
+                                      {order.status === 'DELIVERED' && canReviewProduct(item.productId) && (
+                                        <button
+                                          onClick={() => {/* TODO: Open review modal */}}
+                                          className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                                        >
+                                          Leave Review
+                                        </button>
+                                      )}
+                                    </div>
                                   </div>
-                                  <div className="flex-1">
-                                    <h4 className="text-sm font-medium text-gray-900">
-                                      {item.name}
-                                    </h4>
-                                    <p className="text-sm text-gray-500">
-                                      Quantity: {item.quantity}
-                                    </p>
-                                    <p className="text-sm font-medium text-gray-900">
-                                      ৳{item.price}
-                                    </p>
+                                ))}
+                              </div>
+
+                              {/* Order Details */}
+                              <div className="mt-6 pt-6 border-t border-gray-200">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                  <div>
+                                    <h5 className="font-medium text-gray-900 mb-3">Order Details</h5>
+                                    <div className="space-y-2 text-sm">
+                                      <div className="flex justify-between">
+                                        <span className="text-gray-600">Subtotal:</span>
+                                        <span>৳{order.subtotal.toLocaleString()}</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span className="text-gray-600">Delivery Fee:</span>
+                                        <span>৳{order.deliveryFee.toLocaleString()}</span>
+                                      </div>
+                                      {order.discount > 0 && (
+                                        <div className="flex justify-between text-green-600">
+                                          <span>Discount:</span>
+                                          <span>-৳{order.discount.toLocaleString()}</span>
+                                        </div>
+                                      )}
+                                      <div className="flex justify-between font-medium pt-2 border-t">
+                                        <span>Total:</span>
+                                        <span>৳{order.total.toLocaleString()}</span>
+                                      </div>
+                                    </div>
                                   </div>
-                                  {order.status === 'DELIVERED' && canReviewProduct(item.productId) && (
-                                    <button
-                                      onClick={() => {/* TODO: Open review modal */}}
-                                      className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-                                    >
-                                      Leave Review
+                                  
+                                  <div>
+                                    <h5 className="font-medium text-gray-900 mb-3">Delivery Information</h5>
+                                    <div className="space-y-2 text-sm">
+                                      <p><span className="text-gray-600">Address:</span> {order.deliveryAddress}</p>
+                                      <p><span className="text-gray-600">Payment:</span> {order.paymentMethod}</p>
+                                      {order.trackingId && (
+                                        <p><span className="text-gray-600">Tracking:</span> {order.trackingId}</p>
+                                      )}
+                                      {order.courierName && (
+                                        <p><span className="text-gray-600">Courier:</span> {order.courierName}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div className="mt-6 flex flex-wrap gap-3">
+                                  <Link href={`/order-tracking/${order.orderNumber}`}>
+                                    <button className="px-4 py-2 border border-pearl-600 text-pearl-600 rounded-lg hover:bg-pearl-50 transition-colors">
+                                      Track Order
+                                    </button>
+                                  </Link>
+                                  {order.status === 'DELIVERED' && (
+                                    <button className="px-4 py-2 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700 transition-colors">
+                                      Download Invoice
                                     </button>
                                   )}
+                                  <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                                    Contact Support
+                                  </button>
                                 </div>
-                              ))}
+                              </div>
                             </div>
                           </div>
-                        ))
-                      )}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )
               )}
@@ -553,7 +804,7 @@ export default function AccountPage() {
                       {reviews.length === 0 ? (
                         <div className="text-center py-8 text-gray-500">
                           <Star className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-                          <p>You haven't written any reviews yet.</p>
+                          <p>You haven&apos;t written any reviews yet.</p>
                         </div>
                       ) : (
                         reviews.map((review) => (
@@ -613,145 +864,371 @@ export default function AccountPage() {
 
               {activeTab === 'addresses' && (
                 loading.addresses ? (
-                  <div>Loading addresses...</div>
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pearl-600"></div>
+                  </div>
                 ) : error.addresses ? (
-                  <div className="text-red-500">{error.addresses}</div>
+                  <div className="text-center py-8">
+                    <div className="text-red-500 mb-4">{error.addresses}</div>
+                    <button 
+                      onClick={() => window.location.reload()}
+                      className="px-4 py-2 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700"
+                    >
+                      Try Again
+                    </button>
+                  </div>
                 ) : (
                   <div>
                     <div className="flex justify-between items-center mb-6">
-                      <h3 className="text-lg font-semibold text-gray-900">
+                      <h3 className="text-xl font-semibold text-gray-900">
                         Saved Addresses
                       </h3>
                       <button
                         onClick={handleAddAddress}
-                        className="px-4 py-2 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700"
+                        className="px-4 py-2 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700 flex items-center gap-2"
                       >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add Address
+                        <Plus className="w-4 h-4" />
+                        Add New Address
                       </button>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {addresses.length === 0 ? (
-                        <div className="col-span-2 text-center py-8 text-gray-500">
-                          <MapPin className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-                          <p>No addresses saved yet.</p>
-                        </div>
-                      ) : (
-                        addresses.map((address) => (
-                          <div key={address.id} className="border rounded-lg p-4">
+                    
+                    {addresses.length === 0 ? (
+                      <div className="text-center py-12 bg-gray-50 rounded-lg">
+                        <MapPin className="mx-auto h-16 w-16 text-gray-300 mb-4" />
+                        <h4 className="text-lg font-medium text-gray-900 mb-2">No addresses saved</h4>
+                        <p className="text-gray-600 mb-6">Add your first address to make checkout faster</p>
+                        <button
+                          onClick={handleAddAddress}
+                          className="px-6 py-3 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700"
+                        >
+                          Add Your First Address
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {addresses.map((address) => (
+                          <div key={address.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
                             <div className="flex justify-between items-start mb-4">
-                              <h4 className="text-sm font-medium text-gray-900">
-                                {address.name}
-                              </h4>
+                              <div className="flex items-center space-x-3">
+                                <div className="w-10 h-10 bg-pearl-100 rounded-full flex items-center justify-center">
+                                  <MapPin className="w-5 h-5 text-pearl-600" />
+                                </div>
+                                <div>
+                                  <h4 className="font-medium text-gray-900">{address.name}</h4>
+                                  <p className="text-sm text-gray-500">{address.phone}</p>
+                                </div>
+                              </div>
                               <div className="flex items-center space-x-2">
                                 <button
                                   onClick={() => handleEditAddress(address)}
-                                  className="text-blue-600 hover:text-blue-700"
+                                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                  title="Edit address"
                                 >
                                   <Edit className="h-4 w-4" />
                                 </button>
                                 <button
                                   onClick={() => handleDeleteAddress(address.id)}
-                                  className="text-red-600 hover:text-red-700"
+                                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                  title="Delete address"
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </button>
                               </div>
                             </div>
-                            <p className="text-sm text-gray-600">
-                              {address.street}<br />
-                              {address.city}, {address.state} {address.postalCode}<br />
-                              {address.country}
-                            </p>
-                            <p className="text-sm text-gray-500 mt-2">
-                              Phone: {address.phone}
-                            </p>
+                            <div className="space-y-2 text-sm text-gray-600">
+                              <p>{address.street}</p>
+                              <p>{address.city}, {address.state} {address.postalCode}</p>
+                              <p>{address.country}</p>
+                            </div>
+                            {address.isDefault && (
+                              <div className="mt-4">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                  Default Address
+                                </span>
+                              </div>
+                            )}
                           </div>
-                        ))
-                      )}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )
               )}
 
               {/* Address Modal */}
               {showAddressModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                  <form onSubmit={handleSaveAddress} className="bg-white rounded-lg p-6 w-full max-w-md space-y-4 shadow-lg">
-                    <h3 className="text-lg font-semibold mb-2">
-                      {editingAddress ? 'Edit Address' : 'Add New Address'}
-                    </h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <input
-                        type="text"
-                        placeholder="Full Name"
-                        value={addressForm.name}
-                        onChange={(e) => setAddressForm({ ...addressForm, name: e.target.value })}
-                        className="col-span-2 px-3 py-2 border rounded-lg"
-                        required
-                      />
-                      <input
-                        type="tel"
-                        placeholder="Phone"
-                        value={addressForm.phone}
-                        onChange={(e) => setAddressForm({ ...addressForm, phone: e.target.value })}
-                        className="col-span-2 px-3 py-2 border rounded-lg"
-                        required
-                      />
-                      <input
-                        type="text"
-                        placeholder="Street Address"
-                        value={addressForm.street}
-                        onChange={(e) => setAddressForm({ ...addressForm, street: e.target.value })}
-                        className="col-span-2 px-3 py-2 border rounded-lg"
-                        required
-                      />
-                      <input
-                        type="text"
-                        placeholder="City"
-                        value={addressForm.city}
-                        onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })}
-                        className="px-3 py-2 border rounded-lg"
-                        required
-                      />
-                      <input
-                        type="text"
-                        placeholder="State"
-                        value={addressForm.state}
-                        onChange={(e) => setAddressForm({ ...addressForm, state: e.target.value })}
-                        className="px-3 py-2 border rounded-lg"
-                        required
-                      />
-                      <input
-                        type="text"
-                        placeholder="Postal Code"
-                        value={addressForm.postalCode}
-                        onChange={(e) => setAddressForm({ ...addressForm, postalCode: e.target.value })}
-                        className="px-3 py-2 border rounded-lg"
-                        required
-                      />
-                      <input
-                        type="text"
-                        placeholder="Country"
-                        value={addressForm.country}
-                        onChange={(e) => setAddressForm({ ...addressForm, country: e.target.value })}
-                        className="px-3 py-2 border rounded-lg"
-                        required
-                      />
-                    </div>
-                    <div className="flex gap-2 justify-end">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                  <form onSubmit={handleSaveAddress} className="bg-white rounded-lg p-6 w-full max-w-md space-y-6 shadow-xl">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-xl font-semibold text-gray-900">
+                        {editingAddress ? 'Edit Address' : 'Add New Address'}
+                      </h3>
                       <button
                         type="button"
                         onClick={() => setShowAddressModal(false)}
-                        className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Full Name *
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Enter your full name"
+                          value={addressForm.name}
+                          onChange={(e) => setAddressForm({ ...addressForm, name: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pearl-500 focus:border-transparent"
+                          required
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Phone Number *
+                        </label>
+                        <input
+                          type="tel"
+                          placeholder="+880 1XXX XXX XXX"
+                          value={addressForm.phone}
+                          onChange={(e) => setAddressForm({ ...addressForm, phone: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pearl-500 focus:border-transparent"
+                          required
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Street Address *
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="House/Flat number, Street name"
+                          value={addressForm.street}
+                          onChange={(e) => setAddressForm({ ...addressForm, street: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pearl-500 focus:border-transparent"
+                          required
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            City *
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="City"
+                            value={addressForm.city}
+                            onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pearl-500 focus:border-transparent"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            State/Division *
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="State/Division"
+                            value={addressForm.state}
+                            onChange={(e) => setAddressForm({ ...addressForm, state: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pearl-500 focus:border-transparent"
+                            required
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Postal Code *
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Postal Code"
+                            value={addressForm.postalCode}
+                            onChange={(e) => setAddressForm({ ...addressForm, postalCode: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pearl-500 focus:border-transparent"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Country *
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Country"
+                            value={addressForm.country}
+                            onChange={(e) => setAddressForm({ ...addressForm, country: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pearl-500 focus:border-transparent"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-3 justify-end pt-4 border-t">
+                      <button
+                        type="button"
+                        onClick={() => setShowAddressModal(false)}
+                        className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
-                        className="px-4 py-2 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700"
+                        className="px-6 py-2 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700 transition-colors flex items-center gap-2"
                       >
+                        <Save className="w-4 h-4" />
                         {editingAddress ? 'Update' : 'Add'} Address
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {/* Payment Method Modal */}
+              {showPaymentModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                  <form onSubmit={handleSavePaymentMethod} className="bg-white rounded-lg p-6 w-full max-w-md space-y-6 shadow-xl">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-xl font-semibold text-gray-900">
+                        {editingPayment ? 'Edit Payment Method' : 'Add Payment Method'}
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => setShowPaymentModal(false)}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Cardholder Name *
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Name on card"
+                          value={paymentForm.cardholderName}
+                          onChange={(e) => setPaymentForm({ ...paymentForm, cardholderName: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pearl-500 focus:border-transparent"
+                          required
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Card Number *
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="1234 5678 9012 3456"
+                          value={paymentForm.cardNumber}
+                          onChange={(e) => setPaymentForm({ ...paymentForm, cardNumber: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pearl-500 focus:border-transparent"
+                          maxLength={19}
+                          required
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Month *
+                          </label>
+                          <select
+                            value={paymentForm.expiryMonth}
+                            onChange={(e) => setPaymentForm({ ...paymentForm, expiryMonth: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pearl-500 focus:border-transparent"
+                            required
+                          >
+                            <option value="">MM</option>
+                            {[...Array(12)].map((_, i) => (
+                              <option key={i + 1} value={String(i + 1).padStart(2, '0')}>
+                                {String(i + 1).padStart(2, '0')}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Year *
+                          </label>
+                          <select
+                            value={paymentForm.expiryYear}
+                            onChange={(e) => setPaymentForm({ ...paymentForm, expiryYear: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pearl-500 focus:border-transparent"
+                            required
+                          >
+                            <option value="">YYYY</option>
+                            {[...Array(10)].map((_, i) => {
+                              const year = new Date().getFullYear() + i
+                              return (
+                                <option key={year} value={year}>
+                                  {year}
+                                </option>
+                              )
+                            })}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            CVV *
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="123"
+                            value={paymentForm.cvv}
+                            onChange={(e) => setPaymentForm({ ...paymentForm, cvv: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pearl-500 focus:border-transparent"
+                            maxLength={4}
+                            required
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center pt-2">
+                        <input
+                          type="checkbox"
+                          id="isDefault"
+                          checked={paymentForm.isDefault}
+                          onChange={(e) => setPaymentForm({ ...paymentForm, isDefault: e.target.checked })}
+                          className="h-4 w-4 text-pearl-600 focus:ring-pearl-500 border-gray-300 rounded"
+                        />
+                        <label htmlFor="isDefault" className="ml-2 block text-sm text-gray-700">
+                          Set as default payment method
+                        </label>
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-3 justify-end pt-4 border-t">
+                      <button
+                        type="button"
+                        onClick={() => setShowPaymentModal(false)}
+                        className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-6 py-2 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700 transition-colors flex items-center gap-2"
+                      >
+                        <Save className="w-4 h-4" />
+                        {editingPayment ? 'Update' : 'Add'} Payment Method
                       </button>
                     </div>
                   </form>
@@ -804,43 +1281,90 @@ export default function AccountPage() {
 
               {activeTab === 'payment' && (
                 loading.payments ? (
-                  <div>Loading payment methods...</div>
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pearl-600"></div>
+                  </div>
                 ) : error.payments ? (
-                  <div className="text-red-500">{error.payments}</div>
+                  <div className="text-center py-8">
+                    <div className="text-red-500 mb-4">{error.payments}</div>
+                    <button 
+                      onClick={() => window.location.reload()}
+                      className="px-4 py-2 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700"
+                    >
+                      Try Again
+                    </button>
+                  </div>
                 ) : (
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-6">
-                      Payment Methods
-                    </h3>
-                    <div className="space-y-4">
-                      {payments.length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">
-                          <CreditCard className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-                          <p>No payment methods saved.</p>
-                        </div>
-                      ) : (
-                        payments.map((payment) => (
-                          <div key={payment.id} className="border rounded-lg p-4">
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-xl font-semibold text-gray-900">
+                        Payment Methods
+                      </h3>
+                      <button
+                        onClick={handleAddPaymentMethod}
+                        className="px-4 py-2 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700 flex items-center gap-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add Payment Method
+                      </button>
+                    </div>
+                    
+                    {payments.length === 0 ? (
+                      <div className="text-center py-12 bg-gray-50 rounded-lg">
+                        <CreditCard className="mx-auto h-16 w-16 text-gray-300 mb-4" />
+                        <h4 className="text-lg font-medium text-gray-900 mb-2">No payment methods saved</h4>
+                        <p className="text-gray-600 mb-6">Add a payment method for faster checkout</p>
+                        <button
+                          onClick={handleAddPaymentMethod}
+                          className="px-6 py-3 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700"
+                        >
+                          Add Payment Method
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {payments.map((payment) => (
+                          <div key={payment.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center space-x-4">
-                                <div className="w-12 h-8 bg-gray-200 rounded"></div>
+                                <div className="w-12 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded flex items-center justify-center">
+                                  <CreditCard className="w-4 h-4 text-white" />
+                                </div>
                                 <div>
-                                  <p className="text-sm font-medium text-gray-900">
-                                    {payment.type} - {payment.provider}
+                                  <p className="font-medium text-gray-900">
+                                    {payment.cardholderName}
                                   </p>
                                   <p className="text-sm text-gray-500">
-                                    {payment.last4 ? `**** ${payment.last4}` : 'No card number'}
+                                    {payment.cardNumber} • Expires {payment.expiryMonth}/{payment.expiryYear}
                                   </p>
+                                  {payment.isDefault && (
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 mt-1">
+                                      Default
+                                    </span>
+                                  )}
                                 </div>
                               </div>
-                              <button className="text-red-600 hover:text-red-700">
-                                <Trash2 className="h-4 w-4" />
-                              </button>
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  onClick={() => handleEditPaymentMethod(payment)}
+                                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                  title="Edit payment method"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeletePaymentMethod(payment.id)}
+                                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                  title="Delete payment method"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
                             </div>
                           </div>
-                        ))
-                      )}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )
               )}
