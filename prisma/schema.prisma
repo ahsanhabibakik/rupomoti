@@ -156,6 +156,19 @@ model Order {
   updatedAt     DateTime       @updatedAt
 
   items         OrderItem[]
+
+  // Courier integration fields
+  recipientName      String?
+  recipientPhone     String?
+  recipientEmail     String?
+  recipientCity      String?
+  recipientZone      String?
+  recipientArea      String?
+  courierName        String? // e.g. 'Steadfast', 'RedX', 'Pathao', 'CarryBee'
+  courierConsignmentId String?
+  courierTrackingCode  String?
+  courierStatus        String?
+  courierInfo          Json? // Raw response/info from courier
 }
 
 model OrderItem {

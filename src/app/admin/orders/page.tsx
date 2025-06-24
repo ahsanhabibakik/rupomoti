@@ -59,6 +59,7 @@ interface Order {
     quantity: number
     image: string
   }>
+  courier?: string
   steadfastInfo?: {
     trackingId?: string
     consignmentId?: string
@@ -67,6 +68,13 @@ interface Order {
     lastMessage?: string
   }
 }
+
+const COURIERS = [
+  { value: 'Steadfast', label: 'Steadfast' },
+  { value: 'RedX', label: 'RedX' },
+  { value: 'Pathao', label: 'Pathao' },
+  { value: 'CarryBee', label: 'CarryBee' },
+]
 
 export default function OrdersPage() {
   const router = useRouter()
@@ -82,6 +90,7 @@ export default function OrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [processingOrder, setProcessingOrder] = useState<string | null>(null)
+  const [selectedCourier, setSelectedCourier] = useState<{ [orderId: string]: string }>({})
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -141,7 +150,8 @@ export default function OrdersPage() {
   }
 
   const handleCreateShipment = async (order: Order) => {
-    await handleOrderAction(order.id, 'create_shipment')
+    const courier = selectedCourier[order.id] || 'Steadfast'
+    await handleOrderAction(order.id, 'create_shipment', { courier })
   }
 
   const handleUpdateStatus = async (orderId: string, status: string) => {
@@ -150,11 +160,11 @@ export default function OrdersPage() {
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      PENDING: 'warning',
+      PENDING: 'outline',
       PROCESSING: 'default',
       CONFIRMED: 'default',
-      SHIPPED: 'info',
-      DELIVERED: 'success',
+      SHIPPED: 'secondary',
+      DELIVERED: 'default',
       CANCELLED: 'destructive',
     } as const
 
@@ -167,10 +177,10 @@ export default function OrdersPage() {
 
   const getPaymentStatusBadge = (status: string) => {
     const variants = {
-      PENDING: 'warning',
-      PAID: 'success',
+      PENDING: 'outline',
+      PAID: 'default',
       FAILED: 'destructive',
-      REFUNDED: 'default',
+      REFUNDED: 'secondary',
     } as const
 
     return (
@@ -253,6 +263,7 @@ export default function OrdersPage() {
                   <TableHead>Total</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Payment</TableHead>
+                  <TableHead>Courier</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -294,6 +305,9 @@ export default function OrdersPage() {
                     <TableCell>৳{order.total.toLocaleString()}</TableCell>
                     <TableCell>{getStatusBadge(order.status)}</TableCell>
                     <TableCell>{getPaymentStatusBadge(order.paymentStatus)}</TableCell>
+                    <TableCell>
+                      {order.courier || (order.steadfastInfo?.trackingId ? 'Steadfast' : '-')}
+                    </TableCell>
                     <TableCell>
                       {format(new Date(order.createdAt), 'MMM d, yyyy')}
                     </TableCell>
@@ -429,6 +443,12 @@ export default function OrdersPage() {
                                             <span>{order.steadfastInfo.lastMessage}</span>
                                           </div>
                                         )}
+                                        {(order.steadfastInfo?.trackingId || order.courier) && (
+                                          <div className="flex justify-between">
+                                            <span className="text-muted-foreground">Courier</span>
+                                            <span>{order.courier || 'Steadfast'}</span>
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                   </>
@@ -455,22 +475,39 @@ export default function OrdersPage() {
                               )}
 
                               {order.status === 'CONFIRMED' && !order.steadfastInfo?.trackingId && (
-                                <Button
-                                  onClick={() => handleCreateShipment(order)}
-                                  disabled={processingOrder === order.id}
-                                >
-                                  {processingOrder === order.id ? (
-                                    <>
-                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                      Creating Shipment...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Package className="mr-2 h-4 w-4" />
-                                      Create Shipment
-                                    </>
-                                  )}
-                                </Button>
+                                <div className="flex flex-col gap-2 w-full max-w-xs">
+                                  <label className="text-sm font-medium">Select Courier</label>
+                                  <Select
+                                    value={selectedCourier[order.id] || 'Steadfast'}
+                                    onValueChange={(value) => setSelectedCourier((prev) => ({ ...prev, [order.id]: value }))}
+                                  >
+                                    <SelectTrigger className="w-full">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {COURIERS.map((c) => (
+                                        <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <Button
+                                    onClick={() => handleCreateShipment(order)}
+                                    disabled={processingOrder === order.id}
+                                    className="mt-2"
+                                  >
+                                    {processingOrder === order.id ? (
+                                      <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Creating Shipment...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Package className="mr-2 h-4 w-4" />
+                                        Create Shipment
+                                      </>
+                                    )}
+                                  </Button>
+                                </div>
                               )}
 
                               {order.steadfastInfo?.trackingId && (

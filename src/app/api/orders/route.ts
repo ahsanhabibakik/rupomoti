@@ -107,7 +107,12 @@ export async function POST(req: Request) {
   try {
     const {
       orderNumber,
-      customer,
+      recipientName,
+      recipientPhone,
+      recipientEmail,
+      recipientCity,
+      recipientZone,
+      recipientArea,
       items,
       subtotal,
       deliveryFee,
@@ -120,15 +125,9 @@ export async function POST(req: Request) {
     } = await req.json()
 
     // Validate required fields
-    if (!orderNumber || !customer || !items || !Array.isArray(items) || items.length === 0) {
+    if (!orderNumber || !recipientName || !recipientPhone || !recipientCity || !recipientZone || !recipientArea || !items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ 
-        error: 'Missing required fields: orderNumber, customer, or items' 
-      }, { status: 400 })
-    }
-
-    if (!customer.name || !customer.phone || !customer.address) {
-      return NextResponse.json({ 
-        error: 'Customer name, phone, and address are required' 
+        error: 'Missing required fields: orderNumber, recipientName, recipientPhone, recipientCity, recipientZone, recipientArea, or items' 
       }, { status: 400 })
     }
 
@@ -139,19 +138,20 @@ export async function POST(req: Request) {
     }
 
     try {
-      // Create or find customer
+      // Create or find customer by phone
       let customerRecord = await prisma.customer.findUnique({
-        where: { phone: customer.phone }
+        where: { phone: recipientPhone }
       })
 
       if (!customerRecord) {
         customerRecord = await prisma.customer.create({
           data: {
-            name: customer.name,
-            phone: customer.phone,
-            email: customer.email,
-            address: customer.address,
-            zone: deliveryZone,
+            name: recipientName,
+            phone: recipientPhone,
+            email: recipientEmail,
+            address: deliveryAddress,
+            city: recipientCity,
+            zone: recipientZone,
             userId: userId || undefined
           }
         })
@@ -160,10 +160,11 @@ export async function POST(req: Request) {
         customerRecord = await prisma.customer.update({
           where: { id: customerRecord.id },
           data: {
-            name: customer.name,
-            email: customer.email,
-            address: customer.address,
-            zone: deliveryZone,
+            name: recipientName,
+            email: recipientEmail,
+            address: deliveryAddress,
+            city: recipientCity,
+            zone: recipientZone,
             userId: userId || customerRecord.userId
           }
         })
@@ -185,6 +186,12 @@ export async function POST(req: Request) {
           deliveryZone,
           deliveryAddress,
           orderNote: orderNote || undefined,
+          recipientName,
+          recipientPhone,
+          recipientEmail,
+          recipientCity,
+          recipientZone,
+          recipientArea,
           items: {
             create: items.map((item: any) => ({
               productId: item.productId,
@@ -224,14 +231,11 @@ export async function POST(req: Request) {
       })
     } catch (dbError: any) {
       console.error('Database error:', dbError)
-      
-      // Handle specific Prisma errors
       if (dbError.code === 'P2002') {
         return NextResponse.json({ 
           error: 'Order number already exists. Please try again.' 
         }, { status: 400 })
       }
-      
       throw dbError
     }
   } catch (error: any) {
