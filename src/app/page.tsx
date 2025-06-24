@@ -1,32 +1,40 @@
 import { Metadata } from 'next'
 import Image from 'next/image'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ProductCard } from '@/components/products/ProductCard'
-import productsJson from '@/data/products.json'
-import { GemIcon, Crown, Diamond, Sparkles } from 'lucide-react'
 import { HeroSlider } from '@/components/hero/HeroSlider'
-import Link from 'next/link'
+import { Product } from '@/types/product'
+import { prisma } from '@/lib/prisma'
+import { GemIcon, Crown, Diamond, Sparkles } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'Rupomoti - Elegant Pearl Jewelry Collection',
   description: 'Discover our exquisite collection of elegant pearl jewelry pieces. From timeless classics to modern designs, find the perfect pearl piece for every occasion.',
 }
 
-export default function HomePage() {
-  const products = productsJson.products
+async function getProducts(filter: { [key: string]: boolean }) {
+  return await prisma.product.findMany({
+    where: filter,
+    take: 4,
+    orderBy: { createdAt: 'desc' },
+  })
+}
 
-  // Get best sellers (for demo, we'll use the first 4 products)
-  const bestSellers = products.slice(0, 4).map(product => ({
-    ...product,
-    isBestSeller: true,
-  }))
-
-  // Get new arrivals (for demo, we'll use the last 4 products)
-  const newArrivals = products.slice(-4).map(product => ({
-    ...product,
-    isNew: true,
-  }))
+export default async function HomePage() {
+  const popularProducts = await prisma.product.findMany({
+    where: { isPopular: true },
+    take: 4,
+  })
+  const newArrivals = await prisma.product.findMany({
+    where: { isNewArrival: true },
+    take: 4,
+  })
+  const featuredProducts = await prisma.product.findMany({
+    where: { isFeatured: true },
+    take: 4,
+  })
 
   const categories = [
     { 
@@ -114,32 +122,25 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Best Sellers Section */}
+      {/* Popular Products Section */}
       <section className="py-12 px-4 sm:py-16 bg-base-light">
         <div className="container mx-auto">
           <div className="text-center mb-8 sm:mb-12">
-            <Badge className="bg-accent/10 text-accent mb-4">Best Sellers</Badge>
+            <Badge className="bg-accent/10 text-accent mb-4">Popular</Badge>
             <h2 className="text-2xl sm:text-3xl font-bold text-neutral">Most Popular Pieces</h2>
             <p className="text-neutral-light mt-2">Our customers&apos; favorite pearl jewelry pieces</p>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-            {bestSellers.map((product) => (
+            {popularProducts.map((product) => (
               <ProductCard
                 key={product.id}
-                id={product.id}
-                name={product.name}
-                description={product.description}
-                price={product.price}
-                image={product.images[0]}
-                isBestSeller={product.isBestSeller}
-                isOutOfStock={product.isOutOfStock}
-                discount={product.discount}
+                product={product}
               />
             ))}
           </div>
           <div className="text-center mt-8">
             <Button asChild variant="outline" size="lg" className="border-accent text-accent hover:bg-accent hover:text-primary">
-              <Link href="/shop?sort=popular">View All Best Sellers</Link>
+              <Link href="/shop?filter=popular">View All Popular</Link>
             </Button>
           </div>
         </div>
@@ -157,20 +158,13 @@ export default function HomePage() {
             {newArrivals.map((product) => (
               <ProductCard
                 key={product.id}
-                id={product.id}
-                name={product.name}
-                description={product.description}
-                price={product.price}
-                image={product.images[0]}
-                isNew={product.isNew}
-                isOutOfStock={product.isOutOfStock}
-                discount={product.discount}
+                product={product}
               />
             ))}
           </div>
           <div className="text-center mt-8">
             <Button asChild variant="outline" size="lg" className="border-primary text-primary hover:bg-primary hover:text-accent">
-              <Link href="/shop?sort=newest">View All New Arrivals</Link>
+              <Link href="/shop?filter=new-arrivals">View All New Arrivals</Link>
             </Button>
           </div>
         </div>
@@ -185,16 +179,10 @@ export default function HomePage() {
             <p className="text-neutral-light mt-2">Our most popular and exclusive pearl pieces</p>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
-            {products.map((product) => (
+            {featuredProducts.map((product) => (
               <ProductCard
                 key={product.id}
-                id={product.id}
-                name={product.name}
-                description={product.description}
-                price={product.price}
-                image={product.images[0]}
-                isOutOfStock={product.isOutOfStock}
-                discount={product.discount}
+                product={product}
               />
             ))}
           </div>
