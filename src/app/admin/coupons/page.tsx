@@ -121,6 +121,16 @@ export default function CouponsPage() {
   const [coupons, setCoupons] = useState([])
   const [loading, setLoading] = useState(true)
 
+  // MOCK DATA FETCHING
+  useState(() => {
+    const mockCoupons = [
+      { id: '1', code: 'SUMMER20', type: 'PERCENTAGE', value: 20, minPurchase: 1000, usageLimit: 100, usedCount: 25, validUntil: '2024-08-31', status: 'ACTIVE' },
+      { id: '2', code: 'NEW500', type: 'FIXED', value: 500, minPurchase: 2500, usageLimit: null, usedCount: 10, validUntil: null, status: 'ACTIVE' },
+    ];
+    setCoupons(mockCoupons as any);
+    setLoading(false);
+  });
+
   // TODO: Implement coupon management hooks
   const handleStatusChange = async (couponId: string, status: string) => {
     try {

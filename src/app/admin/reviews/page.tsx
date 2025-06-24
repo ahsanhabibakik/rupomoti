@@ -102,9 +102,19 @@ const columns = [
 
 export default function ReviewsPage() {
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState('ALL')
   const [reviews, setReviews] = useState([])
   const [loading, setLoading] = useState(true)
+
+  // MOCK DATA FETCHING
+  useState(() => {
+    const mockReviews = [
+      { id: '1', product: { name: 'Pearl Necklace' }, customer: { name: 'Jane Doe' }, rating: 5, comment: 'Beautiful!', status: 'APPROVED', createdAt: new Date().toISOString() },
+      { id: '2', product: { name: 'Diamond Earrings' }, customer: { name: 'John Smith' }, rating: 4, comment: 'Very sparkly.', status: 'PENDING', createdAt: new Date().toISOString() },
+    ];
+    setReviews(mockReviews as any);
+    setLoading(false);
+  })
 
   // TODO: Implement review management hooks
   const handleStatusChange = async (reviewId: string, status: string) => {
@@ -130,7 +140,7 @@ export default function ReviewsPage() {
       review.customer.name.toLowerCase().includes(search.toLowerCase()) ||
       review.comment.toLowerCase().includes(search.toLowerCase())
     
-    const matchesStatus = !statusFilter || review.status === statusFilter
+    const matchesStatus = !statusFilter || statusFilter === 'ALL' || review.status === statusFilter
 
     return matchesSearch && matchesStatus
   })
@@ -156,7 +166,7 @@ export default function ReviewsPage() {
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All</SelectItem>
+            <SelectItem value="ALL">All</SelectItem>
             <SelectItem value="PENDING">Pending</SelectItem>
             <SelectItem value="APPROVED">Approved</SelectItem>
             <SelectItem value="REJECTED">Rejected</SelectItem>
