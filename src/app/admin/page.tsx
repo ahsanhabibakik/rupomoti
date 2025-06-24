@@ -232,7 +232,7 @@ export default function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back! Here's what's happening with your store today.</p>
+          <p className="text-muted-foreground">Welcome back! Here&apos;s what&apos;s happening with your store today.</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm">
@@ -282,7 +282,7 @@ export default function DashboardPage() {
         <div className="flex flex-col items-center justify-center p-3 bg-gradient-to-br from-primary/10 to-white rounded-xl border border-primary/20 shadow-sm">
           <TrendingUp className="h-5 w-5 text-primary mb-1" />
           <span className="text-lg font-bold">৳{todaysSales.toLocaleString('bn-BD')}</span>
-          <span className="text-xs text-muted-foreground">Today's Sales</span>
+          <span className="text-xs text-muted-foreground">Today&apos;s Sales</span>
         </div>
         <div className="flex flex-col items-center justify-center p-3 bg-gradient-to-br from-green-100 to-white rounded-xl border border-green-200 shadow-sm">
           <UserPlus className="h-5 w-5 text-green-600 mb-1" />
