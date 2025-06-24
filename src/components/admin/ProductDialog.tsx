@@ -71,6 +71,27 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
     },
   })
 
+  useEffect(() => {
+    if (product) {
+      form.reset(product);
+      setImages(product.images || []);
+    } else {
+      form.reset({
+        name: '',
+        description: '',
+        price: 0,
+        salePrice: undefined,
+        stock: 0,
+        sku: '',
+        categoryId: '',
+        isFeatured: false,
+        isNewArrival: false,
+        isPopular: false,
+      });
+      setImages([]);
+    }
+  }, [product, form]);
+
   // Auto-generate SKU from name
   const productName = form.watch('name')
   useEffect(() => {
@@ -105,18 +126,23 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
         showToast.error('Please upload at least one image')
         return
       }
-      // Real API call to create product
-      const response = await fetch('/api/admin/products', {
-        method: 'POST',
+
+      const method = product ? 'PUT' : 'POST'
+      const url = '/api/admin/products'
+      const body = product ? { ...data, images, id: product.id } : { ...data, images }
+
+      const response = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, images }),
+        body: JSON.stringify(body),
       })
+
       const result = await response.json()
       if (!response.ok) {
-        showToast.error(result.error || 'Failed to create product')
+        showToast.error(result.error || `Failed to ${product ? 'update' : 'create'} product`)
         return
       }
-      showToast.success('Product created successfully')
+      showToast.success(`Product ${product ? 'updated' : 'created'} successfully`)
       onOpenChange(false)
     } catch (error) {
       showToast.error('Something went wrong')

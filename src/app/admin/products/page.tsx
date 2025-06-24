@@ -23,8 +23,9 @@ import {
   Plus, 
   Trash2, 
   Search, 
-  Filter,
+  RotateCw,
 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Image from 'next/image';
 import { showToast } from '@/lib/toast';
 import { ProductDialog } from '@/components/admin/ProductDialog';
@@ -36,11 +37,11 @@ export default function ProductsPage() {
   const [error, setError] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [activeTab, setActiveTab] = useState('active');
   
   const [filters, setFilters] = useState({
     search: '',
     categoryId: '',
-    status: '',
     isFeatured: '',
     isNewArrival: '',
     isPopular: '',
@@ -50,6 +51,7 @@ export default function ProductsPage() {
     try {
       setLoading(true);
       const searchParams = new URLSearchParams(filters);
+      searchParams.set('status', activeTab === 'active' ? 'ACTIVE' : 'TRASHED');
       const res = await fetch(`/api/admin/products?${searchParams}`);
       if (!res.ok) throw new Error('Failed to fetch products');
       const data = await res.json();
@@ -61,23 +63,66 @@ export default function ProductsPage() {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, activeTab]);
 
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
 
-  const handleDelete = async (productId: string) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
+  const handleSoftDelete = async (productId: string) => {
+    if (!confirm('Are you sure you want to move this product to the trash?')) return;
     
     try {
       const res = await fetch(`/api/admin/products?id=${productId}`, {
         method: 'DELETE',
       });
       
-      if (!res.ok) throw new Error('Failed to delete product');
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to move product to trash');
+      }
       
-      showToast.success('Product deleted successfully');
+      showToast.success('Product moved to trash successfully');
+      fetchProducts();
+    } catch (err: any) {
+      showToast.error(err.message);
+    }
+  };
+
+  const handleRestore = async (productId: string) => {
+    if (!confirm('Are you sure you want to restore this product?')) return;
+
+    try {
+      const res = await fetch(`/api/admin/products?id=${productId}&action=restore`, {
+        method: 'PATCH',
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to restore product');
+      }
+
+      showToast.success('Product restored successfully');
+      fetchProducts();
+    } catch (err: any) {
+      showToast.error(err.message);
+    }
+  };
+
+  const handlePermanentDelete = async (productId: string) => {
+    if (!confirm('This action is irreversible. Are you sure you want to permanently delete this product?')) return;
+
+    try {
+      const res = await fetch(`/api/admin/products?id=${productId}&action=delete-permanent`, {
+        method: 'PATCH',
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to delete product permanently');
+      }
+      
+      showToast.success('Product permanently deleted');
       fetchProducts();
     } catch (err: any) {
       showToast.error(err.message);
@@ -102,12 +147,69 @@ export default function ProductsPage() {
     setFilters({
       search: '',
       categoryId: '',
-      status: '',
       isFeatured: '',
       isNewArrival: '',
       isPopular: '',
     });
   }
+
+  const renderProductRows = (productsToRender: Product[]) => (
+    productsToRender.map((product) => (
+      <TableRow key={product.id}>
+        <TableCell>
+          <Image
+            src={product.images[0] || '/placeholder.png'}
+            alt={product.name}
+            width={50}
+            height={50}
+            className="rounded-md object-cover"
+          />
+        </TableCell>
+        <TableCell>{product.name}</TableCell>
+        <TableCell>{product.sku}</TableCell>
+        <TableCell>৳{product.price}</TableCell>
+        <TableCell>{product.stock}</TableCell>
+        <TableCell>
+          <div className="flex flex-wrap gap-1">
+            {product.isFeatured && <Badge variant="outline">Featured</Badge>}
+            {product.isNewArrival && <Badge variant="outline" className="border-blue-500 text-blue-500">New</Badge>}
+            {product.isPopular && <Badge variant="outline" className="border-green-500 text-green-500">Popular</Badge>}
+          </div>
+        </TableCell>
+        <TableCell>
+          <div className="flex items-center gap-2">
+            {activeTab === 'active' ? (
+              <>
+                <Button variant="outline" size="sm" onClick={() => handleEdit(product)}>
+                  Edit
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleSoftDelete(product.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" size="sm" onClick={() => handleRestore(product.id)}>
+                  <RotateCw className="mr-2 h-4 w-4" /> Restore
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handlePermanentDelete(product.id)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" /> Delete Permanently
+                </Button>
+              </>
+            )}
+          </div>
+        </TableCell>
+      </TableRow>
+    ))
+  );
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
@@ -162,59 +264,48 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Image</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>SKU</TableHead>
-            <TableHead>Price</TableHead>
-            <TableHead>Stock</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {products.map((product) => (
-            <TableRow key={product.id}>
-              <TableCell>
-                <Image
-                  src={product.images[0] || '/placeholder.png'}
-                  alt={product.name}
-                  width={50}
-                  height={50}
-                  className="rounded-md object-cover"
-                />
-              </TableCell>
-              <TableCell>{product.name}</TableCell>
-              <TableCell>{product.sku}</TableCell>
-              <TableCell>৳{product.price}</TableCell>
-              <TableCell>{product.stock}</TableCell>
-              <TableCell>
-                <div className="flex flex-wrap gap-1">
-                  {product.isFeatured && <Badge variant="outline">Featured</Badge>}
-                  {product.isNewArrival && <Badge variant="outline" className="border-blue-500 text-blue-500">New</Badge>}
-                  {product.isPopular && <Badge variant="outline" className="border-green-500 text-green-500">Popular</Badge>}
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={() => handleEdit(product)}>
-                    Edit
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDelete(product.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList>
+          <TabsTrigger value="active">Active</TabsTrigger>
+          <TabsTrigger value="trashed">Trashed</TabsTrigger>
+        </TabsList>
+        <TabsContent value="active">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Image</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>SKU</TableHead>
+                <TableHead>Price</TableHead>
+                <TableHead>Stock</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {renderProductRows(products)}
+            </TableBody>
+          </Table>
+        </TabsContent>
+        <TabsContent value="trashed">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Image</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>SKU</TableHead>
+                <TableHead>Price</TableHead>
+                <TableHead>Stock</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {renderProductRows(products)}
+            </TableBody>
+          </Table>
+        </TabsContent>
+      </Tabs>
 
       <ProductDialog
         open={isDialogOpen}
