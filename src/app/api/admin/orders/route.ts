@@ -21,7 +21,7 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
+    const pageSize = parseInt(searchParams.get('pageSize') || '10');
     const status = searchParams.get('status');
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
@@ -47,8 +47,8 @@ export async function GET(request: Request) {
           },
         },
         orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * limit,
-        take: limit,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
       }),
       prisma.order.count({ where }),
     ]);
@@ -77,8 +77,8 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       orders: formattedOrders,
-      total,
-      pages: Math.ceil(total / limit),
+      totalCount: total,
+      totalPages: Math.ceil(total / pageSize),
     });
   } catch (error) {
     console.error('Error fetching orders:', error);

@@ -1,13 +1,13 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authOptions } from '../../auth/[...nextauth]/auth-config';
 import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -15,21 +15,22 @@ export async function GET() {
     }
 
     const orders = await prisma.order.findMany({
-      where: {
-        userEmail: session.user.email
-      },
+      where: { userId: session.user.id },
       include: {
-        customer: true,
         items: {
           include: {
-            product: true
+            product: {
+              select: {
+                id: true,
+                name: true,
+                images: true,
+                price: true
+              }
+            }
           }
         }
       },
-      orderBy: {
-        createdAt: 'desc'
-      },
-      take: 10 // Limit to 10 most recent orders
+      orderBy: { createdAt: 'desc' }
     });
 
     return NextResponse.json(orders);

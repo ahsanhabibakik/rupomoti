@@ -14,8 +14,20 @@ export interface Category {
   }
 }
 
-export function useCategories() {
-  const { data, error, mutate } = useSWR<Category[]>('/api/categories', fetcher)
+interface CategoriesResponse {
+  categories: Category[];
+  totalCount: number;
+  totalPages: number;
+}
+
+export function useCategories({ page = 1, pageSize = 10, search = '' } = {}) {
+  const searchParams = new URLSearchParams({
+    page: page.toString(),
+    pageSize: pageSize.toString(),
+    search,
+  });
+
+  const { data, error, mutate } = useSWR<CategoriesResponse>(`/api/categories?${searchParams}`, fetcher)
 
   const createCategory = async (categoryData: Omit<Category, 'id' | 'slug'>) => {
     return showToast.promise(
@@ -81,7 +93,9 @@ export function useCategories() {
   }
 
   return {
-    data,
+    categories: data?.categories,
+    totalCount: data?.totalCount,
+    totalPages: data?.totalPages,
     isLoading: !error && !data,
     error,
     createCategory,

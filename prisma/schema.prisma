@@ -29,6 +29,8 @@ model User {
   wishlistItems  WishlistItem[]
   reviews        Review[]
   customers      Customer[]
+  paymentMethods UserPaymentMethod[]
+  userSettings   UserSetting[]
 }
 
 model Account {
@@ -93,6 +95,7 @@ model Category {
 model Product {
   id              String   @id @default(auto()) @map("_id") @db.ObjectId
   name            String
+  slug            String   @unique
   description     String
   price           Float
   salePrice       Float?
@@ -104,6 +107,13 @@ model Product {
   isFeatured      Boolean  @default(false)
   isNewArrival    Boolean  @default(false)
   isPopular       Boolean  @default(false)
+  status          ProductStatus @default(ACTIVE)
+  
+  // Additional product details
+  weight          Float?   // in grams
+  dimensions      String?  // e.g., "10cm x 5cm x 2cm"
+  material        String?
+  care            String?  // care instructions
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -125,6 +135,7 @@ model Customer {
   zone      String?  // For delivery zone
   userId    String?  @db.ObjectId
   user      User?    @relation(fields: [userId], references: [id])
+  description String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -156,6 +167,19 @@ model Order {
   updatedAt     DateTime       @updatedAt
 
   items         OrderItem[]
+
+  // Courier integration fields
+  recipientName      String?
+  recipientPhone     String?
+  recipientEmail     String?
+  recipientCity      String?
+  recipientZone      String?
+  recipientArea      String?
+  courierName        String? // e.g. 'Steadfast', 'RedX', 'Pathao', 'CarryBee'
+  courierConsignmentId String?
+  courierTrackingCode  String?
+  courierStatus        String?
+  courierInfo          Json? // Raw response/info from courier
 }
 
 model OrderItem {
@@ -266,6 +290,31 @@ model Setting {
   updatedAt DateTime @updatedAt
 }
 
+model UserPaymentMethod {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @db.ObjectId
+  user        User     @relation(fields: [userId], references: [id])
+  type        String   // e.g. 'CARD', 'BKASH', 'NAGAD', 'BANK', etc.
+  provider    String?  // e.g. 'Visa', 'Mastercard', 'bKash', etc.
+  last4       String?  // Last 4 digits for cards
+  token       String?  // Tokenized payment info (never store full card info)
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model UserSetting {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  key       String
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, key])
+}
+
 enum Role {
   USER
   ADMIN
@@ -306,4 +355,10 @@ enum CouponType {
   PERCENTAGE
   FIXED_AMOUNT
   FREE_SHIPPING
+}
+
+enum ProductStatus {
+  ACTIVE
+  TRASHED
+  ARCHIVED
 }

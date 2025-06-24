@@ -63,9 +63,35 @@ const PAYMENT_METHODS = [
   },
 ]
 
+// Add mock data for city, zone, area
+const CITIES = [
+  { value: 'dhaka', label: 'Dhaka' },
+  { value: 'chittagong', label: 'Chittagong' },
+  { value: 'rajshahi', label: 'Rajshahi' },
+  { value: 'khulna', label: 'Khulna' },
+  { value: 'barishal', label: 'Barishal' },
+  { value: 'sylhet', label: 'Sylhet' },
+  { value: 'rangpur', label: 'Rangpur' },
+  { value: 'mymensingh', label: 'Mymensingh' },
+]
+const ZONES = [
+  { value: 'zone1', label: 'Zone 1' },
+  { value: 'zone2', label: 'Zone 2' },
+  { value: 'zone3', label: 'Zone 3' },
+]
+const AREAS = [
+  { value: 'area1', label: 'Area 1' },
+  { value: 'area2', label: 'Area 2' },
+  { value: 'area3', label: 'Area 3' },
+]
+
 interface FormData {
   name: string
   phone: string
+  email: string
+  city: string
+  zone: string
+  area: string
   address: string
   note: string
 }
@@ -73,6 +99,10 @@ interface FormData {
 interface FormErrors {
   name?: string
   phone?: string
+  email?: string
+  city?: string
+  zone?: string
+  area?: string
   address?: string
 }
 
@@ -86,6 +116,10 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   const [formData, setFormData] = useState<FormData>({
     name: session?.user?.name || '',
     phone: '',
+    email: session?.user?.email || '',
+    city: '',
+    zone: '',
+    area: '',
     address: '',
     note: '',
   })
@@ -98,21 +132,14 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {}
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required'
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required'
-    } else if (!/^(\+8801|01)[3-9]\d{8}$/.test(formData.phone.trim())) {
-      newErrors.phone = 'Please enter a valid Bangladeshi phone number'
-    }
-
-    if (!formData.address.trim()) {
-      newErrors.address = 'Delivery address is required'
-    }
-
+    if (!formData.name.trim()) newErrors.name = 'Name is required'
+    if (!formData.phone.trim()) newErrors.phone = 'Phone number is required'
+    else if (!/^([+]8801|01)[3-9]\d{8}$/.test(formData.phone.trim())) newErrors.phone = 'Please enter a valid Bangladeshi phone number'
+    if (formData.email && !/^\S+@\S+\.\S+$/.test(formData.email.trim())) newErrors.email = 'Invalid email address'
+    if (!formData.city) newErrors.city = 'City is required'
+    if (!formData.zone) newErrors.zone = 'Zone is required'
+    if (!formData.area) newErrors.area = 'Area is required'
+    if (!formData.address.trim()) newErrors.address = 'Delivery address is required'
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -125,26 +152,23 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
     if (!validateForm()) return
-    
     if (items.length === 0) {
       showToast.error('Your cart is empty')
       return
     }
-
     setIsSubmitting(true)
-
     try {
-      // Prepare order data
       const orderData = {
         orderNumber: generateOrderNumber(),
-        customer: {
-          name: formData.name.trim(),
-          phone: formData.phone.trim(),
-          address: formData.address.trim(),
-          email: session?.user?.email || null,
-        },
+        recipientName: formData.name.trim(),
+        recipientPhone: formData.phone.trim(),
+        recipientEmail: formData.email.trim() || null,
+        recipientCity: formData.city,
+        recipientZone: formData.zone,
+        recipientArea: formData.area,
+        deliveryAddress: formData.address.trim(),
+        orderNote: formData.note.trim() || null,
         items: items.map((item: any) => ({
           productId: item.id,
           name: item.name,
@@ -156,43 +180,29 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
         deliveryFee,
         total,
         deliveryZone,
-        deliveryAddress: formData.address.trim(),
-        orderNote: formData.note.trim() || null,
         paymentMethod,
         userId: session?.user?.id || null,
       }
-
-      // Create order
       const response = await fetch('/api/orders', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData),
       })
-
       const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to create order')
-      }
-
-      // Clear cart and close modal
+      if (!response.ok) throw new Error(result.error || 'Failed to create order')
       dispatch(clearCart())
       onOpenChange(false)
-      
-      showToast.success(
-        `Order #${orderData.orderNumber} placed successfully! We'll contact you soon.`
-      )
-
-      // Reset form
+      showToast.success(`Order #${orderData.orderNumber} placed successfully! We'll contact you soon.`)
       setFormData({
         name: session?.user?.name || '',
         phone: '',
+        email: session?.user?.email || '',
+        city: '',
+        zone: '',
+        area: '',
         address: '',
         note: '',
       })
-
     } catch (error: any) {
       console.error('Error creating order:', error)
       showToast.error(error.message || 'Failed to place order. Please try again.')
@@ -362,74 +372,54 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                         <User className="h-5 w-5 text-pearl-600" />
                         Customer Information
                       </h3>
-                      
                       <div className="space-y-4">
                         <div>
-                          <Label htmlFor="name" className="text-sm font-medium">
-                            Full Name *
-                          </Label>
-                          <Input
-                            id="name"
-                            value={formData.name}
-                            onChange={(e) => handleInputChange('name', e.target.value)}
-                            className={`mt-1 ${errors.name ? 'border-red-500' : ''}`}
-                            placeholder="Enter your full name"
-                            disabled={isSubmitting}
-                          />
-                          {errors.name && (
-                            <p className="text-sm text-red-500 mt-1">{errors.name}</p>
-                          )}
+                          <Label htmlFor="name" className="text-sm font-medium">Full Name *</Label>
+                          <Input id="name" value={formData.name} onChange={(e) => handleInputChange('name', e.target.value)} className={`mt-1 ${errors.name ? 'border-red-500' : ''}`} placeholder="Enter your full name" disabled={isSubmitting} />
+                          {errors.name && (<p className="text-sm text-red-500 mt-1">{errors.name}</p>)}
                         </div>
-
                         <div>
-                          <Label htmlFor="phone" className="text-sm font-medium">
-                            Phone Number *
-                          </Label>
-                          <Input
-                            id="phone"
-                            type="tel"
-                            value={formData.phone}
-                            onChange={(e) => handleInputChange('phone', e.target.value)}
-                            className={`mt-1 ${errors.phone ? 'border-red-500' : ''}`}
-                            placeholder="01XXXXXXXXX"
-                            disabled={isSubmitting}
-                          />
-                          {errors.phone && (
-                            <p className="text-sm text-red-500 mt-1">{errors.phone}</p>
-                          )}
+                          <Label htmlFor="phone" className="text-sm font-medium">Phone Number *</Label>
+                          <Input id="phone" type="tel" value={formData.phone} onChange={(e) => handleInputChange('phone', e.target.value)} className={`mt-1 ${errors.phone ? 'border-red-500' : ''}`} placeholder="01XXXXXXXXX" disabled={isSubmitting} />
+                          {errors.phone && (<p className="text-sm text-red-500 mt-1">{errors.phone}</p>)}
                         </div>
-
                         <div>
-                          <Label htmlFor="address" className="text-sm font-medium">
-                            Delivery Address *
-                          </Label>
-                          <Textarea
-                            id="address"
-                            value={formData.address}
-                            onChange={(e) => handleInputChange('address', e.target.value)}
-                            className={`mt-1 ${errors.address ? 'border-red-500' : ''}`}
-                            placeholder="Enter your complete delivery address"
-                            rows={3}
-                            disabled={isSubmitting}
-                          />
-                          {errors.address && (
-                            <p className="text-sm text-red-500 mt-1">{errors.address}</p>
-                          )}
+                          <Label htmlFor="email" className="text-sm font-medium">Email (optional)</Label>
+                          <Input id="email" type="email" value={formData.email} onChange={(e) => handleInputChange('email', e.target.value)} className={`mt-1 ${errors.email ? 'border-red-500' : ''}`} placeholder="Enter your email" disabled={isSubmitting} />
+                          {errors.email && (<p className="text-sm text-red-500 mt-1">{errors.email}</p>)}
                         </div>
-
                         <div>
-                          <Label htmlFor="note" className="text-sm font-medium">
-                            Order Note (Optional)
-                          </Label>
-                          <Textarea
-                            id="note"
-                            value={formData.note}
-                            onChange={(e) => handleInputChange('note', e.target.value)}
-                            className="mt-1"
-                            placeholder="Any special instructions for delivery"
-                            rows={2}
-                            disabled={isSubmitting}
-                          />
+                          <Label htmlFor="city" className="text-sm font-medium">City *</Label>
+                          <select id="city" value={formData.city} onChange={e => handleInputChange('city', e.target.value)} className={`mt-1 w-full border rounded-lg px-3 py-2 ${errors.city ? 'border-red-500' : ''}`} disabled={isSubmitting}>
+                            <option value="">Select city</option>
+                            {CITIES.map(city => <option key={city.value} value={city.value}>{city.label}</option>)}
+                          </select>
+                          {errors.city && (<p className="text-sm text-red-500 mt-1">{errors.city}</p>)}
+                        </div>
+                        <div>
+                          <Label htmlFor="zone" className="text-sm font-medium">Zone *</Label>
+                          <select id="zone" value={formData.zone} onChange={e => handleInputChange('zone', e.target.value)} className={`mt-1 w-full border rounded-lg px-3 py-2 ${errors.zone ? 'border-red-500' : ''}`} disabled={isSubmitting}>
+                            <option value="">Select zone</option>
+                            {ZONES.map(zone => <option key={zone.value} value={zone.value}>{zone.label}</option>)}
+                          </select>
+                          {errors.zone && (<p className="text-sm text-red-500 mt-1">{errors.zone}</p>)}
+                        </div>
+                        <div>
+                          <Label htmlFor="area" className="text-sm font-medium">Area *</Label>
+                          <select id="area" value={formData.area} onChange={e => handleInputChange('area', e.target.value)} className={`mt-1 w-full border rounded-lg px-3 py-2 ${errors.area ? 'border-red-500' : ''}`} disabled={isSubmitting}>
+                            <option value="">Select area</option>
+                            {AREAS.map(area => <option key={area.value} value={area.value}>{area.label}</option>)}
+                          </select>
+                          {errors.area && (<p className="text-sm text-red-500 mt-1">{errors.area}</p>)}
+                        </div>
+                        <div>
+                          <Label htmlFor="address" className="text-sm font-medium">Delivery Address *</Label>
+                          <Textarea id="address" value={formData.address} onChange={(e) => handleInputChange('address', e.target.value)} className={`mt-1 ${errors.address ? 'border-red-500' : ''}`} placeholder="Enter your complete delivery address" rows={3} disabled={isSubmitting} />
+                          {errors.address && (<p className="text-sm text-red-500 mt-1">{errors.address}</p>)}
+                        </div>
+                        <div>
+                          <Label htmlFor="note" className="text-sm font-medium">Order Note (Optional)</Label>
+                          <Textarea id="note" value={formData.note} onChange={(e) => handleInputChange('note', e.target.value)} className="mt-1" placeholder="Any special instructions for delivery" rows={2} disabled={isSubmitting} />
                         </div>
                       </div>
                     </div>
