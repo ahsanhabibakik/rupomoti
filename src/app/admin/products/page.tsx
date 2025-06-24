@@ -39,6 +39,13 @@ export default function ProductsPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [activeTab, setActiveTab] = useState('active');
   
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 10,
+    totalPages: 1,
+    totalCount: 0,
+  });
+
   const [filters, setFilters] = useState({
     search: '',
     categoryId: '',
@@ -52,18 +59,25 @@ export default function ProductsPage() {
       setLoading(true);
       const searchParams = new URLSearchParams(filters);
       searchParams.set('status', activeTab === 'active' ? 'ACTIVE' : 'TRASHED');
+      searchParams.set('page', pagination.page.toString());
+      searchParams.set('pageSize', pagination.pageSize.toString());
       const res = await fetch(`/api/admin/products?${searchParams}`);
       if (!res.ok) throw new Error('Failed to fetch products');
       const data = await res.json();
       
       setProducts(data.products || []);
+      setPagination(prev => ({
+        ...prev,
+        totalPages: data.totalPages,
+        totalCount: data.totalCount,
+      }));
     } catch (err: any) {
       setError(err.message);
       showToast.error(err.message);
     } finally {
       setLoading(false);
     }
-  }, [filters, activeTab]);
+  }, [filters, activeTab, pagination.page, pagination.pageSize]);
 
   useEffect(() => {
     fetchProducts();
@@ -141,6 +155,7 @@ export default function ProductsPage() {
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
+    setPagination(prev => ({...prev, page: 1}));
   };
 
   const clearFilters = () => {
@@ -151,7 +166,16 @@ export default function ProductsPage() {
       isNewArrival: '',
       isPopular: '',
     });
+    setPagination(prev => ({...prev, page: 1}));
   }
+
+  const handlePageSizeChange = (size: number) => {
+    setPagination({ ...pagination, pageSize: size, page: 1 });
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPagination({ ...pagination, page: newPage });
+  };
 
   const renderProductRows = (productsToRender: Product[]) => (
     productsToRender.map((product) => (
@@ -306,6 +330,53 @@ export default function ProductsPage() {
           </Table>
         </TabsContent>
       </Tabs>
+
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-muted-foreground">
+          Showing {Math.min(pagination.pageSize * (pagination.page - 1) + 1, pagination.totalCount)}
+          -
+          {Math.min(pagination.pageSize * pagination.page, pagination.totalCount)} of {pagination.totalCount} products.
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm">Rows per page:</span>
+            <Select
+              value={pagination.pageSize.toString()}
+              onValueChange={(value) => handlePageSizeChange(Number(value))}
+            >
+              <SelectTrigger className="w-20">
+                <SelectValue placeholder={pagination.pageSize} />
+              </SelectTrigger>
+              <SelectContent>
+                {[10, 20, 30, 50, 100, 200].map(size => (
+                  <SelectItem key={size} value={size.toString()}>{size}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm">
+              Page {pagination.page} of {pagination.totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(pagination.page - 1)}
+              disabled={pagination.page <= 1}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(pagination.page + 1)}
+              disabled={pagination.page >= pagination.totalPages}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      </div>
 
       <ProductDialog
         open={isDialogOpen}

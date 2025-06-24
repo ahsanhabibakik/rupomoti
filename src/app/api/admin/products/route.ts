@@ -16,6 +16,8 @@ export async function GET(request: Request) {
     const isNewArrival = searchParams.get('isNewArrival');
     const isPopular = searchParams.get('isPopular');
     const status = searchParams.get('status');
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const pageSize = parseInt(searchParams.get('pageSize') || '10', 10);
 
     const where: any = {};
     
@@ -43,9 +45,21 @@ export async function GET(request: Request) {
       where.status = 'ACTIVE';
     }
 
-    const products = await prisma.product.findMany({ where });
+    const totalProducts = await prisma.product.count({ where });
+    const products = await prisma.product.findMany({
+      where,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
 
-    return NextResponse.json({ products });
+    return NextResponse.json({ 
+      products,
+      totalCount: totalProducts,
+      totalPages: Math.ceil(totalProducts / pageSize),
+    });
   } catch (error) {
     console.error('Failed to fetch products:', error);
     return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
