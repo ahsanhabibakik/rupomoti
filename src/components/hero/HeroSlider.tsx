@@ -169,9 +169,9 @@ export function HeroSlider() {
               index === currentSlide ? "opacity-100 z-10" : "opacity-0"
             }`}
           >
-            <div className="relative w-full h-full">
+            <div className="absolute inset-0">
               {/* Desktop Image */}
-              <div className="relative w-full h-full hidden md:block">
+              <div className="absolute inset-0 hidden md:block relative">
                 <Image
                   src={slide.image}
                   alt={`Slide ${slide.id}`}
@@ -179,10 +179,12 @@ export function HeroSlider() {
                   className="object-cover pointer-events-none"
                   priority={index === 0}
                   draggable={false}
+                  sizes="100vw"
+                  quality={90}
                 />
               </div>
               {/* Mobile Image */}
-              <div className="relative w-full h-full block md:hidden">
+              <div className="absolute inset-0 block md:hidden relative">
                 <Image
                   src={slide.mobileImage}
                   alt={`Slide ${slide.id}`}
@@ -190,6 +192,8 @@ export function HeroSlider() {
                   className="object-cover pointer-events-none"
                   priority={index === 0}
                   draggable={false}
+                  sizes="100vw"
+                  quality={90}
                 />
               </div>
             </div>

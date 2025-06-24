@@ -1,4 +1,5 @@
-import { Metadata } from 'next'
+'use client';
+
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -7,11 +8,6 @@ import productsJson from '@/data/products.json'
 import { GemIcon, Crown, Diamond, Sparkles } from 'lucide-react'
 import { HeroSlider } from '@/components/hero/HeroSlider'
 import Link from 'next/link'
-
-export const metadata: Metadata = {
-  title: 'Rupomoti - Elegant Pearl Jewelry Collection',
-  description: 'Discover our exquisite collection of elegant pearl jewelry pieces. From timeless classics to modern designs, find the perfect pearl piece for every occasion.',
-}
 
 export default function HomePage() {
   const products = productsJson.products
@@ -91,16 +87,15 @@ export default function HomePage() {
                 >
                   <div className="aspect-[4/5] relative">
                     <div className="relative w-full h-full">
-                      <div className="relative w-full h-full">
-                        <Image
-                          src={category.image}
-                          alt={category.name}
-                          className="object-cover transition-transform duration-500 group-hover:scale-110"
-                          fill
-                          sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 50vw"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-neutral/80 via-neutral/30 to-transparent" />
-                      </div>
+                      <Image
+                        src={category.image}
+                        alt={category.name}
+                        className="object-cover transition-transform duration-500 group-hover:scale-110"
+                        fill
+                        sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+                        quality={90}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-neutral/80 via-neutral/30 to-transparent" />
                     </div>
                   </div>
                   <div className="absolute inset-0 p-3 sm:p-6 flex flex-col justify-end text-base">
