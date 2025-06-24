@@ -12,6 +12,10 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
+    const categoryId = searchParams.get('categoryId');
+    const stockStatus = searchParams.get('stockStatus');
+    const minPrice = searchParams.get('minPrice');
+    const maxPrice = searchParams.get('maxPrice');
     const isFeatured = searchParams.get('isFeatured');
     const isNewArrival = searchParams.get('isNewArrival');
     const isPopular = searchParams.get('isPopular');
@@ -26,6 +30,27 @@ export async function GET(request: Request) {
         { name: { contains: search, mode: 'insensitive' } },
         { sku: { contains: search, mode: 'insensitive' } },
       ];
+    }
+    
+    if (categoryId && categoryId !== 'all-categories') {
+      where.categoryId = categoryId;
+    }
+    
+    if (stockStatus && stockStatus !== 'all') {
+      if (stockStatus === 'in-stock') {
+        where.stock = { gt: 0 };
+      } else if (stockStatus === 'out-of-stock') {
+        where.stock = { equals: 0 };
+      } else if (stockStatus === 'low-stock') {
+        where.stock = { gt: 0, lt: 10 };
+      }
+    }
+    
+    if (minPrice) {
+      where.price = { ...where.price, gte: parseFloat(minPrice) };
+    }
+    if (maxPrice) {
+      where.price = { ...where.price, lte: parseFloat(maxPrice) };
     }
     
     if (isFeatured === 'true' || isFeatured === 'false') {
