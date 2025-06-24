@@ -25,7 +25,7 @@ import {
   Search, 
   RotateCw,
   Filter,
-  Loader2
+  X as XIcon,
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Image from 'next/image';
@@ -42,18 +42,22 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
+import { ProductTableSkeleton } from '@/components/admin/ProductTableSkeleton';
 
 const INITIAL_PRICE_RANGE = [0, 50000];
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [isFiltering, setIsFiltering] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [activeTab, setActiveTab] = useState('active');
-  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
   
   const { categories } = useCategories({ pageSize: 999 });
 
@@ -79,18 +83,16 @@ export default function ProductsPage() {
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   useEffect(() => {
-    setFilters(prev => ({...prev, search: debouncedSearchQuery}));
+    setFilters(prev => ({...prev, search: debouncedSearchQuery, page: 1}));
   }, [debouncedSearchQuery]);
 
-  const fetchProducts = useCallback(async () => {
-    if (!initialLoading) {
-      setIsFiltering(true);
+  const fetchProducts = useCallback(async (isInitialLoad = false) => {
+    if (isInitialLoad) {
+        setIsLoading(true);
     }
-
     try {
       const searchParams = new URLSearchParams();
       
-      // Build search params from filters state
       Object.entries(filters).forEach(([key, value]) => {
         if (value) {
             if (key === 'priceRange') {
@@ -100,7 +102,13 @@ export default function ProductsPage() {
                 searchParams.set(key, String(value));
             } else if (key === 'stockStatus' && value !== 'all') {
                 searchParams.set(key, String(value));
-            } else if (!['priceRange', 'categoryId', 'stockStatus'].includes(key)) {
+            } else if (key === 'isFeatured' && value !== 'all-featured') {
+                searchParams.set(key, String(value));
+            } else if (key === 'isNewArrival' && value !== 'all-new-arrival') {
+                searchParams.set(key, String(value));
+            } else if (key === 'isPopular' && value !== 'all-popular') {
+                searchParams.set(key, String(value));
+            } else if (key === 'search' && value) {
                 searchParams.set(key, String(value));
             }
         }
@@ -123,18 +131,24 @@ export default function ProductsPage() {
     } catch (err: any) {
       setError(err.message);
     } finally {
-      setInitialLoading(false);
-      setIsFiltering(false);
+        if (isInitialLoad) {
+            setIsLoading(false);
+        }
     }
-  }, [filters, activeTab, pagination.page, pagination.pageSize, initialLoading]);
+  }, [filters, activeTab, pagination.page, pagination.pageSize]);
 
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    fetchProducts(true);
+  }, []);
 
+  useEffect(() => {
+    if (!isLoading) {
+        fetchProducts(false);
+    }
+  }, [filters, activeTab, pagination.page, pagination.pageSize, isLoading, fetchProducts]);
+  
   const handleFilterChange = (key: string, value: any) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
-    setPagination(prev => ({...prev, page: 1}));
+    setFilters(prev => ({ ...prev, [key]: value, page: 1 }));
   };
 
   const clearFilters = () => {
@@ -149,52 +163,58 @@ export default function ProductsPage() {
       isNewArrival: '',
       isPopular: '',
     });
-    setPagination(prev => ({...prev, page: 1}));
   };
+
+  const activeFilterCount = useMemo(() => {
+    return Object.entries(filters).filter(([key, value]) => {
+      if (key === 'search' && value) return true;
+      if (key === 'categoryId' && value !== 'all-categories') return true;
+      if (key === 'stockStatus' && value !== 'all') return true;
+      if (key === 'priceRange' && (value[0] !== INITIAL_PRICE_RANGE[0] || value[1] !== INITIAL_PRICE_RANGE[1])) return true;
+      if (key === 'isFeatured' && value && value !== 'all-featured') return true;
+      if (key === 'isNewArrival' && value && value !== 'all-new-arrival') return true;
+      if (key === 'isPopular' && value && value !== 'all-popular') return true;
+      return false;
+    }).length;
+  }, [filters]);
   
   const handleSoftDelete = async (productId: string) => {
     if (!confirm('Are you sure you want to move this product to the trash?')) return;
-    try {
-      const res = await fetch(`/api/admin/products?id=${productId}`, { method: 'DELETE' });
-      if (!res.ok) {
-        const { error } = await res.json();
-        throw new Error(error || 'Failed to move product to trash');
-      }
-      showToast.success('Product moved to trash successfully');
-      fetchProducts();
-    } catch (err: any) {
-      showToast.error(err.message);
-    }
+    showToast.promise(
+        fetch(`/api/admin/products?id=${productId}`, { method: 'DELETE' })
+        .then(async res => {
+            if (!res.ok) { const d = await res.json(); throw new Error(d.error) }
+            return res.json();
+        })
+        .then(() => fetchProducts()),
+        { loading: 'Moving to trash...', success: 'Product moved to trash', error: (e) => e.message }
+    );
   };
 
   const handleRestore = async (productId: string) => {
     if (!confirm('Are you sure you want to restore this product?')) return;
-    try {
-      const res = await fetch(`/api/admin/products?id=${productId}&action=restore`, { method: 'PATCH' });
-      if (!res.ok) {
-        const { error } = await res.json();
-        throw new Error(error || 'Failed to restore product');
-      }
-      showToast.success('Product restored successfully');
-      fetchProducts();
-    } catch (err: any) {
-      showToast.error(err.message);
-    }
+    showToast.promise(
+        fetch(`/api/admin/products?id=${productId}&action=restore`, { method: 'PATCH' })
+        .then(async res => {
+            if (!res.ok) { const d = await res.json(); throw new Error(d.error) }
+            return res.json();
+        })
+        .then(() => fetchProducts()),
+        { loading: 'Restoring product...', success: 'Product restored', error: (e) => e.message }
+    );
   };
 
   const handlePermanentDelete = async (productId: string) => {
     if (!confirm('This action is irreversible. Are you sure you want to permanently delete this product?')) return;
-    try {
-      const res = await fetch(`/api/admin/products?id=${productId}&action=delete-permanent`, { method: 'PATCH' });
-      if (!res.ok) {
-        const { error } = await res.json();
-        throw new Error(error || 'Failed to delete product permanently');
-      }
-      showToast.success('Product permanently deleted');
-      fetchProducts();
-    } catch (err: any) {
-      showToast.error(err.message);
-    }
+    showToast.promise(
+        fetch(`/api/admin/products?id=${productId}&action=delete-permanent`, { method: 'PATCH' })
+        .then(async res => {
+            if (!res.ok) { const d = await res.json(); throw new Error(d.error) }
+            return res.json();
+        })
+        .then(() => fetchProducts()),
+        { loading: 'Deleting permanently...', success: 'Product deleted', error: (e) => e.message }
+    );
   };
   
   const handleEdit = (product: Product) => {
@@ -208,7 +228,7 @@ export default function ProductsPage() {
   };
 
   const handlePageSizeChange = (size: number) => {
-    setPagination({ ...pagination, pageSize: size, page: 1 });
+    setPagination(p => ({ ...p, pageSize: size, page: 1 }));
   };
 
   const handlePageChange = (newPage: number) => {
@@ -217,14 +237,10 @@ export default function ProductsPage() {
     }
   };
 
-  const FilterControls = useMemo(() => (
-    <div className="space-y-4">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Input
-                placeholder="Search by name or SKU..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-            />
+  const FilterControls = () => (
+    <div className="space-y-4 p-1">
+        <div className="space-y-2">
+            <label className="text-sm font-medium">Category</label>
             <Select value={filters.categoryId} onValueChange={(v) => handleFilterChange('categoryId', v)}>
                 <SelectTrigger><SelectValue placeholder="Filter by Category" /></SelectTrigger>
                 <SelectContent>
@@ -234,13 +250,16 @@ export default function ProductsPage() {
                 ))}
                 </SelectContent>
             </Select>
+        </div>
+        <div className="space-y-2">
+            <label className="text-sm font-medium">Stock Status</label>
             <Select value={filters.stockStatus} onValueChange={(v) => handleFilterChange('stockStatus', v)}>
                 <SelectTrigger><SelectValue placeholder="Stock Status" /></SelectTrigger>
                 <SelectContent>
                 <SelectItem value="all">All</SelectItem>
                 <SelectItem value="in-stock">In Stock</SelectItem>
                 <SelectItem value="out-of-stock">Out of Stock</SelectItem>
-                <SelectItem value="low-stock">Low Stock (less than 10)</SelectItem>
+                <SelectItem value="low-stock">Low Stock (&lt;10)</SelectItem>
                 </SelectContent>
             </Select>
         </div>
@@ -261,41 +280,42 @@ export default function ProductsPage() {
                 className="w-full"
             />
         </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Select value={filters.isFeatured} onValueChange={(v) => handleFilterChange('isFeatured', v)}>
-                <SelectTrigger><SelectValue placeholder="Featured Status" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all-featured">All</SelectItem>
-                  <SelectItem value="true">Featured</SelectItem>
-                  <SelectItem value="false">Not Featured</SelectItem>
-                </SelectContent>
-            </Select>
-            <Select value={filters.isNewArrival} onValueChange={(v) => handleFilterChange('isNewArrival', v)}>
-                <SelectTrigger><SelectValue placeholder="New Arrival Status" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all-new-arrival">All</SelectItem>
-                  <SelectItem value="true">New Arrival</SelectItem>
-                  <SelectItem value="false">Not New Arrival</SelectItem>
-                </SelectContent>
-            </Select>
-            <Select value={filters.isPopular} onValueChange={(v) => handleFilterChange('isPopular', v)}>
-                <SelectTrigger><SelectValue placeholder="Popular Status" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all-popular">All</SelectItem>
-                  <SelectItem value="true">Popular</SelectItem>
-                  <SelectItem value="false">Not Popular</SelectItem>
-                </SelectContent>
-            </Select>
+        <div className="space-y-2">
+            <label className="text-sm font-medium">Status Flags</label>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                <Select value={filters.isFeatured} onValueChange={(v) => handleFilterChange('isFeatured', v)}>
+                    <SelectTrigger><SelectValue placeholder="Featured" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all-featured">Any</SelectItem>
+                      <SelectItem value="true">Featured</SelectItem>
+                      <SelectItem value="false">Not Featured</SelectItem>
+                    </SelectContent>
+                </Select>
+                <Select value={filters.isNewArrival} onValueChange={(v) => handleFilterChange('isNewArrival', v)}>
+                    <SelectTrigger><SelectValue placeholder="New Arrival" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all-new-arrival">Any</SelectItem>
+                      <SelectItem value="true">New Arrival</SelectItem>
+                      <SelectItem value="false">Not New Arrival</SelectItem>
+                    </SelectContent>
+                </Select>
+                <Select value={filters.isPopular} onValueChange={(v) => handleFilterChange('isPopular', v)}>
+                    <SelectTrigger><SelectValue placeholder="Popular" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all-popular">Any</SelectItem>
+                      <SelectItem value="true">Popular</SelectItem>
+                      <SelectItem value="false">Not Popular</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
         </div>
-        <div className="flex justify-end">
-            <Button variant="ghost" onClick={clearFilters}>Clear Filters</Button>
+        <div className="flex justify-end pt-2">
+            <Button variant="ghost" onClick={clearFilters}>Clear All Filters</Button>
         </div>
     </div>
-  ), [searchQuery, filters, categories, priceRangeValue, handleFilterChange, clearFilters]);
+  );
 
-  const renderProductRows = (productsToRender: Product[]) => (
-    productsToRender.map((product) => (
+  const productRows = useMemo(() => products.map((product) => (
       <TableRow key={product.id}>
         <TableCell>
           <Image
@@ -333,38 +353,42 @@ export default function ProductsPage() {
           </div>
         </TableCell>
       </TableRow>
-    ))
-  );
-
-  if (initialLoading) return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-  if (error) return <div className="text-red-500 text-center p-4">Error: {error}</div>;
+    )), [products, activeTab]);
+  
+  if (error) return <div className="text-red-500 text-center p-4">Error: {error}. Please try refreshing the page.</div>;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl md:text-3xl font-bold">Products</h1>
-        <div className="flex items-center gap-2">
-            <div className="md:hidden">
-                <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
-                    <SheetTrigger asChild>
-                        <Button variant="outline" size="icon"><Filter className="h-4 w-4" /></Button>
-                    </SheetTrigger>
-                    <SheetContent className="w-[85vw]">
-                        <SheetHeader><SheetTitle>Filter Products</SheetTitle></SheetHeader>
-                        <div className="py-4">{FilterControls}</div>
-                    </SheetContent>
-                </Sheet>
-            </div>
-            <Button onClick={openAddDialog}><Plus className="mr-2 h-4 w-4" /> Add</Button>
-        </div>
+        <Button onClick={openAddDialog}><Plus className="mr-2 h-4 w-4" /> Add Product</Button>
       </div>
-
-      <div className="hidden md:block p-4 border rounded-lg bg-card text-card-foreground">
-        <div className="flex items-center gap-2 mb-4">
-          <Search className="h-5 w-5 text-muted-foreground" />
-          <h3 className="text-lg font-semibold">Filter Products</h3>
-        </div>
-        {FilterControls}
+      
+      {/* Filter Bar */}
+      <div className="flex items-center gap-2">
+          <div className="relative flex-grow">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input 
+                placeholder="Search by name or SKU..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+                <Button variant="outline" className="relative">
+                    <Filter className="mr-2 h-4 w-4" />
+                    Filters
+                    {activeFilterCount > 0 && (
+                        <Badge className="absolute -top-2 -right-2 h-5 w-5 justify-center p-0">{activeFilterCount}</Badge>
+                    )}
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80">
+                <FilterControls />
+            </PopoverContent>
+          </Popover>
       </div>
 
       <Tabs value={activeTab} onValueChange={(tab) => { setActiveTab(tab); setPagination(p => ({ ...p, page: 1})); }}>
@@ -372,56 +396,33 @@ export default function ProductsPage() {
           <TabsTrigger value="active">Active</TabsTrigger>
           <TabsTrigger value="trashed">Trashed</TabsTrigger>
         </TabsList>
-        <div className="relative mt-4">
-            {isFiltering && 
-                <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center z-10 rounded-lg">
-                    <Loader2 className="h-6 w-6 animate-spin" />
+        <div className="mt-4">
+            {isLoading ? (
+                <ProductTableSkeleton />
+            ) : (
+                <TabsContent value={activeTab} className="ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                <div className="overflow-x-auto border rounded-lg">
+                    <Table>
+                        <TableHeader>
+                        <TableRow>
+                            <TableHead>Image</TableHead>
+                            <TableHead>Name</TableHead>
+                            <TableHead>SKU</TableHead>
+                            <TableHead>Price</TableHead>
+                            <TableHead>Stock</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Actions</TableHead>
+                        </TableRow>
+                        </TableHeader>
+                        <TableBody>{productRows.length > 0 ? productRows : <TableRow><TableCell colSpan={7} className="text-center h-24">No products found.</TableCell></TableRow>}</TableBody>
+                    </Table>
                 </div>
-            }
-            <TabsContent value="active" className="ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-            <div className="overflow-x-auto border rounded-lg">
-                <Table>
-                    <TableHeader>
-                    <TableRow>
-                        <TableHead>Image</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>SKU</TableHead>
-                        <TableHead>Price</TableHead>
-                        <TableHead>Stock</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
-                    </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                    {products.length > 0 ? renderProductRows(products) : <TableRow><TableCell colSpan={7} className="text-center h-24">No products found.</TableCell></TableRow>}
-                    </TableBody>
-                </Table>
-            </div>
-            </TabsContent>
-            <TabsContent value="trashed" className="ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-            <div className="overflow-x-auto border rounded-lg">
-                <Table>
-                    <TableHeader>
-                    <TableRow>
-                        <TableHead>Image</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>SKU</TableHead>
-                        <TableHead>Price</TableHead>
-                        <TableHead>Stock</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
-                    </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                    {products.length > 0 ? renderProductRows(products) : <TableRow><TableCell colSpan={7} className="text-center h-24">No products found.</TableCell></TableRow>}
-                    </TableBody>
-                </Table>
-            </div>
-            </TabsContent>
+                </TabsContent>
+            )}
         </div>
       </Tabs>
 
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+      {!isLoading && <div className="flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="text-sm text-muted-foreground">
           Showing {products.length > 0 ? (pagination.page - 1) * pagination.pageSize + 1 : 0}
           -
@@ -446,23 +447,23 @@ export default function ProductsPage() {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.page - 1)} disabled={pagination.page <= 1}>Previous</Button>
-            <span className="text-sm font-medium">Page {pagination.page} of {pagination.totalPages}</span>
+            <span className="text-sm font-medium">Page {pagination.page} of {pagination.totalPages || 1}</span>
             <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.page + 1)} disabled={pagination.page >= pagination.totalPages}>Next</Button>
           </div>
         </div>
-      </div>
+      </div>}
 
-      <ProductDialog
+      {isDialogOpen && <ProductDialog
         open={isDialogOpen}
         onOpenChange={(open) => {
           setIsDialogOpen(open);
           if (!open) {
             setEditingProduct(null);
-            fetchProducts();
+            fetchProducts(false);
           }
         }}
         product={editingProduct}
-      />
+      />}
     </div>
   );
 } 
