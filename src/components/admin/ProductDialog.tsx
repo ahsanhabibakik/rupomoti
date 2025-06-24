@@ -22,18 +22,9 @@ import { CategoryDialog } from './CategoryDialog'
 const productSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().min(1, 'Description is required'),
-  price: z.preprocess(
-    (a) => parseFloat(z.string().parse(a)),
-    z.number().positive('Price must be positive')
-  ),
-  salePrice: z.preprocess(
-    (a) => (a ? parseFloat(z.string().parse(a)) : undefined),
-    z.number().positive('Sale price must be positive').optional()
-  ),
-  stock: z.preprocess(
-    (a) => parseInt(z.string().parse(a), 10),
-    z.number().min(0, 'Stock cannot be negative')
-  ),
+  price: z.coerce.number().positive('Price must be positive'),
+  salePrice: z.coerce.number().positive('Sale price must be positive').optional().nullable(),
+  stock: z.coerce.number().int().min(0, 'Stock cannot be negative'),
   sku: z.string().min(1, 'SKU is required'),
   categoryId: z.string().min(1, 'Category is required'),
   isFeatured: z.boolean().default(false),
@@ -51,6 +42,7 @@ interface ProductDialogProps {
 
 export function ProductDialog({ open, onOpenChange, product }: ProductDialogProps) {
   const [images, setImages] = useState<string[]>(product?.images || [])
+  const [initialImages, setInitialImages] = useState<string[]>(product?.images || [])
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false)
   const [newCategoryId, setNewCategoryId] = useState<string | null>(null)
   const { data: categories, mutate: refreshCategories } = useCategories()
@@ -71,10 +63,15 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
     },
   })
 
+  const {
+    formState: { isDirty },
+  } = form
+
   useEffect(() => {
     if (product) {
-      form.reset(product);
-      setImages(product.images || []);
+      form.reset(product)
+      setImages(product.images || [])
+      setInitialImages(product.images || [])
     } else {
       form.reset({
         name: '',
@@ -87,10 +84,11 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
         isFeatured: false,
         isNewArrival: false,
         isPopular: false,
-      });
-      setImages([]);
+      })
+      setImages([])
+      setInitialImages([])
     }
-  }, [product, form]);
+  }, [product, form])
 
   // Auto-generate SKU from name
   const productName = form.watch('name')
@@ -148,6 +146,8 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
       showToast.error('Something went wrong')
     }
   }
+
+  const imagesChanged = JSON.stringify(images) !== JSON.stringify(initialImages)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -349,7 +349,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit">
+              <Button type="submit" disabled={product ? false : !isDirty && !imagesChanged}>
                 {product ? 'Update Product' : 'Create Product'}
               </Button>
             </div>
