@@ -16,6 +16,8 @@ import { showToast } from '@/lib/toast'
 import { Switch } from '@/components/ui/switch'
 import { generateSKU } from '@/lib/utils/sku'
 import { RefreshCw } from 'lucide-react'
+import { CategoryCombobox } from './CategoryCombobox'
+import { CategoryDialog } from './CategoryDialog'
 
 const productSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -49,7 +51,9 @@ interface ProductDialogProps {
 
 export function ProductDialog({ open, onOpenChange, product }: ProductDialogProps) {
   const [images, setImages] = useState<string[]>(product?.images || [])
-  const { data: categories } = useCategories()
+  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false)
+  const [newCategoryId, setNewCategoryId] = useState<string | null>(null)
+  const { data: categories, mutate: refreshCategories } = useCategories()
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -75,6 +79,13 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
     }
   }, [productName, form])
 
+  useEffect(() => {
+    if (newCategoryId) {
+      form.setValue('categoryId', newCategoryId)
+      setNewCategoryId(null)
+    }
+  }, [newCategoryId, form])
+
   const handleGenerateSku = () => {
     const productName = form.getValues('name')
     if (productName) {
@@ -94,20 +105,18 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
         showToast.error('Please upload at least one image')
         return
       }
-
-      // TODO: Add API call to create/update product
-      console.log({ ...data, images })
-
-      await showToast.promise(
-        // Replace with actual API call
-        Promise.resolve('Product created successfully'),
-        {
-          loading: 'Creating product...',
-          success: 'Product created successfully',
-          error: 'Failed to create product'
-        }
-      )
-
+      // Real API call to create product
+      const response = await fetch('/api/admin/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...data, images }),
+      })
+      const result = await response.json()
+      if (!response.ok) {
+        showToast.error(result.error || 'Failed to create product')
+        return
+      }
+      showToast.success('Product created successfully')
       onOpenChange(false)
     } catch (error) {
       showToast.error('Something went wrong')
@@ -224,23 +233,33 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {categories?.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <CategoryCombobox
+                    categories={Array.isArray(categories) ? categories : []}
+                    value={field.value}
+                    onChange={field.onChange}
+                    onCreateCategory={() => setCategoryDialogOpen(true)}
+                    disabled={!Array.isArray(categories)}
+                  />
                   <FormMessage />
                 </FormItem>
               )}
+            />
+
+            <CategoryDialog
+              open={categoryDialogOpen}
+              onOpenChange={async (open) => {
+                setCategoryDialogOpen(open)
+                if (!open) {
+                  // After closing, refresh categories
+                  const updated = await refreshCategories()
+                  // Select the most recently added category
+                  if (Array.isArray(updated) && updated.length > 0) {
+                    setNewCategoryId(updated[updated.length - 1].id)
+                  }
+                }
+              }}
+              categories={Array.isArray(categories) ? categories : []}
+              onSuccess={refreshCategories}
             />
 
             <div className="grid grid-cols-3 gap-4">

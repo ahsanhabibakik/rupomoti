@@ -120,7 +120,7 @@ export default function DashboardPage() {
         <div className="flex flex-col items-center justify-center p-3 bg-gradient-to-br from-primary/10 to-white rounded-xl border border-primary/20 shadow-sm">
           <TrendingUp className="h-6 w-6 text-primary mb-1" />
           <span className="text-lg font-bold">৳{todaysSales.toLocaleString('bn-BD')}</span>
-          <span className="text-xs text-muted-foreground">Today's Sales</span>
+          <span className="text-xs text-muted-foreground">Today&apos;s Sales</span>
         </div>
         <div className="flex flex-col items-center justify-center p-3 bg-gradient-to-br from-green-100 to-white rounded-xl border border-green-200 shadow-sm">
           <UserPlus className="h-6 w-6 text-green-600 mb-1" />
@@ -221,9 +221,9 @@ export default function DashboardPage() {
         </div>
         <ul className="text-sm text-muted-foreground space-y-1">
           <li>Order #1234 was placed by John Doe (৳5,000)</li>
-          <li>Product "Classic Pearl Necklace" was added</li>
+          <li>Product &quot;Classic Pearl Necklace&quot; was added</li>
           <li>Order #1233 was marked as shipped</li>
-          <li>Customer "Jane Smith" signed up</li>
+          <li>Customer &quot;Jane Smith&quot; signed up</li>
         </ul>
       </div>
 
