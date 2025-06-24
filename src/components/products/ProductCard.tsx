@@ -35,7 +35,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const handleAddToCart = () => {
     const cartItem = {
       id,
-      name,
+      name: name || 'Unnamed Product',
       price: discount > 0 ? discountedPrice : safePrice,
       image: images[0] || '/placeholder.png',
       quantity: 1,
@@ -43,39 +43,51 @@ export function ProductCard({ product }: ProductCardProps) {
     }
     dispatch(addToCart(cartItem))
     dispatch(toggleCart())
-    toast.success(`${name} has been added to your cart.`)
+    toast.success(`${name || 'Unnamed Product'} has been added to your cart.`)
   }
 
   const handleWishlistToggle = () => {
     if (isInWishlist()) {
       removeFromWishlist()
-      toast.success(`${name} has been removed from your wishlist.`)
+      toast.success(`${name || 'Unnamed Product'} has been removed from your wishlist.`)
     } else {
       addToWishlist()
-      toast.success(`${name} has been added to your wishlist.`)
+      toast.success(`${name || 'Unnamed Product'} has been added to your wishlist.`)
     }
   }
 
   return (
-    <Link href={`/product/${id}`} className="group relative block overflow-hidden rounded-lg">
+    <Link
+      href={`/product/${id}`}
+      className="group relative block overflow-hidden rounded-xl shadow transition-all duration-300 bg-white hover:shadow-lg border border-gray-100"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <div className="relative aspect-[4/5] w-full">
         <Image
           src={images[0] || '/placeholder.png'}
-          alt={name}
+          alt={name || 'Unnamed Product'}
           fill
-          className="object-cover transition-transform duration-500 group-hover:scale-110"
+          className="object-cover transition-transform duration-500 group-hover:scale-105"
           sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 50vw"
         />
-        <div className="absolute top-3 left-3 flex flex-col gap-2">
+        <div className="absolute top-3 left-3 flex flex-col gap-2 z-10">
           {isNewArrival && <Badge className="bg-primary text-primary-foreground">New</Badge>}
           {isPopular && <Badge className="bg-green-500 text-white">Popular</Badge>}
           {isFeatured && <Badge className="bg-blue-500 text-white">Featured</Badge>}
           {discount > 0 && <Badge variant="destructive">-{discount}%</Badge>}
         </div>
+        {isOutOfStock && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
+            <span className="text-white text-lg font-bold">Out of Stock</span>
+          </div>
+        )}
       </div>
 
       <div className="p-4 bg-background">
-        <h3 className="text-base font-semibold text-foreground truncate">{name}</h3>
+        <h3 className="text-base font-semibold text-foreground truncate" title={name || 'Unnamed Product'}>
+          {name || 'Unnamed Product'}
+        </h3>
         <div className="flex items-baseline gap-2 mt-1">
           <span className={`text-lg font-bold ${salePrice ? 'text-destructive' : 'text-foreground'}`}>
             ৳{salePrice ? salePrice.toLocaleString() : price.toLocaleString()}
@@ -97,6 +109,7 @@ export function ProductCard({ product }: ProductCardProps) {
             }`}
             onClick={handleWishlistToggle}
             aria-label={isInWishlist() ? 'Remove from wishlist' : 'Add to wishlist'}
+            tabIndex={-1}
           >
             <Heart
               className={`h-4 w-4 ${
@@ -111,6 +124,7 @@ export function ProductCard({ product }: ProductCardProps) {
             onClick={handleAddToCart}
             disabled={isOutOfStock}
             aria-label="Add to cart"
+            tabIndex={-1}
           >
             <ShoppingCart className="h-4 w-4" />
           </Button>

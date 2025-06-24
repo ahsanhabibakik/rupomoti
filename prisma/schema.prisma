@@ -29,6 +29,8 @@ model User {
   wishlistItems  WishlistItem[]
   reviews        Review[]
   customers      Customer[]
+  paymentMethods UserPaymentMethod[]
+  userSettings   UserSetting[]
 }
 
 model Account {
@@ -279,6 +281,31 @@ model Setting {
   type      String   @default("text") // text, boolean, number, json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model UserPaymentMethod {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @db.ObjectId
+  user        User     @relation(fields: [userId], references: [id])
+  type        String   // e.g. 'CARD', 'BKASH', 'NAGAD', 'BANK', etc.
+  provider    String?  // e.g. 'Visa', 'Mastercard', 'bKash', etc.
+  last4       String?  // Last 4 digits for cards
+  token       String?  // Tokenized payment info (never store full card info)
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model UserSetting {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  key       String
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, key])
 }
 
 enum Role {
