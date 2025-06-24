@@ -13,14 +13,20 @@ import {
   CreditCard,
   MapPin,
   Shield,
+  Star,
+  Edit,
+  Trash2,
+  Plus,
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { showToast } from '@/lib/toast'
 
 const tabs = [
   { id: 'profile', label: 'Profile', icon: User },
   { id: 'orders', label: 'Orders', icon: Package },
   { id: 'wishlist', label: 'Wishlist', icon: Heart },
+  { id: 'reviews', label: 'My Reviews', icon: Star },
   { id: 'addresses', label: 'Addresses', icon: MapPin },
   { id: 'payment', label: 'Payment Methods', icon: CreditCard },
   { id: 'settings', label: 'Settings', icon: Settings },
@@ -31,17 +37,28 @@ export default function AccountPage() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState('profile')
 
-  // Dynamic data states
+  // Dynamic data states - ensure all are arrays
   const [profile, setProfile] = useState<any>(null)
   const [orders, setOrders] = useState<any[]>([])
   const [wishlist, setWishlist] = useState<any[]>([])
+  const [reviews, setReviews] = useState<any[]>([])
   const [addresses, setAddresses] = useState<any[]>([])
   const [payments, setPayments] = useState<any[]>([])
   const [settings, setSettings] = useState<any>(null)
+  
+  // Form states
+  const [profileForm, setProfileForm] = useState({ name: '', phone: '', email: '' })
+  const [addressForm, setAddressForm] = useState({
+    name: '', phone: '', street: '', city: '', state: '', postalCode: '', country: 'Bangladesh'
+  })
+  const [showAddressModal, setShowAddressModal] = useState(false)
+  const [editingAddress, setEditingAddress] = useState<any>(null)
+  
   const [loading, setLoading] = useState({
     profile: false,
     orders: false,
     wishlist: false,
+    reviews: false,
     addresses: false,
     payments: false,
     settings: false,
@@ -50,6 +67,7 @@ export default function AccountPage() {
     profile: '',
     orders: '',
     wishlist: '',
+    reviews: '',
     addresses: '',
     payments: '',
     settings: '',
@@ -61,7 +79,10 @@ export default function AccountPage() {
       setLoading((l) => ({ ...l, profile: true }))
       fetch('/api/auth/me')
         .then((r) => r.json())
-        .then(setProfile)
+        .then((data) => {
+          setProfile(data)
+          setProfileForm({ name: data.name || '', phone: data.phone || '', email: data.email || '' })
+        })
         .catch(() => setError((e) => ({ ...e, profile: 'Failed to load profile' })))
         .finally(() => setLoading((l) => ({ ...l, profile: false })))
     }
@@ -91,14 +112,38 @@ export default function AccountPage() {
     }
   }, [activeTab])
 
+  // Fetch reviews
+  useEffect(() => {
+    if (activeTab === 'reviews') {
+      setLoading((l) => ({ ...l, reviews: true }))
+      fetch('/api/reviews?mine=1')
+        .then((r) => r.json())
+        .then((data) => {
+          // Ensure reviews is always an array
+          setReviews(Array.isArray(data) ? data : [])
+        })
+        .catch(() => {
+          setError((e) => ({ ...e, reviews: 'Failed to load reviews' }))
+          setReviews([]) // Ensure it's an array even on error
+        })
+        .finally(() => setLoading((l) => ({ ...l, reviews: false })))
+    }
+  }, [activeTab])
+
   // Fetch addresses
   useEffect(() => {
     if (activeTab === 'addresses') {
       setLoading((l) => ({ ...l, addresses: true }))
       fetch('/api/addresses')
         .then((r) => r.json())
-        .then(setAddresses)
-        .catch(() => setError((e) => ({ ...e, addresses: 'Failed to load addresses' })))
+        .then((data) => {
+          // Ensure addresses is always an array
+          setAddresses(Array.isArray(data) ? data : [])
+        })
+        .catch(() => {
+          setError((e) => ({ ...e, addresses: 'Failed to load addresses' }))
+          setAddresses([]) // Ensure it's an array even on error
+        })
         .finally(() => setLoading((l) => ({ ...l, addresses: false })))
     }
   }, [activeTab])
@@ -109,8 +154,14 @@ export default function AccountPage() {
       setLoading((l) => ({ ...l, payments: true }))
       fetch('/api/payment-methods')
         .then((r) => r.json())
-        .then(setPayments)
-        .catch(() => setError((e) => ({ ...e, payments: 'Failed to load payment methods' })))
+        .then((data) => {
+          // Ensure payments is always an array
+          setPayments(Array.isArray(data) ? data : [])
+        })
+        .catch(() => {
+          setError((e) => ({ ...e, payments: 'Failed to load payment methods' }))
+          setPayments([]) // Ensure it's an array even on error
+        })
         .finally(() => setLoading((l) => ({ ...l, payments: false })))
     }
   }, [activeTab])
@@ -126,6 +177,133 @@ export default function AccountPage() {
         .finally(() => setLoading((l) => ({ ...l, settings: false })))
     }
   }, [activeTab])
+
+  // Profile update
+  const handleProfileUpdate = async (e: any) => {
+    e.preventDefault()
+    try {
+      const res = await fetch('/api/auth/me', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profileForm),
+      })
+      if (res.ok) {
+        const updatedProfile = await res.json()
+        setProfile(updatedProfile)
+        showToast.success('Profile updated successfully!')
+      } else {
+        const errorData = await res.json()
+        showToast.error(errorData.message || 'Failed to update profile')
+      }
+    } catch (error) {
+      showToast.error('Failed to update profile')
+    }
+  }
+
+  // Address CRUD
+  const handleAddAddress = () => {
+    setEditingAddress(null)
+    setAddressForm({
+      name: '', phone: '', street: '', city: '', state: '', postalCode: '', country: 'Bangladesh'
+    })
+    setShowAddressModal(true)
+  }
+
+  const handleEditAddress = (address: any) => {
+    setEditingAddress(address)
+    setAddressForm({
+      name: address.name,
+      phone: address.phone,
+      street: address.street,
+      city: address.city,
+      state: address.state,
+      postalCode: address.postalCode,
+      country: address.country
+    })
+    setShowAddressModal(true)
+  }
+
+  const handleSaveAddress = async (e: any) => {
+    e.preventDefault()
+    try {
+      const res = await fetch('/api/addresses', {
+        method: editingAddress ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingAddress ? { id: editingAddress.id, ...addressForm } : addressForm),
+      })
+      if (res.ok) {
+        const newAddress = await res.json()
+        if (editingAddress) {
+          setAddresses(addresses.map(a => a.id === editingAddress.id ? newAddress : a))
+        } else {
+          setAddresses([newAddress, ...addresses])
+        }
+        setShowAddressModal(false)
+        showToast.success(`Address ${editingAddress ? 'updated' : 'added'} successfully!`)
+      }
+    } catch (error) {
+      showToast.error(`Failed to ${editingAddress ? 'update' : 'add'} address`)
+    }
+  }
+
+  const handleDeleteAddress = async (addressId: string) => {
+    if (!confirm('Are you sure you want to delete this address?')) return
+    try {
+      const res = await fetch('/api/addresses', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: addressId }),
+      })
+      if (res.ok) {
+        setAddresses(addresses.filter(a => a.id !== addressId))
+        showToast.success('Address deleted successfully!')
+      }
+    } catch (error) {
+      showToast.error('Failed to delete address')
+    }
+  }
+
+  // Review functions
+  const handleEditReview = async (reviewId: string, rating: number, comment: string) => {
+    try {
+      const res = await fetch('/api/reviews', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: reviewId, rating, comment }),
+      })
+      if (res.ok) {
+        setReviews(reviews.map(r => r.id === reviewId ? { ...r, rating, comment } : r))
+        showToast.success('Review updated!')
+      }
+    } catch (error) {
+      showToast.error('Failed to update review')
+    }
+  }
+
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!confirm('Are you sure you want to delete this review?')) return
+    try {
+      const res = await fetch('/api/reviews', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: reviewId }),
+      })
+      if (res.ok) {
+        setReviews(reviews.filter(r => r.id !== reviewId))
+        showToast.success('Review deleted!')
+      }
+    } catch (error) {
+      showToast.error('Failed to delete review')
+    }
+  }
+
+  const canReviewProduct = (productId: string) => {
+    // Ensure reviews is always an array and handle the case when it's not loaded yet
+    if (!Array.isArray(reviews)) {
+      return false
+    }
+    return !reviews.some(r => r.productId === productId)
+  }
 
   if (status === 'loading') {
     return (
@@ -233,64 +411,42 @@ export default function AccountPage() {
                     <h3 className="text-lg font-semibold text-gray-900 mb-6">
                       Profile Information
                     </h3>
-                    <form className="space-y-6">
+                    <form onSubmit={handleProfileUpdate} className="space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                          <label
-                            htmlFor="name"
-                            className="block text-sm font-medium text-gray-700"
-                          >
+                          <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                             Full Name
                           </label>
                           <input
                             type="text"
                             id="name"
-                            defaultValue={profile.name || ''}
+                            value={profileForm.name}
+                            onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
                             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-pearl-500 focus:border-pearl-500"
                           />
                         </div>
                         <div>
-                          <label
-                            htmlFor="email"
-                            className="block text-sm font-medium text-gray-700"
-                          >
+                          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                             Email Address
                           </label>
                           <input
                             type="email"
                             id="email"
-                            defaultValue={profile.email || ''}
-                            disabled
-                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm bg-gray-50 text-gray-500"
+                            value={profileForm.email}
+                            onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-pearl-500 focus:border-pearl-500"
                           />
                         </div>
                       </div>
                       <div>
-                        <label
-                          htmlFor="role"
-                          className="block text-sm font-medium text-gray-700"
-                        >
-                          Account Type
-                        </label>
-                        <input
-                          type="text"
-                          id="role"
-                          value={profile.role || 'USER'}
-                          disabled
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm bg-gray-50 text-gray-500"
-                        />
-                      </div>
-                      <div>
-                        <label
-                          htmlFor="phone"
-                          className="block text-sm font-medium text-gray-700"
-                        >
+                        <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
                           Phone Number
                         </label>
                         <input
                           type="tel"
                           id="phone"
-                          defaultValue={profile.phone || ''}
+                          value={profileForm.phone}
+                          onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
                           className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-pearl-500 focus:border-pearl-500"
                         />
                       </div>
@@ -318,44 +474,288 @@ export default function AccountPage() {
                       Order History
                     </h3>
                     <div className="space-y-4">
-                      {/* Sample Order */}
-                      <div className="border rounded-lg p-4">
-                        <div className="flex justify-between items-start mb-4">
-                          <div>
-                            <p className="text-sm text-gray-500">Order #12345</p>
-                            <p className="text-sm font-medium text-gray-900">
-                              Placed on March 15, 2024
-                            </p>
-                          </div>
-                          <span className="px-3 py-1 text-sm font-medium text-green-600 bg-green-50 rounded-full">
-                            Delivered
-                          </span>
+                      {orders.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">
+                          <Package className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+                          <p>No orders found.</p>
                         </div>
-                        <div className="flex items-center space-x-4">
-                          <div className="relative w-20 h-20">
-                            <Image
-                              src="/images/products/necklace-1.jpg"
-                              alt="Product"
-                              fill
-                              className="rounded-lg object-cover"
-                            />
+                      ) : (
+                        orders.map((order: any) => (
+                          <div key={order.id} className="border rounded-lg p-4">
+                            <div className="flex justify-between items-start mb-4">
+                              <div>
+                                <p className="text-sm text-gray-500">Order #{order.orderNumber}</p>
+                                <p className="text-sm font-medium text-gray-900">
+                                  Placed on {new Date(order.createdAt).toLocaleDateString()}
+                                </p>
+                              </div>
+                              <span className={`px-3 py-1 text-sm font-medium rounded-full ${
+                                order.status === 'DELIVERED' ? 'text-green-600 bg-green-50' :
+                                order.status === 'SHIPPED' ? 'text-blue-600 bg-blue-50' :
+                                'text-yellow-600 bg-yellow-50'
+                              }`}>
+                                {order.status}
+                              </span>
+                            </div>
+                            
+                            <div className="space-y-3">
+                              {order.items?.map((item: any) => (
+                                <div key={item.id} className="flex items-center space-x-4">
+                                  <div className="relative w-20 h-20">
+                                    <Image
+                                      src={item.image || '/images/placeholder.jpg'}
+                                      alt={item.name}
+                                      fill
+                                      className="rounded-lg object-cover"
+                                    />
+                                  </div>
+                                  <div className="flex-1">
+                                    <h4 className="text-sm font-medium text-gray-900">
+                                      {item.name}
+                                    </h4>
+                                    <p className="text-sm text-gray-500">
+                                      Quantity: {item.quantity}
+                                    </p>
+                                    <p className="text-sm font-medium text-gray-900">
+                                      ৳{item.price}
+                                    </p>
+                                  </div>
+                                  {order.status === 'DELIVERED' && canReviewProduct(item.productId) && (
+                                    <button
+                                      onClick={() => {/* TODO: Open review modal */}}
+                                      className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                                    >
+                                      Leave Review
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                          <div>
-                            <h4 className="text-sm font-medium text-gray-900">
-                              Classic Pearl Necklace
-                            </h4>
-                            <p className="text-sm text-gray-500">
-                              Quantity: 1
-                            </p>
-                            <p className="text-sm font-medium text-gray-900">
-                              ৳15,000
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+                        ))
+                      )}
                     </div>
                   </div>
                 )
+              )}
+
+              {activeTab === 'reviews' && (
+                loading.reviews ? (
+                  <div>Loading reviews...</div>
+                ) : error.reviews ? (
+                  <div className="text-red-500">{error.reviews}</div>
+                ) : (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-6">
+                      My Reviews
+                    </h3>
+                    <div className="space-y-4">
+                      {reviews.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">
+                          <Star className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+                          <p>You haven't written any reviews yet.</p>
+                        </div>
+                      ) : (
+                        reviews.map((review) => (
+                          <div key={review.id} className="border rounded-lg p-4">
+                            <div className="flex items-start justify-between mb-4">
+                              <div className="flex items-center space-x-4">
+                                <div className="relative w-16 h-16">
+                                  <Image
+                                    src={review.product?.images?.[0] || '/images/placeholder.jpg'}
+                                    alt={review.product?.name || 'Product'}
+                                    fill
+                                    className="rounded-lg object-cover"
+                                  />
+                                </div>
+                                <div>
+                                  <h4 className="font-medium text-gray-900">
+                                    {review.product?.name || 'Product'}
+                                  </h4>
+                                  <div className="flex items-center mt-1">
+                                    {[...Array(5)].map((_, i) => (
+                                      <Star
+                                        key={i}
+                                        className={`h-4 w-4 ${
+                                          i < review.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                                        }`}
+                                      />
+                                    ))}
+                                    <span className="ml-2 text-sm text-gray-500">
+                                      {new Date(review.createdAt).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  onClick={() => handleEditReview(review.id, review.rating, review.comment)}
+                                  className="text-blue-600 hover:text-blue-700"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteReview(review.id)}
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </div>
+                            <p className="text-gray-700">{review.comment}</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )
+              )}
+
+              {activeTab === 'addresses' && (
+                loading.addresses ? (
+                  <div>Loading addresses...</div>
+                ) : error.addresses ? (
+                  <div className="text-red-500">{error.addresses}</div>
+                ) : (
+                  <div>
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        Saved Addresses
+                      </h3>
+                      <button
+                        onClick={handleAddAddress}
+                        className="px-4 py-2 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Address
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {addresses.length === 0 ? (
+                        <div className="col-span-2 text-center py-8 text-gray-500">
+                          <MapPin className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+                          <p>No addresses saved yet.</p>
+                        </div>
+                      ) : (
+                        addresses.map((address) => (
+                          <div key={address.id} className="border rounded-lg p-4">
+                            <div className="flex justify-between items-start mb-4">
+                              <h4 className="text-sm font-medium text-gray-900">
+                                {address.name}
+                              </h4>
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  onClick={() => handleEditAddress(address)}
+                                  className="text-blue-600 hover:text-blue-700"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteAddress(address.id)}
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </div>
+                            <p className="text-sm text-gray-600">
+                              {address.street}<br />
+                              {address.city}, {address.state} {address.postalCode}<br />
+                              {address.country}
+                            </p>
+                            <p className="text-sm text-gray-500 mt-2">
+                              Phone: {address.phone}
+                            </p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )
+              )}
+
+              {/* Address Modal */}
+              {showAddressModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                  <form onSubmit={handleSaveAddress} className="bg-white rounded-lg p-6 w-full max-w-md space-y-4 shadow-lg">
+                    <h3 className="text-lg font-semibold mb-2">
+                      {editingAddress ? 'Edit Address' : 'Add New Address'}
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <input
+                        type="text"
+                        placeholder="Full Name"
+                        value={addressForm.name}
+                        onChange={(e) => setAddressForm({ ...addressForm, name: e.target.value })}
+                        className="col-span-2 px-3 py-2 border rounded-lg"
+                        required
+                      />
+                      <input
+                        type="tel"
+                        placeholder="Phone"
+                        value={addressForm.phone}
+                        onChange={(e) => setAddressForm({ ...addressForm, phone: e.target.value })}
+                        className="col-span-2 px-3 py-2 border rounded-lg"
+                        required
+                      />
+                      <input
+                        type="text"
+                        placeholder="Street Address"
+                        value={addressForm.street}
+                        onChange={(e) => setAddressForm({ ...addressForm, street: e.target.value })}
+                        className="col-span-2 px-3 py-2 border rounded-lg"
+                        required
+                      />
+                      <input
+                        type="text"
+                        placeholder="City"
+                        value={addressForm.city}
+                        onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })}
+                        className="px-3 py-2 border rounded-lg"
+                        required
+                      />
+                      <input
+                        type="text"
+                        placeholder="State"
+                        value={addressForm.state}
+                        onChange={(e) => setAddressForm({ ...addressForm, state: e.target.value })}
+                        className="px-3 py-2 border rounded-lg"
+                        required
+                      />
+                      <input
+                        type="text"
+                        placeholder="Postal Code"
+                        value={addressForm.postalCode}
+                        onChange={(e) => setAddressForm({ ...addressForm, postalCode: e.target.value })}
+                        className="px-3 py-2 border rounded-lg"
+                        required
+                      />
+                      <input
+                        type="text"
+                        placeholder="Country"
+                        value={addressForm.country}
+                        onChange={(e) => setAddressForm({ ...addressForm, country: e.target.value })}
+                        className="px-3 py-2 border rounded-lg"
+                        required
+                      />
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setShowAddressModal(false)}
+                        className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-4 py-2 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700"
+                      >
+                        {editingAddress ? 'Update' : 'Add'} Address
+                      </button>
+                    </div>
+                  </form>
+                </div>
               )}
 
               {activeTab === 'wishlist' && (
@@ -369,64 +769,35 @@ export default function AccountPage() {
                       Wishlist
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Sample Wishlist Item */}
-                      <div className="border rounded-lg p-4">
-                        <div className="relative w-full h-48 mb-4">
-                          <Image
-                            src="/images/products/earrings-1.jpg"
-                            alt="Product"
-                            fill
-                            className="rounded-lg object-cover"
-                          />
+                      {wishlist.length === 0 ? (
+                        <div className="col-span-2 text-center py-8 text-gray-500">
+                          <Heart className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+                          <p>Your wishlist is empty.</p>
                         </div>
-                        <h4 className="text-sm font-medium text-gray-900 mb-2">
-                          Pearl Drop Earrings
-                        </h4>
-                        <p className="text-sm font-medium text-gray-900 mb-4">
-                          ৳8,000
-                        </p>
-                        <button className="w-full px-4 py-2 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pearl-500">
-                          Add to Cart
-                        </button>
-                      </div>
+                      ) : (
+                        wishlist.map((item) => (
+                          <div key={item.id} className="border rounded-lg p-4">
+                            <div className="relative w-full h-48 mb-4">
+                              <Image
+                                src={item.product?.images?.[0] || '/images/placeholder.jpg'}
+                                alt={item.product?.name || 'Product'}
+                                fill
+                                className="rounded-lg object-cover"
+                              />
+                            </div>
+                            <h4 className="text-sm font-medium text-gray-900 mb-2">
+                              {item.product?.name || 'Product'}
+                            </h4>
+                            <p className="text-sm font-medium text-gray-900 mb-4">
+                              ৳{item.product?.price || 0}
+                            </p>
+                            <button className="w-full px-4 py-2 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700">
+                              Add to Cart
+                            </button>
+                          </div>
+                        ))
+                      )}
                     </div>
-                  </div>
-                )
-              )}
-
-              {activeTab === 'addresses' && (
-                loading.addresses ? (
-                  <div>Loading addresses...</div>
-                ) : error.addresses ? (
-                  <div className="text-red-500">{error.addresses}</div>
-                ) : (
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-6">
-                      Saved Addresses
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Sample Address */}
-                      <div className="border rounded-lg p-4">
-                        <div className="flex justify-between items-start mb-4">
-                          <h4 className="text-sm font-medium text-gray-900">
-                            Home Address
-                          </h4>
-                          <button className="text-pearl-600 hover:text-pearl-700">
-                            Edit
-                          </button>
-                        </div>
-                        <p className="text-sm text-gray-600">
-                          123 Pearl Street
-                          <br />
-                          Dhaka, 1000
-                          <br />
-                          Bangladesh
-                        </p>
-                      </div>
-                    </div>
-                    <button className="mt-6 px-4 py-2 border border-pearl-600 text-pearl-600 rounded-lg hover:bg-pearl-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pearl-500">
-                      Add New Address
-                    </button>
                   </div>
                 )
               )}
@@ -442,29 +813,34 @@ export default function AccountPage() {
                       Payment Methods
                     </h3>
                     <div className="space-y-4">
-                      {/* Sample Payment Method */}
-                      <div className="border rounded-lg p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-4">
-                            <div className="w-12 h-8 bg-gray-200 rounded"></div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-900">
-                                **** **** **** 1234
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                Expires 12/25
-                              </p>
+                      {payments.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">
+                          <CreditCard className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+                          <p>No payment methods saved.</p>
+                        </div>
+                      ) : (
+                        payments.map((payment) => (
+                          <div key={payment.id} className="border rounded-lg p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-4">
+                                <div className="w-12 h-8 bg-gray-200 rounded"></div>
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">
+                                    {payment.type} - {payment.provider}
+                                  </p>
+                                  <p className="text-sm text-gray-500">
+                                    {payment.last4 ? `**** ${payment.last4}` : 'No card number'}
+                                  </p>
+                                </div>
+                              </div>
+                              <button className="text-red-600 hover:text-red-700">
+                                <Trash2 className="h-4 w-4" />
+                              </button>
                             </div>
                           </div>
-                          <button className="text-red-600 hover:text-red-700">
-                            Remove
-                          </button>
-                        </div>
-                      </div>
+                        ))
+                      )}
                     </div>
-                    <button className="mt-6 px-4 py-2 border border-pearl-600 text-pearl-600 rounded-lg hover:bg-pearl-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pearl-500">
-                      Add New Payment Method
-                    </button>
                   </div>
                 )
               )}
@@ -527,7 +903,7 @@ export default function AccountPage() {
                         <h4 className="text-sm font-medium text-gray-900 mb-4">
                           Password
                         </h4>
-                        <button className="px-4 py-2 border border-pearl-600 text-pearl-600 rounded-lg hover:bg-pearl-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pearl-500">
+                        <button className="px-4 py-2 border border-pearl-600 text-pearl-600 rounded-lg hover:bg-pearl-50">
                           Change Password
                         </button>
                       </div>
@@ -540,7 +916,7 @@ export default function AccountPage() {
                           Once you delete your account, there is no going back.
                           Please be certain.
                         </p>
-                        <button className="px-4 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                        <button className="px-4 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-50">
                           Delete Account
                         </button>
                       </div>

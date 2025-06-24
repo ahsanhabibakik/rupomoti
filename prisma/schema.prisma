@@ -95,6 +95,7 @@ model Category {
 model Product {
   id              String   @id @default(auto()) @map("_id") @db.ObjectId
   name            String
+  slug            String?
   description     String
   price           Float
   salePrice       Float?
@@ -107,6 +108,12 @@ model Product {
   isNewArrival    Boolean  @default(false)
   isPopular       Boolean  @default(false)
   status          ProductStatus @default(ACTIVE)
+  
+  // Additional product details
+  weight          Float?   // in grams
+  dimensions      String?  // e.g., "10cm x 5cm x 2cm"
+  material        String?
+  care            String?  // care instructions
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
