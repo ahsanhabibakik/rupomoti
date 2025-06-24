@@ -59,7 +59,7 @@ export default function AccountPage() {
   useEffect(() => {
     if (activeTab === 'profile') {
       setLoading((l) => ({ ...l, profile: true }))
-      fetch('/api/account/profile')
+      fetch('/api/auth/me')
         .then((r) => r.json())
         .then(setProfile)
         .catch(() => setError((e) => ({ ...e, profile: 'Failed to load profile' })))

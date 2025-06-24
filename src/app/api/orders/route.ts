@@ -105,6 +105,8 @@ export async function DELETE(request: Request) {
 
 export async function POST(req: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    const body = await req.json();
     const {
       orderNumber,
       recipientName,
@@ -121,53 +123,65 @@ export async function POST(req: Request) {
       deliveryAddress,
       orderNote,
       paymentMethod,
-      userId
-    } = await req.json()
+      userId: payloadUserId
+    } = body;
+
+    // Use session userId if not provided
+    const userId = payloadUserId || session?.user?.id || undefined;
 
     // Validate required fields
-    if (!orderNumber || !recipientName || !recipientPhone || !recipientCity || !recipientZone || !recipientArea || !items || !Array.isArray(items) || items.length === 0) {
-      return NextResponse.json({ 
-        error: 'Missing required fields: orderNumber, recipientName, recipientPhone, recipientCity, recipientZone, recipientArea, or items' 
-      }, { status: 400 })
+    if (!orderNumber) {
+      return NextResponse.json({ error: 'Missing required field: orderNumber' }, { status: 400 });
+    }
+    if (!recipientName) {
+      return NextResponse.json({ error: 'Missing required field: recipientName' }, { status: 400 });
+    }
+    if (!recipientPhone) {
+      return NextResponse.json({ error: 'Missing required field: recipientPhone' }, { status: 400 });
+    }
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return NextResponse.json({ error: 'Missing or empty items array' }, { status: 400 });
+    }
+    if (!deliveryZone) {
+      return NextResponse.json({ error: 'Missing required field: deliveryZone' }, { status: 400 });
+    }
+    if (!deliveryAddress) {
+      return NextResponse.json({ error: 'Missing required field: deliveryAddress' }, { status: 400 });
     }
 
-    if (!deliveryZone || !deliveryAddress) {
-      return NextResponse.json({ 
-        error: 'Delivery zone and address are required' 
-      }, { status: 400 })
-    }
-
+    // Optional: recipientCity, recipientZone, recipientArea, recipientEmail, orderNote
+    // Defensive: fallback to empty string if not provided
     try {
       // Create or find customer by phone
       let customerRecord = await prisma.customer.findUnique({
         where: { phone: recipientPhone }
-      })
+      });
 
       if (!customerRecord) {
         customerRecord = await prisma.customer.create({
           data: {
             name: recipientName,
             phone: recipientPhone,
-            email: recipientEmail,
+            email: recipientEmail || '',
             address: deliveryAddress,
-            city: recipientCity,
-            zone: recipientZone,
+            city: recipientCity || '',
+            zone: recipientZone || '',
             userId: userId || undefined
           }
-        })
+        });
       } else {
         // Update existing customer with latest info
         customerRecord = await prisma.customer.update({
           where: { id: customerRecord.id },
           data: {
             name: recipientName,
-            email: recipientEmail,
+            email: recipientEmail || '',
             address: deliveryAddress,
-            city: recipientCity,
-            zone: recipientZone,
+            city: recipientCity || '',
+            zone: recipientZone || '',
             userId: userId || customerRecord.userId
           }
-        })
+        });
       }
 
       // Create the order
@@ -179,19 +193,19 @@ export async function POST(req: Request) {
           status: 'PENDING',
           paymentStatus: 'PENDING',
           paymentMethod: paymentMethod || 'CASH_ON_DELIVERY',
-          subtotal,
-          deliveryFee,
+          subtotal: subtotal || 0,
+          deliveryFee: deliveryFee || 0,
           discount: 0,
-          total,
+          total: total || 0,
           deliveryZone,
           deliveryAddress,
           orderNote: orderNote || undefined,
           recipientName,
           recipientPhone,
-          recipientEmail,
-          recipientCity,
-          recipientZone,
-          recipientArea,
+          recipientEmail: recipientEmail || '',
+          recipientCity: recipientCity || '',
+          recipientZone: recipientZone || '',
+          recipientArea: recipientArea || '',
           items: {
             create: items.map((item: any) => ({
               productId: item.productId,
@@ -202,7 +216,7 @@ export async function POST(req: Request) {
             })),
           },
         },
-        include: { 
+        include: {
           customer: true,
           items: {
             include: {
@@ -210,9 +224,9 @@ export async function POST(req: Request) {
             }
           }
         },
-      })
+      });
 
-      console.log('Order created successfully:', order.orderNumber)
+      console.log('Order created successfully:', order.orderNumber);
 
       return NextResponse.json({
         success: true,
@@ -228,20 +242,20 @@ export async function POST(req: Request) {
           },
           createdAt: order.createdAt
         }
-      })
+      });
     } catch (dbError: any) {
-      console.error('Database error:', dbError)
+      console.error('Database error:', dbError);
       if (dbError.code === 'P2002') {
-        return NextResponse.json({ 
-          error: 'Order number already exists. Please try again.' 
-        }, { status: 400 })
+        return NextResponse.json({
+          error: 'Order number already exists. Please try again.'
+        }, { status: 400 });
       }
-      throw dbError
+      throw dbError;
     }
   } catch (error: any) {
-    console.error('Error creating order:', error)
-    return NextResponse.json({ 
-      error: error.message || 'Failed to create order' 
-    }, { status: 500 })
+    console.error('Error creating order:', error);
+    return NextResponse.json({
+      error: error.message || 'Failed to create order'
+    }, { status: 500 });
   }
 } 
