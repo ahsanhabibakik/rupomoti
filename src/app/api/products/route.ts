@@ -11,6 +11,7 @@ export async function GET(request: Request) {
     const minPrice = Number(searchParams.get('minPrice')) || 0
     const maxPrice = Number(searchParams.get('maxPrice')) || 100000
     const sort = searchParams.get('sort') || 'newest'
+    const status = searchParams.get('status')
 
     // Build the where clause
     const where = {
@@ -44,7 +45,19 @@ export async function GET(request: Request) {
               },
             ]
           : []),
+        // Add status filter if status is provided
+        ...(status
+          ? [
+              {
+                status: status,
+              },
+            ]
+          : []),
       ],
+      // Ensure category exists
+      category: {
+        isNot: null
+      },
     }
 
     // Build the orderBy clause
@@ -61,6 +74,7 @@ export async function GET(request: Request) {
         orderBy = { createdAt: 'desc' }
     }
 
+    const totalProducts = await prisma.product.count({ where })
     const products = await prisma.product.findMany({
       where,
       orderBy,
@@ -69,7 +83,7 @@ export async function GET(request: Request) {
       },
     })
 
-    return NextResponse.json(products)
+    return NextResponse.json({ totalProducts, products })
   } catch (error) {
     console.error('Error fetching products:', error)
     return NextResponse.json(
