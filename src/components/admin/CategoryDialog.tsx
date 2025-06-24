@@ -23,6 +23,8 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { showToast } from '@/lib/toast'
 import { Loader2 } from 'lucide-react'
+import { ImageUpload } from './ImageUpload'
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group'
 
 interface Category {
   id: string
@@ -91,6 +93,7 @@ export function CategoryDialog({
   
   const [errors, setErrors] = useState<FormErrors>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [imageInputMethod, setImageInputMethod] = useState('upload');
   const isEditing = !!category
 
   // Generate slug from name
@@ -115,6 +118,11 @@ export function CategoryDialog({
         metaTitle: category.metaTitle || '',
         metaDescription: category.metaDescription || ''
       })
+      if (category.image) {
+        setImageInputMethod('url')
+      } else {
+        setImageInputMethod('upload')
+      }
     } else {
       setFormData({
         name: '',
@@ -127,6 +135,7 @@ export function CategoryDialog({
         metaTitle: '',
         metaDescription: ''
       })
+      setImageInputMethod('upload')
     }
     setErrors({})
   }, [category, open])
@@ -328,17 +337,41 @@ export function CategoryDialog({
             {/* Settings */}
             <div className="space-y-4">
               <div>
-                <Label htmlFor="image" className="text-sm font-medium">
-                  Category Image URL
-                </Label>
-                <Input
-                  id="image"
-                  type="url"
-                  value={formData.image}
-                  onChange={(e) => handleInputChange('image', e.target.value)}
-                  placeholder="https://example.com/image.jpg"
-                  disabled={isSubmitting}
-                />
+                <Label className="text-sm font-medium">Category Image</Label>
+                <RadioGroup
+                  value={imageInputMethod}
+                  onValueChange={(value) => {
+                    setImageInputMethod(value)
+                    handleInputChange('image', '') // Clear image on method change
+                  }}
+                  className="flex space-x-4 py-2"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="url" id="url" />
+                    <Label htmlFor="url">URL</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="upload" id="upload" />
+                    <Label htmlFor="upload">Upload</Label>
+                  </div>
+                </RadioGroup>
+
+                {imageInputMethod === 'url' ? (
+                  <Input
+                    id="image"
+                    type="url"
+                    value={formData.image}
+                    onChange={(e) => handleInputChange('image', e.target.value)}
+                    placeholder="https://example.com/image.jpg"
+                    disabled={isSubmitting}
+                  />
+                ) : (
+                  <ImageUpload
+                    value={formData.image ? [formData.image] : []}
+                    onChange={(urls) => handleInputChange('image', urls[0] || '')}
+                    maxFiles={1}
+                  />
+                )}
               </div>
 
               <div>
