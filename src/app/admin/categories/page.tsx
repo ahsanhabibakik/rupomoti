@@ -97,20 +97,20 @@ export default function CategoriesPage() {
         )
       },
     },
-    {
-      accessorKey: 'name',
-      header: 'Name',
-    },
-    {
-      accessorKey: 'description',
-      header: 'Description',
-    },
-    {
-      accessorKey: '_count.products',
-      header: 'Products',
-    },
-    {
-      id: 'actions',
+  {
+    accessorKey: 'name',
+    header: 'Name',
+  },
+  {
+    accessorKey: 'description',
+    header: 'Description',
+  },
+  {
+    accessorKey: '_count.products',
+    header: 'Products',
+  },
+  {
+    id: 'actions',
       cell: ({ row }) => (
         <CategoryActions
           category={row.original}

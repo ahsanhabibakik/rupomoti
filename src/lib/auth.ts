@@ -1,12 +1,11 @@
-import { PrismaAdapter } from "@auth/prisma-adapter";
-import { NextAuthOptions } from "next-auth";
+import { NextAuthOptions, getServerSession } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
-import prisma from "./prisma-init";
+import prisma from "./prisma";
 import { compare } from "bcryptjs";
+import { User } from "@prisma/client";
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -44,7 +43,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           role: user.role,
           image: user.image,
-        };
+        } as User;
       },
     }),
   ],
@@ -57,49 +56,30 @@ export const authOptions: NextAuthOptions = {
     error: "/signin",
   },
   callbacks: {
-    async jwt({ token, user, account }) {
-      if (user) {
-        token.role = user.role;
+    async jwt({ token, user }) {
+      if (user) { // On sign-in, `user` object is present
         token.id = user.id;
-      }
-      if (account?.provider === 'google') {
-        const existingUser = await prisma.user.findUnique({
-          where: { email: token.email! },
-        });
-        if (existingUser) {
-          token.role = existingUser.role;
-          token.id = existingUser.id;
+        token.role = user.role;
+      } else { // On subsequent requests, fetch user data from DB
+        if (token.email) {
+          const dbUser = await prisma.user.findUnique({ where: { email: token.email } });
+          if (dbUser) {
+            token.id = dbUser.id;
+            token.role = dbUser.role;
+          }
         }
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.role = token.role as string;
         session.user.id = token.id as string;
+        session.user.role = token.role as string;
       }
       return session;
     },
-    async signIn({ user, account, profile }) {
-      if (account?.provider === "google") {
-        // Create user if doesn't exist
-        const existingUser = await prisma.user.findUnique({
-          where: { email: user.email! },
-        });
-        
-        if (!existingUser) {
-          await prisma.user.create({
-            data: {
-              email: user.email!,
-              name: user.name,
-              image: user.image,
-              role: "USER", // Default role for Google sign-ins
-            },
-          });
-        }
-      }
-      return true;
-    },
   },
   debug: process.env.NODE_ENV === 'development',
-}; 
+};
+
+export const getAuthSession = () => getServerSession(authOptions); 

@@ -200,7 +200,7 @@ export async function PATCH(request: Request) {
   } catch (error) {
     console.error('Error updating product status:', error);
     return NextResponse.json({ error: 'Failed to update product status' }, { status: 500 });
-  }
+    }
 }
 
 // Helper function to generate SKU

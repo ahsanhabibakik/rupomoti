@@ -1,95 +1,110 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Plus } from 'lucide-react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { Plus, SlidersHorizontal } from 'lucide-react'
+import { useDebounce } from '@/hooks/useDebounce'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { DataTable } from '@/components/ui/data-table'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Label } from '@/components/ui/label'
 import { CouponDialog } from '@/components/admin/CouponDialog'
-import { toast } from '@/lib/toast'
+import { useCoupons } from '@/hooks/useCoupons'
+import { CouponTableSkeleton } from '@/components/admin/CouponTableSkeleton'
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from '@/components/ui/badge'
 
-const columns = [
-  {
-    accessorKey: 'code',
-    header: 'Code',
-  },
+export default function CouponsPage() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const { coupons, isLoading, error, mutate } = useCoupons(searchParams.toString())
+
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [selectedCoupon, setSelectedCoupon] = useState<any>(null)
+  
+  const searchTerm = searchParams.get('q') || ''
+  const [localSearch, setLocalSearch] = useState(searchTerm)
+  const debouncedSearch = useDebounce(localSearch, 500)
+
+  const createQueryString = useCallback(
+    (paramsToUpdate: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams.toString())
+      Object.entries(paramsToUpdate).forEach(([key, value]) => {
+        if (value === null) {
+          params.delete(key)
+        } else {
+          params.set(key, value)
+        }
+      })
+      return params.toString()
+    },
+    [searchParams]
+  )
+  
+  useEffect(() => {
+    router.push(`${pathname}?${createQueryString({ q: debouncedSearch || null })}`, { scroll: false })
+  }, [debouncedSearch, router, pathname, createQueryString])
+
+  const handleOpenDialog = (coupon: any = null) => {
+    setSelectedCoupon(coupon)
+    setIsDialogOpen(true)
+  }
+
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false)
+    setSelectedCoupon(null)
+    mutate() // Re-fetch coupons
+  }
+  
+  const status = searchParams.get('status') || 'ACTIVE';
+  const type = searchParams.get('type') || 'all';
+
+  const columns = useMemo(() => [
+    { accessorKey: 'code', header: 'Code' },
   {
     accessorKey: 'type',
     header: 'Type',
     cell: ({ row }) => {
-      const type = row.getValue('type')
-      return type === 'PERCENTAGE' ? 'Percentage' : 'Fixed Amount'
-    },
+        const type = row.getValue('type');
+        return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
+      }
   },
   {
     accessorKey: 'value',
     header: 'Value',
     cell: ({ row }) => {
-      const type = row.getValue('type')
-      const value = row.getValue('value')
-      return type === 'PERCENTAGE' ? `${value}%` : `৳${value}`
+        const type = row.original.type;
+        const value = row.getValue('value');
+        return type === 'percentage' ? `${value}%` : `৳${value}`;
+      }
     },
-  },
-  {
-    accessorKey: 'minPurchase',
-    header: 'Min. Purchase',
-    cell: ({ row }) => {
-      const value = row.getValue('minPurchase')
-      return value ? `৳${value}` : 'No minimum'
-    },
+    {
+      accessorKey: 'minimumAmount',
+      header: 'Min. Spend',
+      cell: ({ row }) => row.original.minimumAmount ? `৳${row.original.minimumAmount}` : 'N/A'
   },
   {
     accessorKey: 'usageLimit',
     header: 'Usage Limit',
-    cell: ({ row }) => {
-      const value = row.getValue('usageLimit')
-      return value || 'Unlimited'
+      cell: ({ row }) => row.original.usageLimit ?? 'Unlimited'
     },
-  },
-  {
-    accessorKey: 'usedCount',
-    header: 'Used',
-  },
+    { accessorKey: 'usedCount', header: 'Used' },
   {
     accessorKey: 'validUntil',
     header: 'Valid Until',
-    cell: ({ row }) => {
-      const date = row.getValue('validUntil')
-      return date ? new Date(date).toLocaleDateString() : 'No expiry'
-    },
+      cell: ({ row }) => new Date(row.original.validUntil).toLocaleDateString()
   },
   {
-    accessorKey: 'status',
+      accessorKey: 'isActive',
     header: 'Status',
     cell: ({ row }) => {
-      const status = row.getValue('status')
-      return (
-        <span
-          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-            status === 'ACTIVE'
-              ? 'bg-green-100 text-green-800'
-              : 'bg-red-100 text-red-800'
-          }`}
-        >
-          {status}
-        </span>
-      )
-    },
+        const isActive = row.getValue('isActive');
+        return <Badge variant={isActive ? 'success' : 'destructive'}>{isActive ? 'Active' : 'Inactive'}</Badge>;
+      }
   },
   {
     id: 'actions',
@@ -97,196 +112,101 @@ const columns = [
       const coupon = row.original
       return (
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleStatusChange(coupon.id, coupon.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE')}
-          >
-            {coupon.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
+            <Button variant="outline" size="sm" onClick={() => handleOpenDialog(coupon)}>
+              Edit
           </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => handleDelete(coupon.id)}
-          >
+            <Button variant="destructive" size="sm" onClick={() => console.log('delete', coupon.id)}>
             Delete
           </Button>
         </div>
       )
     },
   },
-]
+  ], []);
 
-const STATUS_TABS = [
-  { label: 'Active', value: 'ACTIVE' },
-  { label: 'Expired', value: 'EXPIRED' },
-  { label: 'Used', value: 'USED' },
-  { label: 'Inactive', value: 'INACTIVE' },
-]
+  const activeFiltersCount = [
+    searchParams.get('type') && searchParams.get('type') !== 'all',
+  ].filter(Boolean).length;
 
-export default function CouponsPage() {
-  const [search, setSearch] = useState('')
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [coupons, setCoupons] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('ACTIVE')
-  const [editingCoupon, setEditingCoupon] = useState<any>(null)
-
-  useEffect(() => {
-    fetchCoupons()
-  }, [])
-
-  const fetchCoupons = async () => {
-    try {
-      const response = await fetch('/api/coupons')
-      const data = await response.json()
-      setCoupons(data)
-      setLoading(false)
-    } catch (error) {
-      console.error('Error fetching coupons:', error)
-      setLoading(false)
-    }
-  }
-
-  const handleStatusChange = async (couponId: string, status: string) => {
-    try {
-      const response = await fetch(`/api/coupons/${couponId}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status }),
-      })
-      if (response.ok) {
-        fetchCoupons()
-      } else {
-        console.error('Error changing coupon status')
-      }
-    } catch (error) {
-      console.error('Error changing coupon status:', error)
-    }
-  }
-
-  const handleDelete = async (couponId: string) => {
-    if (window.confirm('Are you sure you want to delete this coupon?')) {
-      try {
-        const response = await fetch(`/api/coupons/${couponId}`, {
-          method: 'DELETE',
-        })
-        if (response.ok) {
-          fetchCoupons()
-        } else {
-          console.error('Error deleting coupon')
-        }
-      } catch (error) {
-        console.error('Error deleting coupon:', error)
-      }
-    }
-  }
-
-  const handleAdd = () => {
-    setEditingCoupon(null)
-    setIsDialogOpen(true)
-  }
-
-  const handleEdit = (coupon: any) => {
-    setEditingCoupon(coupon)
-    setIsDialogOpen(true)
-  }
-
-  // Filter coupons by status
-  const filteredCoupons = coupons.filter((coupon: any) => {
-    if (activeTab === 'EXPIRED') {
-      return new Date(coupon.validUntil) < new Date() && coupon.status === 'ACTIVE'
-    }
-    if (activeTab === 'USED') {
-      return coupon.usedCount > 0
-    }
-    return coupon.status === activeTab
-  })
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="h-32 w-32 animate-spin rounded-full border-b-2 border-primary"></div>
-      </div>
-    )
+  if (isLoading && !coupons) {
+    return <CouponTableSkeleton />
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Coupons</h1>
-        <Button onClick={handleAdd}>
+        <Button onClick={() => handleOpenDialog()}>
           <Plus className="w-4 h-4 mr-2" />
           Add Coupon
         </Button>
       </div>
 
+      <Tabs value={status} onValueChange={(value) => router.push(`${pathname}?${createQueryString({ status: value })}`, { scroll: false })}>
+        <TabsList>
+          <TabsTrigger value="ACTIVE">Active</TabsTrigger>
+          <TabsTrigger value="INACTIVE">Inactive</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       <div className="flex items-center gap-4">
-        {STATUS_TABS.map(tab => (
-          <Button
-            key={tab.value}
-            variant={activeTab === tab.value ? 'default' : 'outline'}
-            onClick={() => setActiveTab(tab.value)}
-          >
-            {tab.label}
-          </Button>
-        ))}
         <Input
-          placeholder="Search coupons..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-sm ml-auto"
+          placeholder="Search by coupon code..."
+          value={localSearch}
+          onChange={(e) => setLocalSearch(e.target.value)}
+          className="max-w-sm"
         />
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="gap-2">
+              <SlidersHorizontal className="h-4 w-4" /> Filter
+              {activeFiltersCount > 0 && <Badge variant="secondary">{activeFiltersCount}</Badge>}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-60">
+            <div className="grid gap-4">
+              <div className="space-y-2">
+                <h4 className="font-medium leading-none">Filters</h4>
+                <p className="text-sm text-muted-foreground">
+                  Refine your coupon list.
+                </p>
+              </div>
+              <div className="grid gap-2">
+                <div className="grid grid-cols-3 items-center gap-4">
+                  <Label htmlFor="type">Type</Label>
+                  <Select
+                    value={type}
+                    onValueChange={(value) => router.push(`${pathname}?${createQueryString({ type: value === 'all' ? null : value })}`, { scroll: false })}
+                  >
+                    <SelectTrigger id="type" className="col-span-2 h-8">
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="percentage">Percentage</SelectItem>
+                      <SelectItem value="fixed">Fixed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
 
-      <DataTable
-        columns={columns.map(col =>
-          col.id === 'actions'
-            ? {
-                ...col,
-                cell: ({ row }: any) => {
-                  const coupon = row.original
-                  return (
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(coupon)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleStatusChange(coupon.id, coupon.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE')}
-                      >
-                        {coupon.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDelete(coupon.id)}
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  )
-                },
-              }
-            : col
-        )}
-        data={filteredCoupons.filter((coupon: any) =>
-          coupon.code.toLowerCase().includes(search.toLowerCase())
-        )}
-      />
+      {isLoading ? (
+        <CouponTableSkeleton />
+      ) : error ? (
+        <div className="text-red-500">Failed to load coupons.</div>
+      ) : (
+        <DataTable columns={columns} data={coupons || []} />
+      )}
 
       <CouponDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
-        coupon={editingCoupon}
-        onClose={fetchCoupons}
+        onClose={handleCloseDialog}
+        coupon={selectedCoupon}
       />
     </div>
   )

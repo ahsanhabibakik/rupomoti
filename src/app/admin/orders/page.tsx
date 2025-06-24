@@ -585,23 +585,23 @@ export default function OrdersPage() {
                 </Select>
               </div>
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+            <Button
+              variant="outline"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page <= 1}
-                >
-                  Previous
-                </Button>
-                <span>
-                  Page {page} of {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            >
+              Previous
+            </Button>
+            <span>
+              Page {page} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page >= totalPages}
-                >
-                  Next
-                </Button>
+            >
+              Next
+            </Button>
               </div>
             </div>
           </div>

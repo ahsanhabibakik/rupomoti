@@ -67,7 +67,7 @@ export default function ProductsPage() {
     totalPages: 1,
     totalCount: 0,
   });
-
+  
   const [filters, setFilters] = useState({
     search: '',
     categoryId: 'all-categories',
@@ -216,7 +216,7 @@ export default function ProductsPage() {
         { loading: 'Deleting permanently...', success: 'Product deleted', error: (e) => e.message }
     );
   };
-  
+
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
     setIsDialogOpen(true);
@@ -262,7 +262,7 @@ export default function ProductsPage() {
                 <SelectItem value="low-stock">Low Stock (&lt;10)</SelectItem>
                 </SelectContent>
             </Select>
-        </div>
+      </div>
 
         <div className="space-y-2">
             <div className="flex justify-between items-center">
@@ -283,62 +283,62 @@ export default function ProductsPage() {
         <div className="space-y-2">
             <label className="text-sm font-medium">Status Flags</label>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                <Select value={filters.isFeatured} onValueChange={(v) => handleFilterChange('isFeatured', v)}>
+          <Select value={filters.isFeatured} onValueChange={(v) => handleFilterChange('isFeatured', v)}>
                     <SelectTrigger><SelectValue placeholder="Featured" /></SelectTrigger>
-                    <SelectContent>
+            <SelectContent>
                       <SelectItem value="all-featured">Any</SelectItem>
-                      <SelectItem value="true">Featured</SelectItem>
-                      <SelectItem value="false">Not Featured</SelectItem>
-                    </SelectContent>
-                </Select>
-                <Select value={filters.isNewArrival} onValueChange={(v) => handleFilterChange('isNewArrival', v)}>
+              <SelectItem value="true">Featured</SelectItem>
+              <SelectItem value="false">Not Featured</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filters.isNewArrival} onValueChange={(v) => handleFilterChange('isNewArrival', v)}>
                     <SelectTrigger><SelectValue placeholder="New Arrival" /></SelectTrigger>
-                    <SelectContent>
+            <SelectContent>
                       <SelectItem value="all-new-arrival">Any</SelectItem>
-                      <SelectItem value="true">New Arrival</SelectItem>
-                      <SelectItem value="false">Not New Arrival</SelectItem>
-                    </SelectContent>
-                </Select>
-                <Select value={filters.isPopular} onValueChange={(v) => handleFilterChange('isPopular', v)}>
+              <SelectItem value="true">New Arrival</SelectItem>
+              <SelectItem value="false">Not New Arrival</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filters.isPopular} onValueChange={(v) => handleFilterChange('isPopular', v)}>
                     <SelectTrigger><SelectValue placeholder="Popular" /></SelectTrigger>
-                    <SelectContent>
+            <SelectContent>
                       <SelectItem value="all-popular">Any</SelectItem>
-                      <SelectItem value="true">Popular</SelectItem>
-                      <SelectItem value="false">Not Popular</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
+              <SelectItem value="true">Popular</SelectItem>
+              <SelectItem value="false">Not Popular</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         </div>
         <div className="flex justify-end pt-2">
             <Button variant="ghost" onClick={clearFilters}>Clear All Filters</Button>
         </div>
-    </div>
+      </div>
   );
 
   const productRows = useMemo(() => products.map((product) => (
-      <TableRow key={product.id}>
-        <TableCell>
-          <Image
-            src={product.images[0] || '/placeholder.png'}
-            alt={product.name}
-            width={50}
-            height={50}
-            className="rounded-md object-cover"
-          />
-        </TableCell>
+            <TableRow key={product.id}>
+              <TableCell>
+                <Image
+                  src={product.images[0] || '/placeholder.png'}
+                  alt={product.name}
+                  width={50}
+                  height={50}
+                  className="rounded-md object-cover"
+                />
+              </TableCell>
         <TableCell className="min-w-[200px] font-medium">{product.name}</TableCell>
-        <TableCell>{product.sku}</TableCell>
-        <TableCell>৳{product.price}</TableCell>
-        <TableCell>{product.stock}</TableCell>
-        <TableCell>
-          <div className="flex flex-wrap gap-1">
-            {product.isFeatured && <Badge variant="outline">Featured</Badge>}
-            {product.isNewArrival && <Badge variant="outline" className="border-blue-500 text-blue-500">New</Badge>}
-            {product.isPopular && <Badge variant="outline" className="border-green-500 text-green-500">Popular</Badge>}
-          </div>
-        </TableCell>
-        <TableCell>
-          <div className="flex items-center gap-2">
+              <TableCell>{product.sku}</TableCell>
+              <TableCell>৳{product.price}</TableCell>
+              <TableCell>{product.stock}</TableCell>
+              <TableCell>
+                <div className="flex flex-wrap gap-1">
+                  {product.isFeatured && <Badge variant="outline">Featured</Badge>}
+                  {product.isNewArrival && <Badge variant="outline" className="border-blue-500 text-blue-500">New</Badge>}
+                  {product.isPopular && <Badge variant="outline" className="border-green-500 text-green-500">Popular</Badge>}
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
             {activeTab === 'active' ? (
               <>
                 <Button variant="outline" size="sm" onClick={() => handleEdit(product)}>Edit</Button>
@@ -350,9 +350,9 @@ export default function ProductsPage() {
                 <Button variant="destructive" size="sm" onClick={() => handlePermanentDelete(product.id)}><Trash2 className="mr-2 h-4 w-4" /> Delete</Button>
               </>
             )}
-          </div>
-        </TableCell>
-      </TableRow>
+                </div>
+              </TableCell>
+            </TableRow>
     )), [products, activeTab]);
   
   if (error) return <div className="text-red-500 text-center p-4">Error: {error}. Please try refreshing the page.</div>;
