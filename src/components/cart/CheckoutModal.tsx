@@ -27,7 +27,10 @@ const PAYMENT_OPTIONS = [
 export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   const dispatch = useAppDispatch()
   const items = useAppSelector((state) => state.cart.items)
-  const cartTotal = useAppSelector((state) => state.cart.total)
+  const cartTotal = items.reduce((sum, item) => {
+    const price = item.salePrice && item.salePrice > 0 ? item.salePrice : item.price
+    return sum + price * item.quantity
+  }, 0)
   const discount = useAppSelector((state) => state.cart.discount)
   const shippingCost = useAppSelector((state) => state.cart.shippingCost)
   
@@ -35,47 +38,67 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   const [payment, setPayment] = useState('cod')
   const { register, handleSubmit, formState: { errors } } = useForm()
   const [submitted, setSubmitted] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const subtotal = cartTotal
   const deliveryCharge = DELIVERY_OPTIONS.find(opt => opt.value === delivery)?.price || 0
-  const total = subtotal - discount + deliveryCharge
+  const total = Math.round(subtotal - discount + deliveryCharge)
 
   const onSubmit: SubmitHandler<FieldValues> = async (data) => {
     try {
+      setErrorMessage(null)
+      const orderNumber = 'ORD-' + Date.now()
+      const customer = {
+        name: data.name,
+        phone: data.phone,
+        address: data.address,
+      }
+      const paymentMethodMap = {
+        cod: 'CASH_ON_DELIVERY',
+        bkash: 'BKASH',
+        bank: 'BANK_TRANSFER',
+      }
+      const deliveryZoneMap = {
+        dhaka: 'INSIDE_DHAKA',
+        near_dhaka: 'PERIPHERAL_DHAKA',
+        outside_dhaka: 'OUTSIDE_DHAKA',
+      } as const
+      const orderItems = items.map(item => ({
+        productId: (item as any).productId || item.id,
+        quantity: item.quantity,
+        price: typeof (item as any).salePrice === 'number' && (item as any).salePrice > 0
+          ? Math.round((item as any).salePrice)
+          : Math.round(item.price)
+      }))
       const fullOrder = {
-        ...data,
-        delivery,
-        payment,
-        items,
-        subtotal,
-        discount,
-        deliveryCharge,
+        orderNumber,
+        customer,
+        items: orderItems,
+        subtotal: Math.round(subtotal),
+        discount: Math.round(discount),
+        deliveryFee: Math.round(deliveryCharge),
         total,
+        deliveryZone: deliveryZoneMap[delivery as keyof typeof deliveryZoneMap] || 'INSIDE_DHAKA',
+        deliveryAddress: data.address,
+        orderNote: data.note || '',
+        paymentMethod: paymentMethodMap[payment as keyof typeof paymentMethodMap] || 'CASH_ON_DELIVERY',
         orderDate: new Date().toISOString(),
       }
-      
-      console.log('Submitting order:', fullOrder)
-      
-      // Here you would typically send the order to your API
-      // const response = await fetch('/api/orders', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(fullOrder),
-      // })
-      
-      // if (response.ok) {
-      //   dispatch(clearCart())
-      //   setSubmitted(true)
-      // } else {
-      //   throw new Error('Failed to submit order')
-      // }
-      
-      // For now, just simulate success
-      dispatch(clearCart())
-      setSubmitted(true)
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fullOrder),
+      })
+      if (response.ok) {
+        dispatch(clearCart())
+        setSubmitted(true)
+      } else {
+        const result = await response.json()
+        setErrorMessage(result.error || 'Failed to submit order')
+      }
     } catch (error) {
+      setErrorMessage('Failed to submit order. Please try again.')
       console.error('Error submitting order:', error)
-      alert('Failed to submit order. Please try again.')
     }
   }
 
@@ -88,32 +111,37 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
         <DialogContent className="fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md sm:max-w-lg max-h-[90vh] overflow-y-auto bg-white p-6 rounded-2xl shadow-lg z-[1001]">
           {!submitted ? (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              {errorMessage && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-2 text-sm">
+                  {errorMessage}
+                </div>
+              )}
               {/* Ordered Product Summary */}
               <div className="space-y-2">
                 <h3 className="font-bold text-lg text-gray-800">Order Summary</h3>
                 {items.map((item) => (
                   <div key={item.id} className="flex justify-between text-sm text-gray-700">
                     <span>{item.name} x {item.quantity}</span>
-                    <span>৳{(item.price * item.quantity).toLocaleString()}</span>
+                    <span>৳{Math.round((typeof (item as any).salePrice === 'number' && (item as any).salePrice > 0 ? (item as any).salePrice : item.price) * item.quantity)}</span>
                   </div>
                 ))}
                 <div className="flex justify-between text-sm text-gray-700">
                   <span>Subtotal</span>
-                  <span>৳{subtotal.toLocaleString()}</span>
+                  <span>৳{Math.round(subtotal)}</span>
                 </div>
                 {discount > 0 && (
-                  <div className="flex justify-between text-sm text-green-600">
-                    <span>Discount</span>
-                    <span>-৳{discount.toLocaleString()}</span>
+                  <div className="flex justify-between text-sm font-bold text-green-600">
+                    <span>You saved</span>
+                    <span>৳{Math.round(discount)}!</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm text-gray-700">
                   <span>Delivery Charge</span>
-                  <span>৳{deliveryCharge}</span>
+                  <span>৳{Math.round(deliveryCharge)}</span>
                 </div>
                 <div className="flex justify-between font-bold text-md text-gray-900 border-t pt-2">
                   <span>Total</span>
-                  <span>৳{total.toLocaleString()}</span>
+                  <span>৳{total}</span>
                 </div>
               </div>
 
@@ -175,7 +203,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
               </div>
 
               <button type="submit" className="w-full py-3 bg-yellow-500 text-white font-bold rounded-lg hover:bg-yellow-600 transition-colors text-base">
-                Confirm Order — ৳{total.toLocaleString()}
+                Confirm Order — ৳{total}
               </button>
             </form>
           ) : (

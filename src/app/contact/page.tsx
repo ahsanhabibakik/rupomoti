@@ -82,7 +82,7 @@ export default function ContactPage() {
                     className="input w-full"
                     required
                   >
-                    <option value="">Select a subject</option>
+                    <option value="select-subject">Select a subject</option>
                     <option value="appointment">Schedule an Appointment</option>
                     <option value="custom">Custom Design Inquiry</option>
                     <option value="repair">Jewelry Repair</option>

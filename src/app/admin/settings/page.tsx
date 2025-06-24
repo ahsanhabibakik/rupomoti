@@ -29,7 +29,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     fetchSettings();
-  }, []);
+  }, [fetchSettings]);
 
   const fetchSettings = async () => {
     setIsLoading(true);

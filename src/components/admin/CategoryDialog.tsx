@@ -309,7 +309,7 @@ export function CategoryDialog({
                     <SelectValue placeholder="Select parent category (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No Parent (Top Level)</SelectItem>
+                    <SelectItem value="no-parent">No Parent (Top Level)</SelectItem>
                     {parentOptions
                       .filter(cat => !cat.parentId) // Only show top-level categories as parents
                       .map((cat) => (

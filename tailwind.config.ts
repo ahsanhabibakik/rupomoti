@@ -57,9 +57,9 @@ const config = {
         },
         // Premium Jewelry Color Palette
         primary: {
-          DEFAULT: "#0D1E78", // Deep Sapphire Blue
-          light: "#1A237E",
-          dark: "#000051",
+          DEFAULT: "#4A2E21", // Soft Cocoa Brown
+          light: "#8B6E4F",
+          dark: "#2D1B13",
         },
         accent: {
           DEFAULT: "#E8CBAF", // Champagne Gold
@@ -94,7 +94,7 @@ const config = {
           rose: "#B76E79",
         },
         sapphire: {
-          DEFAULT: "#0D1E78", // Updated to Deep Sapphire Blue
+          DEFAULT: "#0D1E78", // Deep Sapphire Blue
           light: "#1A237E",
           dark: "#000051",
         },
