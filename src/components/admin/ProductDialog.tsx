@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -13,15 +13,30 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ImageUpload } from '@/components/admin/ImageUpload'
 import { useCategories } from '@/hooks/useCategories'
 import { showToast } from '@/lib/toast'
+import { Switch } from '@/components/ui/switch'
+import { generateSKU } from '@/lib/utils/sku'
+import { RefreshCw } from 'lucide-react'
 
 const productSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().min(1, 'Description is required'),
-  price: z.string().min(1, 'Price is required').transform(Number),
-  salePrice: z.string().optional().transform((val) => (val ? Number(val) : undefined)),
-  stock: z.string().min(1, 'Stock is required').transform(Number),
+  price: z.preprocess(
+    (a) => parseFloat(z.string().parse(a)),
+    z.number().positive('Price must be positive')
+  ),
+  salePrice: z.preprocess(
+    (a) => (a ? parseFloat(z.string().parse(a)) : undefined),
+    z.number().positive('Sale price must be positive').optional()
+  ),
+  stock: z.preprocess(
+    (a) => parseInt(z.string().parse(a), 10),
+    z.number().min(0, 'Stock cannot be negative')
+  ),
   sku: z.string().min(1, 'SKU is required'),
   categoryId: z.string().min(1, 'Category is required'),
+  isFeatured: z.boolean().default(false),
+  isNewArrival: z.boolean().default(false),
+  isPopular: z.boolean().default(false),
 })
 
 type ProductFormValues = z.infer<typeof productSchema>
@@ -41,13 +56,37 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
     defaultValues: product || {
       name: '',
       description: '',
-      price: '',
-      salePrice: '',
-      stock: '',
+      price: 0,
+      salePrice: undefined,
+      stock: 0,
       sku: '',
       categoryId: '',
+      isFeatured: false,
+      isNewArrival: false,
+      isPopular: false,
     },
   })
+
+  // Auto-generate SKU from name
+  const productName = form.watch('name')
+  useEffect(() => {
+    if (productName && !form.getValues('sku')) {
+      form.setValue('sku', generateSKU(productName))
+    }
+  }, [productName, form])
+
+  const handleGenerateSku = () => {
+    const productName = form.getValues('name')
+    if (productName) {
+      form.setValue('sku', generateSKU(productName))
+    } else {
+      showToast.error('Please enter a product name first')
+    }
+  }
+
+  const price = form.watch('price')
+  const salePrice = form.watch('salePrice')
+  const discount = price && salePrice ? Math.round(((price - salePrice) / price) * 100) : 0
 
   const onSubmit = async (data: ProductFormValues) => {
     try {
@@ -136,7 +175,9 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
                     <FormControl>
                       <Input type="number" {...field} />
                     </FormControl>
-                    <FormMessage />
+                    {discount > 0 && (
+                      <FormMessage>{discount}% discount</FormMessage>
+                    )}
                   </FormItem>
                 )}
               />
@@ -163,9 +204,14 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>SKU</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
+                    <div className="flex items-center gap-2">
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <Button type="button" variant="outline" size="icon" onClick={handleGenerateSku}>
+                        <RefreshCw className="h-4 w-4" />
+                      </Button>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -196,6 +242,54 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
                 </FormItem>
               )}
             />
+
+            <div className="grid grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="isFeatured"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <FormLabel>Featured</FormLabel>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="isNewArrival"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <FormLabel>New Arrival</FormLabel>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="isPopular"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <FormLabel>Popular</FormLabel>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <div className="space-y-2">
               <FormLabel>Images</FormLabel>

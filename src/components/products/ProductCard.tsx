@@ -11,32 +11,15 @@ import { addToCart, toggleCart } from '@/redux/slices/cartSlice'
 import { useWishlist } from '@/hooks/useWishlist'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { Product } from '@/types/product'
 
 interface ProductCardProps {
-  id: string
-  name: string
-  description: string
-  price: number
-  image: string
-  category?: string
-  isNew?: boolean
-  isBestSeller?: boolean
-  isOutOfStock?: boolean
-  discount?: number
+  product: Product
 }
 
-export function ProductCard({
-  id,
-  name,
-  description,
-  price,
-  image,
-  category = 'Uncategorized',
-  isNew = false,
-  isBestSeller = false,
-  isOutOfStock = false,
-  discount = 0,
-}: ProductCardProps) {
+export function ProductCard({ product }: ProductCardProps) {
+  const { id, name, price, salePrice, images, isNewArrival, isPopular, isFeatured } = product
+  const discount = price && salePrice ? Math.round(((price - salePrice) / price) * 100) : 0
   const dispatch = useAppDispatch()
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist()
   const [isHovered, setIsHovered] = useState(false)
@@ -52,9 +35,9 @@ export function ProductCard({
       id,
       name,
       price: discount > 0 ? discountedPrice : safePrice,
-      image,
+      image: images[0] || '/placeholder.png',
       quantity: 1,
-      category
+      category: 'Uncategorized'
     }
     dispatch(addToCart(cartItem))
     dispatch(toggleCart())
@@ -72,62 +55,33 @@ export function ProductCard({
   }
 
   return (
-    <div 
-      className="group relative flex flex-col h-full overflow-hidden rounded-lg border border-base-dark bg-base-light p-2 sm:p-4 transition-all duration-300 hover:shadow-premium hover:border-accent"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <Link href={`/product/${id}`} className="block">
-        <div className="relative aspect-square overflow-hidden rounded-md">
-          <Image
-            src={image}
-            alt={name}
-            fill
-            className={cn(
-              'object-cover transition-transform duration-300',
-              isHovered ? 'scale-110' : 'scale-100'
-            )}
-            onLoad={() => setIsImageLoading(false)}
-          />
-          {isNew && (
-            <Badge className="absolute left-2 top-2 bg-primary text-accent">New</Badge>
-          )}
-          {isBestSeller && (
-            <Badge className="absolute right-2 top-2 bg-accent text-primary">Best Seller</Badge>
-          )}
-          {isOutOfStock && (
-            <div className="absolute inset-0 flex items-center justify-center bg-base-light/80">
-              <Badge variant="destructive">Out of Stock</Badge>
-            </div>
-          )}
-          {discount > 0 && (
-            <Badge className="absolute top-2 left-2 bg-accent text-primary">-{discount}%</Badge>
-          )}
+    <Link href={`/product/${id}`} className="group relative block overflow-hidden rounded-lg">
+      <div className="relative aspect-[4/5] w-full">
+        <Image
+          src={images[0] || '/placeholder.png'}
+          alt={name}
+          fill
+          className="object-cover transition-transform duration-500 group-hover:scale-110"
+          sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 50vw"
+        />
+        <div className="absolute top-3 left-3 flex flex-col gap-2">
+          {isNewArrival && <Badge className="bg-primary text-primary-foreground">New</Badge>}
+          {isPopular && <Badge className="bg-green-500 text-white">Popular</Badge>}
+          {isFeatured && <Badge className="bg-blue-500 text-white">Featured</Badge>}
+          {discount > 0 && <Badge variant="destructive">-{discount}%</Badge>}
         </div>
-      </Link>
-      <div className="flex flex-col flex-1 gap-2 mt-2">
-        <div className="flex flex-wrap gap-2 min-h-[28px]">
-          {isNew && <Badge className="bg-primary text-accent">New</Badge>}
-          {isBestSeller && <Badge className="bg-accent text-primary">Best Seller</Badge>}
-          {discount > 0 && (
-            <Badge className="bg-accent text-primary">-{discount}% OFF</Badge>
-          )}
-        </div>
-        <h3 className="font-medium leading-tight text-base sm:text-lg line-clamp-1 text-neutral">{name}</h3>
-        <p className="text-sm text-neutral-light line-clamp-2 flex-1">{description}</p>
-        <div className="flex items-center justify-between mt-2">
-          <div>
-            {discount > 0 ? (
-              <div className="flex items-baseline gap-2">
-                <span className="font-bold text-lg text-accent">৳{discountedPrice.toFixed(2)}</span>
-                <span className="text-sm text-neutral-light line-through">৳{safePrice.toFixed(2)}</span>
-              </div>
-            ) : (
-              <span className="font-bold text-lg text-accent">৳{safePrice.toFixed(2)}</span>
-            )}
-          </div>
-          {isOutOfStock && (
-            <Badge className="bg-pearl text-neutral pointer-events-none">Out of Stock</Badge>
+      </div>
+
+      <div className="p-4 bg-background">
+        <h3 className="text-base font-semibold text-foreground truncate">{name}</h3>
+        <div className="flex items-baseline gap-2 mt-1">
+          <span className={`text-lg font-bold ${salePrice ? 'text-destructive' : 'text-foreground'}`}>
+            ৳{salePrice ? salePrice.toLocaleString() : price.toLocaleString()}
+          </span>
+          {salePrice && (
+            <span className="text-sm text-muted-foreground line-through">
+              ৳{price.toLocaleString()}
+            </span>
           )}
         </div>
         <div className="flex gap-2 mt-2">
@@ -153,13 +107,13 @@ export function ProductCard({
             size="icon"
             className="h-8 w-8 rounded-full hover:bg-pearl text-neutral-light hover:text-neutral"
             onClick={handleAddToCart}
-            disabled={isOutOfStock}
+            disabled={!salePrice && isOutOfStock}
             aria-label="Add to cart"
           >
             <ShoppingCart className="h-4 w-4" />
           </Button>
         </div>
       </div>
-    </div>
+    </Link>
   )
 } 

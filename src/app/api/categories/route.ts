@@ -6,25 +6,9 @@ import { prisma } from '@/lib/prisma'
 export async function GET() {
   try {
     const categories = await prisma.category.findMany({
-      include: {
-        parent: true,
-        children: {
-          include: {
-            children: true,
-            _count: {
-              select: { products: true }
-            }
-          }
-        },
-        _count: {
-          select: { products: true }
-        }
-      },
-      orderBy: [
-        { parent: { sortOrder: 'asc' } },
-        { sortOrder: 'asc' },
-        { name: 'asc' }
-      ]
+      orderBy: {
+        name: 'asc'
+      }
     })
 
     return NextResponse.json(categories)

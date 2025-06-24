@@ -3,17 +3,15 @@ export interface Product {
   name: string
   description: string
   price: number
+  salePrice?: number
+  sku: string
+  stock: number
   images: string[]
-  category: string
-  details: {
-    pearlType: string
-    pearlSize: string
-    pearlColor: string
-    clasp?: string
-    length?: string
-    setting?: string
-    closure?: string
-    size?: string
-  }
-  inStock: boolean
+  categoryId: string
+  category: any // You might want to define a proper Category type
+  isFeatured: boolean
+  isNewArrival: boolean
+  isPopular: boolean
+  createdAt: string
+  updatedAt: string
 } 
