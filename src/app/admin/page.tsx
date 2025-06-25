@@ -208,27 +208,27 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (orders && products && customers) {
-      const newOrderActivities = (orders || []).map((order: any) => ({
+      const newOrderActivities = Array.isArray(orders) ? orders.map((order: any) => ({
         id: `order-${order.id}`,
         type: 'order',
         message: `New order #${order.id} placed by ${order.customer?.name || 'a customer'}`,
         time: order.createdAt,
         amount: `৳${order.total.toLocaleString('bn-BD')}`,
-      }))
+      })) : [];
 
-      const newProductActivities = (products || []).map((product: any) => ({
+      const newProductActivities = Array.isArray(products) ? products.map((product: any) => ({
         id: `product-${product.id}`,
         type: 'product',
         message: `Product "${product.name}" was added`,
         time: product.createdAt,
-      }))
+      })) : [];
 
-      const newCustomerActivities = (customers || []).map((customer: any) => ({
+      const newCustomerActivities = Array.isArray(customers) ? customers.map((customer: any) => ({
         id: `customer-${customer.id}`,
         type: 'customer',
         message: `Customer "${customer.name || 'New User'}" signed up`,
         time: customer.createdAt,
-      }))
+      })) : [];
 
       const combined = [...newOrderActivities, ...newProductActivities, ...newCustomerActivities]
         .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
@@ -280,7 +280,7 @@ export default function DashboardPage() {
       )
 
       // Set recent orders
-      setRecentOrders(orders.slice(0, 5))
+      setRecentOrders(Array.isArray(orders) ? orders.slice(0, 5) : [])
     }
   }, [orders])
 
