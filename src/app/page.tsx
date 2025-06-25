@@ -8,6 +8,7 @@ import { HeroSlider } from '@/components/hero/HeroSlider'
 import { Product } from '@/types/product'
 import { prisma } from '@/lib/prisma'
 import { GemIcon, Crown, Diamond, Sparkles, ArrowRight } from 'lucide-react'
+import Loading from './loading'
 
 export const metadata: Metadata = {
   title: 'Rupomoti - Elegant Pearl Jewelry Collection',
