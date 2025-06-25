@@ -7,6 +7,7 @@ import { CartDrawer } from "@/components/cart/CartDrawer"
 import { useAppSelector, useAppDispatch } from "@/redux/hooks"
 import { toggleCart } from "@/redux/slices/cartSlice"
 import { usePathname } from 'next/navigation'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export function RootLayoutClient({
   children,
@@ -18,15 +19,43 @@ export function RootLayoutClient({
   const pathname = usePathname()
   const isAdmin = pathname?.startsWith('/admin')
 
+  const variants = {
+    hidden: { opacity: 0, filter: 'blur(4px)', scale: 0.98 },
+    enter: { opacity: 1, filter: 'blur(0px)', scale: 1 },
+    exit: { opacity: 0, filter: 'blur(4px)', scale: 0.98 },
+  }
+
   return (
     <ErrorBoundary fallback={<div>Something went wrong. Please try again later.</div>}>
       <div className="min-h-screen flex flex-col">
         {!isAdmin && <Navbar />}
-        <main className="flex-1">
-          <ErrorBoundary fallback={<div>Something went wrong. Please try again later.</div>}>
-            {children}
-          </ErrorBoundary>
-        </main>
+        {isAdmin ? (
+          <main className="flex-1">
+            <ErrorBoundary fallback={<div>Something went wrong. Please try again later.</div>}>
+              {children}
+            </ErrorBoundary>
+          </main>
+        ) : (
+          <AnimatePresence
+            mode="wait"
+            initial={false}
+            onExitComplete={() => window.scrollTo(0, 0)}
+          >
+            <motion.main
+              key={pathname}
+              variants={variants}
+              initial="hidden"
+              animate="enter"
+              exit="exit"
+              transition={{ duration: 0.4, ease: [0.43, 0.13, 0.23, 0.96] }}
+              className="flex-1"
+            >
+              <ErrorBoundary fallback={<div>Something went wrong. Please try again later.</div>}>
+                {children}
+              </ErrorBoundary>
+            </motion.main>
+          </AnimatePresence>
+        )}
         {!isAdmin && <Footer />}
         <CartDrawer open={isCartOpen} onOpenChange={(open) => dispatch(toggleCart())} />
       </div>
