@@ -33,7 +33,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { format } from 'date-fns'
-import { CalendarIcon, Loader2, Package, Truck, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
+import { CalendarIcon, Loader2, Package, Truck, CheckCircle, XCircle, AlertCircle, Eye, Check } from 'lucide-react'
 import { showToast } from '@/lib/toast'
 import { Badge, badgeVariants } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -181,7 +181,7 @@ export default function OrdersPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 admin-content">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Orders</h1>
         <div className="flex items-center gap-4">
@@ -273,9 +273,31 @@ export default function OrdersPage() {
                     </TableCell>
                   <TableCell>{format(new Date(order.createdAt), 'dd/MM/yyyy')}</TableCell>
                     <TableCell>
-                    <Button variant="outline" size="sm" onClick={() => setSelectedOrder(order)}>
-                              View Details
-                            </Button>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => setSelectedOrder(order)}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
+                        </Button>
+                        {order.status === 'PENDING' && (
+                          <Button 
+                            variant="default" 
+                            size="sm" 
+                            onClick={() => handleConfirmOrder(order)}
+                            disabled={processingOrder === order.id}
+                          >
+                            {processingOrder === order.id ? (
+                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                            ) : (
+                              <Check className="h-4 w-4 mr-1" />
+                            )}
+                            Confirm
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -285,37 +307,150 @@ export default function OrdersPage() {
 
       {selectedOrder && (
         <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
-          <DialogContent className="max-w-3xl">
+          <DialogContent className="max-w-4xl max-h-[90vh]">
             <DialogHeader>
               <DialogTitle>Order #{selectedOrder.orderNumber}</DialogTitle>
             </DialogHeader>
-            <ScrollArea className="max-h-[70vh] p-4">
-              <div className="space-y-4">
+            <ScrollArea className="max-h-[70vh]">
+              <div className="space-y-6 p-4">
+                {/* Order Status and Actions */}
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm text-muted-foreground">Status:</span>
+                      {getStatusBadge(selectedOrder.status)}
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm text-muted-foreground">Payment:</span>
+                      {getPaymentStatusBadge(selectedOrder.paymentStatus)}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {selectedOrder.status === 'PENDING' && (
+                      <Button 
+                        onClick={() => handleConfirmOrder(selectedOrder)}
+                        disabled={processingOrder === selectedOrder.id}
+                      >
+                        {processingOrder === selectedOrder.id ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                        )}
+                        Confirm Order
+                      </Button>
+                    )}
+                    <Select
+                      value={selectedOrder.status}
+                      onValueChange={(value) => handleUpdateStatus(selectedOrder.id, value)}
+                      disabled={processingOrder === selectedOrder.id}
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="PENDING">Pending</SelectItem>
+                        <SelectItem value="PROCESSING">Processing</SelectItem>
+                        <SelectItem value="CONFIRMED">Confirmed</SelectItem>
+                        <SelectItem value="SHIPPED">Shipped</SelectItem>
+                        <SelectItem value="DELIVERED">Delivered</SelectItem>
+                        <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Customer Information */}
+                <div>
+                  <h3 className="font-semibold mb-3">Customer Information</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Name:</span>
+                      <p className="font-medium">{selectedOrder.customer.name}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Email:</span>
+                      <p className="font-medium">{selectedOrder.customer.email}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Phone:</span>
+                      <p className="font-medium">{selectedOrder.customer.phone}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Address:</span>
+                      <p className="font-medium">{selectedOrder.customer.address}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Order Items */}
+                <div>
+                  <h3 className="font-semibold mb-3">Order Items</h3>
+                  <div className="space-y-3">
+                    {selectedOrder.items.map((item, index) => (
+                      <div key={index} className="flex items-center gap-4 p-3 border rounded-lg">
+                        <div className="relative w-16 h-16">
+                          <Image
+                            src={item.image}
+                            alt={item.name}
+                            fill
+                            className="object-cover rounded-md"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium">{item.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Quantity: {item.quantity} × ৳{item.price.toFixed(2)}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">৳{(item.price * item.quantity).toFixed(2)}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-4 text-right">
+                    <p className="text-lg font-bold">Total: ৳{selectedOrder.total.toFixed(2)}</p>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Courier Information */}
+                {selectedOrder.status === 'CONFIRMED' && !selectedOrder.courierConsignmentId ? (
+                  <CourierSelector 
+                    order={selectedOrder} 
+                    onShipmentCreated={() => {
+                      fetchOrders();
+                      setSelectedOrder(null);
+                    }} 
+                  />
+                ) : selectedOrder.courierName ? (
                   <div>
-                    <h3 className="font-semibold mb-2">Customer Information</h3>
-                    <p>{selectedOrder.customer.name}</p>
-                    <p>{selectedOrder.customer.phone}</p>
-                    <p>{selectedOrder.customer.address}</p>
-            </div>
-                  <Separator/>
-                  {selectedOrder.status === 'CONFIRMED' && !selectedOrder.courierConsignmentId ? (
-                      <CourierSelector 
-                          order={selectedOrder} 
-                          onShipmentCreated={() => {
-                              fetchOrders();
-                              setSelectedOrder(null);
-                          }} 
-                      />
-                  ) : selectedOrder.courierName ? (
+                    <h3 className="font-semibold mb-3">Courier Information</h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                          <h3 className="font-semibold mb-2">Courier Information</h3>
-                          <p><strong>Courier:</strong> {selectedOrder.courierName}</p>
-                          <p><strong>Tracking:</strong> {selectedOrder.courierTrackingCode || 'N/A'}</p>
-                          <p><strong>Status:</strong> {selectedOrder.courierStatus || 'N/A'}</p>
-              </div>
-                  ) : null }
-                  <Separator/>
-                  {/* Item details and totals */}
+                        <span className="text-muted-foreground">Courier:</span>
+                        <p className="font-medium">{selectedOrder.courierName}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Tracking Code:</span>
+                        <p className="font-medium">{selectedOrder.courierTrackingCode || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Status:</span>
+                        <p className="font-medium">{selectedOrder.courierStatus || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Consignment ID:</span>
+                        <p className="font-medium">{selectedOrder.courierConsignmentId || 'N/A'}</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </ScrollArea>
           </DialogContent>

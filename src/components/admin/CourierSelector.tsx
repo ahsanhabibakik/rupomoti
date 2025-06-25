@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { COURIERS, CourierId } from '@/lib/couriers';
 import { toast } from 'sonner';
+import { Loader2, Truck } from 'lucide-react';
 
 interface CourierSelectorProps {
   order: any;
@@ -20,13 +21,24 @@ interface CourierSelectorProps {
 }
 
 export function CourierSelector({ order, onShipmentCreated }: CourierSelectorProps) {
-  const [selectedCourier, setSelectedCourier] = useState<CourierId | null>(null);
+  const [selectedCourier, setSelectedCourier] = useState<CourierId | ''>('');
   const [isLoading, setIsLoading] = useState(false);
   const [areaInfo, setAreaInfo] = useState({ areaId: '', cityId: '', zoneId: '' });
 
   const handleCreateShipment = async () => {
     if (!selectedCourier) {
       toast.error('Please select a courier.');
+      return;
+    }
+
+    // Validate required fields based on courier
+    if (selectedCourier === 'redx' && !areaInfo.areaId) {
+      toast.error('Please enter RedX Delivery Area ID.');
+      return;
+    }
+
+    if (selectedCourier === 'pathao' && (!areaInfo.cityId || !areaInfo.zoneId)) {
+      toast.error('Please enter both Pathao City ID and Zone ID.');
       return;
     }
 
@@ -63,36 +75,75 @@ export function CourierSelector({ order, onShipmentCreated }: CourierSelectorPro
     switch (selectedCourier) {
       case 'redx':
         return (
-          <div className="mt-4">
-            <Label htmlFor="redx-area-id">RedX Delivery Area ID</Label>
-            <Input
-              id="redx-area-id"
-              value={areaInfo.areaId}
-              onChange={(e) => setAreaInfo({ ...areaInfo, areaId: e.target.value })}
-              placeholder="e.g., 12345"
-            />
+          <div className="mt-4 space-y-3">
+            <div>
+              <Label htmlFor="redx-area-id" className="text-sm font-medium">
+                RedX Delivery Area ID *
+              </Label>
+              <Input
+                id="redx-area-id"
+                value={areaInfo.areaId}
+                onChange={(e) => setAreaInfo({ ...areaInfo, areaId: e.target.value })}
+                placeholder="e.g., 12345"
+                disabled={isLoading}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Enter the RedX delivery area ID for the customer's location
+              </p>
+            </div>
           </div>
         );
       case 'pathao':
         return (
-          <div className="grid grid-cols-2 gap-4 mt-4">
-            <div>
-              <Label htmlFor="pathao-city-id">Pathao City ID</Label>
-              <Input
-                id="pathao-city-id"
-                value={areaInfo.cityId}
-                onChange={(e) => setAreaInfo({ ...areaInfo, cityId: e.target.value })}
-                placeholder="e.g., 1"
-              />
+          <div className="mt-4 space-y-3">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="pathao-city-id" className="text-sm font-medium">
+                  Pathao City ID *
+                </Label>
+                <Input
+                  id="pathao-city-id"
+                  value={areaInfo.cityId}
+                  onChange={(e) => setAreaInfo({ ...areaInfo, cityId: e.target.value })}
+                  placeholder="e.g., 1"
+                  disabled={isLoading}
+                />
+              </div>
+              <div>
+                <Label htmlFor="pathao-zone-id" className="text-sm font-medium">
+                  Pathao Zone ID *
+                </Label>
+                <Input
+                  id="pathao-zone-id"
+                  value={areaInfo.zoneId}
+                  onChange={(e) => setAreaInfo({ ...areaInfo, zoneId: e.target.value })}
+                  placeholder="e.g., 10"
+                  disabled={isLoading}
+                />
+              </div>
             </div>
-            <div>
-              <Label htmlFor="pathao-zone-id">Pathao Zone ID</Label>
-              <Input
-                id="pathao-zone-id"
-                value={areaInfo.zoneId}
-                onChange={(e) => setAreaInfo({ ...areaInfo, zoneId: e.target.value })}
-                placeholder="e.g., 10"
-              />
+            <p className="text-xs text-muted-foreground">
+              Enter the Pathao city and zone IDs for the customer's location
+            </p>
+          </div>
+        );
+      case 'steadfast':
+        return (
+          <div className="mt-4">
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                Steadfast courier will use the customer's address automatically. No additional configuration needed.
+              </p>
+            </div>
+          </div>
+        );
+      case 'carrybee':
+        return (
+          <div className="mt-4">
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                CarryBee integration is not yet implemented.
+              </p>
             </div>
           </div>
         );
@@ -102,13 +153,23 @@ export function CourierSelector({ order, onShipmentCreated }: CourierSelectorPro
   };
 
   return (
-    <div className="space-y-4 p-4 border rounded-lg">
-      <h3 className="font-semibold">Create Shipment</h3>
-      <div className="flex items-end gap-4">
-        <div className="flex-grow">
-          <Label>Select Courier</Label>
-          <Select onValueChange={(value) => setSelectedCourier(value as CourierId)} disabled={isLoading}>
-            <SelectTrigger>
+    <div className="space-y-4 p-4 border rounded-lg bg-card">
+      <div className="flex items-center gap-2">
+        <Truck className="h-5 w-5 text-primary" />
+        <h3 className="font-semibold text-lg">Create Shipment</h3>
+      </div>
+      
+      <div className="space-y-4">
+        <div>
+          <Label htmlFor="courier-select" className="text-sm font-medium">
+            Select Courier Service *
+          </Label>
+          <Select 
+            value={selectedCourier} 
+            onValueChange={(value) => setSelectedCourier(value as CourierId)} 
+            disabled={isLoading}
+          >
+            <SelectTrigger id="courier-select" className="w-full">
               <SelectValue placeholder="Choose a courier service" />
             </SelectTrigger>
             <SelectContent>
@@ -120,11 +181,29 @@ export function CourierSelector({ order, onShipmentCreated }: CourierSelectorPro
             </SelectContent>
           </Select>
         </div>
-        <Button onClick={handleCreateShipment} disabled={isLoading || !selectedCourier}>
-          {isLoading ? 'Creating...' : 'Create Shipment'}
-        </Button>
+
+        {renderCourierInputs()}
+
+        <div className="flex justify-end">
+          <Button 
+            onClick={handleCreateShipment} 
+            disabled={isLoading || !selectedCourier}
+            className="min-w-[140px]"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              <>
+                <Truck className="h-4 w-4 mr-2" />
+                Create Shipment
+              </>
+            )}
+          </Button>
+        </div>
       </div>
-      {renderCourierInputs()}
     </div>
   );
 } 

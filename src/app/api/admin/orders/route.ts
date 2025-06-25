@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
     });
-    if (!user?.isAdmin) {
+    if (!user?.isAdmin && user?.role !== 'MANAGER') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -104,7 +104,7 @@ export async function POST(request: Request) {
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
     });
-    if (!user?.isAdmin) {
+    if (!user?.isAdmin && user?.role !== 'MANAGER') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

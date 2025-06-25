@@ -41,7 +41,7 @@ export const authConfig: NextAuthOptions = {
           return null;
         }
 
-        if (user.role !== 'ADMIN') {
+        if (user.role !== 'ADMIN' && user.role !== 'MANAGER') {
           return null;
         }
 

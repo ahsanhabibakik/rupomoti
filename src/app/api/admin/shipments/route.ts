@@ -32,7 +32,7 @@ async function getPathaoAccessToken() {
 
 export async function POST(request: Request) {
     const session = await getServerSession(authConfig);
-    if (session?.user?.role !== 'ADMIN') {
+    if (session?.user?.role !== 'ADMIN' && session?.user?.role !== 'MANAGER') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
