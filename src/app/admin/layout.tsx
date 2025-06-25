@@ -54,6 +54,7 @@ const navigation = [
   { name: 'Media', href: '/admin/media', icon: ImageIcon, badge: null },
   { name: 'Reviews', href: '/admin/reviews', icon: Star, badge: '8' },
   { name: 'Coupons', href: '/admin/coupons', icon: Tag, badge: '3' },
+  { name: 'Couriers', href: '/admin/couriers', icon: Truck, badge: null },
   { name: 'Shipping', href: '/admin/shipping', icon: Truck, badge: null },
   { name: 'Reports', href: '/admin/reports', icon: FileText, badge: null },
   { name: 'Notifications', href: '/admin/notifications', icon: Bell, badge: '4' },
