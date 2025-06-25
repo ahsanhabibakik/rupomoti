@@ -45,7 +45,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
   const [initialImages, setInitialImages] = useState<string[]>(product?.images || [])
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false)
   const [newCategoryId, setNewCategoryId] = useState<string | null>(null)
-  const { data: categories, mutate: refreshCategories } = useCategories()
+  const { categories, isLoading: categoriesLoading, mutate: refreshCategories } = useCategories({ pageSize: 1000 })
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -243,7 +243,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
-                      <Button type="button" variant="outline" size="icon" onClick={handleGenerateSku}>
+                      <Button type="button" variant="outline" onClick={handleGenerateSku}>
                         <RefreshCw className="h-4 w-4" />
                       </Button>
                     </div>
@@ -257,15 +257,19 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
               control={form.control}
               name="categoryId"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex flex-col">
                   <FormLabel>Category</FormLabel>
-                  <CategoryCombobox
-                    categories={Array.isArray(categories) ? categories : []}
-                    value={field.value}
-                    onChange={field.onChange}
-                    onCreateCategory={() => setCategoryDialogOpen(true)}
-                    disabled={!Array.isArray(categories)}
-                  />
+                  <div className="flex items-center gap-2">
+                    <CategoryCombobox
+                      categories={categories || []}
+                      value={field.value}
+                      onChange={field.onChange}
+                      disabled={categoriesLoading}
+                    />
+                    <Button type="button" variant="outline" onClick={() => setCategoryDialogOpen(true)}>
+                      Add Category
+                    </Button>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -273,19 +277,11 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
 
             <CategoryDialog
               open={categoryDialogOpen}
-              onOpenChange={async (open) => {
-                setCategoryDialogOpen(open)
-                if (!open) {
-                  // After closing, refresh categories
-                  const updated = await refreshCategories()
-                  // Select the most recently added category
-                  if (Array.isArray(updated) && updated.length > 0) {
-                    setNewCategoryId(updated[updated.length - 1].id)
-                  }
-                }
+              onOpenChange={setCategoryDialogOpen}
+              onCategoryCreated={(newCategory) => {
+                refreshCategories()
+                setNewCategoryId(newCategory.id)
               }}
-              categories={Array.isArray(categories) ? categories : []}
-              onSuccess={refreshCategories}
             />
 
             <div className="grid grid-cols-3 gap-4">

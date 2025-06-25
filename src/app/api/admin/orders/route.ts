@@ -72,7 +72,11 @@ export async function GET(request: Request) {
         quantity: item.quantity,
         image: item.product.images[0] || '/placeholder.png',
       })),
-      steadfastInfo: order.steadfastInfo,
+      courierName: order.courierName,
+      courierConsignmentId: order.courierConsignmentId,
+      courierTrackingCode: order.courierTrackingCode,
+      courierStatus: order.courierStatus,
+      courierInfo: order.courierInfo,
     }));
 
     return NextResponse.json({
@@ -147,54 +151,16 @@ export async function POST(request: Request) {
           );
         }
 
-        if (order.steadfastInfo?.trackingId) {
+        if (order.courierConsignmentId) {
           return NextResponse.json(
             { error: 'Shipment already exists' },
             { status: 400 }
           );
         }
-
-        // Prepare shipment data for Steadfast
-        const shipmentData = {
-          recipient_name: order.customer.name,
-          recipient_phone: order.customer.phone,
-          recipient_address: order.customer.address,
-          amount_to_collect: order.total,
-          item_description: order.items
-            .map((item) => `${item.product.name} (${item.quantity})`)
-            .join(', '),
-          item_quantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
-          item_weight: 1, // Default weight in kg
-          service_type: 'regular', // or 'express' based on your needs
-          instruction: 'Handle with care',
-        };
-
-        // Create shipment in Steadfast
-        const steadfastResponse = await steadfast.createShipment(shipmentData);
-
-        if (!steadfastResponse.success) {
-          throw new Error(steadfastResponse.message || 'Failed to create shipment');
-        }
-
-        // Update order with Steadfast tracking info
-        await prisma.order.update({
-          where: { id: orderId },
-          data: {
-            status: 'SHIPPED',
-            steadfastInfo: {
-              trackingId: steadfastResponse.tracking_id,
-              consignmentId: steadfastResponse.consignment_id,
-              status: 'PICKED',
-              lastUpdate: new Date().toISOString(),
-              lastMessage: 'Shipment created and picked up by courier',
-            },
-          },
-        });
-
-        return NextResponse.json({
-          message: 'Shipment created successfully',
-          trackingId: steadfastResponse.tracking_id,
-        });
+        
+        // This whole case is now handled by /api/admin/shipments
+        // I will remove it.
+        return NextResponse.json({error: "This action is deprecated. Use /api/admin/shipments"}, {status: 400});
       }
 
       case 'update_status': {
@@ -222,10 +188,12 @@ export async function POST(request: Request) {
         }
 
         // If order is being marked as delivered, update Steadfast status
-        if (status === 'DELIVERED' && order.steadfastInfo?.trackingId) {
+        if (status === 'DELIVERED' && order.courierTrackingCode) {
+          // This might need to be updated to be generic for all couriers
+          // For now, I'll leave it as it might be part of another feature
           try {
             await steadfast.updateDeliveryStatus(
-              order.steadfastInfo.trackingId,
+              order.courierTrackingCode,
               'DELIVERED'
             );
           } catch (error) {

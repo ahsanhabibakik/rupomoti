@@ -1,71 +1,83 @@
-import { useState, useRef } from 'react'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
+'use client'
+
+import * as React from 'react'
+import { Check, ChevronsUpDown } from 'lucide-react'
+
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 
 export interface CategoryComboboxProps {
   categories: { id: string; name: string }[]
   value: string
   onChange: (value: string) => void
-  onCreateCategory: () => void
   disabled?: boolean
 }
 
-export function CategoryCombobox({ categories, value, onChange, onCreateCategory, disabled }: CategoryComboboxProps) {
-  const [query, setQuery] = useState('')
-  const [open, setOpen] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  const filtered = query
-    ? categories.filter(cat => cat.name.toLowerCase().includes(query.toLowerCase()))
-    : categories
-
-  const handleSelect = (id: string) => {
-    onChange(id)
-    setOpen(false)
-    setQuery('')
-  }
+export function CategoryCombobox({
+  categories,
+  value,
+  onChange,
+  disabled,
+}: CategoryComboboxProps) {
+  const [open, setOpen] = React.useState(false)
 
   return (
-    <div className="relative">
-      <Input
-        ref={inputRef}
-        value={query || (categories.find(c => c.id === value)?.name || '')}
-        onChange={e => {
-          setQuery(e.target.value)
-          setOpen(true)
-        }}
-        onFocus={() => setOpen(true)}
-        onBlur={() => setTimeout(() => setOpen(false), 100)}
-        placeholder="Search or select category"
-        disabled={disabled}
-        className="pr-10"
-      />
-      {open && (
-        <div className="absolute z-50 mt-1 w-full bg-white border rounded shadow max-h-60 overflow-auto">
-          {filtered.length > 0 ? (
-            filtered.map(cat => (
-              <div
-                key={cat.id}
-                className={cn(
-                  'px-4 py-2 cursor-pointer hover:bg-primary/10',
-                  value === cat.id && 'bg-primary/10 font-semibold'
-                )}
-                onMouseDown={() => handleSelect(cat.id)}
-              >
-                {cat.name}
-              </div>
-            ))
-          ) : (
-            <div className="px-4 py-2 text-gray-500 flex items-center justify-between">
-              <span>No categories found.</span>
-              <Button type="button" size="sm" variant="link" onMouseDown={onCreateCategory}>
-                Create new
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between"
+          disabled={disabled}
+        >
+          {value
+            ? categories.find((category) => category.id === value)?.name
+            : 'Select category...'}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+        <Command>
+          <CommandInput placeholder="Search category..." />
+          <CommandList>
+            <CommandEmpty>No category found.</CommandEmpty>
+            <CommandGroup>
+              {categories.map((category) => (
+                <CommandItem
+                  key={category.id}
+                  value={category.id}
+                  onSelect={(currentValue) => {
+                    onChange(currentValue === value ? '' : currentValue)
+                    setOpen(false)
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      'mr-2 h-4 w-4',
+                      value === category.id ? 'opacity-100' : 'opacity-0'
+                    )}
+                  />
+                  {category.name}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   )
 } 

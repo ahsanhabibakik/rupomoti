@@ -139,14 +139,26 @@ export async function POST(req: Request) {
     if (!recipientPhone) {
       return NextResponse.json({ error: 'Missing required field: recipientPhone' }, { status: 400 });
     }
+    if (!deliveryAddress) {
+      return NextResponse.json({ error: 'Missing required field: deliveryAddress' }, { status: 400 });
+    }
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'Missing or empty items array' }, { status: 400 });
     }
     if (!deliveryZone) {
       return NextResponse.json({ error: 'Missing required field: deliveryZone' }, { status: 400 });
     }
-    if (!deliveryAddress) {
-      return NextResponse.json({ error: 'Missing required field: deliveryAddress' }, { status: 400 });
+    if (subtotal === undefined || subtotal === null) {
+      return NextResponse.json({ error: 'Missing required field: subtotal' }, { status: 400 });
+    }
+    if (deliveryFee === undefined || deliveryFee === null) {
+      return NextResponse.json({ error: 'Missing required field: deliveryFee' }, { status: 400 });
+    }
+    if (total === undefined || total === null) {
+      return NextResponse.json({ error: 'Missing required field: total' }, { status: 400 });
+    }
+    if (!paymentMethod) {
+      return NextResponse.json({ error: 'Missing required field: paymentMethod' }, { status: 400 });
     }
 
     // Optional: recipientCity, recipientZone, recipientArea, recipientEmail, orderNote
@@ -209,10 +221,8 @@ export async function POST(req: Request) {
           items: {
             create: items.map((item: any) => ({
               productId: item.productId,
-              name: item.name,
-              price: item.price,
               quantity: item.quantity,
-              image: item.image,
+              price: item.price,
             })),
           },
         },
