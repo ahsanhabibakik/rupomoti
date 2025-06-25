@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Heart, ShoppingCart, Sparkles } from 'lucide-react'
+import { Heart, ShoppingCart, Sparkles, Eye, Star, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useAppDispatch } from '@/redux/hooks'
@@ -18,11 +18,10 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const { id, name, price, salePrice, images, isNewArrival, isPopular, isFeatured, stock } = product
+  const { id, name, price, salePrice, images, isNewArrival, isPopular, isFeatured, stock, rating } = product
   const discount = price && salePrice ? Math.round(((price - salePrice) / price) * 100) : 0
   const dispatch = useAppDispatch()
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist()
-  const [isHovered, setIsHovered] = useState(false)
   const [isImageLoading, setIsImageLoading] = useState(true)
 
   const safePrice = typeof price === 'number' && !isNaN(price) ? price : 0
@@ -32,7 +31,9 @@ export function ProductCard({ product }: ProductCardProps) {
 
   const isOutOfStock = typeof stock === 'number' ? stock <= 0 : false;
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
     const cartItem = {
       id,
       name: name || 'Unnamed Product',
@@ -46,7 +47,9 @@ export function ProductCard({ product }: ProductCardProps) {
     toast.success(`${name || 'Unnamed Product'} has been added to your cart.`)
   }
 
-  const handleWishlistToggle = () => {
+  const handleWishlistToggle = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
     if (isInWishlist()) {
       removeFromWishlist()
       toast.success(`${name || 'Unnamed Product'} has been removed from your wishlist.`)
@@ -56,80 +59,134 @@ export function ProductCard({ product }: ProductCardProps) {
     }
   }
 
+  const renderStars = (rating: number = 0) => {
+    return Array.from({ length: 5 }, (_, i) => (
+      <Star
+        key={i}
+        className={cn(
+          "w-3 h-3",
+          i < Math.floor(rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+        )}
+      />
+    ))
+  }
+
   return (
-    <Link
-      href={`/product/${id}`}
-      className="group relative block overflow-hidden rounded-xl shadow transition-all duration-300 bg-white hover:shadow-lg border border-gray-100"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+    <div
+      className="product-card-enhanced bg-base border border-accent-light rounded-xl shadow-premium transition-premium flex flex-col overflow-hidden"
     >
-      <div className="relative aspect-[4/5] w-full">
+      {/* Image Container */}
+      <Link href={`/product/${id}`} className="block relative aspect-square w-full overflow-hidden">
         <Image
           src={images[0] || '/placeholder.png'}
           alt={name || 'Unnamed Product'}
           fill
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
+          className="object-cover"
           sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 50vw"
+          onLoad={() => setIsImageLoading(false)}
         />
-        <div className="absolute top-3 left-3 flex flex-col gap-2 z-10">
-          {isNewArrival && <Badge className="bg-primary text-primary-foreground">New</Badge>}
-          {isPopular && <Badge className="bg-green-500 text-white">Popular</Badge>}
-          {isFeatured && <Badge className="bg-blue-500 text-white">Featured</Badge>}
-          {discount > 0 && <Badge variant="destructive">-{discount}%</Badge>}
-        </div>
-        {isOutOfStock && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
-            <span className="text-white text-lg font-bold">Out of Stock</span>
+        {/* Loading Overlay */}
+        {isImageLoading && (
+          <div className="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center">
+            <div className="w-8 h-8 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
           </div>
         )}
-      </div>
-
-      <div className="p-4 bg-background">
-        <h3 className="text-base font-semibold text-foreground truncate" title={name || 'Unnamed Product'}>
-          {name || 'Unnamed Product'}
-        </h3>
-        <div className="flex items-baseline gap-2 mt-1">
-          <span className={`text-lg font-bold ${salePrice ? 'text-destructive' : 'text-foreground'}`}>
-            ৳{salePrice ? salePrice.toLocaleString() : price.toLocaleString()}
-          </span>
-          {salePrice && (
-            <span className="text-sm text-muted-foreground line-through">
-              ৳{price.toLocaleString()}
-            </span>
+        {/* Badges */}
+        <div className="absolute top-2 left-2 flex flex-row flex-wrap gap-1.5 z-10 max-w-[80%]">
+          {isNewArrival && (
+            <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 shadow-lg text-xs">New</Badge>
+          )}
+          {isPopular && (
+            <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 shadow-lg text-xs">Popular</Badge>
+          )}
+          {isFeatured && (
+            <Badge className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white border-0 shadow-lg text-xs">Featured</Badge>
+          )}
+          {discount > 0 && (
+            <Badge className="bg-gradient-to-r from-red-500 to-pink-500 text-white border-0 shadow-lg font-bold text-xs">-{discount}%</Badge>
           )}
         </div>
-        <div className="flex gap-2 mt-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            className={`h-8 w-8 rounded-full transition-colors ${
-              isInWishlist()
-                ? 'bg-gold/10 text-accent hover:bg-gold/20'
-                : 'hover:bg-pearl text-neutral-light hover:text-neutral'
-            }`}
-            onClick={handleWishlistToggle}
-            aria-label={isInWishlist() ? 'Remove from wishlist' : 'Add to wishlist'}
-            tabIndex={-1}
-          >
-            <Heart
-              className={`h-4 w-4 ${
-                isInWishlist() ? 'fill-gold' : ''
-              }`}
-            />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-full hover:bg-pearl text-neutral-light hover:text-neutral"
-            onClick={handleAddToCart}
-            disabled={isOutOfStock}
-            aria-label="Add to cart"
-            tabIndex={-1}
-          >
-            <ShoppingCart className="h-4 w-4" />
-          </Button>
+        {/* Out of Stock Overlay */}
+        {isOutOfStock && (
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-20">
+            <div className="text-center">
+              <div className="text-white text-base font-bold mb-1">Out of Stock</div>
+            </div>
+          </div>
+        )}
+      </Link>
+      {/* Content */}
+      <div className="flex-1 flex flex-col p-2.5">
+        <div> {/* Content that stays at the top */}
+          <Link href={`/product/${id}`} className="block">
+            <h3 className="text-sm font-semibold text-neutral mb-1.5 min-h-[40px] line-clamp-2 hover:text-primary transition-colors">
+              {name || 'Unnamed Product'}
+            </h3>
+          </Link>
+          {/* Rating - wrapper ensures consistent height */}
+          <div className="h-5 mb-1.5 flex items-center gap-1">
+            {rating && rating > 0 && (
+              <>
+                {renderStars(rating)}
+                <span className="text-xs text-gray-500 ml-1">({rating.toFixed(1)})</span>
+              </>
+            )}
+          </div>
+          {/* Price */}
+          <div className="flex items-baseline gap-2 mb-1.5">
+            <span className={cn(
+              "text-md font-bold",
+              salePrice ? "text-red-600" : "text-primary"
+            )}>
+              ৳{salePrice ? salePrice.toLocaleString() : price?.toLocaleString()}
+            </span>
+            {salePrice && (
+              <span className="text-xs text-gray-500 line-through">
+                ৳{price?.toLocaleString()}
+              </span>
+            )}
+          </div>
+        </div>
+        
+        <div className="mt-auto pt-1.5"> {/* Wrapper to push content below to the bottom */}
+          {/* Stock Status */}
+          {typeof stock === 'number' && (
+            <div className="flex items-center justify-between text-xs mb-1.5">
+              <span className="text-gray-600">Stock:</span>
+              <span className={cn(
+                "font-medium",
+                stock > 10 ? "text-green-600" : stock > 0 ? "text-orange-600" : "text-red-600"
+              )}>
+                {stock > 0 ? `${stock} left` : 'Out of Stock'}
+              </span>
+            </div>
+          )}
+          {/* Action Buttons */}
+          <div className="flex gap-1.5">
+            <Button
+              onClick={handleAddToCart}
+              disabled={isOutOfStock}
+              className="h-9 flex-1 bg-primary hover:bg-primary-dark text-accent rounded-lg text-xs font-medium shadow"
+            >
+              <ShoppingCart className="w-4 h-4 mr-1.5" />
+              Add to Cart
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 rounded-lg border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+              onClick={handleWishlistToggle}
+            >
+              <Heart
+                className={cn(
+                  "h-4 w-4 transition-all duration-300",
+                  isInWishlist() ? "fill-red-500 text-red-500" : "text-gray-600 hover:text-red-500"
+                )}
+              />
+            </Button>
+          </div>
         </div>
       </div>
-    </Link>
+    </div>
   )
 } 

@@ -56,16 +56,6 @@ const config = {
           // DEFAULT: "#E6F0F3", // Alternative: lighter blue
         },
         // Premium Jewelry Color Palette
-        primary: {
-          DEFAULT: "#4A2E21", // Soft Cocoa Brown
-          light: "#8B6E4F",
-          dark: "#2D1B13",
-        },
-        accent: {
-          DEFAULT: "#E8CBAF", // Champagne Gold
-          light: "#F5E6D3",
-          dark: "#D4B483",
-        },
         base: {
           DEFAULT: "#FDF9F4", // Ivory / Pearl White
           light: "#FFFDFA",
@@ -131,6 +121,14 @@ const config = {
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+        },
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
+        },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
@@ -138,6 +136,10 @@ const config = {
         muted: {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",

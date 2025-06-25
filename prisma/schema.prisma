@@ -170,7 +170,7 @@ model Order {
 
   // Courier integration fields
   recipientName      String?
-  recipientPhone     String?
+  recipientPhone     String
   recipientEmail     String?
   recipientCity      String?
   recipientZone      String?
@@ -250,6 +250,28 @@ model Coupon {
   validUntil    DateTime
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
+  @@map("coupons")
+}
+
+model NewsletterSubscription {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  createdAt DateTime @default(now())
+  tags      NewsletterTag[] @relation(fields: [tagIds], references: [id])
+  tagIds    String[] @db.ObjectId
+
+  @@map("newsletter_subscriptions")
+}
+
+model NewsletterTag {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  name         String   @unique
+  createdAt    DateTime @default(now())
+  subscriptions NewsletterSubscription[] @relation(fields: [subscriptionIds], references: [id])
+  subscriptionIds String[] @db.ObjectId
+
+  @@map("newsletter_tags")
 }
 
 model Media {

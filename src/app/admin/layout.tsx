@@ -36,6 +36,7 @@ import {
   Calendar,
   TrendingUp,
   AlertCircle,
+  Mail,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -58,6 +59,12 @@ const navigation = [
   { name: 'Notifications', href: '/admin/notifications', icon: Bell, badge: '4' },
   { name: 'Settings', href: '/admin/settings', icon: Settings, badge: null },
   { name: 'Roles & Permissions', href: '/admin/roles', icon: Shield, badge: null },
+  {
+    href: '/admin/newsletter',
+    label: 'Newsletter',
+    icon: Mail,
+    pro: true,
+  },
 ]
 
 const quickStats = [
@@ -74,7 +81,7 @@ function Sidebar({ className, onClose }: { className?: string; onClose?: () => v
     <div className={cn("flex flex-col h-full", className)}>
       {/* Header with Logo and Back to Home */}
       <div className="flex items-center justify-between h-16 px-4 border-b bg-white dark:bg-neutral-800">
-        <Link href="/" className="flex items-center gap-3 group" onClick={onClose}>
+        <Link href="/admin" className="flex items-center gap-3 group" onClick={onClose}>
           <Image 
             src="/images/branding/logo.png" 
             alt="Rupomoti" 
@@ -113,7 +120,7 @@ function Sidebar({ className, onClose }: { className?: string; onClose?: () => v
           const isActive = pathname === item.href
           return (
             <Link
-              key={item.name}
+              key={item.href}
               href={item.href}
               className={cn(
                 'flex items-center justify-between px-4 py-3 text-sm rounded-lg transition-all duration-200 group',

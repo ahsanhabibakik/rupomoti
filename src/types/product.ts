@@ -3,7 +3,7 @@ export interface Product {
   name: string
   description: string
   price: number
-  salePrice?: number
+  salePrice?: number | null
   sku: string
   stock: number
   images: string[]
@@ -12,6 +12,8 @@ export interface Product {
   isFeatured: boolean
   isNewArrival: boolean
   isPopular: boolean
-  createdAt: string
-  updatedAt: string
+  rating?: number
+  createdAt: Date
+  updatedAt: Date
+  slug: string
 } 
