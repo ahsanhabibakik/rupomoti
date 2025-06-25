@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { prisma } from '@/lib/prisma'
+import { Prisma, ProductStatus } from '@prisma/client'
+import { generateSlug } from '@/lib/utils/slug'
 
 export async function GET(request: Request) {
   try {
@@ -14,50 +16,30 @@ export async function GET(request: Request) {
     const status = searchParams.get('status')
 
     // Build the where clause
-    const where = {
-      AND: [
-        {
-          price: {
-            gte: minPrice,
-            lte: maxPrice,
-          },
-        },
-        // Add category filter if categories are selected
-        ...(categories.length > 0
-          ? [
-              {
-                category: {
-                  slug: {
-                    in: categories,
-                  },
-                },
-              },
-            ]
-          : []),
-        // Add search filter if search term exists
-        ...(search
-          ? [
-              {
-                OR: [
-                  { name: { contains: search, mode: 'insensitive' } },
-                  { description: { contains: search, mode: 'insensitive' } },
-                ],
-              },
-            ]
-          : []),
-        // Add status filter if status is provided
-        ...(status
-          ? [
-              {
-                status: status,
-              },
-            ]
-          : []),
-      ],
-      // Ensure category exists
-      category: {
-        isNot: null
+    const where: Prisma.ProductWhereInput = {
+      price: {
+        gte: minPrice,
+        lte: maxPrice,
       },
+    }
+
+    if (categories.length > 0) {
+      where.category = {
+        slug: {
+          in: categories,
+        },
+      }
+    }
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ]
+    }
+
+    if (status) {
+      where.status = status as ProductStatus
     }
 
     // Build the orderBy clause
@@ -109,6 +91,7 @@ export async function POST(request: Request) {
     const product = await prisma.product.create({
       data: {
         name: json.name,
+        slug: generateSlug(json.name),
         description: json.description,
         price: json.price,
         salePrice: json.salePrice,
