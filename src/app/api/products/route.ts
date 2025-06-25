@@ -15,20 +15,22 @@ export async function GET(request: Request) {
     const sort = searchParams.get('sort') || 'newest'
     const status = searchParams.get('status')
 
+    const categoryFilter: Prisma.CategoryWhereInput = {
+      isActive: true,
+    };
+    if (categories.length > 0) {
+      categoryFilter.slug = {
+        in: categories,
+      };
+    }
+
     // Build the where clause
     const where: Prisma.ProductWhereInput = {
       price: {
         gte: minPrice,
         lte: maxPrice,
       },
-    }
-
-    if (categories.length > 0) {
-      where.category = {
-        slug: {
-          in: categories,
-        },
-      }
+      category: categoryFilter,
     }
 
     if (search) {
