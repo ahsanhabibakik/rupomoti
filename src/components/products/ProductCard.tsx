@@ -92,7 +92,7 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
         )}
         {/* Badges */}
-        <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
+        <div className="absolute top-2 left-2 flex flex-row flex-wrap gap-1.5 z-10 max-w-[80%]">
           {isNewArrival && (
             <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 shadow-lg text-xs">New</Badge>
           )}
@@ -118,7 +118,8 @@ export function ProductCard({ product }: ProductCardProps) {
       {/* Content */}
       <div className="flex-1 flex flex-col p-3 gap-1">
         <Link href={`/product/${id}`} className="block">
-          <h3 className="text-base font-semibold text-neutral mb-1 line-clamp-2 hover:text-primary transition-colors">
+          <h3 className="text-base font-semibold text-neutral mb-1 line-clamp-2 hover:text-primary transition-colors max-w-[90%] md:text-sm text-ellipsis md:line-clamp-1 md:max-w-[95%]">
+            {/* long name for optimization */}
             {name || 'Unnamed Product'}
           </h3>
         </Link>
@@ -160,9 +161,9 @@ export function ProductCard({ product }: ProductCardProps) {
           <Button
             onClick={handleAddToCart}
             disabled={isOutOfStock}
-            className="flex-1 bg-primary hover:bg-primary-dark text-accent rounded-lg py-2 text-xs font-medium shadow"
+            className="flex-1 bg-primary hover:bg-primary-dark text-accent rounded-lg py-1 md:py-2 text-xs font-medium shadow"
           >
-            <ShoppingCart className="w-4 h-4 mr-1" />
+            <ShoppingCart className="w-3 h-3 md:w-4 md:h-4 mr-1" />
             Add to Cart
           </Button>
           <Button

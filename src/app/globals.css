@@ -471,13 +471,13 @@
 .product-grid-enhanced {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 @media (max-width: 768px) {
   .product-grid-enhanced {
     grid-template-columns: repeat(2, 1fr); /* Always 2 columns on mobile */
-    gap: 1rem;
+    gap: .5 rem;
   }
 }
 

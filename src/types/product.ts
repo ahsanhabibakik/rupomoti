@@ -13,7 +13,7 @@ export interface Product {
   isNewArrival: boolean
   isPopular: boolean
   rating?: number
-  createdAt: string
-  updatedAt: string
+  createdAt: Date
+  updatedAt: Date
   slug: string
 } 

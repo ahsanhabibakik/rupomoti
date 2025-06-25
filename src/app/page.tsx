@@ -97,8 +97,8 @@ export default async function HomePage() {
       </section>
 
       {/* Modern Categories Section */}
-      <section className="py-12 px-4 bg-base-light">
-        <div className="container mx-auto max-w-7xl">
+      <section className="py-12 bg-base-light">
+        <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
             <Badge className="bg-accent-light text-neutral px-4 py-2 text-sm font-medium mb-4 shadow-premium">
               Collections
@@ -151,8 +151,8 @@ export default async function HomePage() {
       </section>
 
       {/* Popular Products Section */}
-      <AnimatedSection className="py-16 px-4 bg-white">
-        <div className="container mx-auto max-w-7xl">
+      <AnimatedSection className="py-16 bg-white">
+        <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
             <Badge className="bg-accent-light text-neutral px-4 py-2 text-sm font-medium mb-4 shadow-premium">
               Popular
@@ -184,8 +184,8 @@ export default async function HomePage() {
       </AnimatedSection>
 
       {/* New Arrivals Section */}
-      <AnimatedSection className="py-16 px-4 bg-gradient-to-br from-pearl-50 via-white to-pearl-50">
-        <div className="container mx-auto max-w-7xl">
+      <AnimatedSection className="py-16 bg-gradient-to-br from-pearl-50 via-white to-pearl-50">
+        <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-2 text-sm font-medium mb-4 shadow-lg">
               New Arrivals
@@ -219,8 +219,8 @@ export default async function HomePage() {
       </AnimatedSection>
 
       {/* Featured Products */}
-      <AnimatedSection className="py-16 px-4 bg-white">
-        <div className="container mx-auto max-w-7xl">
+      <AnimatedSection className="py-16 bg-white">
+        <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <Badge className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-4 py-2 text-sm font-medium mb-4 shadow-lg">
               Featured
@@ -245,8 +245,8 @@ export default async function HomePage() {
       </AnimatedSection>
 
       {/* CTA Section */}
-      <section className="py-20 px-4 bg-gradient-to-r from-pearl-600 to-pearl-700">
-        <div className="container mx-auto max-w-4xl text-center">
+      <section className="py-20 bg-gradient-to-r from-pearl-600 to-pearl-700">
+        <div className="container mx-auto max-w-4xl text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
             Discover Your Perfect Pearl
           </h2>
