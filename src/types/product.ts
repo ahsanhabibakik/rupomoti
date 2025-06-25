@@ -12,6 +12,7 @@ export interface Product {
   isFeatured: boolean
   isNewArrival: boolean
   isPopular: boolean
+  rating?: number
   createdAt: string
   updatedAt: string
 } 

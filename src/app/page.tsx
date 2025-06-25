@@ -84,63 +84,51 @@ export default async function HomePage() {
       </section>
 
       {/* Modern Categories Section */}
-      <section className="py-16 px-4 bg-gradient-to-b from-white to-gray-50">
+      <section className="py-12 px-4 bg-base-light">
         <div className="container mx-auto max-w-7xl">
-          <div className="text-center mb-12">
-            <Badge className="bg-gradient-to-r from-pearl-600 to-pearl-700 text-white px-4 py-2 text-sm font-medium mb-4 shadow-lg">
+          <div className="text-center mb-8">
+            <Badge className="bg-accent-light text-neutral px-4 py-2 text-sm font-medium mb-4 shadow-premium">
               Collections
             </Badge>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+            <h2 className="text-3xl md:text-4xl font-bold text-neutral mb-2">
               Browse by Category
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Discover our curated collections of fine pearl jewelry, each piece crafted with precision and elegance
+            <p className="text-lg text-neutral-light max-w-2xl mx-auto">
+              Discover our curated collections of fine pearl jewelry
             </p>
           </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {categories.map((category, index) => {
+          <div className="category-compact">
+            {categories.map((category) => {
               const Icon = category.icon
               return (
                 <Link
                   key={category.id}
                   href={`/shop?category=${category.id}`}
-                  className="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2"
+                  className="category-compact-card group bg-base border border-accent-light shadow-premium hover:shadow-premium-hover transition-premium"
                 >
-                  <div className="aspect-[4/5] relative">
-                    <Image
-                      src={category.image}
-                      alt={category.name}
-                      className="object-cover transition-transform duration-700 group-hover:scale-110"
-                      fill
-                      sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-                    />
-                    <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent ${category.color}`} />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  </div>
-                  
-                  <div className="absolute inset-0 p-6 flex flex-col justify-end">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="p-3 bg-white/20 backdrop-blur-sm rounded-full">
-                        <Icon className="w-6 h-6 text-white" />
-                      </div>
-                      <Badge className="bg-white/20 backdrop-blur-sm text-white border-0 px-3 py-1">
-                        {category.count} items
-                      </Badge>
+                  <Image
+                    src={category.image}
+                    alt={category.name}
+                    fill
+                    className="object-cover"
+                    sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+                  />
+                  <div className="category-compact-overlay">
+                    <div className="category-compact-icon">
+                      <Icon className="w-5 h-5 text-accent" />
                     </div>
-                    
-                    <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-pearl-200 transition-colors">
+                    <div className="category-compact-badge">
+                      {category.count} items
+                    </div>
+                    <h3 className="text-lg font-bold mb-1 text-white drop-shadow">
                       {category.name}
                     </h3>
-                    
-                    <p className="text-sm text-white/80 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 line-clamp-2 mb-4">
+                    <p className="text-xs text-white/90 line-clamp-2 mb-2">
                       {category.description}
                     </p>
-                    
-                    <div className="flex items-center opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-                      <span className="text-white/90 text-sm font-medium">Explore Collection</span>
-                      <ArrowRight className="w-4 h-4 text-white/90 ml-2 group-hover:translate-x-1 transition-transform" />
-                    </div>
+                    <span className="inline-block text-xs font-medium text-accent bg-white/80 rounded px-2 py-1 mt-1">
+                      Explore
+                    </span>
                   </div>
                 </Link>
               )
@@ -150,21 +138,20 @@ export default async function HomePage() {
       </section>
 
       {/* Popular Products Section */}
-      <section className="py-16 px-4 bg-white">
+      <section className="py-12 px-4 bg-base">
         <div className="container mx-auto max-w-7xl">
-          <div className="text-center mb-12">
-            <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 text-sm font-medium mb-4 shadow-lg">
+          <div className="text-center mb-8">
+            <Badge className="bg-accent-light text-neutral px-4 py-2 text-sm font-medium mb-4 shadow-premium">
               Popular
             </Badge>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+            <h2 className="text-3xl md:text-4xl font-bold text-neutral mb-2">
               Most Popular Pieces
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Our customers&apos; favorite pearl jewelry pieces, loved for their timeless beauty and exceptional quality
+            <p className="text-lg text-neutral-light max-w-2xl mx-auto">
+              Our customers' favorite pearl jewelry pieces
             </p>
           </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="product-grid-enhanced">
             {popularProducts.map((product) => (
               <ProductCard
                 key={product.id}
@@ -172,9 +159,8 @@ export default async function HomePage() {
               />
             ))}
           </div>
-          
-          <div className="text-center mt-12">
-            <Button asChild size="lg" className="bg-gradient-to-r from-pearl-600 to-pearl-700 hover:from-pearl-700 hover:to-pearl-800 text-white px-8 py-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+          <div className="text-center mt-8">
+            <Button asChild size="lg" className="bg-primary hover:bg-primary-dark text-accent px-8 py-3 rounded-full shadow-lg transition-premium">
               <Link href="/shop?filter=popular" className="flex items-center gap-2">
                 View All Popular
                 <ArrowRight className="w-5 h-5" />
