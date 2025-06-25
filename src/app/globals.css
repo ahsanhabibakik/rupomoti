@@ -54,6 +54,11 @@
     --ring: 39 37% 66%;
  
     --radius: 0.5rem;
+
+    /* QalbBox Brand Colors */
+    --brand-primary: #1F382D; /* Deep Heart Green */
+    --brand-secondary: #C62828; /* Heart Red */
+    --brand-accent: #FFC857; /* Warm Gold */
   }
  
   .dark {
@@ -522,7 +527,7 @@
 }
 
 .gradient-primary {
-  background: linear-gradient(135deg, #0D1E78 0%, #1A237E 100%);
+  background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
 }
 
 /* Compact Category Styles */

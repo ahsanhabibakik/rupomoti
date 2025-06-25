@@ -9,6 +9,7 @@ import { Product } from '@/types/product'
 import { prisma } from '@/lib/prisma'
 import { GemIcon, Crown, Diamond, Sparkles, ArrowRight } from 'lucide-react'
 import Loading from './loading'
+import { AnimatedSection } from '@/components/ui/AnimatedSection'
 
 export const metadata: Metadata = {
   title: 'Rupomoti - Elegant Pearl Jewelry Collection',
@@ -20,6 +21,9 @@ async function getProducts(filter: { [key: string]: boolean }) {
     where: filter,
     take: 4,
     orderBy: { createdAt: 'desc' },
+    include: {
+      category: true,
+    },
   })
 }
 
@@ -27,14 +31,23 @@ export default async function HomePage() {
   const popularProducts = await prisma.product.findMany({
     where: { isPopular: true },
     take: 4,
+    include: {
+      category: true,
+    },
   })
   const newArrivals = await prisma.product.findMany({
     where: { isNewArrival: true },
     take: 4,
+    include: {
+      category: true,
+    },
   })
   const featuredProducts = await prisma.product.findMany({
     where: { isFeatured: true },
     take: 4,
+    include: {
+      category: true,
+    },
   })
 
   const categories = [
@@ -150,7 +163,7 @@ export default async function HomePage() {
       </section>
 
       {/* Popular Products Section */}
-      <section className="py-16 px-4 bg-white">
+      <AnimatedSection className="py-16 px-4 bg-white">
         <div className="container mx-auto max-w-7xl">
           <div className="text-center mb-12">
             <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 text-sm font-medium mb-4 shadow-lg">
@@ -182,10 +195,10 @@ export default async function HomePage() {
             </Button>
           </div>
         </div>
-      </section>
+      </AnimatedSection>
 
       {/* New Arrivals Section */}
-      <section className="py-16 px-4 bg-gradient-to-br from-pearl-50 via-white to-pearl-50">
+      <AnimatedSection className="py-16 px-4 bg-gradient-to-br from-pearl-50 via-white to-pearl-50">
         <div className="container mx-auto max-w-7xl">
           <div className="text-center mb-12">
             <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-2 text-sm font-medium mb-4 shadow-lg">
@@ -217,10 +230,10 @@ export default async function HomePage() {
             </Button>
           </div>
         </div>
-      </section>
+      </AnimatedSection>
 
       {/* Featured Products */}
-      <section className="py-16 px-4 bg-white">
+      <AnimatedSection className="py-16 px-4 bg-white">
         <div className="container mx-auto max-w-7xl">
           <div className="text-center mb-12">
             <Badge className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-4 py-2 text-sm font-medium mb-4 shadow-lg">
@@ -243,7 +256,7 @@ export default async function HomePage() {
             ))}
           </div>
         </div>
-      </section>
+      </AnimatedSection>
 
       {/* CTA Section */}
       <section className="py-20 px-4 bg-gradient-to-r from-pearl-600 to-pearl-700">
