@@ -17,10 +17,10 @@ const COURIERS = [
   { value: 'CarryBee', label: 'CarryBee' },
 ]
 
-const [modal, setModal] = useState<{ type: 'send' | 'cancel', courier: string } | null>(null)
-const [selectedOrderId, setSelectedOrderId] = useState<string>('')
-const [actionLoading, setActionLoading] = useState(false)
-
+interface Modal {
+  type: 'send' | 'cancel'
+  courier: string
+}
 
 export default function CourierAnalyticsPage() {
   const [orders, setOrders] = useState<any[]>([])
