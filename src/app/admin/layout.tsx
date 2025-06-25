@@ -81,7 +81,7 @@ function Sidebar({ className, onClose }: { className?: string; onClose?: () => v
     <div className={cn("flex flex-col h-full", className)}>
       {/* Header with Logo and Back to Home */}
       <div className="flex items-center justify-between h-16 px-4 border-b bg-white dark:bg-neutral-800">
-        <Link href="/" className="flex items-center gap-3 group" onClick={onClose}>
+        <Link href="/admin" className="flex items-center gap-3 group" onClick={onClose}>
           <Image 
             src="/images/branding/logo.png" 
             alt="Rupomoti" 
