@@ -63,7 +63,7 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8']
 export default function DashboardPage() {
   const { data: products, isLoading: productsLoading } = useProducts()
   const { data: orders, isLoading: ordersLoading } = useOrders()
-  const { data: categories, isLoading: categoriesLoading } = useCategories()
+  const { categories, isLoading: categoriesLoading } = useCategories()
   const [salesData, setSalesData] = useState<any[]>([])
   const [categoryData, setCategoryData] = useState<any[]>([])
   const [topProducts, setTopProducts] = useState<any[]>([])
