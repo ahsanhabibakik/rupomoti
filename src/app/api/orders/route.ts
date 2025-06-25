@@ -115,13 +115,13 @@ export async function POST(req: Request) {
       recipientCity,
       recipientZone,
       recipientArea,
+      deliveryAddress,
+      orderNote,
       items,
       subtotal,
       deliveryFee,
       total,
       deliveryZone,
-      deliveryAddress,
-      orderNote,
       paymentMethod,
       userId: payloadUserId
     } = body;
@@ -248,14 +248,14 @@ export async function POST(req: Request) {
       if (dbError.code === 'P2002') {
         return NextResponse.json({
           error: 'Order number already exists. Please try again.'
-        }, { status: 400 });
+        }, { status: 409 });
       }
-      throw dbError;
+      return NextResponse.json({
+        error: 'An unexpected error occurred while processing your order.'
+      }, { status: 500 });
     }
   } catch (error: any) {
-    console.error('Error creating order:', error);
-    return NextResponse.json({
-      error: error.message || 'Failed to create order'
-    }, { status: 500 });
+    console.error('Failed to parse request body or handle session:', error);
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
-} 
+}

@@ -8,6 +8,14 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
+import { DialogTitle } from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { formatPrice } from '@/lib/utils'
 import Image from 'next/image'
 import { useAppSelector, useAppDispatch } from '@/redux/hooks'
@@ -183,6 +191,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
         paymentMethod,
         userId: session?.user?.id || null,
       }
+      console.log('OrderData being sent:', orderData)
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -239,6 +248,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl bg-white rounded-lg shadow-xl z-50 max-h-[90vh] overflow-hidden"
           >
+            <DialogTitle className="sr-only">Checkout</DialogTitle>
             <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-pearl-500 to-pearl-600 text-white">
               <h2 className="text-xl font-semibold">Complete Your Order</h2>
               <Button
@@ -390,26 +400,38 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                         </div>
                         <div>
                           <Label htmlFor="city" className="text-sm font-medium">City *</Label>
-                          <select id="city" value={formData.city} onChange={e => handleInputChange('city', e.target.value)} className={`mt-1 w-full border rounded-lg px-3 py-2 ${errors.city ? 'border-red-500' : ''}`} disabled={isSubmitting}>
-                            <option value="">Select city</option>
-                            {CITIES.map(city => <option key={city.value} value={city.value}>{city.label}</option>)}
-                          </select>
+                          <Select onValueChange={(value) => handleInputChange('city', value)} value={formData.city} disabled={isSubmitting}>
+                            <SelectTrigger className={`mt-1 w-full ${errors.city ? 'border-red-500' : ''}`}>
+                              <SelectValue placeholder="Select city" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {CITIES.map(city => <SelectItem key={city.value} value={city.value}>{city.label}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
                           {errors.city && (<p className="text-sm text-red-500 mt-1">{errors.city}</p>)}
                         </div>
                         <div>
                           <Label htmlFor="zone" className="text-sm font-medium">Zone *</Label>
-                          <select id="zone" value={formData.zone} onChange={e => handleInputChange('zone', e.target.value)} className={`mt-1 w-full border rounded-lg px-3 py-2 ${errors.zone ? 'border-red-500' : ''}`} disabled={isSubmitting}>
-                            <option value="">Select zone</option>
-                            {ZONES.map(zone => <option key={zone.value} value={zone.value}>{zone.label}</option>)}
-                          </select>
+                          <Select onValueChange={(value) => handleInputChange('zone', value)} value={formData.zone} disabled={isSubmitting}>
+                            <SelectTrigger className={`mt-1 w-full ${errors.zone ? 'border-red-500' : ''}`}>
+                              <SelectValue placeholder="Select zone" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {ZONES.map(zone => <SelectItem key={zone.value} value={zone.value}>{zone.label}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
                           {errors.zone && (<p className="text-sm text-red-500 mt-1">{errors.zone}</p>)}
                         </div>
                         <div>
                           <Label htmlFor="area" className="text-sm font-medium">Area *</Label>
-                          <select id="area" value={formData.area} onChange={e => handleInputChange('area', e.target.value)} className={`mt-1 w-full border rounded-lg px-3 py-2 ${errors.area ? 'border-red-500' : ''}`} disabled={isSubmitting}>
-                            <option value="">Select area</option>
-                            {AREAS.map(area => <option key={area.value} value={area.value}>{area.label}</option>)}
-                          </select>
+                          <Select onValueChange={(value) => handleInputChange('area', value)} value={formData.area} disabled={isSubmitting}>
+                            <SelectTrigger className={`mt-1 w-full ${errors.area ? 'border-red-500' : ''}`}>
+                              <SelectValue placeholder="Select area" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {AREAS.map(area => <SelectItem key={area.value} value={area.value}>{area.label}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
                           {errors.area && (<p className="text-sm text-red-500 mt-1">{errors.area}</p>)}
                         </div>
                         <div>

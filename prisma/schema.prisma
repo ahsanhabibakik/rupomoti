@@ -170,7 +170,7 @@ model Order {
 
   // Courier integration fields
   recipientName      String?
-  recipientPhone     String?
+  recipientPhone     String
   recipientEmail     String?
   recipientCity      String?
   recipientZone      String?

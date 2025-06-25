@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useProducts } from '@/hooks/useProducts'
 import { useOrders } from '@/hooks/useOrders'
 import { useCategories } from '@/hooks/useCategories'
+import { useCustomers } from '@/hooks/useCustomers'
 import {
   LineChart,
   Line,
@@ -115,26 +116,58 @@ export default function DashboardPage() {
   const { data: products, isLoading: productsLoading } = useProducts()
   const { data: orders, isLoading: ordersLoading } = useOrders()
   const { categories, isLoading: categoriesLoading } = useCategories()
+  const { customers, loading: customersLoading } = useCustomers('')
   const [salesData, setSalesData] = useState<any[]>([])
   const [categoryData, setCategoryData] = useState<any[]>([])
   const [topProducts, setTopProducts] = useState<any[]>([])
   const [recentOrders, setRecentOrders] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const { toast } = useToast()
+  const [recentActivity, setRecentActivity] = useState<any[]>([])
 
-  // Mock analytics data
-  const todaysSales = 12500
-  const newCustomers = 7
+  const timeAgo = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+    let interval = seconds / 31536000
+    if (interval > 1) return Math.floor(interval) + ' years ago'
+    interval = seconds / 2592000
+    if (interval > 1) return Math.floor(interval) + ' months ago'
+    interval = seconds / 86400
+    if (interval > 1) return Math.floor(interval) + ' days ago'
+    interval = seconds / 3600
+    if (interval > 1) return Math.floor(interval) + ' hours ago'
+    interval = seconds / 60
+    if (interval > 1) return Math.floor(interval) + ' minutes ago'
+    return Math.floor(seconds) + ' seconds ago'
+  }
+
+  // Analytics Calculations
+  const today = new Date()
+  const isToday = (date: Date) => {
+    const d = new Date(date)
+    return d.getDate() === today.getDate() &&
+           d.getMonth() === today.getMonth() &&
+           d.getFullYear() === today.getFullYear()
+  }
+
+  const todaysSales = Array.isArray(orders) ? orders.filter((o: any) => isToday(o.createdAt)).reduce((sum, o) => sum + o.total, 0) : 0
+  const newCustomers = Array.isArray(customers) ? customers.filter((c: any) => isToday(c.createdAt)).length : 0
   const pendingOrders = Array.isArray(orders) ? orders.filter((order: any) => order.status === 'PENDING').length : 0
   const processingOrders = Array.isArray(orders) ? orders.filter((order: any) => order.status === 'PROCESSING').length : 0
-  const lowStockProducts = 2
+  const lowStockProducts = Array.isArray(products) ? products.filter((p: any) => p.stock > 0 && p.stock < 10).length : 0
 
+  const totalSales = Array.isArray(orders) ? orders.reduce((sum: number, order: any) => sum + order.total, 0) : 0
+  const totalOrders = Array.isArray(orders) ? orders.length : 0
+  const totalCustomers = Array.isArray(customers) ? customers.length : 0
+  const totalProducts = Array.isArray(products) ? products.length : 0
+  
   // Quick stats data
   const quickStats = [
     {
       title: 'Total Sales',
-      value: '৳125,000',
-      change: '+12.5%',
+      value: `৳${Math.round(totalSales).toLocaleString('bn-BD')}`,
+      change: '+12.5%', // Placeholder
       changeType: 'positive',
       icon: DollarSign,
       color: 'text-green-600',
@@ -143,8 +176,8 @@ export default function DashboardPage() {
     },
     {
       title: 'Total Orders',
-      value: '1,234',
-      change: '+8.2%',
+      value: totalOrders.toLocaleString('bn-BD'),
+      change: '+8.2%', // Placeholder
       changeType: 'positive',
       icon: ShoppingCart,
       color: 'text-amber-700',
@@ -152,9 +185,9 @@ export default function DashboardPage() {
       borderColor: 'border-amber-200'
     },
     {
-      title: 'Active Customers',
-      value: '847',
-      change: '+15.3%',
+      title: 'Total Customers',
+      value: totalCustomers.toLocaleString('bn-BD'),
+      change: '+15.3%', // Placeholder
       changeType: 'positive',
       icon: Users,
       color: 'text-purple-600',
@@ -163,8 +196,8 @@ export default function DashboardPage() {
     },
     {
       title: 'Products',
-      value: '89',
-      change: '+3.1%',
+      value: totalProducts.toLocaleString('bn-BD'),
+      change: '+3.1%', // Placeholder
       changeType: 'positive',
       icon: Package,
       color: 'text-orange-600',
@@ -173,14 +206,37 @@ export default function DashboardPage() {
     }
   ]
 
-  // Recent activity data
-  const recentActivity = [
-    { id: 1, type: 'order', message: 'New order #1234 placed by John Doe', time: '2 min ago', amount: '৳5,000' },
-    { id: 2, type: 'product', message: 'Product "Classic Pearl Necklace" was added', time: '15 min ago' },
-    { id: 3, type: 'shipment', message: 'Order #1233 was marked as shipped', time: '1 hour ago' },
-    { id: 4, type: 'customer', message: 'Customer "Jane Smith" signed up', time: '2 hours ago' },
-    { id: 5, type: 'review', message: 'New 5-star review on "Elegant Pearl Earrings"', time: '3 hours ago' },
-  ]
+  useEffect(() => {
+    if (orders && products && customers) {
+      const newOrderActivities = (orders || []).map((order: any) => ({
+        id: `order-${order.id}`,
+        type: 'order',
+        message: `New order #${order.id} placed by ${order.customer?.name || 'a customer'}`,
+        time: order.createdAt,
+        amount: `৳${order.total.toLocaleString('bn-BD')}`,
+      }))
+
+      const newProductActivities = (products || []).map((product: any) => ({
+        id: `product-${product.id}`,
+        type: 'product',
+        message: `Product "${product.name}" was added`,
+        time: product.createdAt,
+      }))
+
+      const newCustomerActivities = (customers || []).map((customer: any) => ({
+        id: `customer-${customer.id}`,
+        type: 'customer',
+        message: `Customer "${customer.name || 'New User'}" signed up`,
+        time: customer.createdAt,
+      }))
+
+      const combined = [...newOrderActivities, ...newProductActivities, ...newCustomerActivities]
+        .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+        .slice(0, 10) // show more activities
+
+      setRecentActivity(combined)
+    }
+  }, [orders, products, customers])
 
   useEffect(() => {
     if (orders && Array.isArray(orders)) {
@@ -239,14 +295,9 @@ export default function DashboardPage() {
   }, [products, categories])
 
   // Show loading state if any data is still loading
-  if (productsLoading || ordersLoading || categoriesLoading) {
+  if (productsLoading || ordersLoading || categoriesLoading || customersLoading) {
     return <DashboardSkeleton />
   }
-
-  const totalSales = Array.isArray(orders) ? orders.reduce((sum: number, order: any) => sum + order.total, 0) : 0
-  const totalOrders = Array.isArray(orders) ? orders.length : 0
-  const totalProducts = Array.isArray(products) ? products.length : 0
-  const totalCategories = Array.isArray(categories) ? categories.length : 0
 
   const shippedOrders = Array.isArray(orders) ? orders.filter((order: any) => order.status === 'SHIPPED').length : 0
   const deliveredOrders = Array.isArray(orders) ? orders.filter((order: any) => order.status === 'DELIVERED').length : 0
@@ -560,7 +611,7 @@ export default function DashboardPage() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium">{activity.message}</p>
                       <div className="flex items-center justify-between mt-1">
-                        <span className="text-xs text-muted-foreground">{activity.time}</span>
+                        <span className="text-xs text-muted-foreground">{timeAgo(activity.time)}</span>
                         {activity.amount && (
                           <span className="text-xs font-medium text-green-600">{activity.amount}</span>
                         )}
