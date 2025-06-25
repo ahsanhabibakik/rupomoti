@@ -29,6 +29,25 @@ async function getPathaoAccessToken() {
     }
 }
 
+async function handleCourierError(res: Response, courierName: string) {
+  const errorText = await res.text();
+  console.error(`${courierName} API Error Response:`, {
+    status: res.status,
+    statusText: res.statusText,
+    body: errorText,
+  });
+
+  if (res.status === 401) {
+    throw new Error(`Authentication failed for ${courierName}. Please check your API credentials (API Key and Secret Key) in the environment variables.`);
+  }
+
+  try {
+    const errorJson = JSON.parse(errorText);
+    throw new Error(errorJson.message || `${courierName} API request failed.`);
+  } catch (e) {
+    throw new Error(errorText || `${courierName} API request failed.`);
+  }
+}
 
 export async function POST(request: Request) {
     const session = await getServerSession(authConfig);
@@ -62,7 +81,7 @@ export async function POST(request: Request) {
         let trackingCode: string | undefined;
 
         switch (courierId as CourierId) {
-            case 'steadfast':
+            case 'steadfast': {
                 const steadfastPayload = {
                     api_key: process.env.STEADFAST_API_KEY,
                     secret_key: process.env.STEADFAST_SECRET_KEY,
@@ -71,23 +90,31 @@ export async function POST(request: Request) {
                     recipient_phone: order.customer.phone,
                     recipient_address: order.customer.address,
                     cod_amount: order.total,
-                    note: order.orderNote || 'Handle with care',
+                    note: 'Handle with care',
                 };
                 const steadfastRes = await fetch(courier.apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(steadfastPayload)
                 });
+
+                if (!steadfastRes.ok) {
+                    await handleCourierError(steadfastRes, 'Steadfast');
+                }
+                
                 courierResponse = await steadfastRes.json();
-                if (steadfastRes.ok && courierResponse.status === 200) {
+
+                if (courierResponse.status === 200) {
                     consignmentId = courierResponse.consignment.consignment_id;
                     trackingCode = courierResponse.consignment.tracking_code;
                 } else {
+                    console.error("Steadfast API Error:", courierResponse);
                     throw new Error(courierResponse.message || 'Steadfast API error');
                 }
                 break;
+            }
 
-            case 'redx':
+            case 'redx': {
                 const redxPayload = {
                     customer_name: order.customer.name,
                     customer_phone: order.customer.phone,
@@ -110,29 +137,31 @@ export async function POST(request: Request) {
                     },
                     body: JSON.stringify(redxPayload)
                 });
-                courierResponse = await redxRes.json();
-                if (redxRes.ok) {
-                    trackingCode = courierResponse.tracking_id;
-                    consignmentId = courierResponse.tracking_id;
-                } else {
-                     throw new Error(courierResponse.message || 'RedX API error');
+                
+                if (!redxRes.ok) {
+                   await handleCourierError(redxRes, 'RedX');
                 }
-                break;
 
-            case 'pathao':
+                courierResponse = await redxRes.json();
+                trackingCode = courierResponse.tracking_id;
+                consignmentId = courierResponse.tracking_id;
+                break;
+            }
+
+            case 'pathao': {
                 const pathaoToken = await getPathaoAccessToken();
                 const pathaoPayload = {
-                    store_id: process.env.PATHAO_STORE_ID, // Assuming store_id is in env
+                    store_id: process.env.PATHAO_STORE_ID,
                     merchant_order_id: order.orderNumber,
                     recipient_name: order.customer.name,
                     recipient_phone: order.customer.phone,
                     recipient_address: order.customer.address,
                     recipient_city: areaInfo.cityId,
                     recipient_zone: areaInfo.zoneId,
-                    delivery_type: 48, // 48 for normal, 12 for on-demand
-                    item_type: 2, // 2 for parcel
+                    delivery_type: 48, 
+                    item_type: 2, 
                     item_quantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
-                    item_weight: order.items.reduce((acc, item) => acc + (item.product.weight || 0.5) * item.quantity, 0) / 1000, // in KG
+                    item_weight: order.items.reduce((acc, item) => acc + (item.product.weight || 0.5) * item.quantity, 0),
                     amount_to_collect: order.total,
                 };
 
@@ -145,32 +174,44 @@ export async function POST(request: Request) {
                     },
                     body: JSON.stringify(pathaoPayload)
                 });
+
+                if (!pathaoRes.ok) {
+                    await handleCourierError(pathaoRes, 'Pathao');
+                }
+
                 courierResponse = await pathaoRes.json();
-                 if (pathaoRes.ok && courierResponse.type === 'success') {
+                if (courierResponse.type === 'success') {
                     consignmentId = courierResponse.data.consignment_id;
                     trackingCode = courierResponse.data.consignment_id;
                 } else {
+                    console.error("Pathao API Error:", courierResponse);
                     throw new Error(courierResponse.message || 'Pathao API error');
                 }
                 break;
+            }
             
             case 'carrybee':
-                 // Placeholder for CarryBee
                  throw new Error("CarryBee is not implemented yet.");
 
             default:
                 return NextResponse.json({ error: 'Invalid courier' }, { status: 400 });
         }
 
-        const updatedOrder = await prisma.order.update({
+        await prisma.order.update({
             where: { id: orderId },
             data: {
+                status: 'SHIPPED',
                 courierName: courier.name,
                 courierConsignmentId: consignmentId,
                 courierTrackingCode: trackingCode,
                 courierStatus: 'Shipment Created',
                 courierInfo: courierResponse as any,
             }
+        });
+        
+        const updatedOrder = await prisma.order.findUnique({
+            where: { id: orderId },
+            include: { customer: true, items: { include: { product: true } } },
         });
 
         return NextResponse.json({ success: true, order: updatedOrder });
