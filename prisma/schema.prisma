@@ -346,8 +346,8 @@ model UserSetting {
 
 enum Role {
   USER
-  MANAGER
   ADMIN
+  MANAGER
 }
 
 enum OrderStatus {

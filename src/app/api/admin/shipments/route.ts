@@ -34,20 +34,26 @@ const courierEnvSchema = z.object({
     CARRYBEE_STORE_ID: z.string().min(1).optional(),
 });
 
-let env: z.infer<typeof courierEnvSchema>;
-try {
-    env = courierEnvSchema.parse(process.env);
-} catch (error) {
-    console.error("❌ Missing or invalid courier environment variables:", error);
-    throw new Error("Server configuration error: Missing courier API credentials.");
-}
+let _env: z.infer<typeof courierEnvSchema> | null = null;
 
-// --- HOTFIX for RedX API URL ---
-// The following line forces the RedX API URL to the production endpoint.
-// This is a temporary fix. The correct long-term solution is to ensure
-// the REDX_API_URL in your .env file is set to the production URL.
-env.REDX_API_URL = "https://openapi.redx.com.bd/v1.0.0-beta";
-console.log("🟢 Overriding RedX API URL to production endpoint:", env.REDX_API_URL);
+function getEnv() {
+    if (_env) {
+        return _env;
+    }
+    try {
+        const parsedEnv = courierEnvSchema.parse(process.env);
+        
+        // --- HOTFIX for RedX API URL ---
+        parsedEnv.REDX_API_URL = "https://openapi.redx.com.bd/v1.0.0-beta";
+        console.log("🟢 Overriding RedX API URL to production endpoint:", parsedEnv.REDX_API_URL);
+        
+        _env = parsedEnv;
+        return _env;
+    } catch (error) {
+        console.error("❌ Missing or invalid courier environment variables:", error);
+        throw new Error("Server configuration error: Missing courier API credentials.");
+    }
+}
 
 type CourierId = 'steadfast' | 'pathao' | 'redx' | 'carrybee';
 
@@ -60,6 +66,7 @@ async function fetchWithCourierErrorHandling(url: string, options: RequestInit, 
     if (!res.ok) {
          console.error(`❌ ${courierName} API Error (Status: ${res.status})`, { status: res.status, statusText: res.statusText, body: responseText });
          if (res.status === 401) {
+            const env = getEnv();
             if (courierName.startsWith('RedX') && env.REDX_API_URL.includes('openapi.redx')) {
                 throw new Error(`RedX Production API authentication failed (401). Please check your production 'REDX_API_KEY'.`);
             }
@@ -95,6 +102,7 @@ async function getPathaoAccessToken(): Promise<string> {
         return existingToken.accessToken;
     }
     console.log(`Token for Pathao is invalid or expired. Fetching new token...`);
+    const env = getEnv();
 
     const usePasswordGrant = env.PATHAO_USERNAME && env.PATHAO_PASSWORD;
     const requestBody = usePasswordGrant 
@@ -141,29 +149,9 @@ async function getPathaoAccessToken(): Promise<string> {
 }
 
 // --- Automated Location ID Fetchers ---
-async function getPathaoAreaInfo(city: string, zone: string, accessToken: string) {
-    console.log(`Fetching Pathao areas for city: ${city}, zone: ${zone}`);
-    const cityData = await fetchWithCourierErrorHandling(
-        `${env.PATHAO_API_URL}/aladdin/api/v1/city-list`, 
-        { headers: { 'Authorization': `Bearer ${accessToken}`, 'Accept': 'application/json' } },
-        'Pathao (City List)'
-    );
-    const cityInfo = cityData.data.data.find((c: any) => c.city_name.toLowerCase() === city.toLowerCase());
-    if (!cityInfo) throw new Error(`Pathao city not found: ${city}`);
-
-    const zoneData = await fetchWithCourierErrorHandling(
-         `${env.PATHAO_API_URL}/aladdin/api/v1/cities/${cityInfo.city_id}/zone-list`, 
-         { headers: { 'Authorization': `Bearer ${accessToken}`, 'Accept': 'application/json' } },
-         'Pathao (Zone List)'
-    );
-    const zoneInfo = zoneData.data.data.find((z: any) => z.zone_name.toLowerCase().includes(zone.toLowerCase()));
-    if (!zoneInfo) throw new Error(`Pathao zone not found in ${city}: ${zone}`);
-    
-    return { cityId: cityInfo.city_id, zoneId: zoneInfo.zone_id };
-}
-
 async function getRedxAreaInfo(district: string, areaName: string) {
     console.log(`Fetching RedX area for district: ${district}, area: ${areaName}`);
+    const env = getEnv();
     const headers = { 'API-ACCESS-TOKEN': `Bearer ${env.REDX_API_KEY}` };
     try {
         const areaData = await fetchWithCourierErrorHandling(
@@ -201,6 +189,7 @@ export async function POST(request: Request) {
     }
 
     try {
+        const env = getEnv(); // Ensure env is loaded
         const body = await request.json();
         const { orderId } = body;
         if (!orderId) return NextResponse.json({ error: 'Invalid input: orderId is required' }, { status: 400 });
@@ -257,20 +246,31 @@ export async function POST(request: Request) {
             }
 
             case 'redx': {
-                const { areaId, areaName } = await getRedxAreaInfo(recipientCity, recipientZone);
+                const areaInfo = await getRedxAreaInfo(recipientCity, recipientZone);
+                const env = getEnv();
                 const payload = {
                     customer_name: order.customer.name,
                     customer_phone: order.customer.phone,
-                    delivery_area_id: areaId,
-                    delivery_area: areaName,
-                    customer_address: order.customer.address,
-                    cash_collection_amount: order.total,
-                    value: order.total,
-                    parcel_weight: totalWeight * 1000,
+                    customer_address: `${order.customer.address}, ${recipientZone}, ${recipientCity}`,
+                    area_id: areaInfo.areaId,
                     merchant_invoice_id: order.orderNumber,
+                    payment_type: "COD",
+                    weight: totalWeight < 0.5 ? 0.5 : totalWeight,
+                    cod_amount: order.total,
+                    get_fragile: false,
+                    delivery_instructions: order.orderNote,
+                    value: order.subtotal,
+                    item_description: order.items.map(i => i.product.name).join(', '),
+                    items: order.items.map(item => ({
+                        name: item.product.name,
+                        quantity: item.quantity,
+                    })),
                 };
+
+                 console.log("Sending payload to RedX:", JSON.stringify(payload, null, 2));
+
                 courierResponse = await fetchWithCourierErrorHandling(
-                    `${env.REDX_API_URL}/parcel`,
+                    `${env.REDX_API_URL}/order`,
                     {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'API-ACCESS-TOKEN': `Bearer ${env.REDX_API_KEY}` },
@@ -285,34 +285,57 @@ export async function POST(request: Request) {
 
             case 'pathao': {
                 const accessToken = await getPathaoAccessToken();
-                const { cityId, zoneId } = await getPathaoAreaInfo(recipientCity, recipientZone, accessToken);
-                const totalQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0);
+                
+                // Find Pathao location IDs from our local DB
+                const cityInfo = await prisma.pathaoLocation.findFirst({
+                    where: { 
+                        city_name: { equals: recipientCity, mode: 'insensitive' },
+                    }
+                });
+
+                if (!cityInfo) {
+                    throw new Error(`Pathao City '${recipientCity}' not found in local database. Please run the location sync or correct the city name.`);
+                }
+
+                const zoneInfo = await prisma.pathaoLocation.findFirst({
+                    where: { 
+                        city_id: cityInfo.city_id,
+                        zone_name: { equals: recipientZone, mode: 'insensitive' },
+                    }
+                });
+
+                if (!zoneInfo) {
+                    throw new Error(`Pathao Zone '${recipientZone}' for City '${recipientCity}' not found in local database. Please run the location sync or correct the zone name.`);
+                }
+                
                 const payload = {
-                    store_id: parseInt(env.PATHAO_STORE_ID),
+                    store_id: env.PATHAO_STORE_ID,
                     merchant_order_id: order.orderNumber,
                     recipient_name: order.customer.name,
                     recipient_phone: order.customer.phone,
                     recipient_address: order.customer.address,
-                    recipient_city: cityId,
-                    recipient_zone: zoneId,
-                    delivery_type: 48,
-                    item_type: 2,
-                    item_quantity: totalQuantity,
-                    item_weight: totalWeight,
+                    recipient_city: cityInfo.city_id,
+                    recipient_zone: zoneInfo.zone_id,
+                    delivery_type: 48, // 48 for Normal, 12 for On-demand
+                    item_type: 2, // 2 for Parcel
+                    special_instruction: order.orderNote,
+                    item_quantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
+                    item_weight: totalWeight < 0.5 ? 0.5 : totalWeight,
                     amount_to_collect: order.total,
+                    item_description: order.items.map(i => i.product.name).join(', '),
                 };
-                 courierResponse = await fetchWithCourierErrorHandling(
+
+                courierResponse = await fetchWithCourierErrorHandling(
                     `${env.PATHAO_API_URL}/aladdin/api/v1/orders`,
                     {
                         method: 'POST',
-                        headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}`, 'Accept': 'application/json' },
                         body: JSON.stringify(payload)
                     },
                     'Pathao'
                 );
-                if (courierResponse.type !== 'success') throw new Error(courierResponse.message || 'Pathao API error');
-                consignmentId = courierResponse.data.consignment_id;
-                trackingCode = courierResponse.data.consignment_id;
+                consignmentId = courierResponse?.consignment_id;
+                trackingCode = courierResponse?.consignment_id; // Pathao uses consignment_id as tracking code
                 break;
             }
             
