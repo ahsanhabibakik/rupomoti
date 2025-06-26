@@ -145,23 +145,24 @@ export function Navbar() {
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-sm">
         <div className="container flex h-16 items-center justify-between px-4">
           
-          <div className="flex flex-1 items-center justify-start">
+          <div className="flex flex-1 items-center justify-start md:flex-none">
             <MobileNav />
             <Link href="/" className="hidden md:flex items-center gap-2">
               <Image src="/images/branding/logo.png" alt="Rupomoti" width={110} height={40} className="object-contain -mt-1" />
             </Link>
           </div>
 
-          <div className="flex items-center justify-center">
-            <Link href="/" className="flex items-center gap-2 md:hidden">
+          <div className="flex flex-1 items-center justify-center md:hidden">
+            <Link href="/" className="flex items-center gap-2">
                <Image src="/images/branding/logo.png" alt="Rupomoti" width={110} height={40} className="object-contain -mt-1"/>
             </Link>
-            <nav className="hidden md:flex items-center gap-6">
-              {navLinks.map((link) => (
-                <NavLink key={link.href} href={link.href}>{link.name}</NavLink>
-              ))}
-            </nav>
           </div>
+
+          <nav className="hidden md:flex items-center gap-6 flex-1 justify-center">
+            {navLinks.map((link) => (
+              <NavLink key={link.href} href={link.href}>{link.name}</NavLink>
+            ))}
+          </nav>
 
           <div className="flex flex-1 items-center justify-end gap-2">
             <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)}>

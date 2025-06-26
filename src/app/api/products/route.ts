@@ -3,7 +3,18 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { prisma } from '@/lib/prisma'
 import { Prisma, ProductStatus } from '@prisma/client'
-import { generateSlug } from '@/lib/utils/slug'
+import { slugify } from '@/lib/utils/slugify'
+
+async function generateUniqueSlug(name: string): Promise<string> {
+  let slug = slugify(name)
+  let uniqueSlug = slug
+  let counter = 1
+  while (await prisma.product.findUnique({ where: { slug: uniqueSlug } })) {
+    uniqueSlug = `${slug}-${counter}`
+    counter++
+  }
+  return uniqueSlug
+}
 
 export async function GET(request: Request) {
   try {
@@ -90,17 +101,12 @@ export async function POST(request: Request) {
 
     const json = await request.json()
 
+    const slug = await generateUniqueSlug(json.name)
+
     const product = await prisma.product.create({
       data: {
-        name: json.name,
-        slug: generateSlug(json.name),
-        description: json.description,
-        price: json.price,
-        salePrice: json.salePrice,
-        images: json.images,
-        stock: json.stock,
-        sku: json.sku,
-        categoryId: json.categoryId,
+        ...json,
+        slug,
       },
       include: {
         category: true,
@@ -130,6 +136,10 @@ export async function PUT(request: Request) {
 
     const json = await request.json()
     const { id, ...data } = json
+
+    if (data.name) {
+      data.slug = await generateUniqueSlug(data.name)
+    }
 
     const product = await prisma.product.update({
       where: { id },
