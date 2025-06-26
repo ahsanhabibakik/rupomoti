@@ -23,7 +23,7 @@ interface CourierSelectorProps {
 export function CourierSelector({ order, onShipmentCreated }: CourierSelectorProps) {
   const [selectedCourier, setSelectedCourier] = useState<CourierId | ''>('');
   const [isLoading, setIsLoading] = useState(false);
-  const [areaInfo, setAreaInfo] = useState({ areaId: '', cityId: '', zoneId: '' });
+  const [areaInfo, setAreaInfo] = useState({ areaId: '', areaName: '', cityId: '', zoneId: '' });
 
   const handleCreateShipment = async () => {
     if (!selectedCourier) {
@@ -32,8 +32,8 @@ export function CourierSelector({ order, onShipmentCreated }: CourierSelectorPro
     }
 
     // Validate required fields based on courier
-    if (selectedCourier === 'redx' && !areaInfo.areaId) {
-      toast.error('Please enter RedX Delivery Area ID.');
+    if (selectedCourier === 'redx' && (!areaInfo.areaId || !areaInfo.areaName)) {
+      toast.error('Please enter both RedX Delivery Area ID and Area Name.');
       return;
     }
 
@@ -52,7 +52,13 @@ export function CourierSelector({ order, onShipmentCreated }: CourierSelectorPro
         body: JSON.stringify({
           orderId: order.id,
           courierId: selectedCourier,
-          areaInfo,
+          areaInfo: {
+            // Send snake_case to the backend as requested
+            area_id: areaInfo.areaId ? Number(areaInfo.areaId) : undefined,
+            area_name: areaInfo.areaName,
+            cityId: areaInfo.cityId,
+            zoneId: areaInfo.zoneId,
+          },
         }),
       });
 
@@ -75,7 +81,7 @@ export function CourierSelector({ order, onShipmentCreated }: CourierSelectorPro
     switch (selectedCourier) {
       case 'redx':
         return (
-          <div className="mt-4 space-y-3">
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="redx-area-id" className="text-sm font-medium">
                 RedX Delivery Area ID *
@@ -87,9 +93,18 @@ export function CourierSelector({ order, onShipmentCreated }: CourierSelectorPro
                 placeholder="e.g., 12345"
                 disabled={isLoading}
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                Enter the RedX delivery area ID for the customer&apos;s location
-              </p>
+            </div>
+            <div>
+              <Label htmlFor="redx-area-name" className="text-sm font-medium">
+                RedX Delivery Area Name *
+              </Label>
+              <Input
+                id="redx-area-name"
+                value={areaInfo.areaName}
+                onChange={(e) => setAreaInfo({ ...areaInfo, areaName: e.target.value })}
+                placeholder="e.g., Mirpur"
+                disabled={isLoading}
+              />
             </div>
           </div>
         );
