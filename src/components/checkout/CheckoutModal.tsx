@@ -8,6 +8,14 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
+import { DialogTitle } from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { formatPrice } from '@/lib/utils'
 import Image from 'next/image'
 import { useAppSelector, useAppDispatch } from '@/redux/hooks'
@@ -136,9 +144,6 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
     if (!formData.phone.trim()) newErrors.phone = 'Phone number is required'
     else if (!/^([+]8801|01)[3-9]\d{8}$/.test(formData.phone.trim())) newErrors.phone = 'Please enter a valid Bangladeshi phone number'
     if (formData.email && !/^\S+@\S+\.\S+$/.test(formData.email.trim())) newErrors.email = 'Invalid email address'
-    if (!formData.city) newErrors.city = 'City is required'
-    if (!formData.zone) newErrors.zone = 'Zone is required'
-    if (!formData.area) newErrors.area = 'Area is required'
     if (!formData.address.trim()) newErrors.address = 'Delivery address is required'
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -160,29 +165,32 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
     setIsSubmitting(true)
     try {
       const orderData = {
-        orderNumber: generateOrderNumber(),
         recipientName: formData.name.trim(),
         recipientPhone: formData.phone.trim(),
-        recipientEmail: formData.email.trim() || null,
-        recipientCity: formData.city,
-        recipientZone: formData.zone,
-        recipientArea: formData.area,
+        recipientEmail: formData.email.trim() || '',
+        recipientCity: formData.city || '',
+        recipientZone: formData.zone || '',
+        recipientArea: formData.area || '',
         deliveryAddress: formData.address.trim(),
-        orderNote: formData.note.trim() || null,
-        items: items.map((item: any) => ({
+        orderNote: formData.note.trim() || '',
+        deliveryZone,
+        items: items.map(item => ({
           productId: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          image: item.image,
+          name:       item.name,
+          price:      item.price,
+          quantity:   item.quantity,
+          image:      item.image,
         })),
         subtotal,
         deliveryFee,
         total,
-        deliveryZone,
         paymentMethod,
         userId: session?.user?.id || null,
-      }
+        orderNumber: generateOrderNumber(),
+      };
+      
+      console.log("orderData", orderData);
+
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -195,7 +203,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
       showToast.success(`Order #${orderData.orderNumber} placed successfully! We'll contact you soon.`)
       setFormData({
         name: session?.user?.name || '',
-        phone: '',
+        phone: session?.user?.phone || '',
         email: session?.user?.email || '',
         city: '',
         zone: '',
@@ -239,6 +247,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl bg-white rounded-lg shadow-xl z-50 max-h-[90vh] overflow-hidden"
           >
+            <DialogTitle className="sr-only">Checkout</DialogTitle>
             <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-pearl-500 to-pearl-600 text-white">
               <h2 className="text-xl font-semibold">Complete Your Order</h2>
               <Button
@@ -374,9 +383,18 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                       </h3>
                       <div className="space-y-4">
                         <div>
-                          <Label htmlFor="name" className="text-sm font-medium">Full Name *</Label>
-                          <Input id="name" value={formData.name} onChange={(e) => handleInputChange('name', e.target.value)} className={`mt-1 ${errors.name ? 'border-red-500' : ''}`} placeholder="Enter your full name" disabled={isSubmitting} />
-                          {errors.name && (<p className="text-sm text-red-500 mt-1">{errors.name}</p>)}
+                          <Label htmlFor="name" className="flex items-center text-sm font-medium text-gray-700">
+                            <User className="w-4 h-4 mr-2" /> Full Name
+                          </Label>
+                          <Input
+                            id="name"
+                            placeholder="e.g. Jannatul Ferdous"
+                            value={formData.name}
+                            onChange={(e) => handleInputChange('name', e.target.value)}
+                            className={`mt-1 ${errors.name ? 'border-red-500' : ''}`}
+                            required
+                          />
+                          {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
                         </div>
                         <div>
                           <Label htmlFor="phone" className="text-sm font-medium">Phone Number *</Label>
@@ -390,26 +408,38 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                         </div>
                         <div>
                           <Label htmlFor="city" className="text-sm font-medium">City *</Label>
-                          <select id="city" value={formData.city} onChange={e => handleInputChange('city', e.target.value)} className={`mt-1 w-full border rounded-lg px-3 py-2 ${errors.city ? 'border-red-500' : ''}`} disabled={isSubmitting}>
-                            <option value="">Select city</option>
-                            {CITIES.map(city => <option key={city.value} value={city.value}>{city.label}</option>)}
-                          </select>
+                          <Select onValueChange={(value) => handleInputChange('city', value)} value={formData.city} disabled={isSubmitting}>
+                            <SelectTrigger className={`mt-1 w-full ${errors.city ? 'border-red-500' : ''}`}>
+                              <SelectValue placeholder="Select city" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {CITIES.map(city => <SelectItem key={city.value} value={city.value}>{city.label}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
                           {errors.city && (<p className="text-sm text-red-500 mt-1">{errors.city}</p>)}
                         </div>
                         <div>
                           <Label htmlFor="zone" className="text-sm font-medium">Zone *</Label>
-                          <select id="zone" value={formData.zone} onChange={e => handleInputChange('zone', e.target.value)} className={`mt-1 w-full border rounded-lg px-3 py-2 ${errors.zone ? 'border-red-500' : ''}`} disabled={isSubmitting}>
-                            <option value="">Select zone</option>
-                            {ZONES.map(zone => <option key={zone.value} value={zone.value}>{zone.label}</option>)}
-                          </select>
+                          <Select onValueChange={(value) => handleInputChange('zone', value)} value={formData.zone} disabled={isSubmitting}>
+                            <SelectTrigger className={`mt-1 w-full ${errors.zone ? 'border-red-500' : ''}`}>
+                              <SelectValue placeholder="Select zone" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {ZONES.map(zone => <SelectItem key={zone.value} value={zone.value}>{zone.label}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
                           {errors.zone && (<p className="text-sm text-red-500 mt-1">{errors.zone}</p>)}
                         </div>
                         <div>
                           <Label htmlFor="area" className="text-sm font-medium">Area *</Label>
-                          <select id="area" value={formData.area} onChange={e => handleInputChange('area', e.target.value)} className={`mt-1 w-full border rounded-lg px-3 py-2 ${errors.area ? 'border-red-500' : ''}`} disabled={isSubmitting}>
-                            <option value="">Select area</option>
-                            {AREAS.map(area => <option key={area.value} value={area.value}>{area.label}</option>)}
-                          </select>
+                          <Select onValueChange={(value) => handleInputChange('area', value)} value={formData.area} disabled={isSubmitting}>
+                            <SelectTrigger className={`mt-1 w-full ${errors.area ? 'border-red-500' : ''}`}>
+                              <SelectValue placeholder="Select area" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {AREAS.map(area => <SelectItem key={area.value} value={area.value}>{area.label}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
                           {errors.area && (<p className="text-sm text-red-500 mt-1">{errors.area}</p>)}
                         </div>
                         <div>

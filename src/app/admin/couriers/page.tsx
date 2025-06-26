@@ -6,6 +6,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { Loader2 } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { toast } from '@/hooks/use-toast'
+import { Button } from '@/components/ui/button'
 
 const COURIERS = [
   { value: 'Steadfast', label: 'Steadfast' },
@@ -14,9 +17,17 @@ const COURIERS = [
   { value: 'CarryBee', label: 'CarryBee' },
 ]
 
+interface Modal {
+  type: 'send' | 'cancel'
+  courier: string
+}
+
 export default function CourierAnalyticsPage() {
   const [orders, setOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [modal, setModal] = useState<{ type: 'send' | 'cancel', courier: string } | null>(null)
+  const [selectedOrderId, setSelectedOrderId] = useState<string>('')
+  const [actionLoading, setActionLoading] = useState(false)
 
   useEffect(() => {
     async function fetchOrders() {
@@ -54,6 +65,34 @@ export default function CourierAnalyticsPage() {
     }
   })
 
+  // Orders for selected courier
+  const modalOrders = modal ? orders.filter(
+    (o) => (o.courier || (o.steadfastInfo?.trackingId ? 'Steadfast' : null)) === modal.courier
+  ) : []
+
+  async function handleAction() {
+    if (!selectedOrderId) return
+    setActionLoading(true)
+    try {
+      // Placeholder: Replace with real API call
+      await new Promise((res) => setTimeout(res, 1000))
+      toast({
+        title: modal?.type === 'send' ? 'Shipment Sent' : 'Shipment Cancelled',
+        description: `Order ${selectedOrderId} for ${modal?.courier} ${modal?.type === 'send' ? 'sent' : 'cancelled'} successfully.`,
+      })
+      setModal(null)
+      setSelectedOrderId('')
+    } catch (e) {
+      toast({
+        title: 'Error',
+        description: 'Failed to perform action.',
+        variant: 'destructive',
+      })
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
   return (
     <div className="space-y-8 max-w-5xl mx-auto py-8">
       <h1 className="text-3xl font-bold mb-4">Courier Analytics</h1>
@@ -77,6 +116,7 @@ export default function CourierAnalyticsPage() {
                     <TableHead>Cancelled</TableHead>
                     <TableHead>Total Orders</TableHead>
                     <TableHead>Total Amount</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -94,12 +134,46 @@ export default function CourierAnalyticsPage() {
                       </TableCell>
                       <TableCell>{stat.total}</TableCell>
                       <TableCell>৳{stat.amount.toLocaleString()}</TableCell>
+                      <TableCell>
+                        <Button size="sm" variant="outline" className="mr-2" onClick={() => setModal({ type: 'send', courier: stat.courier })}>Send Shipment</Button>
+                        <Button size="sm" variant="destructive" onClick={() => setModal({ type: 'cancel', courier: stat.courier })}>Cancel Shipment</Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
+
+          {/* Action Modal */}
+          <Dialog open={!!modal} onOpenChange={() => { setModal(null); setSelectedOrderId('') }}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{modal?.type === 'send' ? 'Send Shipment' : 'Cancel Shipment'} - {modal?.courier}</DialogTitle>
+              </DialogHeader>
+              <div className="mb-4">
+                <label className="block mb-2 text-sm font-medium">Select Order</label>
+                <select
+                  className="w-full border rounded p-2"
+                  value={selectedOrderId}
+                  onChange={e => setSelectedOrderId(e.target.value)}
+                >
+                  <option value="">Select an order</option>
+                  {modalOrders.map((order) => (
+                    <option key={order.id} value={order.id}>
+                      #{order.id} - ৳{order.total} - {order.status}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <DialogFooter>
+                <Button onClick={handleAction} disabled={!selectedOrderId || actionLoading}>
+                  {actionLoading ? 'Processing...' : modal?.type === 'send' ? 'Send Shipment' : 'Cancel Shipment'}
+                </Button>
+                <Button variant="outline" onClick={() => setModal(null)} disabled={actionLoading}>Close</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           <Card>
             <CardHeader>

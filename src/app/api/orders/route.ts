@@ -115,13 +115,13 @@ export async function POST(req: Request) {
       recipientCity,
       recipientZone,
       recipientArea,
+      deliveryAddress,
+      orderNote,
       items,
       subtotal,
       deliveryFee,
       total,
       deliveryZone,
-      deliveryAddress,
-      orderNote,
       paymentMethod,
       userId: payloadUserId
     } = body;
@@ -139,14 +139,26 @@ export async function POST(req: Request) {
     if (!recipientPhone) {
       return NextResponse.json({ error: 'Missing required field: recipientPhone' }, { status: 400 });
     }
+    if (!deliveryAddress) {
+      return NextResponse.json({ error: 'Missing required field: deliveryAddress' }, { status: 400 });
+    }
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'Missing or empty items array' }, { status: 400 });
     }
     if (!deliveryZone) {
       return NextResponse.json({ error: 'Missing required field: deliveryZone' }, { status: 400 });
     }
-    if (!deliveryAddress) {
-      return NextResponse.json({ error: 'Missing required field: deliveryAddress' }, { status: 400 });
+    if (subtotal === undefined || subtotal === null) {
+      return NextResponse.json({ error: 'Missing required field: subtotal' }, { status: 400 });
+    }
+    if (deliveryFee === undefined || deliveryFee === null) {
+      return NextResponse.json({ error: 'Missing required field: deliveryFee' }, { status: 400 });
+    }
+    if (total === undefined || total === null) {
+      return NextResponse.json({ error: 'Missing required field: total' }, { status: 400 });
+    }
+    if (!paymentMethod) {
+      return NextResponse.json({ error: 'Missing required field: paymentMethod' }, { status: 400 });
     }
 
     // Optional: recipientCity, recipientZone, recipientArea, recipientEmail, orderNote
@@ -209,10 +221,8 @@ export async function POST(req: Request) {
           items: {
             create: items.map((item: any) => ({
               productId: item.productId,
-              name: item.name,
-              price: item.price,
               quantity: item.quantity,
-              image: item.image,
+              price: item.price,
             })),
           },
         },
@@ -248,14 +258,14 @@ export async function POST(req: Request) {
       if (dbError.code === 'P2002') {
         return NextResponse.json({
           error: 'Order number already exists. Please try again.'
-        }, { status: 400 });
+        }, { status: 409 });
       }
-      throw dbError;
+      return NextResponse.json({
+        error: 'An unexpected error occurred while processing your order.'
+      }, { status: 500 });
     }
   } catch (error: any) {
-    console.error('Error creating order:', error);
-    return NextResponse.json({
-      error: error.message || 'Failed to create order'
-    }, { status: 500 });
+    console.error('Failed to parse request body or handle session:', error);
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
-} 
+}

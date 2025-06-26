@@ -161,7 +161,7 @@ export default async function HomePage() {
               Most Popular Pieces
             </h2>
             <p className="text-lg text-neutral-light max-w-2xl mx-auto">
-              Our customers' favorite pearl jewelry pieces
+              Our customers&apos; favorite pearl jewelry pieces
             </p>
           </div>
           <div className="product-grid-enhanced">

@@ -52,6 +52,7 @@
     "react-dom": "^18",
     "react-dropzone": "^14.3.8",
     "react-hook-form": "^7.51.0",
+    "react-hot-toast": "^2.5.2",
     "react-icons": "^4.0.0",
     "react-redux": "^9.2.0",
     "recharts": "^2.15.3",
@@ -63,7 +64,7 @@
     "zod": "^3.25.67"
   },
   "devDependencies": {
-    "@prisma/client": "^6.10.0",
+    "@prisma/client": "^6.10.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/nodemailer": "^6.4.17",
@@ -74,7 +75,7 @@
     "eslint": "^8",
     "eslint-config-next": "14.0.0",
     "postcss": "^8",
-    "prisma": "^6.10.0",
+    "prisma": "^6.10.1",
     "tailwindcss": "^3.3.0",
     "tsx": "^4.20.3",
     "typescript": "^5"

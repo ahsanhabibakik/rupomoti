@@ -54,6 +54,7 @@ const navigation = [
   { name: 'Media', href: '/admin/media', icon: ImageIcon, badge: null },
   { name: 'Reviews', href: '/admin/reviews', icon: Star, badge: '8' },
   { name: 'Coupons', href: '/admin/coupons', icon: Tag, badge: '3' },
+  { name: 'Couriers', href: '/admin/couriers', icon: Truck, badge: null },
   { name: 'Shipping', href: '/admin/shipping', icon: Truck, badge: null },
   { name: 'Reports', href: '/admin/reports', icon: FileText, badge: null },
   { name: 'Notifications', href: '/admin/notifications', icon: Bell, badge: '4' },
@@ -81,7 +82,7 @@ function Sidebar({ className, onClose }: { className?: string; onClose?: () => v
     <div className={cn("flex flex-col h-full", className)}>
       {/* Header with Logo and Back to Home */}
       <div className="flex items-center justify-between h-16 px-4 border-b bg-white dark:bg-neutral-800">
-        <Link href="/" className="flex items-center gap-3 group" onClick={onClose}>
+        <Link href="/admin" className="flex items-center gap-3 group" onClick={onClose}>
           <Image 
             src="/images/branding/logo.png" 
             alt="Rupomoti" 
@@ -301,7 +302,7 @@ export default function AdminLayout({
 
       {/* Notification Panel - Mobile */}
       {showNotifications && (
-        <div className="lg:hidden fixed top-16 left-4 right-4 z-50 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg shadow-lg p-4">
+        <div className="lg:hidden fixed top-16 left-4 right-4 z-30 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg shadow-lg p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-primary">Notifications</h3>
             <button 
@@ -331,7 +332,7 @@ export default function AdminLayout({
       )}
 
       {/* Desktop Top Bar */}
-      <div className="hidden lg:flex fixed top-0 right-0 z-50 p-4 gap-2">
+      <div className="hidden lg:flex fixed top-0 right-0 z-30 p-4 gap-2">
         <div className="relative">
           <button
             onClick={() => setShowNotifications((v) => !v)}
@@ -342,7 +343,7 @@ export default function AdminLayout({
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 font-bold">{notifications.length}</span>
           </button>
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg shadow-lg p-4">
+            <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg shadow-lg p-4 z-40">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-semibold text-primary">Notifications</h3>
                 <button 

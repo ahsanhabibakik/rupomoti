@@ -61,7 +61,7 @@ export function useProducts() {
   }
 
   return {
-    data,
+    data: data?.products,
     isLoading: !error && !data,
     error,
     createProduct,

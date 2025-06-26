@@ -48,11 +48,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
     try {
       setErrorMessage(null)
       const orderNumber = 'ORD-' + Date.now()
-      const customer = {
-        name: data.name,
-        phone: data.phone,
-        address: data.address,
-      }
+
       const paymentMethodMap = {
         cod: 'CASH_ON_DELIVERY',
         bkash: 'BKASH',
@@ -65,25 +61,29 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
       } as const
       const orderItems = items.map(item => ({
         productId: (item as any).productId || item.id,
-        quantity: item.quantity,
         price: typeof (item as any).salePrice === 'number' && (item as any).salePrice > 0
           ? Math.round((item as any).salePrice)
-          : Math.round(item.price)
+          : Math.round(item.price),
+        quantity: item.quantity,
       }))
+      
       const fullOrder = {
         orderNumber,
-        customer,
+        recipientName: data.name,
+        recipientPhone: data.phone,
+        deliveryAddress: data.address,
         items: orderItems,
         subtotal: Math.round(subtotal),
         discount: Math.round(discount),
         deliveryFee: Math.round(deliveryCharge),
         total,
         deliveryZone: deliveryZoneMap[delivery as keyof typeof deliveryZoneMap] || 'INSIDE_DHAKA',
-        deliveryAddress: data.address,
         orderNote: data.note || '',
         paymentMethod: paymentMethodMap[payment as keyof typeof paymentMethodMap] || 'CASH_ON_DELIVERY',
-        orderDate: new Date().toISOString(),
       }
+      
+      console.log("orderData", fullOrder);
+
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

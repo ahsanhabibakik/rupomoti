@@ -129,7 +129,7 @@ model Customer {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   name      String
   email     String?
-  phone     String
+  phone     String?
   address   String
   city      String?
   zone      String?  // For delivery zone
