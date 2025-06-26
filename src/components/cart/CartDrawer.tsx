@@ -65,11 +65,12 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   }
 
   const getFinalTotal = () => {
-    return cartTotal - discount + shippingCost
+    const finalTotal = (cartTotal || 0) - (discount || 0) + (shippingCost || 0);
+    return isNaN(finalTotal) ? 0 : finalTotal;
   }
 
   const getAmountNeededForFreeShipping = () => {
-    const amountNeeded = freeShippingThreshold - cartTotal
+    const amountNeeded = freeShippingThreshold - (cartTotal || 0);
     return amountNeeded > 0 ? amountNeeded : 0
   }
 

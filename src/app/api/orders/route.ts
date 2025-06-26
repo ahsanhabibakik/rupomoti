@@ -196,44 +196,72 @@ export async function POST(req: Request) {
         });
       }
 
-      // Create the order
-      const order = await prisma.order.create({
-        data: {
-          orderNumber,
-          customerId: customerRecord.id,
-          userId: userId || undefined,
-          status: 'PENDING',
-          paymentStatus: 'PENDING',
-          paymentMethod: paymentMethod || 'CASH_ON_DELIVERY',
-          subtotal: subtotal || 0,
-          deliveryFee: deliveryFee || 0,
-          discount: 0,
-          total: total || 0,
-          deliveryZone,
-          deliveryAddress,
-          orderNote: orderNote || undefined,
-          recipientName,
-          recipientPhone,
-          recipientEmail: recipientEmail || '',
-          recipientCity: recipientCity || '',
-          recipientZone: recipientZone || '',
-          recipientArea: recipientArea || '',
-          items: {
-            create: items.map((item: any) => ({
-              productId: item.productId,
-              quantity: item.quantity,
-              price: item.price,
-            })),
-          },
-        },
-        include: {
-          customer: true,
-          items: {
-            include: {
-              product: true
-            }
+      // Use a transaction to ensure atomicity
+      const order = await prisma.$transaction(async (tx) => {
+        // 1. Check stock and create a list of updates
+        for (const item of items) {
+          const product = await tx.product.findUnique({
+            where: { id: item.productId },
+          });
+
+          if (!product || product.stock < item.quantity) {
+            throw new Error(`Insufficient stock for product: ${product?.name || item.productId}`);
           }
-        },
+        }
+        
+        // 2. Create the order
+        const createdOrder = await tx.order.create({
+          data: {
+            orderNumber,
+            customerId: customerRecord.id,
+            userId: userId || undefined,
+            status: 'PENDING',
+            paymentStatus: 'PENDING',
+            paymentMethod: paymentMethod || 'CASH_ON_DELIVERY',
+            subtotal: subtotal || 0,
+            deliveryFee: deliveryFee || 0,
+            discount: 0,
+            total: total || 0,
+            deliveryZone,
+            deliveryAddress,
+            orderNote: orderNote || undefined,
+            recipientName,
+            recipientPhone,
+            recipientEmail: recipientEmail || '',
+            recipientCity: recipientCity || '',
+            recipientZone: recipientZone || '',
+            recipientArea: recipientArea || '',
+            items: {
+              create: items.map((item: any) => ({
+                productId: item.productId,
+                quantity: item.quantity,
+                price: item.price,
+              })),
+            },
+          },
+          include: {
+            customer: true,
+            items: {
+              include: {
+                product: true
+              }
+            }
+          },
+        });
+
+        // 3. Update stock for each item
+        for (const item of items) {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: {
+                decrement: item.quantity,
+              },
+            },
+          });
+        }
+
+        return createdOrder;
       });
 
       console.log('Order created successfully:', order.orderNumber);
@@ -253,16 +281,14 @@ export async function POST(req: Request) {
           createdAt: order.createdAt
         }
       });
-    } catch (dbError: any) {
-      console.error('Database error:', dbError);
-      if (dbError.code === 'P2002') {
-        return NextResponse.json({
-          error: 'Order number already exists. Please try again.'
-        }, { status: 409 });
+    } catch (error: any) {
+      console.error('Order creation failed:', error);
+    
+      if (error instanceof Error && error.message.includes('Insufficient stock')) {
+        return NextResponse.json({ error: error.message }, { status: 409 }); // 409 Conflict
       }
-      return NextResponse.json({
-        error: 'An unexpected error occurred while processing your order.'
-      }, { status: 500 });
+    
+      return NextResponse.json({ error: 'An unexpected error occurred while processing your order.' }, { status: 500 });
     }
   } catch (error: any) {
     console.error('Failed to parse request body or handle session:', error);
