@@ -182,6 +182,13 @@ model Order {
   courierInfo          Json? // Raw response/info from courier
 }
 
+model CourierToken {
+  courier      String   @id @map("_id")
+  accessToken  String
+  refreshToken String?
+  expiresAt    DateTime
+}
+
 model OrderItem {
   id        String  @id @default(auto()) @map("_id") @db.ObjectId
   orderId   String  @db.ObjectId
@@ -339,6 +346,7 @@ model UserSetting {
 
 enum Role {
   USER
+  MANAGER
   ADMIN
 }
 

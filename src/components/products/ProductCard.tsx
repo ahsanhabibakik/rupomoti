@@ -116,15 +116,15 @@ export function ProductCard({ product }: ProductCardProps) {
         )}
       </Link>
       {/* Content */}
-      <div className="flex-1 flex flex-col p-2.5">
+      <div className="flex-1 flex flex-col p-2">
         <div> {/* Content that stays at the top */}
           <Link href={`/product/${id}`} className="block">
-            <h3 className="text-sm font-semibold text-neutral mb-1.5 min-h-[40px] line-clamp-2 hover:text-primary transition-colors">
+            <h3 className="text-sm font-semibold text-neutral mb-1 h-[40px] line-clamp-2 hover:text-primary transition-colors">
               {name || 'Unnamed Product'}
             </h3>
           </Link>
           {/* Rating - wrapper ensures consistent height */}
-          <div className="h-5 mb-1.5 flex items-center gap-1">
+          <div className="h-5 mb-1 flex items-center gap-1">
             {rating && rating > 0 && (
               <>
                 {renderStars(rating)}
@@ -133,7 +133,7 @@ export function ProductCard({ product }: ProductCardProps) {
             )}
           </div>
           {/* Price */}
-          <div className="flex items-baseline gap-2 mb-1.5">
+          <div className="flex items-baseline gap-2 mb-1">
             <span className={cn(
               "text-md font-bold",
               salePrice ? "text-red-600" : "text-primary"
@@ -148,10 +148,10 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
         </div>
         
-        <div className="mt-auto pt-1.5"> {/* Wrapper to push content below to the bottom */}
+        <div className="mt-auto pt-1"> {/* Wrapper to push content below to the bottom */}
           {/* Stock Status */}
           {typeof stock === 'number' && (
-            <div className="flex items-center justify-between text-xs mb-1.5">
+            <div className="flex items-center justify-between text-xs mb-1">
               <span className="text-gray-600">Stock:</span>
               <span className={cn(
                 "font-medium",
