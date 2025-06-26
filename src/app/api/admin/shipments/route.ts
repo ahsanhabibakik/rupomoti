@@ -228,6 +228,17 @@ export async function POST(request: Request) {
              return NextResponse.json({ error: 'Order has no courier assigned' }, { status: 400 });
         }
 
+        // --- Pre-shipment Data Validation ---
+        // Validate customer phone number format for couriers with strict rules.
+        if (courierId === 'steadfast') {
+            const phone = order.customer.phone;
+            // Steadfast requires an 11-digit Bangladeshi phone number (e.g., 01xxxxxxxxx).
+            const bdPhoneRegex = /^01[3-9]\d{8}$/;
+            if (!phone || !bdPhoneRegex.test(phone)) {
+                throw new Error(`Invalid phone number for Steadfast: '${phone}'. Please correct the customer's phone number to a valid 11-digit format.`);
+            }
+        }
+
         let courierResponse: any;
         let consignmentId: string | number | undefined;
         let trackingCode: string | number | undefined;
