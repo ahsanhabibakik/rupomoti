@@ -5,16 +5,27 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    remotePatterns: [
+    domains: [
+      "images.unsplash.com",
+      "plus.unsplash.com",
+      "res.cloudinary.com",
+      "mir-s3-cdn-cf.behance.net",           // ← add this
+    ],
+    remotePatterns:  [
       {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-        pathname: '/**',
+        protocol: "https",
+        hostname: "images.unsplash.com",
+        pathname: "/**",
       },
       {
-        protocol: 'https',
-        hostname: 'res.cloudinary.com',
-        pathname: '/**',
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "mir-s3-cdn-cf.behance.net",  // ← add this
+        pathname: "/**",
       },
     ],
     unoptimized: process.env.NODE_ENV === 'development',
