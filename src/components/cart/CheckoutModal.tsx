@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogOverlay, DialogPortal } from '@/components/ui/dialog'
 import { Truck, CreditCard, Banknote, Smartphone, CheckCircle } from 'lucide-react'
 import { useForm, FieldValues, SubmitHandler } from 'react-hook-form'
 import { useAppSelector, useAppDispatch } from '@/redux/hooks'
 import { clearCart } from '@/redux/slices/cartSlice'
+import { useSession } from 'next-auth/react'
 
 interface CheckoutModalProps {
   open: boolean
@@ -36,15 +37,28 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   
   const [delivery, setDelivery] = useState('dhaka')
   const [payment, setPayment] = useState('cod')
-  const { register, handleSubmit, formState: { errors } } = useForm()
+  const { register, handleSubmit, formState: { errors }, reset } = useForm()
   const [submitted, setSubmitted] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const { data: session } = useSession()
+
+  useEffect(() => {
+    if (session?.user) {
+      reset({
+        name: session.user.name || '',
+        phone: (session.user as any).phone || '',
+        address: (session.user as any).address || '',
+      });
+    }
+  }, [session, reset]);
 
   const subtotal = cartTotal
   const deliveryCharge = DELIVERY_OPTIONS.find(opt => opt.value === delivery)?.price || 0
-  const total = Math.round(subtotal - discount + deliveryCharge)
+  const total = Math.round((subtotal || 0) - (discount || 0) + (deliveryCharge || 0))
 
   const onSubmit: SubmitHandler<FieldValues> = async (data) => {
+    setIsSubmitting(true)
     try {
       setErrorMessage(null)
       const orderNumber = 'ORD-' + Date.now()
@@ -61,8 +75,8 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
       } as const
       const orderItems = items.map(item => ({
         productId: (item as any).productId || item.id,
-        price: typeof (item as any).salePrice === 'number' && (item as any).salePrice > 0
-          ? Math.round((item as any).salePrice)
+        price: item.salePrice && item.salePrice > 0
+          ? Math.round(item.salePrice)
           : Math.round(item.price),
         quantity: item.quantity,
       }))
@@ -99,6 +113,8 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
     } catch (error) {
       setErrorMessage('Failed to submit order. Please try again.')
       console.error('Error submitting order:', error)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -122,7 +138,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 {items.map((item) => (
                   <div key={item.id} className="flex justify-between text-sm text-gray-700">
                     <span>{item.name} x {item.quantity}</span>
-                    <span>৳{Math.round((typeof (item as any).salePrice === 'number' && (item as any).salePrice > 0 ? (item as any).salePrice : item.price) * item.quantity)}</span>
+                    <span>৳{Math.round((item.salePrice && item.salePrice > 0 ? item.salePrice : item.price) * item.quantity)}</span>
                   </div>
                 ))}
                 <div className="flex justify-between text-sm text-gray-700">
@@ -202,8 +218,8 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 </div>
               </div>
 
-              <button type="submit" className="w-full py-3 bg-yellow-500 text-white font-bold rounded-lg hover:bg-yellow-600 transition-colors text-base">
-                Confirm Order — ৳{total}
+              <button type="submit" disabled={isSubmitting} className="w-full py-3 bg-yellow-500 text-white font-bold rounded-lg hover:bg-yellow-600 transition-colors text-base disabled:bg-gray-400 disabled:cursor-not-allowed">
+                {isSubmitting ? 'Processing...' : `Confirm Order — ৳${total}`}
               </button>
             </form>
           ) : (

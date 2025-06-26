@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useAppDispatch } from '@/redux/hooks'
-import { addToCart, toggleCart } from '@/redux/slices/cartSlice'
+import { addToCart } from '@/redux/slices/cartSlice'
+import { setCartDrawerOpen } from '@/redux/slices/uiSlice'
 import { Heart, Share2, ChevronRight, Truck, Plus, Minus } from 'lucide-react'
 import Image from 'next/image'
 import { Product } from '@/types/product'
@@ -33,7 +34,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
       category: product.category,
     }
     dispatch(addToCart(cartItem))
-    dispatch(toggleCart())
+    dispatch(setCartDrawerOpen(true))
     showToast.success(`${product.name || 'Unnamed Product'} has been added to your cart.`)
   }
 

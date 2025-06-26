@@ -25,8 +25,14 @@ export function useCoupons(searchParams?: string) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(couponData),
-      }).then((res) => {
-        if (!res.ok) throw new Error('Failed to create coupon')
+      }).then(async (res) => {
+        if (!res.ok) {
+          const errorBody = await res.json().catch(() => ({ error: 'An unknown error occurred' }));
+          const errorMessage = errorBody.error ? (Array.isArray(errorBody.error) ? errorBody.error.map(e => e.message).join(', ') : errorBody.error) : 'Failed to create coupon';
+          const error = new Error(errorMessage);
+          error.info = errorBody;
+          throw error;
+        }
         mutate() // Re-fetch data after creation
         return res.json()
       }),
@@ -44,8 +50,14 @@ export function useCoupons(searchParams?: string) {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, ...couponData }),
-      }).then((res) => {
-        if (!res.ok) throw new Error('Failed to update coupon')
+      }).then(async (res) => {
+        if (!res.ok) {
+          const errorBody = await res.json().catch(() => ({ error: 'An unknown error occurred' }));
+          const errorMessage = errorBody.error ? (Array.isArray(errorBody.error) ? errorBody.error.map(e => e.message).join(', ') : errorBody.error) : 'Failed to update coupon';
+          const error = new Error(errorMessage);
+          error.info = errorBody;
+          throw error;
+        }
         mutate() // Re-fetch data after update
         return res.json()
       }),
@@ -61,8 +73,14 @@ export function useCoupons(searchParams?: string) {
     return showToast.promise(
       fetch(`/api/coupons?id=${id}`, {
         method: 'DELETE',
-      }).then((res) => {
-        if (!res.ok) throw new Error('Failed to delete coupon')
+      }).then(async (res) => {
+        if (!res.ok) {
+          const errorBody = await res.json().catch(() => ({ error: 'An unknown error occurred' }));
+          const errorMessage = errorBody.error || 'Failed to delete coupon';
+          const error = new Error(errorMessage);
+          error.info = errorBody;
+          throw error;
+        }
         mutate() // Re-fetch data after deletion
       }),
       {

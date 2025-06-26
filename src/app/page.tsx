@@ -10,6 +10,7 @@ import { prisma } from '@/lib/prisma'
 import { GemIcon, Crown, Diamond, Sparkles, ArrowRight } from 'lucide-react'
 import Loading from './loading'
 import { AnimatedSection } from '@/components/ui/AnimatedSection'
+import CategorySection from '@/components/home/CategorySection'
 
 export const metadata: Metadata = {
   title: 'Rupomoti - Elegant Pearl Jewelry Collection',
@@ -27,67 +28,38 @@ async function getProducts(filter: { [key: string]: boolean }) {
   })
 }
 
-export default async function HomePage() {
-  const popularProducts = await prisma.product.findMany({
-    where: { isPopular: true },
-    take: 4,
-    include: {
-      category: true,
+async function getCategories() {
+  return prisma.category.findMany({
+    where: {
+      isActive: true,
+      parentId: null,
+    },
+    take: 6,
+    orderBy: {
+      sortOrder: 'asc',
     },
   })
-  const newArrivals = await prisma.product.findMany({
-    where: { isNewArrival: true },
-    take: 4,
-    include: {
-      category: true,
-    },
-  })
-  const featuredProducts = await prisma.product.findMany({
-    where: { isFeatured: true },
-    take: 4,
-    include: {
-      category: true,
-    },
-  })
+}
 
-  const categories = [
-    { 
-      id: 'necklaces',
-      name: 'Pearl Necklaces', 
-      count: '24',
-      icon: Crown,
-      image: '/images/pearl/jewelery1.jpeg',
-      description: 'Elegant pearl necklaces for every occasion',
-      color: 'from-pink-500/20 to-rose-500/20'
-    },
-    { 
-      id: 'rings',
-      name: 'Pearl Rings', 
-      count: '38',
-      icon: Diamond,
-      image: '/images/pearl/jewelery2.jpeg',
-      description: 'Stunning pearl rings that make a statement',
-      color: 'from-blue-500/20 to-indigo-500/20'
-    },
-    { 
-      id: 'earrings',
-      name: 'Pearl Earrings', 
-      count: '16',
-      icon: Sparkles,
-      image: '/images/pearl/jewelery3.jpeg',
-      description: 'Beautiful pearl earrings for everyday elegance',
-      color: 'from-purple-500/20 to-violet-500/20'
-    },
-    { 
-      id: 'bracelets',
-      name: 'Pearl Bracelets', 
-      count: '29',
-      icon: GemIcon,
-      image: '/images/pearl/jewelery4.jpeg',
-      description: 'Delicate pearl bracelets that complement any style',
-      color: 'from-emerald-500/20 to-teal-500/20'
-    }
-  ]
+export default async function HomePage() {
+  const [popularProducts, newArrivals, featuredProducts, categories] = await Promise.all([
+    prisma.product.findMany({
+      where: { isPopular: true },
+      take: 4,
+      include: { category: true },
+    }),
+    prisma.product.findMany({
+      where: { isNewArrival: true },
+      take: 4,
+      include: { category: true },
+    }),
+    prisma.product.findMany({
+      where: { isFeatured: true },
+      take: 4,
+      include: { category: true },
+    }),
+    getCategories(),
+  ])
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -97,58 +69,7 @@ export default async function HomePage() {
       </section>
 
       {/* Modern Categories Section */}
-      <section className="py-12 bg-base-light">
-        <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
-            <Badge className="bg-accent-light text-neutral px-4 py-2 text-sm font-medium mb-4 shadow-premium">
-              Collections
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-bold text-neutral mb-2">
-              Browse by Category
-            </h2>
-            <p className="text-lg text-neutral-light max-w-2xl mx-auto">
-              Discover our curated collections of fine pearl jewelry
-            </p>
-          </div>
-          <div className="category-compact">
-            {categories.map((category) => {
-              const Icon = category.icon
-              return (
-                <Link
-                  key={category.id}
-                  href={`/shop?category=${category.id}`}
-                  className="category-compact-card group bg-base border border-accent-light shadow-premium hover:shadow-premium-hover transition-premium"
-                >
-                  <Image
-                    src={category.image}
-                    alt={category.name}
-                    fill
-                    className="object-cover"
-                    sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-                  />
-                  <div className="category-compact-overlay">
-                    <div className="category-compact-icon">
-                      <Icon className="w-5 h-5 text-accent" />
-                    </div>
-                    <div className="category-compact-badge">
-                      {category.count} items
-                    </div>
-                    <h3 className="text-lg font-bold mb-1 text-white drop-shadow">
-                      {category.name}
-                    </h3>
-                    <p className="text-xs text-white/90 line-clamp-2 mb-2">
-                      {category.description}
-                    </p>
-                    <span className="inline-block text-xs font-medium text-accent bg-white/80 rounded px-2 py-1 mt-1">
-                      Explore
-                    </span>
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-        </div>
-      </section>
+      <CategorySection categories={categories} />
 
       {/* Popular Products Section */}
       <AnimatedSection className="py-16 bg-white">

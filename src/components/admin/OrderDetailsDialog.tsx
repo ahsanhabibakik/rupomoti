@@ -34,6 +34,13 @@ export function OrderDetailsDialog({
 }: OrderDetailsDialogProps) {
   if (!order) return null
 
+  // Defensive checks for financial values
+  const subtotal = order.subtotal ?? 0;
+  const deliveryFee = order.deliveryFee ?? 0;
+  const discount = order.discount ?? 0;
+  const tax = order.tax ?? 0;
+  const total = order.total ?? 0;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl">
@@ -184,28 +191,28 @@ export function OrderDetailsDialog({
           <div className="space-y-2">
             <div className="flex justify-between">
               <p className="text-sm text-gray-500">Subtotal</p>
-              <p className="font-medium">৳{order.subtotal.toFixed(2)}</p>
+              <p className="font-medium">৳{subtotal.toFixed(2)}</p>
             </div>
             <div className="flex justify-between">
               <p className="text-sm text-gray-500">Shipping</p>
-              <p className="font-medium">৳{order.shipping.toFixed(2)}</p>
+              <p className="font-medium">৳{deliveryFee.toFixed(2)}</p>
             </div>
-            {order.discount > 0 && (
+            {discount > 0 && (
               <div className="flex justify-between">
                 <p className="text-sm text-gray-500">Discount</p>
                 <p className="font-medium text-red-600">
-                  -৳{order.discount.toFixed(2)}
+                  -৳{discount.toFixed(2)}
                 </p>
               </div>
             )}
             <div className="flex justify-between">
               <p className="text-sm text-gray-500">Tax</p>
-              <p className="font-medium">৳{order.tax.toFixed(2)}</p>
+              <p className="font-medium">৳{tax.toFixed(2)}</p>
             </div>
             <Separator />
             <div className="flex justify-between">
               <p className="font-semibold">Total</p>
-              <p className="font-semibold">৳{order.total.toFixed(2)}</p>
+              <p className="font-semibold">৳{total.toFixed(2)}</p>
             </div>
           </div>
         </div>

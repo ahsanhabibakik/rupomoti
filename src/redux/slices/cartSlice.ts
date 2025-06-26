@@ -10,6 +10,7 @@ export interface CartItem {
   category: string
   variantId?: string
   variantName?: string
+  salePrice?: number
 }
 
 interface CartState {

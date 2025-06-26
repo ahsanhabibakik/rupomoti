@@ -100,6 +100,10 @@ export default function CourierAnalyticsPage() {
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
+      ) : orders.length === 0 ? (
+        <div className="text-center text-gray-500 py-16 text-lg font-medium">
+          No orders found for any courier.
+        </div>
       ) : (
         <>
           <Card>

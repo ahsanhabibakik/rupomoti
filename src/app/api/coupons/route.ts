@@ -44,12 +44,12 @@ export async function GET(request: NextRequest) {
 const couponSchema = z.object({
   code: z.string().min(1),
   type: z.enum(['percentage', 'fixed']),
-  value: z.number(),
-  minimumAmount: z.number().optional().nullable(),
-  maximumDiscount: z.number().optional().nullable(),
+  value: z.coerce.number(),
+  minimumAmount: z.coerce.number().optional().nullable(),
+  maximumDiscount: z.coerce.number().optional().nullable(),
   validFrom: z.string().datetime(),
   validUntil: z.string().datetime(),
-  usageLimit: z.number().optional().nullable(),
+  usageLimit: z.coerce.number().optional().nullable(),
   isActive: z.boolean().default(true),
 })
 
@@ -61,10 +61,19 @@ export async function POST(request: Request) {
     }
 
     const json = await request.json()
-    const data = couponSchema.parse({
+    
+    // Transform empty strings for optional fields to null for Prisma
+    const transformedJson = {
       ...json,
-      validFrom: new Date(json.validFrom).toISOString(),
-      validUntil: new Date(json.validUntil).toISOString(),
+      minimumAmount: json.minimumAmount || null,
+      maximumDiscount: json.maximumDiscount || null,
+      usageLimit: json.usageLimit || null,
+    };
+
+    const data = couponSchema.parse({
+      ...transformedJson,
+      validFrom: new Date(transformedJson.validFrom).toISOString(),
+      validUntil: new Date(transformedJson.validUntil).toISOString(),
     })
 
     const coupon = await prisma.coupon.create({ data })
@@ -93,6 +102,9 @@ export async function PUT(request: Request) {
     const json = await request.json()    
     const { id, ...dataToUpdate } = updateCouponSchema.parse({
       ...json,
+      minimumAmount: json.minimumAmount || null,
+      maximumDiscount: json.maximumDiscount || null,
+      usageLimit: json.usageLimit || null,
       validFrom: new Date(json.validFrom).toISOString(),
       validUntil: new Date(json.validUntil).toISOString(),
     })

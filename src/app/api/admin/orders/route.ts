@@ -53,34 +53,8 @@ export async function GET(request: Request) {
       prisma.order.count({ where }),
     ]);
 
-    const formattedOrders = orders.map((order) => ({
-      id: order.id,
-      orderNumber: order.orderNumber,
-      customer: {
-        name: order.customer.name,
-        email: order.customer.email,
-        phone: order.customer.phone,
-        address: order.customer.address,
-      },
-      total: order.total,
-      status: order.status,
-      paymentStatus: order.paymentStatus,
-      createdAt: order.createdAt,
-      items: order.items.map((item) => ({
-        name: item.product.name,
-        price: item.price,
-        quantity: item.quantity,
-        image: item.product.images[0] || '/placeholder.png',
-      })),
-      courierName: order.courierName,
-      courierConsignmentId: order.courierConsignmentId,
-      courierTrackingCode: order.courierTrackingCode,
-      courierStatus: order.courierStatus,
-      courierInfo: order.courierInfo,
-    }));
-
     return NextResponse.json({
-      orders: formattedOrders,
+      orders: orders,
       totalCount: total,
       totalPages: Math.ceil(total / pageSize),
     });
@@ -192,9 +166,9 @@ export async function POST(request: Request) {
           // This might need to be updated to be generic for all couriers
           // For now, I'll leave it as it might be part of another feature
           try {
-            await steadfast.updateDeliveryStatus(
+            await steadfast.getDeliveryStatus(
               order.courierTrackingCode,
-              'DELIVERED'
+              'tracking'
             );
           } catch (error) {
             console.error('Error updating Steadfast status:', error);

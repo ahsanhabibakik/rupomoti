@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -33,6 +33,7 @@ interface CouponDialogProps {
 
 export function CouponDialog({ open, onOpenChange, coupon, onClose }: CouponDialogProps) {
   const { createCoupon, updateCoupon } = useCoupons()
+  const [formError, setFormError] = useState<string | null>(null)
 
   const form = useForm<CouponFormValues>({
     resolver: zodResolver(couponSchema),
@@ -73,6 +74,7 @@ export function CouponDialog({ open, onOpenChange, coupon, onClose }: CouponDial
   }, [coupon, form])
 
   const onSubmit = async (data: CouponFormValues) => {
+    setFormError(null)
     try {
       if (coupon) {
         await updateCoupon(coupon.id, data)
@@ -81,8 +83,17 @@ export function CouponDialog({ open, onOpenChange, coupon, onClose }: CouponDial
       }
       onOpenChange(false)
       onClose()
-    } catch (error) {
-      console.error('Error submitting coupon:', error)
+    } catch (error: any) {
+      let message = 'Failed to submit coupon.'
+      if (error?.info && Array.isArray(error.info)) {
+        // Zod validation errors
+        message = error.info.map((e: any) => e.message).join(', ')
+      } else if (error?.info?.error) {
+        message = error.info.error
+      } else if (error?.message) {
+        message = error.message
+      }
+      setFormError(message)
     }
   }
 
@@ -241,6 +252,10 @@ export function CouponDialog({ open, onOpenChange, coupon, onClose }: CouponDial
                 </FormItem>
               )}
             />
+
+            {formError && (
+              <div className="text-red-600 text-sm mb-2">{formError}</div>
+            )}
 
             <div className="flex justify-end gap-4">
               <Button
