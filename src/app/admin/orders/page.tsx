@@ -1,7 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import React, { useState } from 'react'
 import {
   Table,
   TableBody,
@@ -18,8 +17,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Calendar } from '@/components/ui/calendar'
 import {
   Popover,
   PopoverContent,
@@ -28,156 +25,52 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { format } from 'date-fns'
-import { CalendarIcon, Loader2, Package, Truck, CheckCircle, XCircle, AlertCircle, Eye, Check } from 'lucide-react'
+import { CalendarIcon, Loader2, Package, Eye, Edit, Truck } from 'lucide-react'
 import { showToast } from '@/lib/toast'
-import { Badge, badgeVariants } from '@/components/ui/badge'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
-import Image from 'next/image'
-import { CourierSelector } from '@/components/admin/CourierSelector'
-import { cn } from '@/lib/utils'
+import { Badge } from '@/components/ui/badge'
+import { Calendar } from '@/components/ui/calendar'
 import { OrderDetailsDialog } from '@/components/admin/OrderDetailsDialog'
+import { CourierAssignmentForm } from '@/components/admin/CourierAssignmentForm'
+import { ShipNowButton } from '@/components/admin/ShipNowButton'
+import { Order } from '@prisma/client'
+import useSWR from 'swr'
 
-interface Order {
-  id: string
-  orderNumber: string
-  customer: {
-    name: string
-    email: string
-    phone: string
-    address: string
-    city?: string
+const fetcher = (url: string) => fetch(url).then(res => {
+  if (!res.ok) {
+    throw new Error('Failed to fetch data');
   }
-  total: number
-  status: string
-  paymentStatus: string
-  createdAt: string
-  items: Array<{
-    name: string
-    price: number
-    quantity: number
-    image: string
-  }>
-  courierName?: string
-  courierConsignmentId?: string
-  courierTrackingCode?: string
-  courierStatus?: string
-  courierInfo?: any
-}
+  return res.json();
+});
 
 export default function OrdersPage() {
-  const router = useRouter()
-  const [orders, setOrders] = useState<Order[]>([])
-  const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
-  const [totalCount, setTotalCount] = useState(0)
   const [filters, setFilters] = useState({
-    status: '',
+    status: 'all',
     startDate: null as Date | null,
     endDate: null as Date | null,
   })
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
-  const [processingOrder, setProcessingOrder] = useState<string | null>(null)
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
-  const fetchOrders = useCallback(async () => {
-    try {
-      setLoading(true)
-      const searchParams = new URLSearchParams({
-        page: page.toString(),
-        pageSize: pageSize.toString(),
-      })
+  const searchParams = new URLSearchParams({
+    page: page.toString(),
+    limit: '10',
+  });
+  if (filters.status && filters.status !== 'all') searchParams.set('status', filters.status);
+  if (filters.startDate) searchParams.set('startDate', filters.startDate.toISOString());
+  if (filters.endDate) searchParams.set('endDate', filters.endDate.toISOString());
 
-      if (filters.status && filters.status !== 'all-orders') searchParams.append('status', filters.status)
-      if (filters.startDate) searchParams.append('startDate', filters.startDate.toISOString())
-      if (filters.endDate) searchParams.append('endDate', filters.endDate.toISOString())
+  const { data, error, isLoading, mutate } = useSWR(`/api/admin/orders?${searchParams.toString()}`, fetcher, {
+    revalidateOnFocus: false,
+  });
+  
+  const orders: Order[] = data?.orders || [];
+  const totalPages = data?.totalPages || 1;
 
-      const response = await fetch(`/api/admin/orders?${searchParams}`)
-      const data = await response.json()
-
-      if (!response.ok) throw new Error(data.error)
-
-      setOrders(data.orders)
-      setTotalPages(data.totalPages)
-      setTotalCount(data.totalCount)
-    } catch (error) {
-      showToast.error('Failed to fetch orders')
-      console.error('Error fetching orders:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [page, filters, pageSize])
-
-  useEffect(() => {
-    fetchOrders()
-  }, [fetchOrders])
-
-  const handleOrderAction = async (orderId: string, action: string, data?: any) => {
-    try {
-      setProcessingOrder(orderId)
-      const response = await fetch('/api/admin/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId, action, ...data }),
-      })
-
-      const responseData = await response.json()
-      if (!response.ok) throw new Error(responseData.error)
-
-      showToast.success('Order updated successfully')
-      fetchOrders()
-    } catch (error: any) {
-      showToast.error(error.message || 'Failed to update order')
-      console.error('Error updating order:', error)
-    } finally {
-      setProcessingOrder(null)
-    }
-  }
-
-  const handleConfirmOrder = async (order: Order) => {
-    await handleOrderAction(order.id, 'confirm_order')
-  }
-
-  const handleUpdateStatus = async (orderId: string, status: string) => {
-    await handleOrderAction(orderId, 'update_status', { status })
-  }
-
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      PENDING: 'outline',
-      PROCESSING: 'default',
-      CONFIRMED: 'default',
-      SHIPPED: 'secondary',
-      DELIVERED: 'default',
-      CANCELLED: 'destructive',
-    } as const
-    const variantKey = status as keyof typeof variants;
-    return (
-      <div className={cn(badgeVariants({ variant: variants[variantKey] || 'default' }))}>
-        {status}
-      </div>
-    )
-  }
-
-  const getPaymentStatusBadge = (status: string) => {
-    const variants = {
-      PENDING: 'outline',
-      PAID: 'default',
-      FAILED: 'destructive',
-      REFUNDED: 'secondary',
-    } as const
-    const variantKey = status as keyof typeof variants;
-    return (
-      <div className={cn(badgeVariants({ variant: variants[variantKey] || 'default' }))}>
-        {status}
-      </div>
-    )
+  if (error) {
+    showToast.error(error.message);
   }
 
   return (
@@ -196,16 +89,14 @@ export default function OrdersPage() {
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all-orders">All</SelectItem>
+              <SelectItem value="all">All</SelectItem>
               <SelectItem value="PENDING">Pending</SelectItem>
-              <SelectItem value="PROCESSING">Processing</SelectItem>
               <SelectItem value="CONFIRMED">Confirmed</SelectItem>
               <SelectItem value="SHIPPED">Shipped</SelectItem>
               <SelectItem value="DELIVERED">Delivered</SelectItem>
               <SelectItem value="CANCELLED">Cancelled</SelectItem>
             </SelectContent>
           </Select>
-
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" className="w-[240px] justify-start text-left font-normal">
@@ -221,17 +112,9 @@ export default function OrdersPage() {
               <Calendar
                 initialFocus
                 mode="range"
-                defaultMonth={filters.startDate || undefined}
-                selected={{
-                  from: filters.startDate || undefined,
-                  to: filters.endDate || undefined,
-                }}
-                onSelect={(range: any) => {
-                  setFilters({
-                    ...filters,
-                    startDate: range?.from || null,
-                    endDate: range?.to || null,
-                  })
+                selected={{ from: filters.startDate!, to: filters.endDate! }}
+                onSelect={(range) => {
+                  setFilters({ ...filters, startDate: range?.from || null, endDate: range?.to || null });
                   setPage(1);
                 }}
                 numberOfMonths={2}
@@ -241,221 +124,114 @@ export default function OrdersPage() {
         </div>
       </div>
       <div className="border rounded-lg">
-            <Table>
-              <TableHeader>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Order</TableHead>
+              <TableHead>Customer</TableHead>
+              <TableHead>Total</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Courier</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center">
+                  <Loader2 className="mx-auto h-8 w-8 animate-spin" />
+                </TableCell>
+              </TableRow>
+            ) : orders.length === 0 ? (
                 <TableRow>
-                  <TableHead>Order</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Payment</TableHead>
-                  <TableHead>Courier</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Actions</TableHead>
+                    <TableCell colSpan={6} className="text-center py-10">
+                        <Package className="mx-auto h-12 w-12 text-gray-400" />
+                        <p className="mt-2 text-sm text-gray-500">No orders found.</p>
+                    </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center h-24">
-                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
+            ) : (
+              orders.map((order: any) => (
+                <TableRow key={order.id}>
+                  <TableCell>
+                    <div className="font-medium">#{order.orderNumber}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {format(new Date(order.createdAt), 'dd MMM yyyy')}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div>{order.customer.name}</div>
+                    <div className="text-sm text-muted-foreground">{order.customer.phone}</div>
+                  </TableCell>
+                  <TableCell>৳{order.total.toLocaleString()}</TableCell>
+                  <TableCell>
+                    <Badge variant={order.status === 'CANCELLED' ? 'destructive' : 'default'}>
+                        {order.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {order.courierName ? (
+                        <div className="flex items-center gap-2">
+                            <Truck className="h-4 w-4" />
+                            <span>{order.courierName}</span>
+                        </div>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">Not Assigned</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                       <Button variant="outline" size="sm" onClick={() => setSelectedOrder(order)}>
+                          <Eye className="mr-2 h-4 w-4" /> View
+                       </Button>
+                      
+                      {!['SHIPPED', 'DELIVERED', 'CANCELLED'].includes(order.status) && (
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <Edit className="mr-2 h-4 w-4" /> Assign
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <CourierAssignmentForm order={order} onSuccess={() => mutate()} />
+                          </DialogContent>
+                        </Dialog>
+                      )}
+
+                      <ShipNowButton order={order} onShipmentSuccess={() => mutate()} />
+                    </div>
                   </TableCell>
                 </TableRow>
-              ) : orders.map((order) => (
-                  <TableRow key={order.id}>
-                  <TableCell className="font-medium">#{order.orderNumber}</TableCell>
-                  <TableCell>{order.customer.name}</TableCell>
-                  <TableCell>৳{order.total.toFixed(2)}</TableCell>
-                    <TableCell>{getStatusBadge(order.status)}</TableCell>
-                    <TableCell>{getPaymentStatusBadge(order.paymentStatus)}</TableCell>
-                    <TableCell>
-                    {order.courierName || '-'}
-                    </TableCell>
-                  <TableCell>{format(new Date(order.createdAt), 'dd/MM/yyyy')}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => setSelectedOrder(order)}
-                        >
-                          <Eye className="h-4 w-4 mr-1" />
-                          View
-                        </Button>
-                        {order.status === 'PENDING' && (
-                          <Button 
-                            variant="default" 
-                            size="sm" 
-                            onClick={() => handleConfirmOrder(order)}
-                            disabled={processingOrder === order.id}
-                          >
-                            {processingOrder === order.id ? (
-                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                            ) : (
-                              <Check className="h-4 w-4 mr-1" />
-                            )}
-                            Confirm
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
       {selectedOrder && (
-        <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
-          <DialogContent className="max-w-4xl max-h-[90vh]">
-            <DialogHeader>
-              <DialogTitle>Order #{selectedOrder.orderNumber}</DialogTitle>
-            </DialogHeader>
-            <ScrollArea className="max-h-[70vh]">
-              <div className="space-y-6 p-4">
-                {/* Order Status and Actions */}
-                <div className="flex items-center justify-between">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-4">
-                      <span className="text-sm text-muted-foreground">Status:</span>
-                      {getStatusBadge(selectedOrder.status)}
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <span className="text-sm text-muted-foreground">Payment:</span>
-                      {getPaymentStatusBadge(selectedOrder.paymentStatus)}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {selectedOrder.status === 'PENDING' && (
-                      <Button 
-                        onClick={() => handleConfirmOrder(selectedOrder)}
-                        disabled={processingOrder === selectedOrder.id}
-                      >
-                        {processingOrder === selectedOrder.id ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        ) : (
-                          <CheckCircle className="h-4 w-4 mr-2" />
-                        )}
-                        Confirm Order
-                      </Button>
-                    )}
-                    <Select
-                      value={selectedOrder.status}
-                      onValueChange={(value) => handleUpdateStatus(selectedOrder.id, value)}
-                      disabled={processingOrder === selectedOrder.id}
-                    >
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="PENDING">Pending</SelectItem>
-                        <SelectItem value="PROCESSING">Processing</SelectItem>
-                        <SelectItem value="CONFIRMED">Confirmed</SelectItem>
-                        <SelectItem value="SHIPPED">Shipped</SelectItem>
-                        <SelectItem value="DELIVERED">Delivered</SelectItem>
-                        <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Customer Information */}
-                <div>
-                  <h3 className="font-semibold mb-3">Customer Information</h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Name:</span>
-                      <p className="font-medium">{selectedOrder.customer.name}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Email:</span>
-                      <p className="font-medium">{selectedOrder.customer.email}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Phone:</span>
-                      <p className="font-medium">{selectedOrder.customer.phone}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Address:</span>
-                      <p className="font-medium">{selectedOrder.customer.address}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Order Items */}
-                <div>
-                  <h3 className="font-semibold mb-3">Order Items</h3>
-                  <div className="space-y-3">
-                    {selectedOrder.items.map((item, index) => (
-                      <div key={index} className="flex items-center gap-4 p-3 border rounded-lg">
-                        <div className="relative w-16 h-16">
-                          <Image
-                            src={item.image}
-                            alt={item.name}
-                            fill
-                            className="object-cover rounded-md"
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium">{item.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            Quantity: {item.quantity} × ৳{item.price.toFixed(2)}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium">৳{(item.price * item.quantity).toFixed(2)}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-4 text-right">
-                    <p className="text-lg font-bold">Total: ৳{selectedOrder.total.toFixed(2)}</p>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Courier Information */}
-                {selectedOrder.status === 'CONFIRMED' && !selectedOrder.courierConsignmentId ? (
-                  <CourierSelector 
-                    order={selectedOrder} 
-                    onShipmentCreated={() => {
-                      fetchOrders();
-                      setSelectedOrder(null);
-                    }} 
-                  />
-                ) : selectedOrder.courierName ? (
-                  <div>
-                    <h3 className="font-semibold mb-3">Courier Information</h3>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">Courier:</span>
-                        <p className="font-medium">{selectedOrder.courierName}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Tracking Code:</span>
-                        <p className="font-medium">{selectedOrder.courierTrackingCode || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Status:</span>
-                        <p className="font-medium">{selectedOrder.courierStatus || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Consignment ID:</span>
-                        <p className="font-medium">{selectedOrder.courierConsignmentId || 'N/A'}</p>
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            </ScrollArea>
-          </DialogContent>
-        </Dialog>
+        <OrderDetailsDialog 
+          order={selectedOrder} 
+          open={!!selectedOrder}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) {
+              setSelectedOrder(null);
+            }
+          }}
+          onActionComplete={() => {
+            setSelectedOrder(null);
+            mutate();
+          }} 
+        />
       )}
+
+      <div className="flex justify-between items-center">
+          <div className="text-sm text-muted-foreground">
+             Showing page {page} of {totalPages}
+          </div>
+          <div className="flex items-center gap-2">
+              <Button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1 || isLoading} variant="outline">Previous</Button>
+              <Button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages || isLoading} variant="outline">Next</Button>
+          </div>
+      </div>
     </div>
   )
 } 

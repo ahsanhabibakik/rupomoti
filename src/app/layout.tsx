@@ -1,18 +1,17 @@
-import { Inter, Rubik } from 'next/font/google'
+import { Inter } from 'next/font/google'
 import { RootLayoutClient } from '@/components/layout/RootLayoutClient'
 import { Providers } from '@/components/providers'
 import './globals.css'
 import { Metadata } from 'next'
 import { Analytics } from '@vercel/analytics/react'
-import { Toaster } from 'sonner'
+import { Toaster } from '@/components/ui/toaster'
 import { cn } from '@/lib/utils'
 import { Navbar } from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
-const rubik = Rubik({
+const inter = Inter({
   subsets: ['latin'],
-  variable: '--font-rubik',
+  display: 'swap',
 })
 
 export const metadata: Metadata = {
@@ -21,7 +20,7 @@ export const metadata: Metadata = {
     default: 'Rupomoti - Elegant Jewelry Collection',
     template: '%s | Rupomoti'
   },
-  description: 'Discover our exquisite collection of elegant jewelry pieces. From timeless classics to modern designs, find the perfect piece for every occasion.',
+  description: 'Rupomoti is a premier online store for exquisite pearl jewelry in Bangladesh. Discover our collection of pearl necklaces, earrings, bracelets, and more.',
   keywords: ['jewelry', 'necklaces', 'rings', 'earrings', 'bracelets', 'bangladesh jewelry', 'luxury jewelry'],
   authors: [{ name: 'Rupomoti' }],
   creator: 'Rupomoti',
@@ -77,30 +76,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={cn(
-          "min-h-screen bg-background font-sans antialiased",
-          inter.variable,
-          rubik.variable,
-        )}
-      >
+      <body className={inter.className}>
         <Providers>
-          <div className="relative flex min-h-screen flex-col">
-            <Navbar />
-            <div className="flex-1">{children}</div>
-            <Footer />
-          </div>
-          <Toaster
-            position="bottom-right"
-            toastOptions={{
-              classNames: {
-                error: 'bg-red-400',
-                success: 'text-green-400',
-                warning: 'text-yellow-400',
-                info: 'bg-blue-400',
-              },
-            }}
-          />
+          <RootLayoutClient>
+            {children}
+          </RootLayoutClient>
+          <Toaster />
           <Analytics />
         </Providers>
       </body>

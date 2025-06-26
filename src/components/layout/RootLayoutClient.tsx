@@ -5,7 +5,7 @@ import Footer from "@/components/layout/Footer"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { CartDrawer } from "@/components/cart/CartDrawer"
 import { useAppSelector, useAppDispatch } from "@/redux/hooks"
-import { toggleCart } from "@/redux/slices/cartSlice"
+import { selectIsCartDrawerOpen, setCartDrawerOpen } from "@/redux/slices/uiSlice"
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -14,7 +14,7 @@ export function RootLayoutClient({
 }: {
   children: React.ReactNode
 }) {
-  const isCartOpen = useAppSelector((state) => state.cart.isCartOpen)
+  const isCartOpen = useAppSelector(selectIsCartDrawerOpen)
   const dispatch = useAppDispatch()
   const pathname = usePathname()
   const isAdmin = pathname?.startsWith('/admin')
@@ -27,37 +27,38 @@ export function RootLayoutClient({
 
   return (
     <ErrorBoundary fallback={<div>Something went wrong. Please try again later.</div>}>
-      <div className="min-h-screen flex flex-col">
+      <div className="relative flex min-h-screen flex-col">
         {!isAdmin && <Navbar />}
-        {isAdmin ? (
-          <main className="flex-1">
+        
+        <main className="flex-1">
+          {isAdmin ? (
             <ErrorBoundary fallback={<div>Something went wrong. Please try again later.</div>}>
               {children}
             </ErrorBoundary>
-          </main>
-        ) : (
-          <AnimatePresence
-            mode="wait"
-            initial={false}
-            onExitComplete={() => window.scrollTo(0, 0)}
-          >
-            <motion.main
-              key={pathname}
-              variants={variants}
-              initial="hidden"
-              animate="enter"
-              exit="exit"
-              transition={{ duration: 0.4, ease: [0.43, 0.13, 0.23, 0.96] }}
-              className="flex-1"
+          ) : (
+            <AnimatePresence
+              mode="wait"
+              initial={false}
+              onExitComplete={() => window.scrollTo(0, 0)}
             >
-              <ErrorBoundary fallback={<div>Something went wrong. Please try again later.</div>}>
-                {children}
-              </ErrorBoundary>
-            </motion.main>
-          </AnimatePresence>
-        )}
+              <motion.div
+                key={pathname}
+                variants={variants}
+                initial="hidden"
+                animate="enter"
+                exit="exit"
+                transition={{ duration: 0.4, ease: [0.43, 0.13, 0.23, 0.96] }}
+              >
+                <ErrorBoundary fallback={<div>Something went wrong. Please try again later.</div>}>
+                  {children}
+                </ErrorBoundary>
+              </motion.div>
+            </AnimatePresence>
+          )}
+        </main>
+        
         {!isAdmin && <Footer />}
-        <CartDrawer open={isCartOpen} onOpenChange={(open) => dispatch(toggleCart())} />
+        <CartDrawer open={isCartOpen} onOpenChange={(open) => dispatch(setCartDrawerOpen(open))} />
       </div>
     </ErrorBoundary>
   )

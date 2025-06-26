@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { useSession, signOut } from "next-auth/react";
 import { Menu, X, Search, ShoppingCart, ChevronDown, User, Shield, LogOut, Settings } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { toggleCart } from "@/redux/slices/cartSlice";
+import { setCartDrawerOpen } from "@/redux/slices/uiSlice";
 import SearchModal from "@/components/search/SearchModal";
 import { Button } from "@/components/ui/button";
 import {
@@ -168,7 +168,7 @@ export function Navbar() {
               <Search className="h-5 w-5" />
               <span className="sr-only">Search</span>
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => dispatch(toggleCart())} className="relative">
+            <Button variant="ghost" size="icon" onClick={() => dispatch(setCartDrawerOpen(true))} className="relative">
               <ShoppingCart className="h-5 w-5" />
               <span className="sr-only">Open Cart</span>
               {cartCount > 0 && (
