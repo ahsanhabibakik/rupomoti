@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Table,
@@ -33,12 +33,15 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { format } from 'date-fns'
-import { CalendarIcon, Loader2, Package, Truck, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
+import { CalendarIcon, Loader2, Package, Truck, CheckCircle, XCircle, AlertCircle, Eye, Check } from 'lucide-react'
 import { showToast } from '@/lib/toast'
-import { Badge } from '@/components/ui/badge'
+import { Badge, badgeVariants } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import Image from 'next/image'
+import { CourierSelector } from '@/components/admin/CourierSelector'
+import { cn } from '@/lib/utils'
+import { OrderDetailsDialog } from '@/components/admin/OrderDetailsDialog'
 
 interface Order {
   id: string
@@ -48,6 +51,7 @@ interface Order {
     email: string
     phone: string
     address: string
+    city?: string
   }
   total: number
   status: string
@@ -59,22 +63,12 @@ interface Order {
     quantity: number
     image: string
   }>
-  courier?: string
-  steadfastInfo?: {
-    trackingId?: string
-    consignmentId?: string
-    status?: string
-    lastUpdate?: string
-    lastMessage?: string
-  }
+  courierName?: string
+  courierConsignmentId?: string
+  courierTrackingCode?: string
+  courierStatus?: string
+  courierInfo?: any
 }
-
-const COURIERS = [
-  { value: 'Steadfast', label: 'Steadfast' },
-  { value: 'RedX', label: 'RedX' },
-  { value: 'Pathao', label: 'Pathao' },
-  { value: 'CarryBee', label: 'CarryBee' },
-]
 
 export default function OrdersPage() {
   const router = useRouter()
@@ -90,9 +84,7 @@ export default function OrdersPage() {
     endDate: null as Date | null,
   })
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
-  const [actionLoading, setActionLoading] = useState(false)
   const [processingOrder, setProcessingOrder] = useState<string | null>(null)
-  const [selectedCourier, setSelectedCourier] = useState<{ [orderId: string]: string }>({})
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -152,11 +144,6 @@ export default function OrdersPage() {
     await handleOrderAction(order.id, 'confirm_order')
   }
 
-  const handleCreateShipment = async (order: Order) => {
-    const courier = selectedCourier[order.id] || 'Steadfast'
-    await handleOrderAction(order.id, 'create_shipment', { courier })
-  }
-
   const handleUpdateStatus = async (orderId: string, status: string) => {
     await handleOrderAction(orderId, 'update_status', { status })
   }
@@ -170,11 +157,11 @@ export default function OrdersPage() {
       DELIVERED: 'default',
       CANCELLED: 'destructive',
     } as const
-
+    const variantKey = status as keyof typeof variants;
     return (
-      <Badge variant={variants[status as keyof typeof variants] || 'default'}>
+      <div className={cn(badgeVariants({ variant: variants[variantKey] || 'default' }))}>
         {status}
-      </Badge>
+      </div>
     )
   }
 
@@ -185,22 +172,22 @@ export default function OrdersPage() {
       FAILED: 'destructive',
       REFUNDED: 'secondary',
     } as const
-
+    const variantKey = status as keyof typeof variants;
     return (
-      <Badge variant={variants[status as keyof typeof variants] || 'default'}>
+      <div className={cn(badgeVariants({ variant: variants[variantKey] || 'default' }))}>
         {status}
-      </Badge>
+      </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 admin-content">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Orders</h1>
         <div className="flex items-center gap-4">
           <Select
             value={filters.status}
-            onValueChange={(value) => {
+            onValueChange={(value: string) => {
               setFilters({ ...filters, status: value })
               setPage(1)
             }}
@@ -253,20 +240,12 @@ export default function OrdersPage() {
           </Popover>
         </div>
       </div>
-
-      {loading ? (
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-      ) : (
-        <>
-          <div className="rounded-md border">
+      <div className="border rounded-lg">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Order</TableHead>
                   <TableHead>Customer</TableHead>
-                  <TableHead>Items</TableHead>
                   <TableHead>Total</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Payment</TableHead>
@@ -276,280 +255,48 @@ export default function OrdersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {orders.map((order) => (
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center h-24">
+                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
+                  </TableCell>
+                </TableRow>
+              ) : orders.map((order) => (
                   <TableRow key={order.id}>
-                    <TableCell className="font-medium">
-                      #{order.orderNumber}
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <p className="font-medium">{order.customer.name}</p>
-                        <p className="text-sm text-muted-foreground">{order.customer.phone}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex -space-x-2">
-                        {order.items.slice(0, 3).map((item, index) => (
-                          <div
-                            key={index}
-                            className="relative h-8 w-8 rounded-full border-2 border-background overflow-hidden"
-                          >
-                            <Image
-                              src={item.image}
-                              alt={item.name}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                        ))}
-                        {order.items.length > 3 && (
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-muted text-xs">
-                            +{order.items.length - 3}
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>৳{order.total.toLocaleString()}</TableCell>
+                  <TableCell className="font-medium">#{order.orderNumber}</TableCell>
+                  <TableCell>{order.customer.name}</TableCell>
+                  <TableCell>৳{order.total.toFixed(2)}</TableCell>
                     <TableCell>{getStatusBadge(order.status)}</TableCell>
                     <TableCell>{getPaymentStatusBadge(order.paymentStatus)}</TableCell>
                     <TableCell>
-                      {order.courier || (order.steadfastInfo?.trackingId ? 'Steadfast' : '-')}
+                    {order.courierName || '-'}
                     </TableCell>
-                    <TableCell>
-                      {format(new Date(order.createdAt), 'MMM d, yyyy')}
-                    </TableCell>
+                  <TableCell>{format(new Date(order.createdAt), 'dd/MM/yyyy')}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              View Details
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-3xl">
-                            <DialogHeader>
-                              <DialogTitle>Order #{order.orderNumber}</DialogTitle>
-                            </DialogHeader>
-                            <ScrollArea className="max-h-[60vh]">
-                              <div className="space-y-6 p-1">
-                                {/* Order Status */}
-                                <div className="flex items-center justify-between">
-                                  <div className="space-y-1">
-                                    <p className="text-sm text-muted-foreground">Order Status</p>
-                                    {getStatusBadge(order.status)}
-                                  </div>
-                                  <div className="space-y-1">
-                                    <p className="text-sm text-muted-foreground">Payment Status</p>
-                                    {getPaymentStatusBadge(order.paymentStatus)}
-                                  </div>
-                                </div>
-
-                                <Separator />
-
-                                {/* Customer Information */}
-                                <div>
-                                  <h3 className="font-medium mb-2">Customer Information</h3>
-                                  <div className="grid gap-2 text-sm">
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Name</span>
-                                      <span>{order.customer.name}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Phone</span>
-                                      <span>{order.customer.phone}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Email</span>
-                                      <span>{order.customer.email}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Address</span>
-                                      <span className="text-right">{order.customer.address}</span>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <Separator />
-
-                                {/* Order Items */}
-                                <div>
-                                  <h3 className="font-medium mb-2">Order Items</h3>
-                                  <div className="space-y-4">
-                                    {order.items.map((item, index) => (
-                                      <div key={index} className="flex gap-4">
-                                        <div className="relative h-16 w-16 rounded overflow-hidden flex-shrink-0">
-                                          <Image
-                                            src={item.image}
-                                            alt={item.name}
-                                            fill
-                                            className="object-cover"
-                                          />
-                                        </div>
-                                        <div className="flex-1">
-                                          <h4 className="font-medium">{item.name}</h4>
-                                          <div className="text-sm text-muted-foreground">
-                                            <span>৳{item.price.toLocaleString()}</span>
-                                            <span className="mx-2">×</span>
-                                            <span>{item.quantity}</span>
-                                          </div>
-                                        </div>
-                                        <div className="text-right">
-                                          <p className="font-medium">
-                                            ৳{(item.price * item.quantity).toLocaleString()}
-                                          </p>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-
-                                <Separator />
-
-                                {/* Order Total */}
-                                <div className="space-y-2">
-                                  <div className="flex justify-between text-sm">
-                                    <span>Subtotal</span>
-                                    <span>৳{order.total.toLocaleString()}</span>
-                                  </div>
-                                  <div className="flex justify-between font-medium">
-                                    <span>Total</span>
-                                    <span>৳{order.total.toLocaleString()}</span>
-                                  </div>
-                                </div>
-
-                                {/* Steadfast Information */}
-                                {order.steadfastInfo && (
-                                  <>
-                                    <Separator />
-                                    <div>
-                                      <h3 className="font-medium mb-2">Delivery Information</h3>
-                                      <div className="grid gap-2 text-sm">
-                                        {order.steadfastInfo.trackingId && (
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Tracking ID</span>
-                                            <span>{order.steadfastInfo.trackingId}</span>
-                                          </div>
-                                        )}
-                                        {order.steadfastInfo.status && (
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Status</span>
-                                            <span>{order.steadfastInfo.status}</span>
-                                          </div>
-                                        )}
-                                        {order.steadfastInfo.lastUpdate && (
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Last Update</span>
-                                            <span>
-                                              {format(new Date(order.steadfastInfo.lastUpdate), 'PPP')}
-                                            </span>
-                                          </div>
-                                        )}
-                                        {order.steadfastInfo.lastMessage && (
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Latest Update</span>
-                                            <span>{order.steadfastInfo.lastMessage}</span>
-                                          </div>
-                                        )}
-                                        {(order.steadfastInfo?.trackingId || order.courier) && (
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Courier</span>
-                                            <span>{order.courier || 'Steadfast'}</span>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                            </ScrollArea>
-
-                            {/* Action Buttons */}
-                            <div className="flex items-center gap-2 mt-6 pt-6 border-t">
-                              {order.status === 'PENDING' && (
-                                <Button
-                                  onClick={() => handleConfirmOrder(order)}
-                                  disabled={processingOrder === order.id}
-                                >
-                                  {processingOrder === order.id ? (
-                                    <>
-                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                      Confirming...
-                                    </>
-                                  ) : (
-                                    'Confirm Order'
-                                  )}
-                                </Button>
-                              )}
-
-                              {order.status === 'CONFIRMED' && !order.steadfastInfo?.trackingId && (
-                                <div className="flex flex-col gap-2 w-full max-w-xs">
-                                  <label className="text-sm font-medium">Select Courier</label>
-                                  <Select
-                                    value={selectedCourier[order.id] || 'Steadfast'}
-                                    onValueChange={(value) => setSelectedCourier((prev) => ({ ...prev, [order.id]: value }))}
-                                  >
-                                    <SelectTrigger className="w-full">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {COURIERS.map((c) => (
-                                        <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                  <Button
-                                    onClick={() => handleCreateShipment(order)}
-                                    disabled={processingOrder === order.id}
-                                    className="mt-2"
-                                  >
-                                    {processingOrder === order.id ? (
-                                      <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Creating Shipment...
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Package className="mr-2 h-4 w-4" />
-                                        Create Shipment
-                                      </>
-                                    )}
-                                  </Button>
-                                </div>
-                              )}
-
-                              {order.steadfastInfo?.trackingId && (
-                                <Button variant="outline" asChild>
-                                  <a
-                                    href={`https://steadfast.com.bd/track/${order.steadfastInfo.trackingId}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    <Truck className="mr-2 h-4 w-4" />
-                                    Track on Steadfast
-                                  </a>
-                                </Button>
-                              )}
-
-                              <Select
-                                value={order.status}
-                                onValueChange={(value) => handleUpdateStatus(order.id, value)}
-                                disabled={processingOrder === order.id}
-                              >
-                                <SelectTrigger className="w-[140px]">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="PENDING">Pending</SelectItem>
-                                  <SelectItem value="PROCESSING">Processing</SelectItem>
-                                  <SelectItem value="CONFIRMED">Confirmed</SelectItem>
-                                  <SelectItem value="SHIPPED">Shipped</SelectItem>
-                                  <SelectItem value="DELIVERED">Delivered</SelectItem>
-                                  <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => setSelectedOrder(order)}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
+                        </Button>
+                        {order.status === 'PENDING' && (
+                          <Button 
+                            variant="default" 
+                            size="sm" 
+                            onClick={() => handleConfirmOrder(order)}
+                            disabled={processingOrder === order.id}
+                          >
+                            {processingOrder === order.id ? (
+                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                            ) : (
+                              <Check className="h-4 w-4 mr-1" />
+                            )}
+                            Confirm
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -558,54 +305,156 @@ export default function OrdersPage() {
             </Table>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
-              Showing {Math.min(pageSize * (page - 1) + 1, totalCount)}
-              -
-              {Math.min(pageSize * page, totalCount)} of {totalCount} orders.
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm">Rows per page:</span>
-                <Select
-                  value={pageSize.toString()}
-                  onValueChange={(value) => {
-                    setPageSize(Number(value));
-                    setPage(1);
-                  }}
-                >
-                  <SelectTrigger className="w-20">
-                    <SelectValue placeholder={pageSize} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[10, 20, 30, 50, 100, 200].map(size => (
-                      <SelectItem key={size} value={size.toString()}>{size}</SelectItem>
+      {selectedOrder && (
+        <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
+          <DialogContent className="max-w-4xl max-h-[90vh]">
+            <DialogHeader>
+              <DialogTitle>Order #{selectedOrder.orderNumber}</DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="max-h-[70vh]">
+              <div className="space-y-6 p-4">
+                {/* Order Status and Actions */}
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm text-muted-foreground">Status:</span>
+                      {getStatusBadge(selectedOrder.status)}
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm text-muted-foreground">Payment:</span>
+                      {getPaymentStatusBadge(selectedOrder.paymentStatus)}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {selectedOrder.status === 'PENDING' && (
+                      <Button 
+                        onClick={() => handleConfirmOrder(selectedOrder)}
+                        disabled={processingOrder === selectedOrder.id}
+                      >
+                        {processingOrder === selectedOrder.id ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                        )}
+                        Confirm Order
+                      </Button>
+                    )}
+                    <Select
+                      value={selectedOrder.status}
+                      onValueChange={(value) => handleUpdateStatus(selectedOrder.id, value)}
+                      disabled={processingOrder === selectedOrder.id}
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="PENDING">Pending</SelectItem>
+                        <SelectItem value="PROCESSING">Processing</SelectItem>
+                        <SelectItem value="CONFIRMED">Confirmed</SelectItem>
+                        <SelectItem value="SHIPPED">Shipped</SelectItem>
+                        <SelectItem value="DELIVERED">Delivered</SelectItem>
+                        <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Customer Information */}
+                <div>
+                  <h3 className="font-semibold mb-3">Customer Information</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Name:</span>
+                      <p className="font-medium">{selectedOrder.customer.name}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Email:</span>
+                      <p className="font-medium">{selectedOrder.customer.email}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Phone:</span>
+                      <p className="font-medium">{selectedOrder.customer.phone}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Address:</span>
+                      <p className="font-medium">{selectedOrder.customer.address}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Order Items */}
+                <div>
+                  <h3 className="font-semibold mb-3">Order Items</h3>
+                  <div className="space-y-3">
+                    {selectedOrder.items.map((item, index) => (
+                      <div key={index} className="flex items-center gap-4 p-3 border rounded-lg">
+                        <div className="relative w-16 h-16">
+                          <Image
+                            src={item.image}
+                            alt={item.name}
+                            fill
+                            className="object-cover rounded-md"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium">{item.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Quantity: {item.quantity} × ৳{item.price.toFixed(2)}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">৳{(item.price * item.quantity).toFixed(2)}</p>
+                        </div>
+                      </div>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </div>
+                  <div className="mt-4 text-right">
+                    <p className="text-lg font-bold">Total: ৳{selectedOrder.total.toFixed(2)}</p>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Courier Information */}
+                {selectedOrder.status === 'CONFIRMED' && !selectedOrder.courierConsignmentId ? (
+                  <CourierSelector 
+                    order={selectedOrder} 
+                    onShipmentCreated={() => {
+                      fetchOrders();
+                      setSelectedOrder(null);
+                    }} 
+                  />
+                ) : selectedOrder.courierName ? (
+                  <div>
+                    <h3 className="font-semibold mb-3">Courier Information</h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Courier:</span>
+                        <p className="font-medium">{selectedOrder.courierName}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Tracking Code:</span>
+                        <p className="font-medium">{selectedOrder.courierTrackingCode || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Status:</span>
+                        <p className="font-medium">{selectedOrder.courierStatus || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Consignment ID:</span>
+                        <p className="font-medium">{selectedOrder.courierConsignmentId || 'N/A'}</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
               </div>
-              <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page <= 1}
-            >
-              Previous
-            </Button>
-            <span>
-              Page {page} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page >= totalPages}
-            >
-              Next
-            </Button>
-              </div>
-            </div>
-          </div>
-        </>
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   )

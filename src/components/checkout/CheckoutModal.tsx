@@ -144,9 +144,6 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
     if (!formData.phone.trim()) newErrors.phone = 'Phone number is required'
     else if (!/^([+]8801|01)[3-9]\d{8}$/.test(formData.phone.trim())) newErrors.phone = 'Please enter a valid Bangladeshi phone number'
     if (formData.email && !/^\S+@\S+\.\S+$/.test(formData.email.trim())) newErrors.email = 'Invalid email address'
-    if (!formData.city) newErrors.city = 'City is required'
-    if (!formData.zone) newErrors.zone = 'Zone is required'
-    if (!formData.area) newErrors.area = 'Area is required'
     if (!formData.address.trim()) newErrors.address = 'Delivery address is required'
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -168,30 +165,32 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
     setIsSubmitting(true)
     try {
       const orderData = {
-        orderNumber: generateOrderNumber(),
         recipientName: formData.name.trim(),
         recipientPhone: formData.phone.trim(),
-        recipientEmail: formData.email.trim() || null,
-        recipientCity: formData.city,
-        recipientZone: formData.zone,
-        recipientArea: formData.area,
+        recipientEmail: formData.email.trim() || '',
+        recipientCity: formData.city || '',
+        recipientZone: formData.zone || '',
+        recipientArea: formData.area || '',
         deliveryAddress: formData.address.trim(),
-        orderNote: formData.note.trim() || null,
-        items: items.map((item: any) => ({
+        orderNote: formData.note.trim() || '',
+        deliveryZone,
+        items: items.map(item => ({
           productId: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          image: item.image,
+          name:       item.name,
+          price:      item.price,
+          quantity:   item.quantity,
+          image:      item.image,
         })),
         subtotal,
         deliveryFee,
         total,
-        deliveryZone,
         paymentMethod,
         userId: session?.user?.id || null,
-      }
-      console.log('OrderData being sent:', orderData)
+        orderNumber: generateOrderNumber(),
+      };
+      
+      console.log("orderData", orderData);
+
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -384,9 +383,18 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                       </h3>
                       <div className="space-y-4">
                         <div>
-                          <Label htmlFor="name" className="text-sm font-medium">Full Name *</Label>
-                          <Input id="name" value={formData.name} onChange={(e) => handleInputChange('name', e.target.value)} className={`mt-1 ${errors.name ? 'border-red-500' : ''}`} placeholder="Enter your full name" disabled={isSubmitting} />
-                          {errors.name && (<p className="text-sm text-red-500 mt-1">{errors.name}</p>)}
+                          <Label htmlFor="name" className="flex items-center text-sm font-medium text-gray-700">
+                            <User className="w-4 h-4 mr-2" /> Full Name
+                          </Label>
+                          <Input
+                            id="name"
+                            placeholder="e.g. Jannatul Ferdous"
+                            value={formData.name}
+                            onChange={(e) => handleInputChange('name', e.target.value)}
+                            className={`mt-1 ${errors.name ? 'border-red-500' : ''}`}
+                            required
+                          />
+                          {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
                         </div>
                         <div>
                           <Label htmlFor="phone" className="text-sm font-medium">Phone Number *</Label>

@@ -17,17 +17,20 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { CourierSelector } from '@/components/admin/CourierSelector'
 
 interface OrderDetailsDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   order: any
+  onActionComplete: () => void;
 }
 
 export function OrderDetailsDialog({
   open,
   onOpenChange,
   order,
+  onActionComplete
 }: OrderDetailsDialogProps) {
   if (!order) return null
 
@@ -103,51 +106,44 @@ export function OrderDetailsDialog({
           {/* Shipping Information */}
           <div>
             <h3 className="font-semibold mb-2">Shipping Information</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-500">Address</p>
-                <p className="font-medium">{order.shippingInfo.address}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">City</p>
-                <p className="font-medium">{order.shippingInfo.city}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">State</p>
-                <p className="font-medium">{order.shippingInfo.state || '-'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Postal Code</p>
-                <p className="font-medium">{order.shippingInfo.postalCode}</p>
-              </div>
-            </div>
+            <p className="font-medium">{order.customer.address}, {order.customer.city}</p>
           </div>
 
-          {order.steadfastInfo && (
+          {order.courierName && (
             <>
               <Separator />
-              {/* Steadfast Tracking Information */}
+              {/* Courier Tracking Information */}
               <div>
                 <h3 className="font-semibold mb-2">Tracking Information</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-gray-500">Tracking ID</p>
-                    <p className="font-medium">{order.steadfastInfo.trackingId}</p>
+                    <p className="font-medium">{order.courierTrackingCode}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Status</p>
-                    <Badge>{order.steadfastInfo.status}</Badge>
+                    <Badge>{order.courierStatus}</Badge>
                   </div>
-                  {order.steadfastInfo.lastUpdate && (
+                  {order.courierInfo?.lastUpdate && (
                     <div>
                       <p className="text-sm text-gray-500">Last Update</p>
                       <p className="font-medium">
-                        {format(new Date(order.steadfastInfo.lastUpdate), 'PPP')}
+                        {format(new Date(order.courierInfo.lastUpdate), 'PPP')}
                       </p>
                     </div>
                   )}
                 </div>
               </div>
+            </>
+          )}
+
+          {order.status === 'CONFIRMED' && !order.courierConsignmentId && (
+            <>
+              <Separator />
+              <CourierSelector order={order} onShipmentCreated={() => {
+                onActionComplete();
+                onOpenChange(false);
+              }} />
             </>
           )}
 
