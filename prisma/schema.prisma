@@ -389,6 +389,21 @@ enum CouponType {
 
 enum ProductStatus {
   ACTIVE
-  TRASHED
+  INACTIVE
   ARCHIVED
+  TRASHED
+}
+
+type PathaoZone {
+  zone_id   Int
+  zone_name String
+}
+
+model PathaoLocation {
+  id        String       @id @default(auto()) @map("_id") @db.ObjectId
+  city_id   Int          @unique
+  city_name String
+  zones     PathaoZone[]
+
+  @@map("pathao_locations")
 }
