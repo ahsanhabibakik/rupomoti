@@ -203,7 +203,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
       showToast.success(`Order #${orderData.orderNumber} placed successfully! We'll contact you soon.`)
       setFormData({
         name: session?.user?.name || '',
-        phone: '',
+        phone: session?.user?.phone || '',
         email: session?.user?.email || '',
         city: '',
         zone: '',

@@ -88,7 +88,7 @@ export function CourierSelector({ order, onShipmentCreated }: CourierSelectorPro
                 disabled={isLoading}
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Enter the RedX delivery area ID for the customer's location
+                Enter the RedX delivery area ID for the customer&apos;s location
               </p>
             </div>
           </div>
@@ -123,7 +123,7 @@ export function CourierSelector({ order, onShipmentCreated }: CourierSelectorPro
               </div>
             </div>
             <p className="text-xs text-muted-foreground">
-              Enter the Pathao city and zone IDs for the customer's location
+              Enter the Pathao city and zone IDs for the customer&apos;s location
             </p>
           </div>
         );
@@ -132,7 +132,7 @@ export function CourierSelector({ order, onShipmentCreated }: CourierSelectorPro
           <div className="mt-4">
             <div className="p-3 bg-muted rounded-lg">
               <p className="text-sm text-muted-foreground">
-                Steadfast courier will use the customer's address automatically. No additional configuration needed.
+                Steadfast courier will use the customer&apos;s address automatically. No additional configuration needed.
               </p>
             </div>
           </div>
