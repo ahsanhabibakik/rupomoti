@@ -3,12 +3,22 @@ import { withAuth } from 'next-auth/middleware'
 
 export default withAuth({
   callbacks: {
-    authorized: ({ token }) => {
-      // TEMPORARY: Allow all access for debugging
-      console.log('Middleware - checking token:', token)
-      const userRole = token?.role as string
-      console.log('Middleware - user role:', userRole)
-      // Temporarily return true to allow all access
+    authorized: ({ token, req }) => {
+      // Check if user is trying to access admin routes
+      if (req.nextUrl.pathname.startsWith('/admin')) {
+        // Allow access to admin login page
+        if (req.nextUrl.pathname === '/admin/login') {
+          return true
+        }
+        
+        // For other admin routes, check if user is admin
+        const userRole = token?.role as string
+        const isAdmin = token?.isAdmin as boolean
+        
+        return isAdmin || userRole === 'ADMIN' || userRole === 'MANAGER'
+      }
+      
+      // For non-admin routes, allow access
       return true
     }
   },

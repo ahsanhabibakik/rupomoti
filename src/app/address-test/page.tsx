@@ -1,3 +1,5 @@
+'use client'
+
 // Address Management Test Component
 import React, { useState, useEffect } from 'react';
 

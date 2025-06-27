@@ -520,8 +520,8 @@
 
 @media (max-width: 768px) {
   .product-grid-enhanced {
-    grid-template-columns: repeat(2, 1fr); /* Always 2 columns on mobile */
-    gap: .5 rem;
+    grid-template-columns: 1fr; /* Single column on mobile */
+    gap: 1rem;
   }
 }
 

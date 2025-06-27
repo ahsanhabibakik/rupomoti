@@ -1,17 +1,25 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import Image from 'next/image'
-import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { Category } from '@prisma/client'
+import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { ProductCard } from '@/components/products/ProductCard'
 
-interface CategorySectionProps {
-  categories: Category[]
+interface SlidableProductSectionProps {
+  title: string
+  products: any[]
+  viewAllLink: string
+  className?: string
 }
 
-export default function CategorySection({ categories }: CategorySectionProps) {
+export default function SlidableProductSection({ 
+  title, 
+  products, 
+  viewAllLink, 
+  className = "" 
+}: SlidableProductSectionProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(true)
@@ -27,31 +35,31 @@ export default function CategorySection({ categories }: CategorySectionProps) {
   const scrollLeft = () => {
     const container = scrollContainerRef.current
     if (container) {
-      container.scrollBy({ left: -250, behavior: 'smooth' })
+      container.scrollBy({ left: -300, behavior: 'smooth' })
     }
   }
 
   const scrollRight = () => {
     const container = scrollContainerRef.current
     if (container) {
-      container.scrollBy({ left: 250, behavior: 'smooth' })
+      container.scrollBy({ left: 300, behavior: 'smooth' })
     }
   }
 
-  if (!categories || categories.length === 0) {
+  if (!products || products.length === 0) {
     return null
   }
 
   return (
-    <section className="py-12 bg-gray-50">
+    <section className={`py-12 ${className}`}>
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
-            Shop by Category
+            {title}
           </h2>
           
           {/* Desktop Navigation */}
-          {categories.length > 4 && (
+          {products.length > 3 && (
             <div className="hidden md:flex gap-2">
               <button
                 onClick={scrollLeft}
@@ -79,52 +87,36 @@ export default function CategorySection({ categories }: CategorySectionProps) {
           )}
         </div>
 
-        {/* Slidable Categories Container */}
+        {/* Slidable Products Container */}
         <div className="relative">
           <div
             ref={scrollContainerRef}
             onScroll={handleScroll}
-            className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-4"
+            className="flex gap-6 overflow-x-auto scrollbar-hide scroll-smooth pb-4"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            {categories.map((category, index) => (
+            {products.map((product, index) => (
               <motion.div
-                key={category.id}
-                className="flex-none"
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
+                key={product.id}
+                className="flex-none w-full sm:w-72 md:w-80"
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
               >
-                <Link
-                  href={`/category/${category.slug}`}
-                  className="block group"
-                >
-                  <div className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 w-40 sm:w-48">
-                    <div className="relative aspect-square mb-3 overflow-hidden rounded-lg bg-gray-100">
-                      {category.image ? (
-                        <Image
-                          src={category.image}
-                          alt={category.name}
-                          fill
-                          className="object-cover transition-transform duration-300 group-hover:scale-105"
-                          sizes="(max-width: 640px) 160px, 192px"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
-                          <span className="text-orange-600 text-2xl font-bold">
-                            {category.name.charAt(0)}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <h3 className="text-center text-sm font-semibold text-gray-900 group-hover:text-orange-600 transition-colors duration-200">
-                      {category.name}
-                    </h3>
-                  </div>
-                </Link>
+                <ProductCard product={product} />
               </motion.div>
             ))}
           </div>
+        </div>
+
+        {/* View All Button */}
+        <div className="text-center mt-6">
+          <Button asChild className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-full shadow-md hover:shadow-lg text-sm">
+            <Link href={viewAllLink} className="flex items-center gap-2">
+              View All
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </Button>
         </div>
       </div>
     </section>
