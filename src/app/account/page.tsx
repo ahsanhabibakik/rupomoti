@@ -914,15 +914,17 @@ export default function AccountPage() {
                               <div className="flex items-center space-x-2">
                                 <button
                                   onClick={() => handleOpenReviewModal(review.product, review)}
-                                  className="text-blue-600 hover:text-blue-700"
+                                  className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                                  title="Edit Review"
                                 >
                                   <Edit className="h-4 w-4" />
                                 </button>
                                 <button
                                   onClick={() => handleDeleteReview(review.id)}
-                                  className="text-red-600 hover:text-red-700"
+                                  className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                                  title="Delete Review"
                                 >
-z                                  <Trash2 className="h-4 w-4" />
+                                  <Trash2 className="h-4 w-4" />
                                 </button>
                               </div>
                             </div>
@@ -1057,7 +1059,8 @@ z                                  <Trash2 className="h-4 w-4" />
                       <button
                         type="button"
                         onClick={() => setShowAddressModal(false)}
-                        className="text-gray-400 hover:text-gray-600"
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="Close"
                       >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1198,7 +1201,8 @@ z                                  <Trash2 className="h-4 w-4" />
                       <button
                         type="button"
                         onClick={() => setShowPaymentModal(false)}
-                        className="text-gray-400 hover:text-gray-600"
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="Close"
                       >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

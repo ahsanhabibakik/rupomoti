@@ -15,7 +15,8 @@ export default withAuth({
         const userRole = token?.role as string
         const isAdmin = token?.isAdmin as boolean
         
-        return isAdmin || userRole === 'ADMIN' || userRole === 'MANAGER'
+        // Allow access for SUPER_ADMIN, ADMIN, MANAGER roles, or if isAdmin is true
+        return isAdmin || userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' || userRole === 'MANAGER'
       }
       
       // For non-admin routes, allow access

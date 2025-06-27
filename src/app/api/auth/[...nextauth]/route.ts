@@ -7,7 +7,6 @@ import GoogleProvider from "next-auth/providers/google"
 import NextAuth from "next-auth"
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -47,6 +46,8 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           email: user.email,
           name: user.name,
+          role: user.role,
+          isAdmin: user.isAdmin,
         }
       },
     }),
@@ -60,13 +61,14 @@ export const authOptions: NextAuthOptions = {
         // Fetch user from DB to get role if needed
         const dbUser = await prisma.user.findUnique({ where: { email: user.email as string } });
         token.role = dbUser?.role;
-        token.isAdmin = dbUser?.role === 'ADMIN';
+        token.isAdmin = dbUser?.isAdmin || false;
+        token.id = dbUser?.id;
       }
       return token;
     },
     async session({ session, token }) {
       if (token && session.user) {
-        session.user.id = token.sub!;
+        session.user.id = token.id as string || token.sub!;
         (session.user as any).role = token.role as string;
         (session.user as any).isAdmin = token.isAdmin as boolean;
       }

@@ -244,7 +244,7 @@ export default function AdminLayout({
   }
 
   const userRole = session.user?.role;
-  if (userRole !== 'ADMIN' && userRole !== 'MANAGER') {
+  if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN' && userRole !== 'MANAGER') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
         <h1 className="text-2xl font-bold">Access Denied</h1>

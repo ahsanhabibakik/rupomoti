@@ -41,7 +41,7 @@ export const authConfig: NextAuthOptions = {
           return null;
         }
 
-        if (user.role !== 'ADMIN' && user.role !== 'MANAGER') {
+        if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN' && user.role !== 'MANAGER') {
           return null;
         }
 
@@ -50,6 +50,7 @@ export const authConfig: NextAuthOptions = {
           email: user.email,
           name: user.name,
           role: user.role,
+          isAdmin: user.isAdmin,
         };
       },
     }),
@@ -62,6 +63,7 @@ export const authConfig: NextAuthOptions = {
       if (user) {
         token.role = user.role;
         token.id = user.id;
+        token.isAdmin = user.isAdmin;
       }
       if (account?.provider === 'google') {
         const existingUser = await prisma.user.findUnique({
@@ -70,6 +72,7 @@ export const authConfig: NextAuthOptions = {
         if (existingUser) {
           token.role = existingUser.role;
           token.id = existingUser.id;
+          token.isAdmin = existingUser.isAdmin;
         }
       }
       return token;
@@ -78,6 +81,7 @@ export const authConfig: NextAuthOptions = {
       if (session.user) {
         session.user.role = token.role as string;
         session.user.id = token.id as string;
+        session.user.isAdmin = token.isAdmin as boolean;
       }
       return session;
     },

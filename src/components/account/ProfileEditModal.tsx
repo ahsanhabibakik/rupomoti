@@ -73,7 +73,8 @@ export function ProfileEditModal({ isOpen, onClose, profile, onUpdate }: Profile
           <h2 className="text-xl font-semibold text-gray-900">Edit Profile</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            title="Close"
           >
             <X className="w-5 h-5" />
           </button>

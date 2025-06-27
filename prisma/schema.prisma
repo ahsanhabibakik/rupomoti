@@ -371,6 +371,7 @@ model AuditLog {
 enum Role {
   USER
   ADMIN
+  SUPER_ADMIN
   MANAGER
 }
 
