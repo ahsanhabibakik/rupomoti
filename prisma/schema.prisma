@@ -32,6 +32,7 @@ model User {
   customers      Customer[]
   paymentMethods UserPaymentMethod[]
   userSettings   UserSetting[]
+  auditLogs      AuditLog[]
 }
 
 model Account {
@@ -159,13 +160,17 @@ model Order {
   deliveryFee   Float
   discount      Float          @default(0)
   total         Float
+  paidAmount    Float          @default(0) // For partial payments
+  remainingAmount Float        @default(0) // Remaining amount to be paid
   deliveryZone  DeliveryZone
   deliveryAddress String
   orderNote     String?
+  appliedCoupon String?        // Coupon code applied
   trackingId    String?
   steadfastInfo Json?          // Steadfast tracking information
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?      // For soft deletes
 
   items         OrderItem[]
 
@@ -248,7 +253,7 @@ model Coupon {
   id            String    @id @default(auto()) @map("_id") @db.ObjectId
   code          String    @unique
   type          CouponType
-  value         Float     // Percentage or fixed amount
+  value         Float     // Percentage or fixed amount (0 for FREE_SHIPPING)
   minimumAmount Float?
   maximumDiscount Float?
   usageLimit    Int?
@@ -256,6 +261,8 @@ model Coupon {
   isActive      Boolean   @default(true)
   validFrom     DateTime
   validUntil    DateTime
+  description   String?   // Description for the coupon
+  applicableZones DeliveryZone[] // For zone-specific coupons
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -345,6 +352,22 @@ model UserSetting {
   @@unique([userId, key])
 }
 
+model AuditLog {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  model       String   // e.g., "Order", "Customer"
+  recordId    String   // The ID of the record that was changed
+  userId      String   @db.ObjectId
+  user        User     @relation(fields: [userId], references: [id])
+  action      String   // e.g., "UPDATE_PAYMENT_STATUS", "EDIT_ADDRESS"
+  field       String?  // The specific field that was changed
+  oldValue    String?
+  newValue    String?
+  details     Json?    // For more complex change details
+  createdAt   DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
 enum Role {
   USER
   ADMIN
@@ -353,33 +376,37 @@ enum Role {
 
 enum OrderStatus {
   PENDING
-  PROCESSING
   CONFIRMED
+  PROCESSING
   SHIPPED
   DELIVERED
-  CANCELLED
+  CANCELED
   RETURNED
+  REFUNDED
 }
 
 enum PaymentStatus {
   PENDING
+  PARTIAL
   PAID
   FAILED
   REFUNDED
-  PARTIAL
 }
 
 enum PaymentMethod {
   CASH_ON_DELIVERY
+  SSLCOMMERZ
+  BKASH
+  NAGAD
+  ROCKET
+  UPAY
   BANK_TRANSFER
-  MOBILE_BANKING
-  CARD_PAYMENT
+  CARD
 }
 
 enum DeliveryZone {
   INSIDE_DHAKA
   OUTSIDE_DHAKA
-  PERIPHERAL_DHAKA
 }
 
 enum CouponType {

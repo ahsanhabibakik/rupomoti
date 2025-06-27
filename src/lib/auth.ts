@@ -3,7 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { prisma } from "./prisma";
 import { compare } from "bcryptjs";
-import { User } from "@prisma/client";
+import { User, Role } from "@prisma/client";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -62,22 +62,14 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.role = user.role;
         token.isAdmin = user.isAdmin;
-      } else { // On subsequent requests, fetch user data from DB
-        if (token.email) {
-          const dbUser = await prisma.user.findUnique({ where: { email: token.email } });
-          if (dbUser) {
-            token.id = dbUser.id;
-            token.role = dbUser.role;
-          }
-        }
       }
       return token;
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.id;
-        session.user.role = token.role;
-        session.user.isAdmin = token.isAdmin;
+        session.user.id = token.id as string;
+        session.user.role = token.role as Role;
+        session.user.isAdmin = token.isAdmin as boolean;
       }
       return session;
     },

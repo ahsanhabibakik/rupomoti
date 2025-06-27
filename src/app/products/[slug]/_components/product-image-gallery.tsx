@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface ProductImageGalleryProps {
-  images: { url: string; id: string }[]
+  images: string[]
   productName: string
 }
 
@@ -27,7 +27,7 @@ export function ProductImageGallery({ images, productName }: ProductImageGallery
     <div className="relative">
       <div className="aspect-square relative rounded-lg overflow-hidden">
         <Image
-          src={images[selectedImage].url}
+          src={images[selectedImage]}
           alt={`${productName} - Image ${selectedImage + 1}`}
           fill
           className="object-cover"
@@ -49,12 +49,12 @@ export function ProductImageGallery({ images, productName }: ProductImageGallery
       <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
         {images.map((image, index) => (
           <button
-            key={image.id}
+            key={index}
             className={`relative w-20 h-20 rounded-lg overflow-hidden border-2 ${selectedImage === index ? 'border-primary' : 'border-transparent'}`}
             onClick={() => setSelectedImage(index)}
           >
             <Image
-              src={image.url}
+              src={image}
               alt={`Thumbnail of ${productName} ${index + 1}`}
               fill
               className="object-cover"

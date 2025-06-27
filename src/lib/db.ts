@@ -72,7 +72,7 @@ export async function initDatabase() {
       { name: 'Customer', query: async () => await prisma.customer.findFirst() },
       { name: 'Media', query: async () => await prisma.media.findFirst() },
       { name: 'Coupon', query: async () => await prisma.coupon.findFirst() },
-      { name: 'Settings', query: async () => await prisma.settings.findFirst() }
+      { name: 'Settings', query: async () => await prisma.setting.findFirst() }
     ]
 
     let hasErrors = false

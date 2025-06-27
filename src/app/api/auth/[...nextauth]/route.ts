@@ -4,8 +4,7 @@ import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import CredentialsProvider from "next-auth/providers/credentials"
 import GoogleProvider from "next-auth/providers/google"
-import NextAuth from "next-auth/next"
-import { authConfig } from "./auth-config"
+import NextAuth from "next-auth"
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -44,12 +43,39 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid credentials")
         }
 
-        return user
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          isAdmin: user.role === 'ADMIN',
+        }
       },
     }),
   ],
   pages: {
     signIn: "/admin/login",
+  },
+  callbacks: {
+    async jwt({ token, user }) {
+      console.log('JWT callback - token:', token, 'user:', user)
+      if (user) {
+        token.role = user.role
+        token.isAdmin = user.role === 'ADMIN'
+        console.log('Setting token role:', token.role, 'isAdmin:', token.isAdmin)
+      }
+      return token
+    },
+    async session({ session, token }) {
+      console.log('Session callback - session:', session, 'token:', token)
+      if (token) {
+        session.user.id = token.sub!
+        session.user.role = token.role as string
+        session.user.isAdmin = token.isAdmin as boolean
+        console.log('Setting session role:', session.user.role, 'isAdmin:', session.user.isAdmin)
+      }
+      return session
+    },
   },
   debug: process.env.NODE_ENV === "development",
   session: {
@@ -58,6 +84,6 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 }
 
-const handler = NextAuth(authConfig)
+const handler = NextAuth(authOptions)
 
 export { handler as GET, handler as POST } 

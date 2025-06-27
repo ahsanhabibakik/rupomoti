@@ -9,7 +9,9 @@ import { showToast } from '@/lib/toast'
 import { Product } from '@prisma/client'
 
 interface AddToCartButtonProps {
-  product: Omit<Product, 'description' | 'stock' | 'createdAt' | 'updatedAt'>
+  product: Omit<Product, 'description' | 'stock' | 'createdAt' | 'updatedAt'> & {
+    category?: { name: string; slug: string } | null
+  }
 }
 
 export function AddToCartButton({ product }: AddToCartButtonProps) {
@@ -22,6 +24,7 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
       name: product.name,
       price: product.salePrice ?? product.price,
       image: product.images[0],
+      category: product.category?.name || 'Unknown',
       quantity 
     }))
     showToast.success(`${quantity} × "${product.name}" added to cart!`)

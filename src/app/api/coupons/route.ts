@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
 
 const couponSchema = z.object({
   code: z.string().min(1),
-  type: z.enum(['percentage', 'fixed']),
+  type: z.enum(['PERCENTAGE', 'FIXED_AMOUNT']),
   value: z.coerce.number(),
   minimumAmount: z.coerce.number().optional().nullable(),
   maximumDiscount: z.coerce.number().optional().nullable(),
@@ -65,6 +65,7 @@ export async function POST(request: Request) {
     // Transform empty strings for optional fields to null for Prisma
     const transformedJson = {
       ...json,
+      type: json.type === 'percentage' ? 'PERCENTAGE' : json.type === 'fixed' ? 'FIXED_AMOUNT' : json.type,
       minimumAmount: json.minimumAmount || null,
       maximumDiscount: json.maximumDiscount || null,
       usageLimit: json.usageLimit || null,
@@ -102,6 +103,7 @@ export async function PUT(request: Request) {
     const json = await request.json()    
     const { id, ...dataToUpdate } = updateCouponSchema.parse({
       ...json,
+      type: json.type === 'percentage' ? 'PERCENTAGE' : json.type === 'fixed' ? 'FIXED_AMOUNT' : json.type,
       minimumAmount: json.minimumAmount || null,
       maximumDiscount: json.maximumDiscount || null,
       usageLimit: json.usageLimit || null,

@@ -220,7 +220,7 @@ export default function ShopPage() {
     if (isInitialLoad) return;
     const timeoutId = setTimeout(() => fetchProducts(true), 100);
     return () => clearTimeout(timeoutId);
-  }, [debouncedSearchInput, selectedCategories, debouncedPriceRange, sortBy, isInitialLoad]);
+  }, [debouncedSearchInput, selectedCategories, debouncedPriceRange, sortBy, isInitialLoad, fetchProducts]);
 
 
   const handleClearFilters = () => {

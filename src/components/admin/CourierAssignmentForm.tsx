@@ -92,18 +92,26 @@ export function CourierAssignmentForm({ order, onSuccess }: CourierAssignmentFor
             }
         };
         fetchUpazilas();
-    }, [watchedDistrict, setValue]);
+    }, [watchedDistrict, setValue, watch]);
 
     const { mutate } = useSWRConfig();
     const onSubmit: SubmitHandler<AssignmentFormValues> = async (data) => {
         setIsLoading(true);
         try {
             const response = await fetch(`/api/admin/orders/${order.id}`, {
-                method: 'PUT',
+                method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
             });
-            if (!response.ok) throw new Error((await response.json()).error || 'Failed to update order');
+            if (!response.ok) {
+                const errorData = await response.text(); // Use .text() to avoid JSON parse error on empty body
+                try {
+                    const jsonData = JSON.parse(errorData);
+                    throw new Error(jsonData.error || 'Failed to update order');
+                } catch (e) {
+                    throw new Error(errorData || 'Failed to update order');
+                }
+            }
             toast.success('Order updated successfully!');
             if (onSuccess) onSuccess();
         } catch (error: any) {

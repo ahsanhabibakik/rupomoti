@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/prisma';
 import { steadfast } from '@/lib/steadfast';
 import { authConfig } from '@/lib/auth-config';
+import { Prisma } from '@prisma/client';
 
 export async function GET(request: Request) {
   try {
@@ -25,17 +26,42 @@ export async function GET(request: Request) {
     const status = searchParams.get('status');
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
+    const search = searchParams.get('search');
 
-    const where: any = {};
-    if (status) where.status = status;
-    if (startDate && endDate) {
-      where.createdAt = {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
-      };
+    const filters: Prisma.OrderWhereInput[] = [
+      { deletedAt: null }
+    ];
+
+    if (status && status !== 'all') {
+      filters.push({ status: status as Prisma.OrderStatus });
     }
 
-    const [orders, total] = await Promise.all([
+    if (startDate) {
+      filters.push({ createdAt: { gte: new Date(startDate) } });
+    }
+
+    if (endDate) {
+      filters.push({ createdAt: { lte: new Date(endDate) } });
+    }
+
+    if (search) {
+      filters.push({
+        OR: [
+          { orderNumber: { contains: search, mode: 'insensitive' } },
+          { recipientName: { contains: search, mode: 'insensitive' } },
+          { recipientPhone: { contains: search, mode: 'insensitive' } },
+          { customer: { name: { contains: search, mode: 'insensitive' } } },
+          { customer: { phone: { contains: search, mode: 'insensitive' } } },
+          { items: { some: { product: { name: { contains: search, mode: 'insensitive' } } } } },
+        ],
+      });
+    }
+
+    const where: Prisma.OrderWhereInput = {
+      AND: filters,
+    };
+
+    const [orders, totalOrders] = await Promise.all([
       prisma.order.findMany({
         where,
         include: {
@@ -55,8 +81,8 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       orders: orders,
-      totalCount: total,
-      totalPages: Math.ceil(total / pageSize),
+      totalCount: totalOrders,
+      totalPages: Math.ceil(totalOrders / pageSize),
     });
   } catch (error) {
     console.error('Error fetching orders:', error);

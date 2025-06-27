@@ -8,7 +8,9 @@ import { addToCart } from '@/redux/slices/cartSlice'
 import { showToast } from '@/lib/toast'
 import { type Prisma } from '@prisma/client'
 
-type Product = Prisma.ProductGetPayload<{}>
+type Product = Prisma.ProductGetPayload<{
+  include: { category: true }
+}>
 
 interface AddToCartButtonProps {
   product: Product
@@ -24,6 +26,7 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
       name: product.name,
       price: product.salePrice ?? product.price,
       image: (product.images as string[])[0],
+      category: product.category?.name || 'Unknown',
       quantity 
     }))
     showToast.success(`${quantity} × "${product.name}" added to cart!`)

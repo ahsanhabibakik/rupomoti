@@ -69,6 +69,7 @@ async function main() {
         price: randomPrice,
         stock: randomStock,
         sku: generateSKU(product.name),
+        slug: product.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
         images: [imageUrl],
         categoryId: randomCategory.id,
       },

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/auth-config';
+import { authOptions } from '../auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
 
 export async function GET() {
@@ -10,7 +10,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const paymentMethods = await prisma.paymentMethod.findMany({
+    const paymentMethods = await prisma.userPaymentMethod.findMany({
       where: { userId: session.user.id },
       orderBy: { createdAt: 'desc' }
     });
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     const last4 = cardNumber.slice(-4);
     const maskedCardNumber = `**** **** **** ${last4}`;
 
-    const paymentMethod = await prisma.paymentMethod.create({
+    const paymentMethod = await prisma.userPaymentMethod.create({
       data: {
         type,
         provider,
@@ -76,7 +76,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Verify the payment method belongs to the user
-    const existingPaymentMethod = await prisma.paymentMethod.findFirst({
+    const existingPaymentMethod = await prisma.userPaymentMethod.findFirst({
       where: { id, userId: session.user.id }
     });
 
@@ -88,7 +88,7 @@ export async function PUT(request: NextRequest) {
     const last4 = cardNumber.slice(-4);
     const maskedCardNumber = `**** **** **** ${last4}`;
 
-    const paymentMethod = await prisma.paymentMethod.update({
+    const paymentMethod = await prisma.userPaymentMethod.update({
       where: { id },
       data: {
         type,
@@ -124,7 +124,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Verify the payment method belongs to the user
-    const existingPaymentMethod = await prisma.paymentMethod.findFirst({
+    const existingPaymentMethod = await prisma.userPaymentMethod.findFirst({
       where: { id, userId: session.user.id }
     });
 
@@ -132,7 +132,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Payment method not found' }, { status: 404 });
     }
 
-    await prisma.paymentMethod.delete({
+    await prisma.userPaymentMethod.delete({
       where: { id }
     });
 
