@@ -160,9 +160,12 @@ model Order {
   deliveryFee   Float
   discount      Float          @default(0)
   total         Float
+  paidAmount    Float          @default(0) // For partial payments
+  remainingAmount Float        @default(0) // Remaining amount to be paid
   deliveryZone  DeliveryZone
   deliveryAddress String
   orderNote     String?
+  appliedCoupon String?        // Coupon code applied
   trackingId    String?
   steadfastInfo Json?          // Steadfast tracking information
   createdAt     DateTime       @default(now())
@@ -250,7 +253,7 @@ model Coupon {
   id            String    @id @default(auto()) @map("_id") @db.ObjectId
   code          String    @unique
   type          CouponType
-  value         Float     // Percentage or fixed amount
+  value         Float     // Percentage or fixed amount (0 for FREE_SHIPPING)
   minimumAmount Float?
   maximumDiscount Float?
   usageLimit    Int?
@@ -258,6 +261,8 @@ model Coupon {
   isActive      Boolean   @default(true)
   validFrom     DateTime
   validUntil    DateTime
+  description   String?   // Description for the coupon
+  applicableZones DeliveryZone[] // For zone-specific coupons
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -382,6 +387,7 @@ enum OrderStatus {
 
 enum PaymentStatus {
   PENDING
+  PARTIAL
   PAID
   FAILED
   REFUNDED
@@ -392,6 +398,10 @@ enum PaymentMethod {
   SSLCOMMERZ
   BKASH
   NAGAD
+  ROCKET
+  UPAY
+  BANK_TRANSFER
+  CARD
 }
 
 enum DeliveryZone {
@@ -402,6 +412,7 @@ enum DeliveryZone {
 enum CouponType {
   PERCENTAGE
   FIXED_AMOUNT
+  FREE_SHIPPING
 }
 
 enum ProductStatus {
