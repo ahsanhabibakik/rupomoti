@@ -23,6 +23,8 @@ import {
 import Image from 'next/image'
 import Link from 'next/link'
 import { showToast } from '@/lib/toast'
+import { ProfileEditModal } from '@/components/account/ProfileEditModal'
+import { ReviewModal } from '@/components/account/ReviewModal'
 
 const tabs = [
   { id: 'profile', label: 'Profile', icon: User },
@@ -59,8 +61,38 @@ export default function AccountPage() {
   const [showAddressModal, setShowAddressModal] = useState(false)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [showProfileEdit, setShowProfileEdit] = useState(false)
+  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [selectedProduct, setSelectedProduct] = useState<any>(null)
+  const [editingReview, setEditingReview] = useState<any>(null)
   const [editingAddress, setEditingAddress] = useState<any>(null)
+  const [selectedOrder, setSelectedOrder] = useState<any>(null)
+  const [showOrderDetails, setShowOrderDetails] = useState(false)
   const [editingPayment, setEditingPayment] = useState<any>(null)
+  // Helper function to check if user can review a product
+  const canReviewProduct = (productId: string) => {
+    return orders.some((order: any) => 
+      order.status === 'DELIVERED' && 
+      order.items.some((item: any) => item.productId === productId) &&
+      !reviews.some((review: any) => review.productId === productId)
+    )
+  }
+
+  // Helper function to get review for a product
+  const getProductReview = (productId: string) => {
+    return reviews.find((review: any) => review.productId === productId)
+  }
+
+  // Helper function to format order status
+  const getOrderStatusColor = (status: string) => {
+    switch (status) {
+      case 'DELIVERED': return 'bg-green-100 text-green-800'
+      case 'SHIPPED': return 'bg-blue-100 text-blue-800'
+      case 'PROCESSING': return 'bg-yellow-100 text-yellow-800'
+      case 'CONFIRMED': return 'bg-purple-100 text-purple-800'
+      case 'CANCELLED': return 'bg-red-100 text-red-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
   
   const [loading, setLoading] = useState({
     profile: false,
@@ -289,6 +321,24 @@ export default function AccountPage() {
   }
 
   // Review functions
+  const handleOpenReviewModal = (product: any, existingReview?: any) => {
+    setSelectedProduct(product)
+    setEditingReview(existingReview || null)
+    setShowReviewModal(true)
+  }
+
+  const handleReviewSubmitted = () => {
+    // Refresh reviews data
+    fetch('/api/reviews?mine=1')
+      .then((r) => r.json())
+      .then((data) => {
+        setReviews(Array.isArray(data) ? data : [])
+      })
+      .catch(() => {
+        setReviews([])
+      })
+  }
+
   const handleEditReview = async (reviewId: string, rating: number, comment: string) => {
     try {
       const res = await fetch('/api/reviews', {
@@ -322,12 +372,10 @@ export default function AccountPage() {
     }
   }
 
-  const canReviewProduct = (productId: string) => {
-    // Ensure reviews is always an array and handle the case when it's not loaded yet
-    if (!Array.isArray(reviews)) {
-      return false
-    }
-    return !reviews.some(r => r.productId === productId)
+  // Order details function
+  const handleViewOrderDetails = (order: any) => {
+    setSelectedOrder(order)
+    setShowOrderDetails(true)
   }
 
   // Payment Method CRUD
@@ -510,11 +558,11 @@ export default function AccountPage() {
                         Profile Information
                       </h3>
                       <button
-                        onClick={() => setShowProfileEdit(!showProfileEdit)}
+                        onClick={() => setShowProfileEdit(true)}
                         className="px-4 py-2 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700 flex items-center gap-2"
                       >
                         <Edit className="w-4 h-4" />
-                        {showProfileEdit ? 'Cancel' : 'Edit Profile'}
+                        Edit Profile
                       </button>
                     </div>
                     
@@ -711,7 +759,7 @@ export default function AccountPage() {
                                     <div className="flex flex-col items-end space-y-2">
                                       {order.status === 'DELIVERED' && canReviewProduct(item.productId) && (
                                         <button
-                                          onClick={() => {/* TODO: Open review modal */}}
+                                          onClick={() => handleOpenReviewModal(item.product)}
                                           className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
                                         >
                                           Leave Review
@@ -840,7 +888,7 @@ export default function AccountPage() {
                               </div>
                               <div className="flex items-center space-x-2">
                                 <button
-                                  onClick={() => handleEditReview(review.id, review.rating, review.comment)}
+                                  onClick={() => handleOpenReviewModal(review.product, review)}
                                   className="text-blue-600 hover:text-blue-700"
                                 >
                                   <Edit className="h-4 w-4" />
@@ -1452,6 +1500,34 @@ export default function AccountPage() {
           </div>
         </div>
       </div>
+
+      {/* Profile Edit Modal */}
+      <ProfileEditModal
+        isOpen={showProfileEdit}
+        onClose={() => setShowProfileEdit(false)}
+        profile={profile}
+        onUpdate={(updatedProfile) => {
+          setProfile(updatedProfile)
+          setProfileForm({
+            name: updatedProfile.name || '',
+            phone: updatedProfile.phone || '',
+            email: updatedProfile.email || ''
+          })
+        }}
+      />
+
+      {/* Review Modal */}
+      <ReviewModal
+        isOpen={showReviewModal}
+        onClose={() => {
+          setShowReviewModal(false)
+          setSelectedProduct(null)
+          setEditingReview(null)
+        }}
+        product={selectedProduct}
+        existingReview={editingReview}
+        onReviewSubmitted={handleReviewSubmitted}
+      />
     </div>
   )
 } 

@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { auth } from '@/lib/auth'
+import { getAuthSession } from '@/lib/auth'
 import { z } from 'zod'
 
 export async function GET(request: Request) {
-  const session = await auth()
+  const session = await getAuthSession()
 
   if (!session?.user?.isAdmin) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
@@ -35,7 +35,7 @@ const createSubscriberSchema = z.object({
 })
 
 export async function POST(request: Request) {
-  const session = await auth()
+  const session = await getAuthSession()
 
   if (!session?.user?.isAdmin) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })

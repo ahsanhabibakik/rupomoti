@@ -92,7 +92,7 @@ export function CourierAssignmentForm({ order, onSuccess }: CourierAssignmentFor
             }
         };
         fetchUpazilas();
-    }, [watchedDistrict, setValue]);
+    }, [watchedDistrict, setValue, watch]);
 
     const { mutate } = useSWRConfig();
     const onSubmit: SubmitHandler<AssignmentFormValues> = async (data) => {

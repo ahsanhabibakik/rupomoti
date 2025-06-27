@@ -16,7 +16,8 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { SlidersHorizontal, Search, X, Loader2, Frown } from 'lucide-react'
-import { Product } from '@/types/product'
+import { Product, Category } from '@prisma/client'
+import { getCategories } from '@/actions/getCategories'
 
 const categories = [
   { id: 'necklaces', name: 'Necklaces' },
@@ -35,17 +36,20 @@ const sortOptions = [
 
 const PAGE_SIZE = 9;
 
-function FilterSection({ 
-  selectedCategories, 
-  setSelectedCategories, 
-  priceRange, 
-  setPriceRange 
+function FilterSection({
+  selectedCategories,
+  setSelectedCategories,
+  priceRange,
+  setPriceRange,
+  inSheet,
+  categories
 }: {
   selectedCategories: string[];
   setSelectedCategories: React.Dispatch<React.SetStateAction<string[]>>;
   priceRange: [number, number];
   setPriceRange: (value: [number, number]) => void;
   inSheet?: boolean;
+  categories: Category[];
 }) {
   const handlePriceInputChange = (index: 0 | 1, value: string) => {
     const newRange = [...priceRange] as [number, number];
@@ -64,11 +68,11 @@ function FilterSection({
               <input
                 type="checkbox"
                 id={`cat-${category.id}`}
-                checked={selectedCategories.includes(category.id)}
+                checked={selectedCategories.includes(category.slug)}
                 onChange={(e) => {
                   const { checked } = e.target;
                   setSelectedCategories(prev => 
-                    checked ? [...prev, category.id] : prev.filter(id => id !== category.id)
+                    checked ? [...prev, category.slug] : prev.filter(slug => slug !== category.slug)
                   )
                 }}
                 className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary focus:ring-2 focus:ring-offset-0 transition"
@@ -108,7 +112,17 @@ function FilterSection({
   )
 }
 
+async function getInitialProducts() {
+  const res = await fetch(`http://localhost:3000/api/products?limit=${PAGE_SIZE}&sort=newest`, { cache: 'no-store' });
+  if (!res.ok) return { products: [], total: 0 };
+  const data = await res.json();
+  return data;
+}
+
 export default function ShopPage() {
+  const [initialData, setInitialData] = useState<{ products: Product[], total: number }>({ products: [], total: 0 });
+  const [categories, setCategories] = useState<Category[]>([]);
+  
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 100000]);
   const [sortBy, setSortBy] = useState<string>('newest');
@@ -118,6 +132,7 @@ export default function ShopPage() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   
   const debouncedSearchInput = useDebounce(searchInput, 500);
   const debouncedPriceRange = useDebounce(priceRange, 500);
@@ -140,20 +155,46 @@ export default function ShopPage() {
 
     try {
       const res = await fetch(`/api/products?${params.toString()}`);
+      if (!res.ok) throw new Error('Failed to fetch products');
       const data = await res.json();
       const newProducts = data.products || [];
-
-      setProducts(prev => isNewSearch ? newProducts : [...prev, ...newProducts]);
-      setPage(currentPage);
+      
+      if (isNewSearch) {
+        setProducts(newProducts);
+        setPage(1);
+      } else {
+        setProducts(prev => [...prev, ...newProducts]);
+        setPage(currentPage);
+      }
+      
       setHasMore(newProducts.length === PAGE_SIZE);
     } catch (error) {
       console.error("Failed to fetch products:", error);
     } finally {
       setLoading(false);
+      if (isInitialLoad) setIsInitialLoad(false);
     }
-  }, [debouncedSearchInput, selectedCategories, debouncedPriceRange, sortBy, page, hasMore]);
+  }, [debouncedSearchInput, selectedCategories, debouncedPriceRange, sortBy, page, hasMore, isInitialLoad]);
 
   useEffect(() => {
+    async function loadInitialData() {
+      const [productsData, categoriesData] = await Promise.all([
+        getInitialProducts(),
+        getCategories({ level: 0, active: true })
+      ]);
+      setInitialData(productsData);
+      setProducts(productsData.products);
+      setCategories(categoriesData);
+      setHasMore(productsData.products.length === PAGE_SIZE);
+      setIsInitialLoad(false);
+      setLoading(false);
+    }
+    loadInitialData();
+  }, []);
+
+  useEffect(() => {
+    if (isInitialLoad) return;
+
     const observer = new IntersectionObserver(
       entries => {
         if (entries[0].isIntersecting && !loading) {
@@ -173,12 +214,13 @@ export default function ShopPage() {
         observer.unobserve(currentRef);
       }
     };
-  }, [loading, fetchProducts]);
+  }, [loading, fetchProducts, isInitialLoad]);
   
   useEffect(() => {
+    if (isInitialLoad) return;
     const timeoutId = setTimeout(() => fetchProducts(true), 100);
     return () => clearTimeout(timeoutId);
-  }, [debouncedSearchInput, selectedCategories, debouncedPriceRange, sortBy]);
+  }, [debouncedSearchInput, selectedCategories, debouncedPriceRange, sortBy, isInitialLoad, fetchProducts]);
 
 
   const handleClearFilters = () => {
@@ -193,7 +235,8 @@ export default function ShopPage() {
     priceRange[0] > 0 ||
     priceRange[1] < 100000;
     
-  const showSkeletons = loading && products.length === 0;
+  const showSkeletons = isInitialLoad || (loading && products.length === 0);
+  const currentProducts = isInitialLoad ? initialData.products : products;
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
@@ -227,6 +270,7 @@ export default function ShopPage() {
               setSelectedCategories={setSelectedCategories}
               priceRange={priceRange}
               setPriceRange={setPriceRange}
+              categories={categories}
             />
           </div>
         </aside>
@@ -234,8 +278,8 @@ export default function ShopPage() {
         <main className="flex-1">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <p className="text-muted-foreground text-sm">
-              {showSkeletons ? 'Searching...' : `Showing ${products.length} products`}
-              {!loading && !hasMore && products.length > 0 && " (end of results)"}
+              {showSkeletons ? 'Searching...' : `Showing ${currentProducts.length} of ${initialData.total} products`}
+              {!loading && !hasMore && currentProducts.length > 0 && " (end of results)"}
             </p>
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <Sheet>
@@ -251,47 +295,62 @@ export default function ShopPage() {
                         <SheetTitle>Filters</SheetTitle>
                         {hasActiveFilters && <Button variant="link" onClick={handleClearFilters}>Clear all</Button>}
                       </SheetHeader>
-                      <FilterSection inSheet={true} {...{selectedCategories, setSelectedCategories, priceRange, setPriceRange}} />
+                      <FilterSection
+                        selectedCategories={selectedCategories}
+                        setSelectedCategories={setSelectedCategories}
+                        priceRange={priceRange}
+                        setPriceRange={setPriceRange}
+                        categories={categories}
+                        inSheet={true}
+                      />
                     </div>
                   </ScrollArea>
                 </SheetContent>
               </Sheet>
               <select
+                id="sort-by"
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value)}
-                className="border rounded-md px-3 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 w-auto flex-1"
+                className="h-11 border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 flex-1 rounded-md border px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium"
               >
-                {sortOptions.map(option => <option key={option.id} value={option.id}>{option.name}</option>)}
+                {sortOptions.map(option => (
+                  <option key={option.id} value={option.id}>{option.name}</option>
+                ))}
               </select>
             </div>
           </div>
 
-          {showSkeletons ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-8">
-              {[...Array(PAGE_SIZE)].map((_, i) => <ProductCardSkeleton key={i} />)}
-            </div>
-          ) : products.length > 0 ? (
-            <>
-              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-8">
-                {products.map((product) => (
-                   <ProductCard key={product.id} product={product} />
-                ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+            {showSkeletons ? (
+              Array.from({ length: PAGE_SIZE }).map((_, index) => (
+                <ProductCardSkeleton key={index} />
+              ))
+            ) : currentProducts.length > 0 ? (
+              currentProducts.map((product, index) => {
+                const isLastElement = index === currentProducts.length - 1;
+                return isLastElement ? (
+                  <div ref={lastProductElementRef} key={product.id}>
+                    <ProductCard product={product} />
+                  </div>
+                ) : (
+                  <ProductCard key={product.id} product={product} />
+                )
+              })
+            ) : (
+              <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
+                <Frown className="w-16 h-16 text-muted-foreground mb-4" />
+                <h3 className="text-2xl font-semibold mb-2">No Products Found</h3>
+                <p className="text-muted-foreground">
+                  Try adjusting your filters or search terms.
+                </p>
               </div>
-              
-              <div ref={lastProductElementRef} className="h-1" />
+            )}
+          </div>
 
-              {loading && products.length > 0 && (
-                <div className="flex justify-center items-center py-8">
-                  <Loader2 className="h-8 w-8 text-primary animate-spin" />
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="text-center py-24 border-2 border-dashed rounded-lg flex flex-col items-center">
-              <Frown className="h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-4 text-xl font-semibold text-foreground">No Products Found</h3>
-              <p className="text-muted-foreground mt-2">Try adjusting your search or filters.</p>
-              <Button onClick={handleClearFilters} className="mt-6">Clear Filters</Button>
+          {loading && !showSkeletons && (
+            <div className="flex justify-center items-center py-10 mt-6">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="ml-3 text-muted-foreground">Loading more products...</p>
             </div>
           )}
         </main>

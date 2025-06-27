@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { 
@@ -55,11 +55,9 @@ export default function OrderTrackingPage() {
   const [trackingHistory, setTrackingHistory] = useState<OrderStatus[]>([])
   const [refreshing, setRefreshing] = useState(false)
 
-  useEffect(() => {
-    fetchOrder()
-  }, [params.orderNumber])
-
-  const fetchOrder = async () => {
+  const fetchOrder = useCallback(async () => {
+    if (!params?.orderNumber) return
+    
     try {
       setLoading(true)
       const response = await fetch(`/api/orders/track/${params.orderNumber}`)
@@ -76,7 +74,11 @@ export default function OrderTrackingPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [params?.orderNumber])
+
+  useEffect(() => {
+    fetchOrder()
+  }, [fetchOrder])
 
   const refreshTracking = async () => {
     setRefreshing(true)
