@@ -32,6 +32,7 @@ model User {
   customers      Customer[]
   paymentMethods UserPaymentMethod[]
   userSettings   UserSetting[]
+  auditLogs      AuditLog[]
 }
 
 model Account {
@@ -166,6 +167,7 @@ model Order {
   steadfastInfo Json?          // Steadfast tracking information
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?      // For soft deletes
 
   items         OrderItem[]
 
@@ -343,6 +345,22 @@ model UserSetting {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, key])
+}
+
+model AuditLog {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  model       String   // e.g., "Order", "Customer"
+  recordId    String   // The ID of the record that was changed
+  userId      String   @db.ObjectId
+  user        User     @relation(fields: [userId], references: [id])
+  action      String   // e.g., "UPDATE_PAYMENT_STATUS", "EDIT_ADDRESS"
+  field       String?  // The specific field that was changed
+  oldValue    String?
+  newValue    String?
+  details     Json?    // For more complex change details
+  createdAt   DateTime @default(now())
+
+  @@map("audit_logs")
 }
 
 enum Role {

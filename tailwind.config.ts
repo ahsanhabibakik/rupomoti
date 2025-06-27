@@ -149,6 +149,21 @@ const config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Courier Colors
+        pathao: {
+          light: '#fce8e6', // A light, pale red
+          dark: '#e63946',  // The official Pathao red
+        },
+        redx: {
+          DEFAULT: '#d90429', // A strong, royal red
+        },
+        carrybee: {
+          DEFAULT: '#ffca3a', // A vibrant yellow
+          dark: '#c47d00',
+        },
+        'steadfast-green': {
+          DEFAULT: '#2a9d8f', // A calm, steady green
+        },
       },
       fontFamily: {
         sans: ['var(--font-inter)'],
