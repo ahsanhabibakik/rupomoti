@@ -47,8 +47,6 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           email: user.email,
           name: user.name,
-          role: user.role,
-          isAdmin: user.role === 'ADMIN',
         }
       },
     }),
@@ -59,18 +57,20 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = user.role
-        token.isAdmin = user.role === 'ADMIN'
+        // Fetch user from DB to get role if needed
+        const dbUser = await prisma.user.findUnique({ where: { email: user.email as string } });
+        token.role = dbUser?.role;
+        token.isAdmin = dbUser?.role === 'ADMIN';
       }
-      return token
+      return token;
     },
     async session({ session, token }) {
-      if (token) {
-        session.user.id = token.sub!
-        session.user.role = token.role as string
-        session.user.isAdmin = token.isAdmin as boolean
+      if (token && session.user) {
+        session.user.id = token.sub!;
+        (session.user as any).role = token.role as string;
+        (session.user as any).isAdmin = token.isAdmin as boolean;
       }
-      return session
+      return session;
     },
   },
   debug: process.env.NODE_ENV === "development",

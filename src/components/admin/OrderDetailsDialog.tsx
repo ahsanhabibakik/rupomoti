@@ -272,7 +272,7 @@ export function OrderDetailsDialog({ order }: OrderDetailsDialogProps) {
                         </div>
                       ) : auditLogs && auditLogs.length > 0 ? (
                         <div className="space-y-4 pr-4">
-                          {auditLogs.map((log) => (
+                          {auditLogs.map((log: Awaited<ReturnType<typeof getAuditLogs>>[0]) => (
                             <AuditLogItem key={log.id} log={log} />
                           ))}
                         </div>

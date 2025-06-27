@@ -246,7 +246,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
       showToast.success(`Order #${orderData.orderNumber} placed successfully! We'll contact you soon.`)
       setFormData({
         name: session?.user?.name || '',
-        phone: session?.user?.phone || '',
+        phone: '',
         email: session?.user?.email || '',
         city: '',
         zone: '',
