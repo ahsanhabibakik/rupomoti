@@ -372,11 +372,11 @@ enum Role {
 enum OrderStatus {
   PENDING
   PROCESSING
-  CONFIRMED
   SHIPPED
   DELIVERED
-  CANCELLED
+  CANCELED
   RETURNED
+  REFUNDED
 }
 
 enum PaymentStatus {
@@ -384,33 +384,29 @@ enum PaymentStatus {
   PAID
   FAILED
   REFUNDED
-  PARTIAL
 }
 
 enum PaymentMethod {
   CASH_ON_DELIVERY
-  BANK_TRANSFER
-  MOBILE_BANKING
-  CARD_PAYMENT
+  SSLCOMMERZ
+  BKASH
+  NAGAD
 }
 
 enum DeliveryZone {
   INSIDE_DHAKA
   OUTSIDE_DHAKA
-  PERIPHERAL_DHAKA
 }
 
 enum CouponType {
   PERCENTAGE
   FIXED_AMOUNT
-  FREE_SHIPPING
 }
 
 enum ProductStatus {
   ACTIVE
   INACTIVE
   ARCHIVED
-  TRASHED
 }
 
 type PathaoZone {

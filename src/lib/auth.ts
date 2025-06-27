@@ -58,26 +58,20 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async jwt({ token, user }) {
+      console.log("JWT callback - user:", user);
       if (user) { // On sign-in, `user` object is present
         token.id = user.id;
         token.role = user.role;
         token.isAdmin = user.isAdmin;
-      } else { // On subsequent requests, fetch user data from DB
-        if (token.email) {
-          const dbUser = await prisma.user.findUnique({ where: { email: token.email } });
-          if (dbUser) {
-            token.id = dbUser.id;
-            token.role = dbUser.role;
-          }
-        }
       }
+      console.log("JWT callback - token:", token);
       return token;
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.id;
-        session.user.role = token.role;
-        session.user.isAdmin = token.isAdmin;
+        session.user.id = token.id as string;
+        session.user.role = token.role as Role;
+        session.user.isAdmin = token.isAdmin as boolean;
       }
       return session;
     },
