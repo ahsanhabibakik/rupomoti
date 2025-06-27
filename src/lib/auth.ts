@@ -3,7 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { prisma } from "./prisma";
 import { compare } from "bcryptjs";
-import { User } from "@prisma/client";
+import { User, Role } from "@prisma/client";
 
 export const authOptions: NextAuthOptions = {
   providers: [
