@@ -124,14 +124,17 @@ async function main() {
       }
 
       // Create the product with the category relationship
+      const slug = productData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
       await prisma.product.upsert({
-        where: { name: product.name },
+        where: { slug },
         update: {
           ...productData,
           categoryId: category.id,
         },
         create: {
           ...productData,
+          slug,
+          sku: `${category.name.substring(0, 3).toUpperCase()}-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
           categoryId: category.id,
         },
       })

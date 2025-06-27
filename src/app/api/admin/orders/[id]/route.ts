@@ -8,7 +8,7 @@ const updateOrderSchema = z.object({
   courierName: z.enum(['steadfast', 'redx', 'pathao', 'carrybee']).optional(),
   recipientCity: z.string().optional(),
   recipientZone: z.string().optional(),
-  status: z.string().optional(),
+  status: z.enum(['PENDING', 'PROCESSING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'RETURNED']).optional(),
 });
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {

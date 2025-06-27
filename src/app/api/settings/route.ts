@@ -10,13 +10,13 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    let settings = await prisma.userSettings.findUnique({
+    let settings = await prisma.userSetting.findUnique({
       where: { userId: session.user.id }
     });
 
     // If no settings exist, create default settings
     if (!settings) {
-      settings = await prisma.userSettings.create({
+      settings = await prisma.userSetting.create({
         data: {
           userId: session.user.id,
           emailNotifications: {
@@ -54,13 +54,13 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { emailNotifications, smsNotifications, privacySettings } = body;
 
-    let settings = await prisma.userSettings.findUnique({
+    let settings = await prisma.userSetting.findUnique({
       where: { userId: session.user.id }
     });
 
     if (settings) {
       // Update existing settings
-      settings = await prisma.userSettings.update({
+      settings = await prisma.userSetting.update({
         where: { userId: session.user.id },
         data: {
           emailNotifications: emailNotifications || settings.emailNotifications,
@@ -70,7 +70,7 @@ export async function PUT(request: NextRequest) {
       });
     } else {
       // Create new settings
-      settings = await prisma.userSettings.create({
+      settings = await prisma.userSetting.create({
         data: {
           userId: session.user.id,
           emailNotifications: emailNotifications || {

@@ -178,7 +178,7 @@ export default function ProductsPage() {
     }).length;
   }, [filters]);
   
-  const handleSoftDelete = async (productId: string) => {
+  const handleSoftDelete = useCallback(async (productId: string) => {
     if (!confirm('Are you sure you want to move this product to the trash?')) return;
     showToast.promise(
         fetch(`/api/admin/products?id=${productId}`, { method: 'DELETE' })
@@ -189,9 +189,9 @@ export default function ProductsPage() {
         .then(() => fetchProducts()),
         { loading: 'Moving to trash...', success: 'Product moved to trash', error: (e) => e.message }
     );
-  };
+  }, [fetchProducts]);
 
-  const handleRestore = async (productId: string) => {
+  const handleRestore = useCallback(async (productId: string) => {
     if (!confirm('Are you sure you want to restore this product?')) return;
     showToast.promise(
         fetch(`/api/admin/products?id=${productId}&action=restore`, { method: 'PATCH' })
@@ -202,9 +202,9 @@ export default function ProductsPage() {
         .then(() => fetchProducts()),
         { loading: 'Restoring product...', success: 'Product restored', error: (e) => e.message }
     );
-  };
+  }, [fetchProducts]);
 
-  const handlePermanentDelete = async (productId: string) => {
+  const handlePermanentDelete = useCallback(async (productId: string) => {
     if (!confirm('This action is irreversible. Are you sure you want to permanently delete this product?')) return;
     showToast.promise(
         fetch(`/api/admin/products?id=${productId}&action=delete-permanent`, { method: 'PATCH' })
@@ -215,12 +215,12 @@ export default function ProductsPage() {
         .then(() => fetchProducts()),
         { loading: 'Deleting permanently...', success: 'Product deleted', error: (e) => e.message }
     );
-  };
+  }, [fetchProducts]);
 
-  const handleEdit = (product: Product) => {
+  const handleEdit = useCallback((product: Product) => {
     setEditingProduct(product);
     setIsDialogOpen(true);
-  };
+  }, []);
 
   const openAddDialog = () => {
     setEditingProduct(null);
