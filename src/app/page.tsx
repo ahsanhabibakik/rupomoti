@@ -11,6 +11,7 @@ import { GemIcon, Crown, Diamond, Sparkles, ArrowRight } from 'lucide-react'
 import Loading from './loading'
 import { AnimatedSection } from '@/components/ui/AnimatedSection'
 import CategorySection from '@/components/home/CategorySection'
+import { getCategories } from '@/actions/getCategories'
 
 export const metadata: Metadata = {
   title: 'Rupomoti - Elegant Pearl Jewelry Collection',
@@ -24,19 +25,6 @@ async function getProducts(filter: { [key: string]: boolean }) {
     orderBy: { createdAt: 'desc' },
     include: {
       category: true,
-    },
-  })
-}
-
-async function getCategories() {
-  return prisma.category.findMany({
-    where: {
-      isActive: true,
-      parentId: null,
-    },
-    take: 6,
-    orderBy: {
-      sortOrder: 'asc',
     },
   })
 }
@@ -58,7 +46,7 @@ export default async function HomePage() {
       take: 4,
       include: { category: true },
     }),
-    getCategories(),
+    getCategories({ active: true, level: 0 }),
   ])
 
   return (

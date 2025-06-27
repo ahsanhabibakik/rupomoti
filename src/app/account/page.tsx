@@ -282,40 +282,65 @@ export default function AccountPage() {
 
   const handleSaveAddress = async (e: any) => {
     e.preventDefault()
+    console.log('Saving address:', { editingAddress, addressForm })
+    
     try {
+      const method = editingAddress ? 'PUT' : 'POST'
+      const body = editingAddress 
+        ? { id: editingAddress.id, ...addressForm } 
+        : addressForm
+      
+      console.log('API request:', { method, body })
+      
       const res = await fetch('/api/addresses', {
-        method: editingAddress ? 'PUT' : 'POST',
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editingAddress ? { id: editingAddress.id, ...addressForm } : addressForm),
+        body: JSON.stringify(body),
       })
+      
+      const responseData = await res.json()
+      console.log('API response:', { status: res.status, data: responseData })
+      
       if (res.ok) {
-        const newAddress = await res.json()
         if (editingAddress) {
-          setAddresses(addresses.map(a => a.id === editingAddress.id ? newAddress : a))
+          setAddresses(addresses.map(a => a.id === editingAddress.id ? responseData : a))
         } else {
-          setAddresses([newAddress, ...addresses])
+          setAddresses([responseData, ...addresses])
         }
         setShowAddressModal(false)
         showToast.success(`Address ${editingAddress ? 'updated' : 'added'} successfully!`)
+      } else {
+        showToast.error(responseData.error || `Failed to ${editingAddress ? 'update' : 'add'} address`)
       }
     } catch (error) {
+      console.error('Error saving address:', error)
       showToast.error(`Failed to ${editingAddress ? 'update' : 'add'} address`)
     }
   }
 
   const handleDeleteAddress = async (addressId: string) => {
     if (!confirm('Are you sure you want to delete this address?')) return
+    
+    console.log('Deleting address:', addressId)
+    
     try {
       const res = await fetch('/api/addresses', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: addressId }),
       })
+      
+      const responseData = await res.json()
+      console.log('Delete response:', { status: res.status, data: responseData })
+      
       if (res.ok) {
         setAddresses(addresses.filter(a => a.id !== addressId))
         showToast.success('Address deleted successfully!')
+      } else {
+        showToast.error(responseData.error || 'Failed to delete address')
       }
     } catch (error) {
+      console.error('Error deleting address:', error)
       showToast.error('Failed to delete address')
     }
   }
@@ -897,7 +922,7 @@ export default function AccountPage() {
                                   onClick={() => handleDeleteReview(review.id)}
                                   className="text-red-600 hover:text-red-700"
                                 >
-                                  <Trash2 className="h-4 w-4" />
+z                                  <Trash2 className="h-4 w-4" />
                                 </button>
                               </div>
                             </div>
@@ -925,6 +950,16 @@ export default function AccountPage() {
                       Try Again
                     </button>
                   </div>
+                ) : !session ? (
+                  <div className="text-center py-12 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <div className="text-yellow-800 mb-4">Please sign in to manage your addresses</div>
+                    <button 
+                      onClick={() => router.push('/signin')}
+                      className="px-6 py-3 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700"
+                    >
+                      Sign In
+                    </button>
+                  </div>
                 ) : (
                   <div>
                     <div className="flex justify-between items-center mb-6">
@@ -939,6 +974,14 @@ export default function AccountPage() {
                         Add New Address
                       </button>
                     </div>
+                    
+                    {/* Debug Info */}
+                    {process.env.NODE_ENV === 'development' && (
+                      <div className="mb-4 p-3 bg-gray-100 rounded-lg text-sm">
+                        <p>Debug: Session user ID: {session?.user?.id || 'No session'}</p>
+                        <p>Debug: Addresses count: {addresses.length}</p>
+                      </div>
+                    )}
                     
                     {addresses.length === 0 ? (
                       <div className="text-center py-12 bg-gray-50 rounded-lg">
@@ -1530,4 +1573,4 @@ export default function AccountPage() {
       />
     </div>
   )
-} 
+}
