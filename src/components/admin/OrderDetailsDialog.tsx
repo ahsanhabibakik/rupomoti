@@ -428,7 +428,7 @@ function AuditLogItem({ log }: AuditLogItemProps) {
           ) : (
             <Fragment>
               {' added a note: '}
-              <em className="text-gray-600">"{log.newValue}"</em>
+              <em className="text-gray-600">&ldquo;{log.newValue}&rdquo;</em>
             </Fragment>
           )}
         </div>
