@@ -66,7 +66,7 @@ export function OrderFilters() {
     }
     
     router.replace(`${pathname}?${params.toString()}`);
-  }, [debouncedSearchTerm, status, dateRange, pathname, router]);
+  }, [debouncedSearchTerm, status, dateRange, pathname, router, searchParams]);
 
   return (
     <div className="flex flex-col md:flex-row items-center gap-4">
