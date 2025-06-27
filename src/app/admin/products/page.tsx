@@ -139,7 +139,7 @@ export default function ProductsPage() {
 
   useEffect(() => {
     fetchProducts(true);
-  }, []);
+  }, [fetchProducts]);
 
   useEffect(() => {
     if (!isLoading) {
@@ -353,7 +353,7 @@ export default function ProductsPage() {
                 </div>
               </TableCell>
             </TableRow>
-    )), [products, activeTab]);
+    )), [products, activeTab, handleEdit, handleSoftDelete, handleRestore, handlePermanentDelete]);
   
   if (error) return <div className="text-red-500 text-center p-4">Error: {error}. Please try refreshing the page.</div>;
 
