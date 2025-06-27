@@ -56,6 +56,27 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/admin/login",
   },
+  callbacks: {
+    async jwt({ token, user }) {
+      console.log('JWT callback - token:', token, 'user:', user)
+      if (user) {
+        token.role = user.role
+        token.isAdmin = user.role === 'ADMIN'
+        console.log('Setting token role:', token.role, 'isAdmin:', token.isAdmin)
+      }
+      return token
+    },
+    async session({ session, token }) {
+      console.log('Session callback - session:', session, 'token:', token)
+      if (token) {
+        session.user.id = token.sub!
+        session.user.role = token.role as string
+        session.user.isAdmin = token.isAdmin as boolean
+        console.log('Setting session role:', session.user.role, 'isAdmin:', session.user.isAdmin)
+      }
+      return session
+    },
+  },
   debug: process.env.NODE_ENV === "development",
   session: {
     strategy: "jwt",
