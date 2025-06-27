@@ -58,13 +58,11 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async jwt({ token, user }) {
-      console.log("JWT callback - user:", user);
       if (user) { // On sign-in, `user` object is present
         token.id = user.id;
         token.role = user.role;
         token.isAdmin = user.isAdmin;
       }
-      console.log("JWT callback - token:", token);
       return token;
     },
     async session({ session, token }) {
