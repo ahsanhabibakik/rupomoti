@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { debounce } from 'lodash';
 
 type Order = {
@@ -43,7 +43,7 @@ export function useCustomers(searchTerm: string) {
     }
   }, []);
 
-  const debouncedFetchCustomers = useCallback(
+  const debouncedFetchCustomers = useMemo(() => 
     debounce(fetchCustomers, 300),
     [fetchCustomers]
   );

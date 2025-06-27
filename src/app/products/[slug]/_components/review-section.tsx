@@ -34,9 +34,12 @@ export function ReviewSection({ productId, productSlug, initialReviews = [] }: R
       comment: formData.get('comment') as string,
       rating: parseInt(formData.get('rating') as string, 10),
       createdAt: new Date(),
+      updatedAt: new Date(),
+      userId: session.user.id || '',
+      productId: productId,
       user: {
-        name: session.user.name,
-        image: session.user.image,
+        name: session.user.name || null,
+        image: session.user.image || null,
       },
     }
 
@@ -90,11 +93,18 @@ export function ReviewSection({ productId, productSlug, initialReviews = [] }: R
   )
 }
 
-function ReviewForm({ productId, productSlug, onSubmit, isPending }) {
+interface ReviewFormProps {
+  productId: string
+  productSlug: string
+  onSubmit: (formData: FormData) => void
+  isPending: boolean
+}
+
+function ReviewForm({ productId, productSlug, onSubmit, isPending }: ReviewFormProps) {
   const [rating, setRating] = useState(5)
   const [comment, setComment] = useState('')
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     formData.set('rating', rating.toString());

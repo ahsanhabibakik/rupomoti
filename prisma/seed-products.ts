@@ -136,6 +136,8 @@ async function main() {
       await prisma.product.create({
         data: {
           ...productData,
+          slug: productData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+          sku: `${category.name.substring(0, 3).toUpperCase()}-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
           category: {
             connect: { id: category.id }
           }

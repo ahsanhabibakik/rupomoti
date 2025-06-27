@@ -4,8 +4,7 @@ import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import CredentialsProvider from "next-auth/providers/credentials"
 import GoogleProvider from "next-auth/providers/google"
-import NextAuth from "next-auth/next"
-import { authConfig } from "./auth-config"
+import NextAuth from "next-auth"
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -44,7 +43,13 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid credentials")
         }
 
-        return user
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          isAdmin: user.role === 'ADMIN',
+        }
       },
     }),
   ],
@@ -58,6 +63,6 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 }
 
-const handler = NextAuth(authConfig)
+const handler = NextAuth(authOptions)
 
 export { handler as GET, handler as POST } 

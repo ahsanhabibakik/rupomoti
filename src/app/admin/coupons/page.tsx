@@ -17,22 +17,29 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from '@/components/ui/badge'
 
+import { type Coupon } from '@prisma/client'
+
+type CouponTableRow = {
+  original: Coupon
+  getValue: (key: string) => any
+}
+
 export default function CouponsPage() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const { coupons, isLoading, error, mutate } = useCoupons(searchParams.toString())
+  const { coupons, isLoading, error, mutate } = useCoupons(searchParams?.toString() || '')
 
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedCoupon, setSelectedCoupon] = useState<any>(null)
   
-  const searchTerm = searchParams.get('q') || ''
+  const searchTerm = searchParams?.get('q') || ''
   const [localSearch, setLocalSearch] = useState(searchTerm)
   const debouncedSearch = useDebounce(localSearch, 500)
 
   const createQueryString = useCallback(
     (paramsToUpdate: Record<string, string | null>) => {
-      const params = new URLSearchParams(searchParams.toString())
+      const params = new URLSearchParams(searchParams?.toString() || '')
       Object.entries(paramsToUpdate).forEach(([key, value]) => {
         if (value === null) {
           params.delete(key)
@@ -60,15 +67,15 @@ export default function CouponsPage() {
     mutate() // Re-fetch coupons
   }
   
-  const status = searchParams.get('status') || 'ACTIVE';
-  const type = searchParams.get('type') || 'all';
+  const status = searchParams?.get('status') || 'ACTIVE';
+  const type = searchParams?.get('type') || 'all';
 
   const columns = useMemo(() => [
     { accessorKey: 'code', header: 'Code' },
   {
     accessorKey: 'type',
     header: 'Type',
-    cell: ({ row }) => {
+    cell: ({ row }: { row: CouponTableRow }) => {
         const type = row.getValue('type');
         return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
       }
@@ -76,7 +83,7 @@ export default function CouponsPage() {
   {
     accessorKey: 'value',
     header: 'Value',
-    cell: ({ row }) => {
+    cell: ({ row }: { row: CouponTableRow }) => {
         const type = row.original.type;
         const value = row.getValue('value');
         return type === 'percentage' ? `${value}%` : `৳${value}`;

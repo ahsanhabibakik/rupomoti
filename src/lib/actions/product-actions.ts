@@ -7,7 +7,6 @@ export async function getProduct(slug: string) {
     where: { slug },
     include: {
       category: true,
-      images: true,
       reviews: {
         select: {
           rating: true,
@@ -41,7 +40,7 @@ export async function getRelatedProducts(productId: string, categoryId: string |
       },
     },
     include: {
-      images: true,
+      category: true,
     },
     take: 4,
   })

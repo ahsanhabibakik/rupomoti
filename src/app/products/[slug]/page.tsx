@@ -91,7 +91,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         </div>
 
         <div className="mt-16">
-          <ReviewSection productId={product.id} initialReviews={reviews} />
+          <ReviewSection productId={product.id} productSlug={product.slug} initialReviews={reviews} />
         </div>
 
         {relatedProducts.length > 0 && (
@@ -99,7 +99,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <h2 className="text-2xl font-bold text-center mb-8">Related Products</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {relatedProducts.map(p => (
-                <ProductCard key={p.id} product={p} />
+                <ProductCard key={p.id} product={{...p, category: p.category || { name: '', slug: '' }}} />
               ))}
             </div>
           </div>
