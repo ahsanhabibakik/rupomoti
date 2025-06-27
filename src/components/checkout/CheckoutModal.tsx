@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Package, CreditCard, Banknote, MapPin, User, Phone, MapPinIcon, MessageSquare, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -21,7 +21,7 @@ import Image from 'next/image'
 import { useAppSelector, useAppDispatch } from '@/redux/hooks'
 import { selectCartItems, clearCart } from '@/redux/slices/cartSlice'
 import { showToast } from '@/lib/toast'
-// import { useSession } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
 
 interface CheckoutModalProps {
   open: boolean
@@ -112,15 +112,17 @@ interface FormErrors {
   zone?: string
   area?: string
   address?: string
+  note?: string
 }
 
 export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   const dispatch = useAppDispatch()
-  // const { data: session } = useSession()
-  const session: any = null // Temporary - will implement session later
+  const { data: session } = useSession()
   const items = useAppSelector(selectCartItems)
   const [deliveryZone, setDeliveryZone] = useState<DeliveryZoneKey>('INSIDE_DHAKA')
   const [paymentMethod, setPaymentMethod] = useState('CASH_ON_DELIVERY')
+  const [addresses, setAddresses] = useState<any[]>([])
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('')
   const [formData, setFormData] = useState<FormData>({
     name: session?.user?.name || '',
     phone: '',
@@ -133,6 +135,47 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   })
   const [errors, setErrors] = useState<FormErrors>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Load user's saved addresses
+  useEffect(() => {
+    if (session?.user && open) {
+      fetch('/api/addresses')
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            setAddresses(data)
+            // Auto-select default address if available
+            const defaultAddress = data.find(addr => addr.isDefault)
+            if (defaultAddress) {
+              setSelectedAddressId(defaultAddress.id)
+              setFormData(prev => ({
+                ...prev,
+                name: defaultAddress.name,
+                phone: defaultAddress.phone,
+                city: defaultAddress.city,
+                address: `${defaultAddress.street}, ${defaultAddress.city}, ${defaultAddress.state} ${defaultAddress.postalCode}`,
+              }))
+            }
+          }
+        })
+        .catch(err => console.error('Failed to load addresses:', err))
+    }
+  }, [session, open])
+
+  // Handle address selection
+  const handleAddressSelect = (addressId: string) => {
+    setSelectedAddressId(addressId)
+    const address = addresses.find(addr => addr.id === addressId)
+    if (address) {
+      setFormData(prev => ({
+        ...prev,
+        name: address.name,
+        phone: address.phone,
+        city: address.city,
+        address: `${address.street}, ${address.city}, ${address.state} ${address.postalCode}`,
+      }))
+    }
+  }
 
   const subtotal = items.reduce((total, item) => total + item.price * item.quantity, 0)
   const deliveryFee = DELIVERY_ZONES[deliveryZone].fee
@@ -381,6 +424,35 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                         <User className="h-5 w-5 text-pearl-600" />
                         Customer Information
                       </h3>
+                      
+                      {/* Saved Addresses Selection */}
+                      {session?.user && addresses.length > 0 && (
+                        <div className="mb-4">
+                          <Label className="text-sm font-medium mb-2 block">Use Saved Address</Label>
+                          <Select
+                            value={selectedAddressId}
+                            onValueChange={handleAddressSelect}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select a saved address" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">Enter address manually</SelectItem>
+                              {addresses.map((address) => (
+                                <SelectItem key={address.id} value={address.id}>
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">{address.name}</span>
+                                    <span className="text-sm text-gray-600">
+                                      {address.street}, {address.city}, {address.state} {address.postalCode}
+                                    </span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                      
                       <div className="space-y-4">
                         <div>
                           <Label htmlFor="name" className="flex items-center text-sm font-medium text-gray-700">
@@ -501,4 +573,4 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
       )}
     </AnimatePresence>
   )
-} 
+}
