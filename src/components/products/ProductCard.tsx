@@ -77,7 +77,7 @@ export function ProductCard({ product }: ProductCardProps) {
       className="product-card-enhanced bg-base border border-accent-light rounded-xl shadow-premium transition-premium flex flex-col overflow-hidden"
     >
       {/* Image Container */}
-      <Link href={`/product/${id}`} className="block relative aspect-square w-full overflow-hidden">
+      <Link href={`/product/${product.slug || id}`} className="block relative aspect-square w-full overflow-hidden">
         <Image
           src={images[0] || '/placeholder.png'}
           alt={name || 'Unnamed Product'}
