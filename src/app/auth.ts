@@ -1,11 +1,11 @@
 import { PrismaAdapter } from "@auth/prisma-adapter"
-import { NextAuthOptions } from "next-auth"
+import NextAuth from "next-auth"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
-import CredentialsProvider from "next-auth/providers/credentials"
-import GoogleProvider from "next-auth/providers/google"
+import Credentials from "next-auth/providers/credentials"
+import Google from "next-auth/providers/google"
 
-export const authOptions: NextAuthOptions = {
+export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   secret: process.env.NEXTAUTH_SECRET,
   session: {
@@ -15,11 +15,11 @@ export const authOptions: NextAuthOptions = {
     signIn: '/signin',
   },
   providers: [
-    GoogleProvider({
+    Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
-    CredentialsProvider({
+    Credentials({
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
@@ -56,11 +56,12 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async session({ token, session }) {
       if (token) {
-        session.user.id = token.id
-        session.user.name = token.name
-        session.user.email = token.email
-        session.user.image = token.picture
-        session.user.role = token.role
+        session.user.id = token.id as string
+        session.user.name = token.name as string
+        session.user.email = token.email as string
+        session.user.image = token.picture as string
+        session.user.role = token.role as string
+        session.user.isAdmin = token.isAdmin as boolean
       }
 
       return session
@@ -74,7 +75,7 @@ export const authOptions: NextAuthOptions = {
 
       if (!dbUser) {
         if (user) {
-          token.id = user?.id
+          token.id = user.id
         }
         return token
       }
@@ -85,7 +86,8 @@ export const authOptions: NextAuthOptions = {
         email: dbUser.email,
         picture: dbUser.image,
         role: dbUser.role,
+        isAdmin: dbUser.role === 'ADMIN' || dbUser.role === 'SUPER_ADMIN',
       }
     },
   },
-}
+})

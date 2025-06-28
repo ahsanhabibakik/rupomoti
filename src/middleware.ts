@@ -1,31 +1,38 @@
 import { NextResponse } from 'next/server'
-import { withAuth } from 'next-auth/middleware'
+import { auth } from '@/app/auth'
 
-export default withAuth({
-  callbacks: {
-    authorized: ({ token, req }) => {
-      // Check if user is trying to access admin routes
-      if (req.nextUrl.pathname.startsWith('/admin')) {
-        // Allow access to admin login page
-        if (req.nextUrl.pathname === '/admin/login') {
-          return true
-        }
-        
-        // For other admin routes, check if user is admin
-        const userRole = token?.role as string
-        const isAdmin = token?.isAdmin as boolean
-        
-        // Allow access for SUPER_ADMIN, ADMIN, MANAGER roles, or if isAdmin is true
-        return isAdmin || userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' || userRole === 'MANAGER'
-      }
-      
-      // For non-admin routes, allow access
-      return true
+export default auth((req) => {
+  const { nextUrl } = req
+  const isLoggedIn = !!req.auth
+  
+  // Check if user is trying to access admin routes
+  if (nextUrl.pathname.startsWith('/admin')) {
+    // Allow access to admin login page
+    if (nextUrl.pathname === '/admin/login') {
+      return NextResponse.next()
     }
-  },
-  pages: {
-    signIn: '/admin/login'
+    
+    // For other admin routes, check if user is logged in and is admin
+    if (!isLoggedIn) {
+      const loginUrl = new URL('/admin/login', nextUrl.origin)
+      return NextResponse.redirect(loginUrl)
+    }
+    
+    const user = req.auth?.user
+    const userRole = user?.role as string
+    const isAdmin = user?.isAdmin as boolean
+    
+    // Allow access for SUPER_ADMIN, ADMIN, MANAGER roles, or if isAdmin is true
+    const hasAdminAccess = isAdmin || userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' || userRole === 'MANAGER'
+    
+    if (!hasAdminAccess) {
+      const loginUrl = new URL('/admin/login', nextUrl.origin)
+      return NextResponse.redirect(loginUrl)
+    }
   }
+  
+  // For non-admin routes, allow access
+  return NextResponse.next()
 })
 
 export const config = {
