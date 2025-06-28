@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from 'next-auth';
 import { z } from 'zod';
-import { authOptions } from '@/app/auth';
+import { auth } from '@/app/auth';
 import { prisma } from "@/lib/prisma";
 import { Prisma, PaymentStatus, OrderStatus } from '@prisma/client';
 

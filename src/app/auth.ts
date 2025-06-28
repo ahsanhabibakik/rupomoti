@@ -32,17 +32,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const user = await prisma.user.findUnique({
           where: {
-            email: credentials.email,
+            email: credentials.email as string,
           },
         })
 
-        if (!user || !user?.hashedPassword) {
+        if (!user || !user.password) {
           throw new Error("Invalid credentials")
         }
 
         const isCorrectPassword = await bcrypt.compare(
-          credentials.password,
-          user.hashedPassword
+          credentials.password as string,
+          user.password
         )
 
         if (!isCorrectPassword) {
@@ -55,40 +55,37 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     async session({ token, session }) {
-      if (token) {
+      if (token && session.user) {
         session.user.id = token.id as string
-        session.user.name = token.name
-        session.user.email = token.email
-        session.user.image = token.picture
+        session.user.name = token.name ?? null
+        session.user.email = token.email as string
+        session.user.image = token.picture ?? null
         session.user.role = token.role as string
         session.user.isAdmin = token.isAdmin as boolean
       }
-
       return session
     },
     async jwt({ token, user }) {
       if (user) {
-        // User is present on sign-in, so fetch data from the database
-        const dbUser = await prisma.user.findFirst({
-          where: {
-            email: user.email,
-          },
+        token.id = user.id
+        token.name = user.name
+        token.email = user.email
+        token.picture = user.image
+        const dbUser = await prisma.user.findUnique({
+          where: { email: user.email! },
         })
 
+        // If the user is found in the database, populate the token
         if (dbUser) {
-          // Return a new token with all the necessary user information
-          return {
-            id: dbUser.id,
-            name: dbUser.name,
-            email: dbUser.email,
-            picture: dbUser.image,
-            role: dbUser.role,
-            isAdmin: dbUser.role === 'ADMIN' || dbUser.role === 'SUPER_ADMIN',
-          }
+          token.id = dbUser.id
+          token.name = dbUser.name
+          token.email = dbUser.email
+          token.picture = dbUser.image
+          token.role = dbUser.role
+          token.isAdmin =
+            dbUser.role === 'ADMIN' || dbUser.role === 'SUPER_ADMIN'
         }
       }
-
-      // On subsequent calls, return the existing token without a database call
       return token
     },
   },

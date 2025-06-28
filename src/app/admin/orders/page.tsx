@@ -1,4 +1,8 @@
+'use client';
+
 import { Suspense } from 'react';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Table,
   TableBody,
@@ -19,7 +23,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { CourierBadge } from '@/components/ui/CourierBadge';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Edit, Eye, Package, Truck } from 'lucide-react';
+import { Edit, Eye, Package, RefreshCw, Truck } from 'lucide-react';
 import { OrderTableSkeleton } from '@/components/admin/OrderTableSkeleton';
 
 type OrderWithDetails = Prisma.OrderGetPayload<{
@@ -37,35 +41,48 @@ function isNew(date: string | Date) {
   return differenceInHours(new Date(), new Date(date)) < 24;
 }
 
-async function OrdersList({
-  searchParams,
-}: {
-  searchParams: { [key: string]: string | string[] | undefined };
-}) {
-  const search = typeof searchParams.search === 'string' ? searchParams.search : undefined;
-  const status = searchParams.status as OrderStatus | 'all' || 'all';
-  const from = typeof searchParams.from === 'string' ? searchParams.from : undefined;
-  const to = typeof searchParams.to === 'string' ? searchParams.to : undefined;
-  const page = typeof searchParams.page === 'string' ? Number(searchParams.page) : 1;
-  const limit = typeof searchParams.limit === 'string' ? Number(searchParams.limit) : 10;
+function OrdersList() {
+  const searchParams = useSearchParams();
+  const search = searchParams.get('search');
+  const status = searchParams.get('status') ?? 'all';
+  const from = searchParams.get('from');
+  const to = searchParams.get('to');
+  const page = Number(searchParams.get('page') ?? 1);
+  const limit = Number(searchParams.get('limit') ?? 10);
 
-  const { orders, totalOrders, totalPages, error } = await getOrders({
-    search,
-    status,
-    startDate: from,
-    endDate: to,
-    page,
-    limit,
+  const { data, error, isLoading } = useQuery({
+    queryKey: ['orders', { search, status, from, to, page, limit }],
+    queryFn: async () => {
+      const query = new URLSearchParams({
+        search: search ?? '',
+        status,
+        from: from ?? '',
+        to: to ?? '',
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+      const response = await fetch(`/api/admin/orders?${query.toString()}`);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    },
   });
+
+  if (isLoading) {
+    return <OrderTableSkeleton />;
+  }
 
   if (error) {
     return (
       <div className="text-red-500 text-center py-10">
         <p>Failed to load orders.</p>
-        <p className="text-sm text-muted-foreground">{error}</p>
+        <p className="text-sm text-muted-foreground">{error.message}</p>
       </div>
     );
   }
+
+  const { orders, totalOrders, totalPages } = data ?? { orders: [], totalOrders: 0, totalPages: 0 };
 
   return (
     <div className="space-y-4">
@@ -158,20 +175,57 @@ async function OrdersList({
   );
 }
 
-export default function OrdersPage({
-  searchParams,
-}: {
-  searchParams: { [key: string]: string | string[] | undefined };
-}) {
+export default function OrdersPage() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['orders'] });
+  };
+
   return (
     <div className="p-4 md:p-6 space-y-6">
       <div className="flex flex-col md:flex-row items-center justify-between gap-4">
         <h1 className="text-2xl font-bold">Orders</h1>
-        <OrderFilters />
+        <div className="flex items-center gap-2">
+          <OrderFilters />
+          <Button variant="outline" size="icon" onClick={handleRefresh}>
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
-      <Suspense fallback={<OrderTableSkeleton />}>
-        <OrdersList searchParams={searchParams} />
-      </Suspense>
+      <OrdersList />
     </div>
   );
+}
+
+function OrdersListWrapper() {
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  // You might need to reconstruct the searchParams object to pass to OrdersList
+  // This is a simplified example.
+  const params = {
+    search: searchParams.get('search'),
+    status: searchParams.get('status'),
+    from: searchParams.get('from'),
+    to: searchParams.get('to'),
+    page: searchParams.get('page'),
+    limit: searchParams.get('limit'),
+  };
+
+  // The actual OrdersList component needs to be created or adapted
+  // to be a server component or to receive props in a way that works with Suspense.
+  // For now, let's assume we can refactor it slightly.
+  // This part is complex because we are calling an async component from a client component.
+  // The best approach is often to have a separate component that fetches the data.
+
+  // Let's keep the existing structure for now and pass searchParams.
+  // But this will require making OrdersList a client component as well,
+  // or fetching data inside it using a hook.
+  
+  // The 'searchParams' prop needs to be handled correctly.
+  // Let's create a simplified `params` object for now.
+  const queryParams = Object.fromEntries(searchParams.entries());
+
+  return <OrdersList />;
 } 

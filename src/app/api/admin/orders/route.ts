@@ -1,67 +1,45 @@
-import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { prisma } from '@/lib/prisma';
-import { steadfast } from '@/lib/steadfast';
-import { authOptions } from '@/app/auth';
-import { Prisma } from '@prisma/client';
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/app/auth";
+import { prisma } from "@/lib/prisma";
+import { OrderStatus, Prisma } from "@prisma/client";
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id || (session.user.role !== 'ADMIN' && session.user.role !== 'MANAGER')) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
-    const session = await auth();
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Check if user is admin
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
-    if (!user?.isAdmin && user?.role !== 'MANAGER') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const pageSize = parseInt(searchParams.get('pageSize') || '10');
-    const status = searchParams.get('status');
-    const startDate = searchParams.get('startDate');
-    const endDate = searchParams.get('endDate');
-    const search = searchParams.get('search');
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "10", 10);
+    const search = searchParams.get("search") || "";
+    const status = (searchParams.get("status") as OrderStatus) || "all";
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
 
-    const filters: Prisma.OrderWhereInput[] = [
-      { deletedAt: null }
-    ];
-
-    if (status && status !== 'all') {
-      filters.push({ status: status as Prisma.OrderStatus });
-    }
-
-    if (startDate) {
-      filters.push({ createdAt: { gte: new Date(startDate) } });
-    }
-
-    if (endDate) {
-      filters.push({ createdAt: { lte: new Date(endDate) } });
-    }
+    const where: Prisma.OrderWhereInput = {};
 
     if (search) {
-      filters.push({
-        OR: [
-          { orderNumber: { contains: search, mode: 'insensitive' } },
-          { recipientName: { contains: search, mode: 'insensitive' } },
-          { recipientPhone: { contains: search, mode: 'insensitive' } },
-          { customer: { name: { contains: search, mode: 'insensitive' } } },
-          { customer: { phone: { contains: search, mode: 'insensitive' } } },
-          { items: { some: { product: { name: { contains: search, mode: 'insensitive' } } } } },
-        ],
-      });
+      where.OR = [
+        { orderNumber: { contains: search, mode: "insensitive" } },
+        { customer: { name: { contains: search, mode: "insensitive" } } },
+        { items: { some: { product: { name: { contains: search, mode: "insensitive" } } } } },
+      ];
     }
 
-    const where: Prisma.OrderWhereInput = {
-      AND: filters,
-    };
+    if (status && status !== "all") {
+      where.status = status;
+    }
 
-    const [orders, totalOrders] = await Promise.all([
+    if (startDate && endDate) {
+      where.createdAt = {
+        gte: new Date(startDate),
+        lte: new Date(endDate),
+      };
+    }
+
+    const [orders, totalOrders] = await prisma.$transaction([
       prisma.order.findMany({
         where,
         include: {
@@ -72,24 +50,24 @@ export async function GET(request: Request) {
             },
           },
         },
-        orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
       }),
       prisma.order.count({ where }),
     ]);
 
+    const totalPages = Math.ceil(totalOrders / limit);
+
     return NextResponse.json({
-      orders: orders,
-      totalCount: totalOrders,
-      totalPages: Math.ceil(totalOrders / pageSize),
+      orders,
+      totalOrders,
+      totalPages,
+      currentPage: page,
     });
   } catch (error) {
-    console.error('Error fetching orders:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch orders' },
-      { status: 500 }
-    );
+    console.error("[GET_ORDERS_API]", error);
+    return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 });
   }
 }
 
