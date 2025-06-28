@@ -28,11 +28,11 @@ export function OrderFilters() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
-  const [status, setStatus] = useState(searchParams.get('status') || 'all');
+  const [searchTerm, setSearchTerm] = useState(searchParams?.get('search') || '');
+  const [status, setStatus] = useState(searchParams?.get('status') || 'all');
   const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
-    const from = searchParams.get('from');
-    const to = searchParams.get('to');
+    const from = searchParams?.get('from');
+    const to = searchParams?.get('to');
     if (from && to) {
       return { from: parseISO(from), to: parseISO(to) };
     }
@@ -42,7 +42,7 @@ export function OrderFilters() {
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   useEffect(() => {
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams?.toString() || '');
     params.set('page', '1');
 
     if (debouncedSearchTerm) {
@@ -69,7 +69,7 @@ export function OrderFilters() {
   }, [debouncedSearchTerm, status, dateRange, pathname, router, searchParams]);
 
   return (
-    <div className="flex flex-col md:flex-row items-center gap-4">
+    <div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:items-center md:gap-4">
       <div className="relative w-full md:w-auto md:min-w-[300px]">
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
@@ -79,9 +79,9 @@ export function OrderFilters() {
           className="pl-8"
         />
       </div>
-      <div className="flex w-full md:w-auto items-center gap-4">
+      <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2 w-full md:w-auto md:items-center md:gap-2">
          <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="w-full md:w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
@@ -93,10 +93,12 @@ export function OrderFilters() {
         </Select>
         <Popover>
             <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full md:w-[280px] justify-start text-left font-normal">
+                <Button variant="outline" className="w-full sm:w-[280px] justify-start text-left font-normal">
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {dateRange?.from && dateRange?.to ? (
-                        `${format(dateRange.from, 'LLL dd, y')} - ${format(dateRange.to, 'LLL dd, y')}`
+                        <span className="truncate">
+                          {format(dateRange.from, 'MMM dd')} - {format(dateRange.to, 'MMM dd, y')}
+                        </span>
                     ) : (
                         <span>Pick a date range</span>
                     )}
@@ -109,7 +111,17 @@ export function OrderFilters() {
                     defaultMonth={dateRange?.from}
                     selected={dateRange}
                     onSelect={setDateRange}
+                    numberOfMonths={1}
+                    className="md:hidden"
+                />
+                <Calendar
+                    initialFocus
+                    mode="range"
+                    defaultMonth={dateRange?.from}
+                    selected={dateRange}
+                    onSelect={setDateRange}
                     numberOfMonths={2}
+                    className="hidden md:block"
                 />
             </PopoverContent>
         </Popover>

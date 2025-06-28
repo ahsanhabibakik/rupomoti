@@ -97,6 +97,11 @@ export async function GET(req: Request) {
       where,
       include: {
         customer: true,
+        user: {
+          select: {
+            isFlagged: true
+          }
+        },
         items: {
           include: {
             product: true,

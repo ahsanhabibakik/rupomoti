@@ -13,6 +13,8 @@ const patchBodySchema = z.object({
   courierName: z.string().optional().nullable(),
   trackingId: z.string().optional().nullable(),
   note: z.string().optional(),
+  restore: z.boolean().optional(),
+  markAsFake: z.boolean().optional(),
 });
 
 export async function PATCH(
@@ -26,6 +28,12 @@ export async function PATCH(
 
   try {
     const body = await request.json();
+    const validation = patchBodySchema.safeParse(body);
+
+    if (!validation.success) {
+      return NextResponse.json({ error: 'Invalid input', issues: validation.error.issues }, { status: 400 });
+    }
+
     const order = await prisma.order.findUnique({
         where: { id: params.orderId },
         include: { user: true }
@@ -35,9 +43,11 @@ export async function PATCH(
         return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    // Handle different actions
-    if (body.restore) {
-      // Restore order from trash
+    const updates = validation.data;
+    const { note, restore, markAsFake, ...updateData } = updates;
+
+    // Handle special actions
+    if (restore) {
       await prisma.order.update({
           where: { id: params.orderId },
           data: { deletedAt: null },
@@ -45,34 +55,106 @@ export async function PATCH(
       return NextResponse.json({ success: true, message: 'Order restored successfully.' });
     }
 
-    if (body.markAsFake !== undefined) {
-      // Mark order as fake and optionally flag the user
-      const updateData: any = { isFakeOrder: body.markAsFake };
-      
-      await prisma.order.update({
+    if (markAsFake !== undefined) {
+      const updatedOrder = await prisma.$transaction(async (tx) => {
+        // Update order
+        const order = await tx.order.update({
           where: { id: params.orderId },
-          data: updateData,
+          data: { isFakeOrder: markAsFake },
+        });
+
+        // If marking as fake and user exists, flag the user
+        if (markAsFake && order.userId) {
+          await tx.user.update({
+            where: { id: order.userId },
+            data: { isFlagged: true }
+          });
+        }
+
+        // Create audit log
+        if (session.user.id) {
+          await tx.auditLog.create({
+            data: {
+              model: 'Order',
+              recordId: params.orderId,
+              userId: session.user.id,
+              action: 'UPDATE',
+              field: 'isFakeOrder',
+              oldValue: String(order.isFakeOrder),
+              newValue: String(markAsFake),
+            }
+          });
+        }
+
+        return order;
       });
 
-      // If marking as fake and user exists, flag the user
-      if (body.markAsFake && order.userId) {
-        await prisma.user.update({
-          where: { id: order.userId },
-          data: { isFlagged: true }
+      const message = markAsFake ? 'Order marked as fake and user flagged.' : 'Order unmarked as fake.';
+      return NextResponse.json(updatedOrder);
+    }
+
+    // Handle regular order updates
+    const updatedOrder = await prisma.$transaction(async (tx) => {
+      const originalOrder = await tx.order.findUnique({
+        where: { id: params.orderId },
+      });
+
+      if (!originalOrder) {
+        throw new Error("Order not found");
+      }
+
+      const auditLogs: Prisma.AuditLogCreateManyInput[] = [];
+      const userId = session.user.id;
+
+      // Create audit logs for changes
+      for (const key in updateData) {
+        const typedKey = key as keyof typeof updateData;
+        const oldValue = originalOrder[typedKey];
+        const newValue = updateData[typedKey];
+        if (oldValue !== newValue && userId) {
+          auditLogs.push({
+            model: 'Order',
+            recordId: params.orderId,
+            userId,
+            action: 'UPDATE',
+            field: key,
+            oldValue: String(oldValue ?? ''),
+            newValue: String(newValue ?? ''),
+          });
+        }
+      }
+      
+      if (note && userId) {
+        auditLogs.push({
+            model: 'Order',
+            recordId: params.orderId,
+            userId,
+            action: 'NOTE',
+            field: 'note',
+            oldValue: '',
+            newValue: note,
+        })
+      }
+
+      if (auditLogs.length > 0) {
+        await tx.auditLog.createMany({
+          data: auditLogs,
         });
       }
 
-      const message = body.markAsFake ? 'Order marked as fake and user flagged.' : 'Order unmarked as fake.';
-      return NextResponse.json({ success: true, message });
-    }
-
-    // Default restore behavior for backward compatibility
-    await prisma.order.update({
+      if (Object.keys(updateData).length === 0) {
+        return originalOrder;
+      }
+      
+      const updated = await tx.order.update({
         where: { id: params.orderId },
-        data: { deletedAt: null },
+        data: updateData,
+      });
+      
+      return updated;
     });
 
-    return NextResponse.json({ success: true, message: 'Order restored successfully.' });
+    return NextResponse.json(updatedOrder);
   } catch (error) {
     console.error('Failed to update order:', error);
     return NextResponse.json({ error: 'Failed to update order' }, { status: 500 });
