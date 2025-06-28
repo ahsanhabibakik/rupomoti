@@ -791,3 +791,31 @@
       max-width: 1400px;
     }
   }
+  
+/* Enhanced toast styling */
+  .sonner-toast {
+    font-family: inherit !important;
+  }
+  
+  [data-sonner-toaster] {
+    --normal-bg: hsl(var(--background));
+    --normal-border: hsl(var(--border));
+    --normal-text: hsl(var(--foreground));
+    --success-bg: hsl(var(--success));
+    --success-border: hsl(var(--success));
+    --success-text: hsl(var(--success-foreground));
+    --error-bg: hsl(var(--destructive));
+    --error-border: hsl(var(--destructive));
+    --error-text: hsl(var(--destructive-foreground));
+    --warning-bg: hsl(var(--warning));
+    --warning-border: hsl(var(--warning));
+    --warning-text: hsl(var(--warning-foreground));
+    --info-bg: hsl(var(--info));
+    --info-border: hsl(var(--info));
+    --info-text: hsl(var(--info-foreground));
+  }
+
+  [data-sonner-toast] {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
