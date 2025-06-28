@@ -8,6 +8,7 @@ import { useCategories } from '@/hooks/useCategories'
 import { useCustomers } from '@/hooks/useCustomers'
 import { useOrderStatistics } from '@/hooks/useOrderStatistics'
 import { useSession } from 'next-auth/react'
+import { StockManagement } from '@/components/admin/StockManagement'
 import {
   LineChart,
   Line,
@@ -414,7 +415,7 @@ export default function DashboardPage() {
     }
   }
 
-  // Data processing effects
+  // Data processing effects - Fixed to prevent infinite re-renders
   useEffect(() => {
     if (orders && Array.isArray(orders) && clientTime) {
       // Daily sales data for the last 7 days
@@ -496,11 +497,11 @@ export default function DashboardPage() {
       // Recent orders
       setRecentOrders(orders.slice(0, 10))
       
-      // Recent activity
-      const orderActivities = orders.slice(0, 10).map((order: any) => ({
+      // Recent activity - Fixed to avoid function calls in dependency
+      const orderActivities = orders.slice(0, 10).map((order: any, index) => ({
         id: `order-${order.id}`,
         type: 'order',
-        message: `New order ${getOrderAnalyticalInfo(order).displayNumber} placed`,
+        message: `New order #${order.id.slice(-8).toUpperCase()} placed`,
         time: order.createdAt,
         amount: `৳${order.total.toLocaleString('bn-BD')}`,
         user: order.customer?.name || 'Guest',
@@ -510,7 +511,7 @@ export default function DashboardPage() {
       
       setRecentActivity(orderActivities)
     }
-  }, [orders, clientTime])
+  }, [orders, clientTime]) // Removed getOrderAnalyticalInfo from dependencies
 
   useEffect(() => {
     if (Array.isArray(customers) && orders && Array.isArray(orders)) {
@@ -723,7 +724,7 @@ export default function DashboardPage() {
 
       {/* Main Dashboard Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 h-auto p-1">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 h-auto p-1">
           <TabsTrigger value="overview" className="flex items-center gap-1 sm:gap-2 py-2 text-xs sm:text-sm">
             <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
             Overview
@@ -732,9 +733,13 @@ export default function DashboardPage() {
             <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
             Analytics
           </TabsTrigger>
+          <TabsTrigger value="stock" className="flex items-center gap-1 sm:gap-2 py-2 text-xs sm:text-sm">
+            <Package className="h-3 w-3 sm:h-4 sm:w-4" />
+            Stock
+          </TabsTrigger>
           <TabsTrigger value="orders" className="flex items-center gap-1 sm:gap-2 py-2 text-xs sm:text-sm">
             <ListOrdered className="h-3 w-3 sm:h-4 sm:w-4" />
-            Recent Orders
+            Orders
           </TabsTrigger>
           <TabsTrigger value="insights" className="flex items-center gap-1 sm:gap-2 py-2 text-xs sm:text-sm">
             <Sparkles className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -1151,6 +1156,10 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="stock" className="space-y-6">
+          <StockManagement />
         </TabsContent>
       </Tabs>
     </div>

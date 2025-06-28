@@ -34,6 +34,7 @@ model User {
   paymentMethods UserPaymentMethod[]
   userSettings   UserSetting[]
   auditLogs      AuditLog[]
+  stockLogs      StockLog[]
 }
 
 model Account {
@@ -124,6 +125,7 @@ model Product {
   reviews         Review[]
   wishlistItems   WishlistItem[]
   orderItems      OrderItem[]
+  stockLogs       StockLog[]
   
   @@map("products")
 }
@@ -175,6 +177,7 @@ model Order {
   isFakeOrder   Boolean        @default(false) // Track fake/suspicious orders
 
   items         OrderItem[]
+  stockLogs     StockLog[]
 
   // Courier integration fields
   recipientName      String?
@@ -368,6 +371,28 @@ model AuditLog {
   createdAt   DateTime @default(now())
 
   @@map("audit_logs")
+}
+
+model StockLog {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  productId     String   @db.ObjectId
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  previousStock Int
+  newStock      Int
+  changeAmount  Int      // positive for increase, negative for decrease
+  operation     String   // 'increment', 'decrement', 'set'
+  reason        String   // reason for the change
+  
+  orderId       String?  @db.ObjectId // if related to an order
+  order         Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  
+  userId        String?  @db.ObjectId // user who made the change
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  createdAt     DateTime @default(now())
+  
+  @@map("stock_logs")
 }
 
 enum Role {

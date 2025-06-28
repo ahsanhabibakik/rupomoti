@@ -14,21 +14,36 @@ export async function getProducts(filter: { [key: string]: boolean }) {
 }
 
 export async function getHomePageData() {
+  // Common filter to exclude out-of-stock products for regular users
+  const baseWhere = {
+    status: 'ACTIVE',
+    stock: { gt: 0 }
+  }
+
   const [featuredProducts, popularProducts, newArrivals] = await Promise.all([
     prisma.product.findMany({
-      where: { isFeatured: true },
+      where: { 
+        ...baseWhere,
+        isFeatured: true 
+      },
       take: 8,
       orderBy: { createdAt: 'desc' },
       include: { category: true },
     }),
     prisma.product.findMany({
-      where: { isPopular: true },
+      where: { 
+        ...baseWhere,
+        isPopular: true 
+      },
       take: 8,
       orderBy: { createdAt: 'desc' },
       include: { category: true },
     }),
     prisma.product.findMany({
-      where: { isNewArrival: true },
+      where: { 
+        ...baseWhere,
+        isNewArrival: true 
+      },
       take: 4,
       orderBy: { createdAt: 'desc' },
       include: { category: true },

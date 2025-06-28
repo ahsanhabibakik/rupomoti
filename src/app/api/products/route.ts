@@ -4,7 +4,7 @@ import { Prisma, ProductStatus } from '@prisma/client'
 import { slugify } from '@/lib/utils/slugify'
 
 async function generateUniqueSlug(name: string): Promise<string> {
-  let slug = slugify(name)
+  const slug = slugify(name)
   let uniqueSlug = slug
   let counter = 1
   while (await prisma.product.findUnique({ where: { slug: uniqueSlug } })) {
@@ -23,6 +23,8 @@ export async function GET(request: Request) {
     const maxPrice = Number(searchParams.get('maxPrice')) || 100000
     const sort = searchParams.get('sort') || 'newest'
     const status = searchParams.get('status')
+    const includeOutOfStock = searchParams.get('includeOutOfStock') === 'true' // For admin views
+    const adminView = searchParams.get('adminView') === 'true' // For admin-only access
 
     const categoryFilter: Prisma.CategoryWhereInput = {
       isActive: true,
@@ -51,6 +53,16 @@ export async function GET(request: Request) {
 
     if (status) {
       where.status = status as ProductStatus
+    } else {
+      // Only show active products for regular users
+      where.status = ProductStatus.ACTIVE
+    }
+
+    // Exclude out-of-stock products for regular users (unless specifically requested)
+    if (!includeOutOfStock && !adminView) {
+      where.stock = {
+        gt: 0
+      }
     }
 
     // Build the orderBy clause

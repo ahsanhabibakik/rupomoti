@@ -23,7 +23,8 @@ export async function getRelatedProducts(categoryId: string, currentProductId: s
     where: {
       categoryId,
       id: { not: currentProductId },
-      status: 'PUBLISHED',
+      status: 'ACTIVE',
+      stock: { gt: 0 }, // Only show in-stock products
     },
     take: 4,
     include: {
