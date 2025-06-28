@@ -52,11 +52,27 @@ import {
   Phone,
   MapPin,
 } from 'lucide-react'
-import { getAuditLogs } from '@/lib/actions/audit-log-actions'
 
 type OrderWithDetails = Prisma.OrderGetPayload<{
   include: { customer: true; items: { include: { product: true } } }
 }>
+
+type AuditLogWithUser = {
+  id: string
+  model: string
+  recordId: string
+  userId: string
+  action: string
+  field: string | null
+  oldValue: string | null
+  newValue: string | null
+  details: Record<string, any> | null
+  createdAt: string
+  user: {
+    name: string | null
+    email: string | null
+  }
+}
 
 type OrderDetailsDialogProps = {
   order: OrderWithDetails
@@ -90,7 +106,13 @@ export function OrderDetailsDialog({ order }: OrderDetailsDialogProps) {
 
   const { data: auditLogs, isLoading: isLoadingAuditLogs } = useQuery({
     queryKey: ['audit-logs', order.id],
-    queryFn: () => getAuditLogs(order.id),
+    queryFn: async () => {
+      const response = await fetch(`/api/admin/audit-logs?orderId=${order.id}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch audit logs')
+      }
+      return response.json()
+    },
     enabled: isOpen && activeTab === 'history',
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
@@ -272,7 +294,7 @@ export function OrderDetailsDialog({ order }: OrderDetailsDialogProps) {
                         </div>
                       ) : auditLogs && auditLogs.length > 0 ? (
                         <div className="space-y-4 pr-4">
-                          {auditLogs.map((log: Awaited<ReturnType<typeof getAuditLogs>>[0]) => (
+                          {auditLogs.map((log: AuditLogWithUser) => (
                             <AuditLogItem key={log.id} log={log} />
                           ))}
                         </div>
@@ -389,7 +411,7 @@ export function OrderDetailsDialog({ order }: OrderDetailsDialogProps) {
 }
 
 type AuditLogItemProps = {
-  log: Awaited<ReturnType<typeof getAuditLogs>>[0]
+  log: AuditLogWithUser
 }
 
 function AuditLogItem({ log }: AuditLogItemProps) {
