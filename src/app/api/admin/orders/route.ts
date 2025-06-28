@@ -3,71 +3,82 @@ import { auth } from "@/app/auth";
 import { prisma } from "@/lib/prisma";
 import { OrderStatus, Prisma } from "@prisma/client";
 
-export async function GET(request: NextRequest) {
+export async function GET(req: Request) {
   const session = await auth();
-  if (!session?.user?.id || (session.user.role !== 'ADMIN' && session.user.role !== 'MANAGER')) {
+  if (!session?.user?.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const { searchParams } = new URL(req.url);
+  const search = searchParams.get('search') || '';
+  const status = searchParams.get('status'); // e.g., 'all', 'trashed', or specific order statuses
+  const from = searchParams.get('from');
+  const to = searchParams.get('to');
+  const page = parseInt(searchParams.get('page') || '1', 10);
+  const limit = parseInt(searchParams.get('limit') || '10', 10);
+  const offset = (page - 1) * limit;
+
   try {
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1", 10);
-    const limit = parseInt(searchParams.get("limit") || "10", 10);
-    const search = searchParams.get("search") || "";
-    const status = (searchParams.get("status") as OrderStatus) || "all";
-    const startDate = searchParams.get("startDate");
-    const endDate = searchParams.get("endDate");
-
     const where: Prisma.OrderWhereInput = {};
-
-    if (search) {
+    if (status === 'trashed') {
+      where.deletedAt = { not: null };
+    } else if (status === 'active') {
+      // Show all orders that are not trashed (deletedAt is null or does not exist)
       where.OR = [
-        { orderNumber: { contains: search, mode: "insensitive" } },
-        { customer: { name: { contains: search, mode: "insensitive" } } },
-        { items: { some: { product: { name: { contains: search, mode: "insensitive" } } } } },
+        { deletedAt: null },
+        { deletedAt: { equals: undefined } },
       ];
     }
 
-    if (status && status !== "all") {
-      where.status = status;
+    if (search) {
+      where.OR = [
+        ...(where.OR || []),
+        { orderNumber: { contains: search, mode: 'insensitive' } },
+        { customer: { name: { contains: search, mode: 'insensitive' } } },
+        { recipientName: { contains: search, mode: 'insensitive' } },
+        { recipientPhone: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+    
+    if (status && status !== 'all' && status !== 'trashed' && status !== 'active') {
+        where.status = status as string;
     }
 
-    if (startDate && endDate) {
+    if (from && to) {
       where.createdAt = {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
+        gte: new Date(from),
+        lte: new Date(to),
       };
     }
 
-    const [orders, totalOrders] = await prisma.$transaction([
-      prisma.order.findMany({
-        where,
-        include: {
-          customer: true,
-          items: {
-            include: {
-              product: true,
-            },
+    const orders = await prisma.order.findMany({
+      where,
+      include: {
+        customer: true,
+        items: {
+          include: {
+            product: true,
           },
         },
-        orderBy: { createdAt: "desc" },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      prisma.order.count({ where }),
-    ]);
+      },
+      orderBy: { createdAt: 'desc' },
+      skip: offset,
+      take: limit,
+    });
 
-    const totalPages = Math.ceil(totalOrders / limit);
+    const totalOrders = await prisma.order.count({ where });
 
     return NextResponse.json({
       orders,
       totalOrders,
-      totalPages,
-      currentPage: page,
+      totalPages: Math.ceil(totalOrders / limit),
     });
   } catch (error) {
-    console.error("[GET_ORDERS_API]", error);
-    return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 });
+    console.error(error);
+    return NextResponse.json(
+      { error: (error as Error).message || 'Failed to fetch orders' },
+      { status: 500 }
+    );
   }
 }
 
@@ -193,11 +204,11 @@ export async function POST(request: Request) {
           { status: 400 }
         );
     }
-  } catch (error: any) {
-    console.error('Error processing order action:', error);
+  } catch (error) {
+    console.error(error);
     return NextResponse.json(
-      { error: error.message || 'Failed to process order action' },
+      { error: (error as Error).message || 'Failed to process order action' },
       { status: 500 }
     );
   }
-} 
+}

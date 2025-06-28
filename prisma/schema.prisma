@@ -22,6 +22,7 @@ model User {
   updatedAt      DateTime  @updatedAt
   role           Role      @default(USER)
   isAdmin        Boolean   @default(false)
+  isFlagged      Boolean   @default(false)
 
   accounts       Account[]
   sessions       Session[]

@@ -10,45 +10,60 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 export function OrderTableSkeleton() {
   return (
-    <div className="border rounded-lg">
+    <div className="space-y-4">
+      <div className="border rounded-lg">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead><Skeleton className="h-5 w-20" /></TableHead>
-              <TableHead><Skeleton className="h-5 w-32" /></TableHead>
-              <TableHead><Skeleton className="h-5 w-24" /></TableHead>
-              <TableHead><Skeleton className="h-5 w-40" /></TableHead>
-              <TableHead className="text-right"><Skeleton className="h-5 w-28" /></TableHead>
+              <TableHead>Order</TableHead>
+              <TableHead>Customer</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Courier</TableHead>
+              <TableHead className="text-right">Total</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {Array.from({ length: 10 }).map((_, index) => (
-              <TableRow key={index}>
+            {Array.from({ length: 10 }).map((_, i) => (
+              <TableRow key={i}>
                 <TableCell>
-                  <Skeleton className="h-4 w-24 mb-1" />
-                  <Skeleton className="h-3 w-32" />
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-3 w-32 mt-2" />
                 </TableCell>
                 <TableCell>
-                   <Skeleton className="h-4 w-40 mb-1" />
-                   <Skeleton className="h-3 w-28" />
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-24 mt-2" />
                 </TableCell>
-                <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                 <TableCell>
-                    <div className="flex flex-col items-start gap-1">
-                        <Skeleton className="h-5 w-24" />
-                        <Skeleton className="h-5 w-20" />
-                    </div>
+                  <div className="flex flex-col gap-2">
+                    <Skeleton className="h-5 w-20" />
+                    <Skeleton className="h-5 w-16" />
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-5 w-28" />
                 </TableCell>
                 <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                        <Skeleton className="h-8 w-24" />
-                        <Skeleton className="h-8 w-24" />
-                    </div>
+                  <Skeleton className="h-4 w-16 ml-auto" />
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex gap-2 justify-end">
+                    <Skeleton className="h-8 w-24" />
+                    <Skeleton className="h-8 w-8" />
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
+      </div>
+      <div className="flex justify-between items-center">
+        <Skeleton className="h-8 w-48" />
+        <div className="flex gap-2">
+          <Skeleton className="h-8 w-20" />
+          <Skeleton className="h-8 w-20" />
+        </div>
+      </div>
     </div>
   )
 } 

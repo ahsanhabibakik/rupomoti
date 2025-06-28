@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/app/auth'
 import { prisma } from '@/lib/prisma'
+import { generateUniqueOrderNumber } from '@/lib/utils/order-number'
 
 export async function GET() {
   try {
@@ -110,7 +111,6 @@ export async function POST(req: Request) {
     console.log('Order API - Received data:', JSON.stringify(body, null, 2));
     
     const {
-      orderNumber,
       recipientName,
       recipientPhone,
       recipientEmail,
@@ -132,9 +132,6 @@ export async function POST(req: Request) {
     const userId = payloadUserId || session?.user?.id || undefined;
 
     // Validate required fields
-    if (!orderNumber) {
-      return NextResponse.json({ error: 'Missing required field: orderNumber' }, { status: 400 });
-    }
     if (!recipientName) {
       return NextResponse.json({ error: 'Missing required field: recipientName' }, { status: 400 });
     }
@@ -211,10 +208,13 @@ export async function POST(req: Request) {
           }
         }
         
-        // 2. Create the order
+        // 2. Generate unique order number
+        const newOrderNumber = await generateUniqueOrderNumber();
+        
+        // 3. Create the order
         const createdOrder = await tx.order.create({
           data: {
-            orderNumber,
+            orderNumber: newOrderNumber,
             customerId: customerRecord.id,
             userId: userId || undefined,
             status: 'PENDING',
@@ -251,7 +251,7 @@ export async function POST(req: Request) {
           },
         });
 
-        // 3. Update stock for each item
+        // 4. Update stock for each item
         for (const item of items) {
           await tx.product.update({
             where: { id: item.productId },

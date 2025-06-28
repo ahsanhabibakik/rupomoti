@@ -1,8 +1,8 @@
 'use client';
 
-import { Suspense } from 'react';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import {
   Table,
   TableBody,
@@ -11,11 +11,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { format, differenceInHours } from 'date-fns';
-import { getOrders } from '@/lib/actions/order-actions';
-import { OrderStatus, Prisma } from '@prisma/client';
-import { AdvancedPagination } from '@/components/ui/AdvancedPagination';
-import { OrderFilters } from './_components/OrderFilters';
+import { Prisma } from '@prisma/client';
 import { OrderDetailsDialog } from '@/components/admin/OrderDetailsDialog';
 import { CourierAssignmentForm } from '@/components/admin/CourierAssignmentForm';
 import { ShipNowButton } from '@/components/admin/ShipNowButton';
@@ -23,10 +21,14 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { CourierBadge } from '@/components/ui/CourierBadge';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Edit, Eye, Package, RefreshCw, Truck } from 'lucide-react';
+import { Edit, Package, RefreshCw, Trash2, Undo, AlertTriangle } from 'lucide-react';
 import { OrderTableSkeleton } from '@/components/admin/OrderTableSkeleton';
+import { DataTablePagination } from '@/components/ui/DataTablePagination';
+import { showToast } from '@/lib/toast';
+import { OrderFilters } from './_components/OrderFilters';
 
-type OrderWithDetails = Prisma.OrderGetPayload<{
+// Manually define the type to include the fields we need
+type OrderWithDetails = (Prisma.OrderGetPayload<{
   include: {
     customer: true;
     items: {
@@ -35,53 +37,87 @@ type OrderWithDetails = Prisma.OrderGetPayload<{
       };
     };
   };
-}>;
+}>) & {
+  user: { isFlagged: boolean } | null;
+};
 
 function isNew(date: string | Date) {
   return differenceInHours(new Date(), new Date(date)) < 24;
 }
 
-function OrdersList() {
-  const searchParams = useSearchParams();
+function OrdersList({ status }: { status: 'active' | 'trashed' }) {
+  const router = useRouter();
+  const searchParams = useSearchParams() || new URLSearchParams();
+  const queryClient = useQueryClient();
+
   const search = searchParams.get('search');
-  const status = searchParams.get('status') ?? 'all';
   const from = searchParams.get('from');
   const to = searchParams.get('to');
   const page = Number(searchParams.get('page') ?? 1);
   const limit = Number(searchParams.get('limit') ?? 10);
 
-  const { data, error, isLoading } = useQuery({
-    queryKey: ['orders', { search, status, from, to, page, limit }],
+  const { data, error, isLoading, isPlaceholderData } = useQuery({
+    queryKey: ['orders', { status, search, from, to, page, limit }],
     queryFn: async () => {
       const query = new URLSearchParams({
+        status: status,
         search: search ?? '',
-        status,
         from: from ?? '',
         to: to ?? '',
         page: page.toString(),
         limit: limit.toString(),
       });
       const response = await fetch(`/api/admin/orders?${query.toString()}`);
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
+      if (!response.ok) throw new Error('Network response was not ok');
       return response.json();
     },
+    placeholderData: (previousData) => previousData,
   });
 
-  if (isLoading) {
-    return <OrderTableSkeleton />;
-  }
+  const { mutate: trashOrder, isPending: isTrashing } = useMutation({
+    mutationFn: (orderId: string) => fetch(`/api/admin/orders/${orderId}`, { method: 'DELETE' }),
+    onSuccess: async () => {
+      showToast.success('Order moved to trash.');
+      await queryClient.invalidateQueries({ queryKey: ['orders'] });
+    },
+    onError: () => showToast.error('Failed to move order to trash.'),
+  });
 
-  if (error) {
-    return (
-      <div className="text-red-500 text-center py-10">
-        <p>Failed to load orders.</p>
-        <p className="text-sm text-muted-foreground">{error.message}</p>
-      </div>
-    );
-  }
+  const { mutate: restoreOrder, isPending: isRestoring } = useMutation({
+    mutationFn: (orderId: string) => fetch(`/api/admin/orders/${orderId}`, { 
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ restore: true })
+    }),
+    onSuccess: async () => {
+      showToast.success('Order restored successfully.');
+      await queryClient.invalidateQueries({ queryKey: ['orders'] });
+    },
+    onError: () => showToast.error('Failed to restore order.'),
+  });
+  
+  const handleTrashOrder = (orderId: string) => {
+    if (window.confirm('Are you sure you want to move this order to the trash? This will also flag the user.')) {
+      trashOrder(orderId);
+    }
+  };
+  
+  const handlePageChange = (newPage: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('page', newPage.toString());
+    router.push(`/admin/orders?${params.toString()}`);
+  };
 
+  const handlePageSizeChange = (newSize: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('limit', newSize.toString());
+    params.set('page', '1');
+    router.push(`/admin/orders?${params.toString()}`);
+  };
+
+  if (isLoading && !isPlaceholderData) return <OrderTableSkeleton />;
+  if (error) return <div className="text-red-500 text-center py-10">Failed to load orders.</div>;
+  
   const { orders, totalOrders, totalPages } = data ?? { orders: [], totalOrders: 0, totalPages: 0 };
 
   return (
@@ -95,7 +131,7 @@ function OrdersList() {
               <TableHead>Status</TableHead>
               <TableHead>Courier</TableHead>
               <TableHead className="text-right">Total</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="text-center">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -103,15 +139,17 @@ function OrdersList() {
               <TableRow>
                 <TableCell colSpan={6} className="text-center h-48">
                   <Package className="mx-auto h-12 w-12 text-gray-400" />
-                  <p className="mt-2 text-sm text-gray-500">No orders found.</p>
+                  <p className="mt-2 text-sm text-gray-500">
+                    {status === 'trashed' ? 'Trash is empty.' : 'No orders found.'}
+                  </p>
                 </TableCell>
               </TableRow>
             ) : (
-              orders.map((order) => (
-                <TableRow key={order.id}>
+              orders.map((order: OrderWithDetails) => (
+                <TableRow key={order.id} className={isPlaceholderData ? 'opacity-50' : ''}>
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      {isNew(order.createdAt) && (
+                      {status === 'active' && isNew(order.createdAt) && (
                         <span className="relative flex h-3 w-3" title="New Order">
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
                           <span className="relative inline-flex rounded-full h-3 w-3 bg-sky-500"></span>
@@ -124,7 +162,10 @@ function OrdersList() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div>{order.recipientName || order.customer.name}</div>
+                    <div className='flex items-center gap-2'>
+                        {order.user?.isFlagged && <span title='This user has been flagged'><AlertTriangle className="h-4 w-4 text-destructive" /></span>}
+                        <span>{order.recipientName || order.customer.name}</span>
+                    </div>
                     <div className="text-sm text-muted-foreground">
                       {order.recipientPhone || order.customer.phone}
                     </div>
@@ -143,20 +184,37 @@ function OrdersList() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <OrderDetailsDialog order={order} />
-                       {!['SHIPPED', 'DELIVERED', 'CANCELED'].includes(order.status) && (
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <Edit className="mr-2 h-4 w-4" /> Assign
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <CourierAssignmentForm order={order} />
-                          </DialogContent>
-                        </Dialog>
+                      {status === 'active' ? (
+                        <>
+                          <OrderDetailsDialog order={order} />
+                          {!['SHIPPED', 'DELIVERED', 'CANCELED'].includes(order.status) && (
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button variant="outline" size="sm"><Edit className="mr-2 h-4 w-4" /> Assign</Button>
+                              </DialogTrigger>
+                              <DialogContent><CourierAssignmentForm order={order} /></DialogContent>
+                            </Dialog>
+                          )}
+                          <ShipNowButton order={order} />
+                          <Button 
+                            variant="destructive" 
+                            size="icon" 
+                            disabled={isTrashing} 
+                            onClick={() => handleTrashOrder(order.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                           <Button variant="outline" size="sm" onClick={() => restoreOrder(order.id)} disabled={isRestoring}>
+                            <Undo className="mr-2 h-4 w-4" /> Restore
+                          </Button>
+                          <Button variant="destructive" size="sm" disabled={true} title="Permanent deletion is disabled">
+                            Delete Permanently
+                          </Button>
+                        </>
                       )}
-                      <ShipNowButton order={order} />
                     </div>
                   </TableCell>
                 </TableRow>
@@ -165,18 +223,22 @@ function OrdersList() {
           </TableBody>
         </Table>
       </div>
-      <AdvancedPagination
-        currentPage={page}
-        totalPages={totalPages}
-        limit={limit}
-        totalRecords={totalOrders}
-      />
+      {totalOrders > 0 && (
+        <DataTablePagination
+            page={page}
+            totalPages={totalPages}
+            totalRecords={totalOrders}
+            pageSize={limit}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+        />
+      )}
     </div>
   );
 }
 
 export default function OrdersPage() {
-  const router = useRouter();
+  const [activeTab, setActiveTab] = useState('active');
   const queryClient = useQueryClient();
 
   const handleRefresh = () => {
@@ -194,38 +256,18 @@ export default function OrdersPage() {
           </Button>
         </div>
       </div>
-      <OrdersList />
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList>
+            <TabsTrigger value="active">Active</TabsTrigger>
+            <TabsTrigger value="trashed">Trashed</TabsTrigger>
+        </TabsList>
+        <TabsContent value="active">
+            <OrdersList status="active" />
+        </TabsContent>
+        <TabsContent value="trashed">
+            <OrdersList status="trashed" />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
-
-function OrdersListWrapper() {
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
-  // You might need to reconstruct the searchParams object to pass to OrdersList
-  // This is a simplified example.
-  const params = {
-    search: searchParams.get('search'),
-    status: searchParams.get('status'),
-    from: searchParams.get('from'),
-    to: searchParams.get('to'),
-    page: searchParams.get('page'),
-    limit: searchParams.get('limit'),
-  };
-
-  // The actual OrdersList component needs to be created or adapted
-  // to be a server component or to receive props in a way that works with Suspense.
-  // For now, let's assume we can refactor it slightly.
-  // This part is complex because we are calling an async component from a client component.
-  // The best approach is often to have a separate component that fetches the data.
-
-  // Let's keep the existing structure for now and pass searchParams.
-  // But this will require making OrdersList a client component as well,
-  // or fetching data inside it using a hook.
-  
-  // The 'searchParams' prop needs to be handled correctly.
-  // Let's create a simplified `params` object for now.
-  const queryParams = Object.fromEntries(searchParams.entries());
-
-  return <OrdersList />;
-} 

@@ -191,12 +191,6 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
     return Object.keys(newErrors).length === 0
   }
 
-  const generateOrderNumber = (): string => {
-    const timestamp = Date.now().toString()
-    const random = Math.random().toString(36).substring(2, 5).toUpperCase()
-    return `RP${timestamp.slice(-6)}${random}`
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validateForm()) return
@@ -207,7 +201,6 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
     setIsSubmitting(true)
     try {
       const orderData = {
-        orderNumber: generateOrderNumber(),
         recipientName: formData.name.trim(),
         recipientPhone: formData.phone.trim(),
         recipientEmail: formData.email.trim() || '',
@@ -242,7 +235,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
       if (!response.ok) throw new Error(result.error || 'Failed to create order')
       dispatch(clearCart())
       onOpenChange(false)
-      showToast.success(`Order #${orderData.orderNumber} placed successfully! We'll contact you soon.`)
+      showToast.success(`Order #${result.order.orderNumber} placed successfully! We'll contact you soon.`)
       setFormData({
         name: session?.user?.name || '',
         phone: '',

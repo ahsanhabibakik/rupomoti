@@ -169,8 +169,28 @@ export function OrderDetailsDialog({ order }: OrderDetailsDialogProps) {
     },
   })
 
+  const deleteMutation = useMutation({
+    mutationFn: () => fetch(`/api/admin/orders/${order.id}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      showToast.success('Order moved to trash.')
+      queryClient.invalidateQueries({ queryKey: ['orders'] })
+      setIsOpen(false)
+    },
+    onError: (error: Error) => {
+      showToast.error(error.message || 'Failed to move order to trash.')
+    },
+  })
+
+  const isCancelling = editableOrder.status === 'CANCELED' && order.status !== 'CANCELED'
+
   const handleSaveChanges = () => {
     if (!hasChanges) return
+
+    if (isCancelling) {
+      if (!confirm('Are you sure you want to move this order to the trash?')) return
+      deleteMutation.mutate()
+      return
+    }
 
     const changedData: Partial<EditableOrderState> = {}
     for (const key in editableOrder) {
@@ -187,12 +207,11 @@ export function OrderDetailsDialog({ order }: OrderDetailsDialogProps) {
 
   const handleFieldChange = (
     field: keyof EditableOrderState,
-    value: string | null
+    value: string | null | OrderStatus | PaymentStatus
   ) => {
-    setEditableOrder((prev) =>
-      produce(prev, (draft) => {
-        // @ts-ignore
-        draft[field] = value
+    setEditableOrder(
+      produce((draft) => {
+        (draft[field] as any) = value
       })
     )
   }
@@ -397,12 +416,16 @@ export function OrderDetailsDialog({ order }: OrderDetailsDialogProps) {
         <DialogFooter className="mt-6">
           <Button
             onClick={handleSaveChanges}
-            disabled={!hasChanges || updateMutation.isPending}
+            disabled={!hasChanges || updateMutation.isPending || deleteMutation.isPending}
+            variant={isCancelling ? 'destructive' : 'default'}
           >
-            {updateMutation.isPending && (
+            {updateMutation.isPending || deleteMutation.isPending ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : isCancelling ? (
+              'Move to Trash'
+            ) : (
+              'Save Changes'
             )}
-            Save Changes
           </Button>
         </DialogFooter>
       </DialogContent>
