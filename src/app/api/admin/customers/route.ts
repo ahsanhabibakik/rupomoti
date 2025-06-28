@@ -6,7 +6,11 @@ import { Prisma } from '@prisma/client';
 export async function GET(request: Request) {
   try {
     const session = await auth();
-    if (!session || !session.user || (session.user.role !== 'ADMIN' && session.user.role !== 'MANAGER')) {
+    if (
+      !session ||
+      !session.user ||
+      !['ADMIN', 'MANAGER', 'SUPER_ADMIN'].includes(session.user.role)
+    ) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -47,4 +51,4 @@ export async function GET(request: Request) {
     console.error('Failed to fetch customers:', error);
     return NextResponse.json({ error: 'Failed to fetch customers' }, { status: 500 });
   }
-} 
+}
