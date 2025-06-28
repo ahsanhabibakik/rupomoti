@@ -11,7 +11,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
-import { authConfig } from '@/lib/auth-config';
+import { authOptions } from '@/app/auth';
 import { z } from 'zod';
 import { Order, User } from '@prisma/client';
 
@@ -183,7 +183,7 @@ async function getRedxAreaInfo(district: string, areaName: string) {
 
 // --- Main API Handler ---
 export async function POST(request: Request) {
-    const session = await getServerSession(authConfig);
+    const session = await getServerSession(authOptions);
     if (session?.user?.role !== 'ADMIN' && session?.user?.role !== 'MANAGER') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
