@@ -57,9 +57,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ token, session }) {
       if (token) {
         session.user.id = token.id as string
-        session.user.name = token.name as string
-        session.user.email = token.email as string
-        session.user.image = token.picture as string
+        session.user.name = token.name
+        session.user.email = token.email
+        session.user.image = token.picture
         session.user.role = token.role as string
         session.user.isAdmin = token.isAdmin as boolean
       }
@@ -67,27 +67,29 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session
     },
     async jwt({ token, user }) {
-      const dbUser = await prisma.user.findFirst({
-        where: {
-          email: token.email,
-        },
-      })
+      if (user) {
+        // User is present on sign-in, so fetch data from the database
+        const dbUser = await prisma.user.findFirst({
+          where: {
+            email: user.email,
+          },
+        })
 
-      if (!dbUser) {
-        if (user) {
-          token.id = user.id
+        if (dbUser) {
+          // Return a new token with all the necessary user information
+          return {
+            id: dbUser.id,
+            name: dbUser.name,
+            email: dbUser.email,
+            picture: dbUser.image,
+            role: dbUser.role,
+            isAdmin: dbUser.role === 'ADMIN' || dbUser.role === 'SUPER_ADMIN',
+          }
         }
-        return token
       }
 
-      return {
-        id: dbUser.id,
-        name: dbUser.name,
-        email: dbUser.email,
-        picture: dbUser.image,
-        role: dbUser.role,
-        isAdmin: dbUser.role === 'ADMIN' || dbUser.role === 'SUPER_ADMIN',
-      }
+      // On subsequent calls, return the existing token without a database call
+      return token
     },
   },
 })
