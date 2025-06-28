@@ -39,5 +39,10 @@ export default async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*']
+  matcher: [
+    // Only match admin UI routes, not API routes
+    '/admin/((?!api).)*',
+    // But also include the main /admin route
+    '/admin'
+  ]
 } 
