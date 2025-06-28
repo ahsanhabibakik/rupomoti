@@ -12,6 +12,8 @@ import Loading from './loading'
 import { AnimatedSection } from '@/components/ui/AnimatedSection'
 import CategorySection from '@/components/home/CategorySection'
 import SlidableProductSection from '@/components/home/SlidableProductSection'
+import GridProductSection from '@/components/home/GridProductSection'
+import SeasonalOffersBanner from '@/components/home/SeasonalOffersBanner'
 import { getCategories } from '@/actions/getCategories'
 
 export const metadata: Metadata = {
@@ -34,17 +36,17 @@ export default async function HomePage() {
   const [popularProducts, newArrivals, featuredProducts, categories] = await Promise.all([
     prisma.product.findMany({
       where: { isPopular: true },
-      take: 4,
+      take: 8, // More products for grid layout
       include: { category: true },
     }),
     prisma.product.findMany({
       where: { isNewArrival: true },
-      take: 4,
+      take: 4, // Keep as slider, so fewer products
       include: { category: true },
     }),
     prisma.product.findMany({
       where: { isFeatured: true },
-      take: 4,
+      take: 8, // More products for grid layout
       include: { category: true },
     }),
     getCategories({ active: true, level: 0 }),
@@ -52,6 +54,9 @@ export default async function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen">
+      {/* Seasonal Offers Banner */}
+      <SeasonalOffersBanner />
+      
       {/* Hero Section */}
       <section className="bg-transparent">
         <HeroSlider />
@@ -62,17 +67,20 @@ export default async function HomePage() {
         <CategorySection categories={categories} />
       </AnimatedSection>
 
-      {/* Popular Products Section */}
+      {/* Popular Products Section - Grid on Mobile */}
       <AnimatedSection>
-        <SlidableProductSection 
+        <GridProductSection 
           title="Popular Pieces"
           products={popularProducts}
           viewAllLink="/shop?filter=popular"
           className="bg-background"
+          mobileColumns={2}
+          desktopColumns={4}
+          showMoreProducts={8}
         />
       </AnimatedSection>
 
-      {/* New Arrivals Section */}
+      {/* New Arrivals Section - Slider (Keep as is) */}
       <AnimatedSection>
         <SlidableProductSection 
           title="Latest Collection"
@@ -82,13 +90,16 @@ export default async function HomePage() {
         />
       </AnimatedSection>
 
-      {/* Featured Products */}
+      {/* Featured Products - Grid on Mobile */}
       <AnimatedSection>
-        <SlidableProductSection 
+        <GridProductSection 
           title="Featured Collections"
           products={featuredProducts}
           viewAllLink="/shop?filter=featured"
           className="bg-background"
+          mobileColumns={2}
+          desktopColumns={4}
+          showMoreProducts={8}
         />
       </AnimatedSection>
 
@@ -130,7 +141,7 @@ export default async function HomePage() {
                       ))}
                     </div>
                     <p className="text-foreground text-sm md:text-base italic">
-                      "{testimonial.text}"
+                      &ldquo;{testimonial.text}&rdquo;
                     </p>
                   </div>
                   <div className="border-t border-accent/20 pt-4">

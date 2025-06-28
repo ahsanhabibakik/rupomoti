@@ -148,7 +148,7 @@ export function HeroSlider() {
     <div className="relative py-4">
       {/* Hero Slider */}
       <div
-        className="max-w-screen-xl mx-2  md:mx-auto mt-2 relative h-60 sm:h-72 md:h-80 overflow-hidden select-none rounded-2xl"
+        className="max-w-screen-xl mx-2 md:mx-auto mt-2 relative h-64 sm:h-80 md:h-96 lg:h-[500px] overflow-hidden select-none rounded-2xl"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -192,53 +192,44 @@ export function HeroSlider() {
             <div className="absolute inset-0">
               <div className="absolute inset-0 flex items-center">
                 <div className="container mx-auto px-4">
-                  {/* <div className="max-w-2xl">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Sparkles className="w-6 h-6 text-accent drop-shadow-lg" />
-                      <span className="text-accent font-medium drop-shadow-lg">Premium Pearls</span>
-                    </div>
-                    <h1 className="text-3xl sm:text-4xl md:text-6xl font-display text-white drop-shadow-lg mb-4 leading-tight">
-                      {slide.title}
-                    </h1>
-                    <p className="text-base sm:text-lg md:text-xl text-white/90 drop-shadow-lg mb-8 max-w-lg">
-                      {slide.subtitle}
-                    </p>
-                    <div
-                      className="inline-flex items-center gap-2 bg-accent text-primary px-8 py-4 rounded-full font-semibold hover:bg-accent-dark transition-colors duration-200 shadow-accent"
-                    >
-                      {slide.cta}
-                    </div>
-                  </div> */}
+                  {/* Content can be added here later if needed */}
                 </div>
               </div>
             </div>
           </Link>
         ))}
 
-        {/* Navigation Arrows */}
+        {/* Navigation Arrows - Desktop Only */}
         <button
           onClick={prevSlide}
-          className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-base-light/90 p-3 rounded-full hover:bg-base-light transition-colors z-20 shadow-premium"
+          className="hidden md:block absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-background/90 backdrop-blur-sm p-3 rounded-full hover:bg-background transition-all duration-200 z-20 shadow-lg border border-accent/20"
         >
-          <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-neutral" />
+          <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
         </button>
         <button
           onClick={nextSlide}
-          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-base-light/90 p-3 rounded-full hover:bg-base-light transition-colors z-20 shadow-premium"
+          className="hidden md:block absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-background/90 backdrop-blur-sm p-3 rounded-full hover:bg-background transition-all duration-200 z-20 shadow-lg border border-accent/20"
         >
-          <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-neutral" />
+          <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
         </button>
 
         {/* Slide Indicators */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-40 sm:w-56 h-2 flex items-center z-20">
-          <div className="relative w-full h-2 bg-base-light/40 rounded-full overflow-hidden">
-            <div
-              className="absolute top-0 left-0 h-full bg-accent rounded-full transition-all duration-500"
-              style={{
-                width: `${100 / slides.length}%`,
-                left: `${(100 / slides.length) * currentSlide}%`,
-              }}
-            />
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20">
+          <div className="flex items-center gap-2">
+            {slides.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => {
+                  setCurrentSlide(index);
+                  setIsAutoPlaying(false);
+                }}
+                className={`transition-all duration-300 rounded-full ${
+                  index === currentSlide
+                    ? "w-8 h-2 bg-background"
+                    : "w-2 h-2 bg-background/50 hover:bg-background/70"
+                }`}
+              />
+            ))}
           </div>
         </div>
       </div>
