@@ -12,6 +12,11 @@ export interface OrderStatistics {
   newToday: number;
   revenue: number;
   revenueToday: number;
+  revenueYesterday?: number;
+  revenueThisWeek?: number;
+  revenueLastWeek?: number;
+  revenueThisMonth?: number;
+  revenueLastMonth?: number;
 }
 
 export function useOrderStatistics() {
