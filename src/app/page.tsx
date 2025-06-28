@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { ProductCard } from '@/components/products/ProductCard'
 import { HeroSlider } from '@/components/hero/HeroSlider'
 import { Product } from '@/types/product'
-import { prisma } from '@/lib/prisma'
+import { getHomePageData } from '@/actions/home-actions'
 import { GemIcon, Crown, Diamond, Sparkles, ArrowRight } from 'lucide-react'
 import Loading from './loading'
 import { AnimatedSection } from '@/components/ui/AnimatedSection'
@@ -21,36 +21,9 @@ export const metadata: Metadata = {
   description: 'Discover our exquisite collection of elegant pearl jewelry pieces. From timeless classics to modern designs, find the perfect pearl piece for every occasion.',
 }
 
-async function getProducts(filter: { [key: string]: boolean }) {
-  return await prisma.product.findMany({
-    where: filter,
-    take: 4,
-    orderBy: { createdAt: 'desc' },
-    include: {
-      category: true,
-    },
-  })
-}
-
 export default async function HomePage() {
-  const [popularProducts, newArrivals, featuredProducts, categories] = await Promise.all([
-    prisma.product.findMany({
-      where: { isPopular: true },
-      take: 8, // More products for grid layout
-      include: { category: true },
-    }),
-    prisma.product.findMany({
-      where: { isNewArrival: true },
-      take: 4, // Keep as slider, so fewer products
-      include: { category: true },
-    }),
-    prisma.product.findMany({
-      where: { isFeatured: true },
-      take: 8, // More products for grid layout
-      include: { category: true },
-    }),
-    getCategories({ active: true, level: 0 }),
-  ])
+  const { popularProducts, newArrivals, featuredProducts } = await getHomePageData()
+  const categories = await getCategories({ active: true, level: 0 })
 
   return (
     <div className="flex flex-col min-h-screen">
