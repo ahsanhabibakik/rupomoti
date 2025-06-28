@@ -244,28 +244,31 @@ export function Navbar() {
     <>
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-sm">
         {/* Main navbar */}
-        <div className="container flex h-16 items-center justify-between px-4">
+        <div className="container flex h-16 items-center justify-between px-4 max-w-7xl mx-auto">
           
-          <div className="flex flex-1 items-center justify-start md:flex-none">
+          {/* Left section: Mobile menu + Desktop logo */}
+          <div className="flex items-center gap-4 flex-shrink-0">
             <MobileNav />
             <Link href="/" className="hidden md:flex items-center gap-2">
-              <Image src="/images/branding/logo.png" alt="Rupomoti" width={110} height={40} className="object-contain -mt-1" />
+              <Image src="/images/branding/logo.png" alt="Rupomoti" width={110} height={40} className="object-contain" />
             </Link>
           </div>
 
-          <div className="flex flex-1 items-center justify-center md:hidden">
+          {/* Center section: Mobile logo + Desktop navigation */}
+          <div className="flex items-center justify-center md:hidden flex-1">
             <Link href="/" className="flex items-center gap-2">
-               <Image src="/images/branding/logo.png" alt="Rupomoti" width={110} height={40} className="object-contain -mt-1"/>
+               <Image src="/images/branding/logo.png" alt="Rupomoti" width={90} height={32} className="object-contain"/>
             </Link>
           </div>
 
-          <nav className="hidden md:flex items-center gap-6 flex-1 justify-center">
+          <nav className="hidden md:flex items-center gap-8 flex-1 justify-center max-w-2xl">
             {navLinks.map((link) => (
               <NavLink key={link.href} href={link.href}>{link.name}</NavLink>
             ))}
           </nav>
 
-          <div className="flex flex-1 items-center justify-end gap-2">
+          {/* Right section: Actions */}
+          <div className="flex items-center gap-2 flex-shrink-0">
             <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)} className="hidden md:flex">
               <Search className="h-5 w-5" />
               <span className="sr-only">Search</span>
@@ -274,7 +277,7 @@ export function Navbar() {
               <ShoppingCart className="h-5 w-5" />
               <span className="sr-only">Open Cart</span>
               {cartCount > 0 && (
-                  <span className="absolute top-0 right-0 -mt-1 -mr-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
                       {cartCount}
                   </span>
               )}
@@ -285,7 +288,7 @@ export function Navbar() {
         
         {/* Mobile search bar - second row */}
         <div className="md:hidden border-t bg-background/95">
-          <div className="container px-4 py-3">
+          <div className="container px-4 py-2 max-w-7xl mx-auto">
             <MobileSearchBar onSearch={handleMobileSearch} />
           </div>
         </div>

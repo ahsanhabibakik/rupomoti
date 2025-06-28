@@ -37,20 +37,24 @@ export default async function HomePage() {
 
       {/* Modern Categories Section */}
       <AnimatedSection>
-        <CategorySection categories={categories} />
+        <div className="container mx-auto max-w-7xl">
+          <CategorySection categories={categories} />
+        </div>
       </AnimatedSection>
 
       {/* Popular Products Section - Grid on Mobile */}
       <AnimatedSection>
-        <GridProductSection 
-          title="Popular Pieces"
-          products={popularProducts}
-          viewAllLink="/shop?filter=popular"
-          className="bg-background"
-          mobileColumns={2}
-          desktopColumns={4}
-          showMoreProducts={8}
-        />
+        <div className="container mx-auto max-w-7xl">
+          <GridProductSection 
+            title="Popular Pieces"
+            products={popularProducts}
+            viewAllLink="/shop?filter=popular"
+            className="bg-background"
+            mobileColumns={2}
+            desktopColumns={4}
+            showMoreProducts={8}
+          />
+        </div>
       </AnimatedSection>
 
       {/* New Arrivals Section - Slider (Keep as is) */}
@@ -65,21 +69,23 @@ export default async function HomePage() {
 
       {/* Featured Products - Grid on Mobile */}
       <AnimatedSection>
-        <GridProductSection 
-          title="Featured Collections"
-          products={featuredProducts}
-          viewAllLink="/shop?filter=featured"
-          className="bg-background"
-          mobileColumns={2}
-          desktopColumns={4}
-          showMoreProducts={8}
-        />
+        <div className="container mx-auto max-w-7xl">
+          <GridProductSection 
+            title="Featured Collections"
+            products={featuredProducts}
+            viewAllLink="/shop?filter=featured"
+            className="bg-background"
+            mobileColumns={2}
+            desktopColumns={4}
+            showMoreProducts={8}
+          />
+        </div>
       </AnimatedSection>
 
       {/* Testimonials Section */}
       <AnimatedSection>
         <section className="py-12 md:py-16 bg-muted">
-          <div className="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-8 md:mb-12">
               <h2 className="text-2xl md:text-3xl font-bold text-primary mb-4">
                 What Our Customers Say
@@ -144,7 +150,7 @@ export default async function HomePage() {
             </div>
           </div>
           
-          <div className="container mx-auto max-w-4xl text-center px-4 sm:px-6 lg:px-8 relative">
+          <div className="container mx-auto max-w-7xl text-center px-4 sm:px-6 lg:px-8 relative">
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-background mb-4 md:mb-6">
               Find Your Perfect Piece
             </h2>

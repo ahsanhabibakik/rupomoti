@@ -74,27 +74,27 @@ export default function SeasonalOffersBanner() {
       "relative overflow-hidden bg-gradient-to-r transition-all duration-500",
       offer.bgGradient
     )}>
-      <div className="container mx-auto px-4 py-3">
+      <div className="container mx-auto px-4 py-2 max-w-7xl">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 flex-1">
-            <Icon className={cn("w-5 h-5", offer.textColor)} />
-            <div className="flex-1">
-              <p className={cn("text-sm font-semibold", offer.textColor)}>
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <Icon className={cn("w-4 h-4 flex-shrink-0", offer.textColor)} />
+            <div className="flex-1 min-w-0">
+              <p className={cn("text-sm font-semibold leading-tight", offer.textColor)}>
                 {offer.title}
               </p>
-              <p className={cn("text-xs opacity-90", offer.textColor)}>
+              <p className={cn("text-xs opacity-90 leading-tight", offer.textColor)}>
                 {offer.description}
               </p>
             </div>
           </div>
           
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <Button 
               asChild 
               variant="ghost" 
               size="sm"
               className={cn(
-                "text-xs font-medium hover:bg-background/20",
+                "text-xs font-medium hover:bg-background/20 h-8 px-3",
                 offer.textColor
               )}
             >
@@ -106,17 +106,17 @@ export default function SeasonalOffersBanner() {
             <Button
               variant="ghost"
               size="icon"
-              className={cn("w-6 h-6", offer.textColor, "hover:bg-background/20")}
+              className={cn("w-8 h-8", offer.textColor, "hover:bg-background/20")}
               onClick={() => setIsVisible(false)}
             >
-              <X className="w-4 h-4" />
+              <X className="w-3 h-3" />
             </Button>
           </div>
         </div>
       </div>
       
       {/* Dots indicator */}
-      <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 flex gap-1">
+      <div className="absolute bottom-0.5 left-1/2 transform -translate-x-1/2 flex gap-1">
         {offers.map((_, index) => (
           <div
             key={index}

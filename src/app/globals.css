@@ -683,3 +683,61 @@
     z-index: 9999 !important;
   }
 }
+
+/* Container utility for consistent responsive behavior */
+.container-responsive {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 1400px;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .container-responsive {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-responsive {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+/* Ensure modal backgrounds are not transparent */
+[data-radix-dialog-overlay] {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(4px) !important;
+}
+  
+[data-radix-dialog-content] {
+  z-index: 9999 !important;
+  background-color: hsl(var(--background)) !important;
+}
+
+/* Responsive breakpoint adjustments for better scaling */
+@media (min-width: 1200px) and (max-width: 1600px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 1600px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+/* Fix scrollbar styling */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
