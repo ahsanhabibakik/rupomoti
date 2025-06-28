@@ -2,10 +2,10 @@
 
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { getAuthSession } from '@/lib/auth'
+import { auth } from '@/app/auth'
 
 export async function createReview(formData: FormData) {
-  const session = await getAuthSession()
+  const session = await auth()
   if (!session?.user?.id) {
     return { error: 'Unauthorized' }
   }

@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session || session.user?.role !== 'ADMIN') {
       return NextResponse.json(
@@ -41,7 +41,7 @@ export async function GET() {
 
 export async function PATCH(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session || session.user?.role !== 'ADMIN') {
       return NextResponse.json(

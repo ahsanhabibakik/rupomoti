@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthSession } from '@/lib/auth'
+import { auth } from '@/app/auth'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getAuthSession()
+    const session = await auth()
     
     console.log('Debug Auth - Session:', JSON.stringify(session, null, 2))
     

@@ -1,9 +1,12 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/app/auth'
 
-export default auth((req) => {
+export default async function middleware(req: NextRequest) {
   const { nextUrl } = req
-  const isLoggedIn = !!req.auth
+  
+  // Get session using the auth function
+  const session = await auth()
+  const isLoggedIn = !!session?.user
   
   // Check if user is trying to access admin routes
   if (nextUrl.pathname.startsWith('/admin')) {
@@ -18,7 +21,7 @@ export default auth((req) => {
       return NextResponse.redirect(loginUrl)
     }
     
-    const user = req.auth?.user
+    const user = session?.user
     const userRole = user?.role as string
     const isAdmin = user?.isAdmin as boolean
     
@@ -33,7 +36,7 @@ export default auth((req) => {
   
   // For non-admin routes, allow access
   return NextResponse.next()
-})
+}
 
 export const config = {
   matcher: ['/admin/:path*']

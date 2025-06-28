@@ -1,6 +1,4 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from "@/app/auth"
 import { prisma } from '@/lib/prisma'
 import { Prisma, ProductStatus } from '@prisma/client'
 import { slugify } from '@/lib/utils/slugify'
@@ -90,7 +88,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
 
     if (!session) {
       return NextResponse.json(
@@ -125,7 +123,7 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
 
     if (!session) {
       return NextResponse.json(
@@ -161,7 +159,7 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
 
     if (!session) {
       return NextResponse.json(

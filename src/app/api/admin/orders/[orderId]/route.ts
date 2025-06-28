@@ -21,7 +21,7 @@ export async function PATCH(
   { params }: { params: { orderId: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user?.id || (session.user.role !== 'ADMIN' && session.user.role !== 'MANAGER')) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
@@ -122,7 +122,7 @@ export async function DELETE(
   { params }: { params: { orderId: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user?.id || (session.user.role !== 'ADMIN' && session.user.role !== 'MANAGER')) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
