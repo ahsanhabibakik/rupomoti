@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogOverlay, DialogPortal } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogOverlay, DialogPortal, DialogTitle } from '@/components/ui/dialog'
 import { Truck, CreditCard, Banknote, Smartphone, CheckCircle } from 'lucide-react'
 import { useForm, FieldValues, SubmitHandler } from 'react-hook-form'
 import { useAppSelector, useAppDispatch } from '@/redux/hooks'
@@ -125,6 +125,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
       <DialogPortal>
         <DialogOverlay className="fixed inset-0 bg-black/20 z-[1000]" />
         <DialogContent className="fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md sm:max-w-lg max-h-[90vh] overflow-y-auto bg-white p-6 rounded-2xl shadow-lg z-[1001]">
+          <DialogTitle className="sr-only">Checkout</DialogTitle>
           {!submitted ? (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               {errorMessage && (

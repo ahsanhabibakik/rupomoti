@@ -19,7 +19,7 @@ import { CourierAssignmentForm } from '@/components/admin/CourierAssignmentForm'
 import { ShipNowButton } from '@/components/admin/ShipNowButton';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { CourierBadge } from '@/components/ui/CourierBadge';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Edit, Package, RefreshCw, Trash2, Undo, AlertTriangle, Flag, FlagOff, Download, FileText, Printer, CheckSquare, Square } from 'lucide-react';
@@ -597,7 +597,10 @@ function OrdersList({ status }: { status: 'active' | 'trashed' | 'fake' }) {
                                     <span className="hidden sm:inline ml-1">Assign</span>
                                   </Button>
                                 </DialogTrigger>
-                                <DialogContent><CourierAssignmentForm order={order} /></DialogContent>
+                                <DialogContent>
+                                  <DialogTitle className="sr-only">Assign Courier</DialogTitle>
+                                  <CourierAssignmentForm order={order} />
+                                </DialogContent>
                               </Dialog>
                             )}
                             <ShipNowButton order={order} />
@@ -847,7 +850,10 @@ function OrdersList({ status }: { status: 'active' | 'trashed' | 'fake' }) {
                                     <Edit className="h-3 w-3 mr-1" /> Assign
                                   </Button>
                                 </DialogTrigger>
-                                <DialogContent><CourierAssignmentForm order={order} /></DialogContent>
+                                <DialogContent>
+                                  <DialogTitle className="sr-only">Assign Courier</DialogTitle>
+                                  <CourierAssignmentForm order={order} />
+                                </DialogContent>
                               </Dialog>
                             )}
                             <ShipNowButton order={order} />
