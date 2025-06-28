@@ -105,6 +105,9 @@ export async function POST(req: Request) {
   try {
     const session = await auth();
     const body = await req.json();
+    
+    console.log('Order API - Received data:', JSON.stringify(body, null, 2));
+    
     const {
       orderNumber,
       recipientName,
@@ -289,7 +292,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'An unexpected error occurred while processing your order.' }, { status: 500 });
     }
   } catch (error: any) {
-    console.error('Failed to parse request body or handle session:', error);
-    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+    console.error('Failed to create order:', error);
+    
+    // Provide more specific error messages
+    if (error.message) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    
+    // Check if it's a Prisma validation error
+    if (error.code === 'P2002') {
+      return NextResponse.json({ error: 'Duplicate order number. Please try again.' }, { status: 400 });
+    }
+    
+    return NextResponse.json({ error: 'Failed to create order. Please try again.' }, { status: 500 });
   }
 }

@@ -208,6 +208,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
     setIsSubmitting(true)
     try {
       const orderData = {
+        orderNumber: generateOrderNumber(),
         recipientName: formData.name.trim(),
         recipientPhone: formData.phone.trim(),
         recipientEmail: formData.email.trim() || '',
@@ -219,17 +220,16 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
         deliveryZone,
         items: items.map(item => ({
           productId: item.id,
-          name:       item.name,
-          price:      item.price,
-          quantity:   item.quantity,
-          image:      item.image,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          image: item.image,
         })),
         subtotal,
         deliveryFee,
         total,
         paymentMethod,
         userId: session?.user?.id || null,
-        orderNumber: generateOrderNumber(),
       };
       
       console.log("orderData", orderData);
