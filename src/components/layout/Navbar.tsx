@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from "next-auth/react";
-import { Menu, X, Search, ShoppingCart, ChevronDown, User, Shield, LogOut, Settings } from "lucide-react";
+import { Menu, Search, ShoppingCart, User, Shield, LogOut, Settings } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { setCartDrawerOpen } from "@/redux/slices/uiSlice";
 import SearchModal from "@/components/search/SearchModal";
@@ -14,8 +14,6 @@ import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
-  SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
 import {
@@ -235,9 +233,8 @@ export function Navbar() {
   const cartItems = useAppSelector((state) => state.cart.items);
   const cartCount = cartItems.reduce((total, item) => total + (item.quantity || 0), 0);
 
-  const handleMobileSearch = (query: string) => {
+  const handleMobileSearch = () => {
     setIsSearchOpen(true);
-    // You can also implement direct search logic here
   };
 
   return (

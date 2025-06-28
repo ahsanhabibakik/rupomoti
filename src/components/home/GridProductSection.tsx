@@ -29,7 +29,7 @@ export default function GridProductSection({
 
   return (
     <section className={`py-8 md:py-12 ${className}`}>
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 md:mb-8">
           <div>
@@ -49,7 +49,31 @@ export default function GridProductSection({
         </div>
 
         {/* Products Grid */}
-        <div className={`grid grid-cols-${mobileColumns} md:grid-cols-${Math.min(desktopColumns, 3)} lg:grid-cols-${desktopColumns} gap-3 md:gap-4 lg:gap-6`}>
+        <div className={`grid gap-3 md:gap-4 lg:gap-6 ${
+          mobileColumns === 1 
+            ? 'grid-cols-1' 
+            : mobileColumns === 3 
+            ? 'grid-cols-3' 
+            : 'grid-cols-2'
+        } ${
+          Math.min(desktopColumns, 3) === 1 
+            ? 'md:grid-cols-1' 
+            : Math.min(desktopColumns, 3) === 2
+            ? 'md:grid-cols-2'
+            : 'md:grid-cols-3'
+        } ${
+          desktopColumns === 1 
+            ? 'lg:grid-cols-1' 
+            : desktopColumns === 2
+            ? 'lg:grid-cols-2'
+            : desktopColumns === 3
+            ? 'lg:grid-cols-3'
+            : desktopColumns === 5
+            ? 'lg:grid-cols-5'
+            : desktopColumns === 6
+            ? 'lg:grid-cols-6'
+            : 'lg:grid-cols-4'
+        }`}>
           {displayProducts.map((product) => (
             <div key={product.id} className="w-full">
               <ProductCard
