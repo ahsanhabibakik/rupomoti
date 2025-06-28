@@ -26,7 +26,7 @@ import { OrderTableSkeleton } from '@/components/admin/OrderTableSkeleton';
 import { DataTablePagination } from '@/components/ui/DataTablePagination';
 import { showToast } from '@/lib/toast';
 import { OrderFilters } from './_components/OrderFilters';
-import { getOrderDisplayNumber } from '@/lib/utils/order-number';
+import { getOrderDisplayNumber, getOrderAnalyticalInfo } from '@/lib/utils/order-number';
 
 // Manually define the type to include the fields we need
 type OrderWithDetails = (Prisma.OrderGetPayload<{
@@ -69,7 +69,11 @@ function OrdersList({ status }: { status: 'active' | 'trashed' | 'fake' }) {
         page: page.toString(),
         limit: limit.toString(),
       });
-      const response = await fetch(`/api/admin/orders?${query.toString()}`);
+      const response = await fetch(`/api/admin/orders?${query.toString()}`, {
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
+      });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Network error' }));
         throw new Error(errorData.error || 'Failed to fetch orders');
@@ -77,8 +81,9 @@ function OrdersList({ status }: { status: 'active' | 'trashed' | 'fake' }) {
       return response.json();
     },
     placeholderData: (previousData: any) => previousData,
-    staleTime: 30000, // Consider data fresh for 30 seconds
-    refetchOnWindowFocus: false, // Don't refetch on window focus
+    staleTime: 0, // Always consider data stale to ensure fresh data
+    refetchOnWindowFocus: true, // Refetch when window gains focus
+    refetchInterval: 30000, // Refetch every 30 seconds
   });
 
   const { mutate: trashOrder, isPending: isTrashing } = useMutation({
@@ -195,17 +200,30 @@ function OrdersList({ status }: { status: 'active' | 'trashed' | 'fake' }) {
                 orders.map((order: OrderWithDetails) => (
                   <TableRow key={order.id} className={isPlaceholderData ? 'opacity-50' : ''}>
                     <TableCell>
-                      <div className="flex items-center gap-3">
-                        {status === 'active' && isNew(order.createdAt) && (
-                          <span className="relative flex h-3 w-3" title="New Order">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-3 w-3 bg-sky-500"></span>
-                          </span>
-                        )}
-                        {order.isFakeOrder && (
-                          <Flag className="h-4 w-4 text-red-500" title="Fake Order" />
-                        )}
-                        <div className="font-medium">{getOrderDisplayNumber(order.orderNumber)}</div>
+                      <div className="flex items-center gap-2">
+                        {(() => {
+                          const orderInfo = getOrderAnalyticalInfo(order);
+                          return (
+                            <>
+                              {orderInfo.isVeryNew && (
+                                <span className="relative flex h-3 w-3" title="Very New Order (< 2hrs)">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                                </span>
+                              )}
+                              {orderInfo.isNew && !orderInfo.isVeryNew && (
+                                <span className="relative flex h-3 w-3" title="New Order (< 24hrs)">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-3 w-3 bg-sky-500"></span>
+                                </span>
+                              )}
+                              {order.isFakeOrder && (
+                                <Flag className="h-4 w-4 text-red-500" title="Fake Order" />
+                              )}
+                              <div className="font-medium">{orderInfo.displayNumber}</div>
+                            </>
+                          );
+                        })()}
                       </div>
                       <div className="text-sm text-muted-foreground mt-1">
                         {format(new Date(order.createdAt), "dd MMM yyyy, h:mm a")}
@@ -233,14 +251,17 @@ function OrdersList({ status }: { status: 'active' | 'trashed' | 'fake' }) {
                       ৳{order.total.toLocaleString()}
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-1">
                         {status === 'active' ? (
                           <>
                             <OrderDetailsDialog order={order} />
                             {!['SHIPPED', 'DELIVERED', 'CANCELED'].includes(order.status) && (
                               <Dialog>
                                 <DialogTrigger asChild>
-                                  <Button variant="outline" size="sm"><Edit className="mr-2 h-4 w-4" /> Assign</Button>
+                                  <Button variant="outline" size="sm" className="h-8 px-2">
+                                    <Edit className="h-3 w-3" />
+                                    <span className="hidden sm:inline ml-1">Assign</span>
+                                  </Button>
                                 </DialogTrigger>
                                 <DialogContent><CourierAssignmentForm order={order} /></DialogContent>
                               </Dialog>
@@ -248,20 +269,23 @@ function OrdersList({ status }: { status: 'active' | 'trashed' | 'fake' }) {
                             <ShipNowButton order={order} />
                             <Button 
                               variant={order.isFakeOrder ? "secondary" : "outline"} 
-                              size="icon" 
+                              size="sm"
+                              className="h-8 w-8 p-0"
                               disabled={isMarkingFake} 
                               onClick={() => handleMarkAsFake(order.id, order.isFakeOrder || false)}
                               title={order.isFakeOrder ? "Unmark as fake" : "Mark as fake"}
                             >
-                              {order.isFakeOrder ? <FlagOff className="h-4 w-4" /> : <Flag className="h-4 w-4" />}
+                              {order.isFakeOrder ? <FlagOff className="h-3 w-3" /> : <Flag className="h-3 w-3" />}
                             </Button>
                             <Button 
                               variant="destructive" 
-                              size="icon" 
+                              size="sm"
+                              className="h-8 w-8 p-0"
                               disabled={isTrashing} 
                               onClick={() => handleTrashOrder(order.id)}
+                              title="Move to trash"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-3 w-3" />
                             </Button>
                           </>
                         ) : status === 'fake' ? (
@@ -270,27 +294,35 @@ function OrdersList({ status }: { status: 'active' | 'trashed' | 'fake' }) {
                             <Button 
                               variant="outline" 
                               size="sm" 
+                              className="h-8 px-2"
                               disabled={isMarkingFake} 
                               onClick={() => handleMarkAsFake(order.id, true)}
                             >
-                              <FlagOff className="mr-2 h-4 w-4" /> Unmark Fake
+                              <FlagOff className="h-3 w-3" />
+                              <span className="hidden sm:inline ml-1">Unmark</span>
                             </Button>
                             <Button 
                               variant="destructive" 
-                              size="icon" 
+                              size="sm"
+                              className="h-8 w-8 p-0"
                               disabled={isTrashing} 
                               onClick={() => handleTrashOrder(order.id)}
+                              title="Move to trash"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-3 w-3" />
                             </Button>
                           </>
                         ) : (
                           <>
-                             <Button variant="outline" size="sm" onClick={() => restoreOrder(order.id)} disabled={isRestoring}>
-                              <Undo className="mr-2 h-4 w-4" /> Restore
-                            </Button>
-                            <Button variant="destructive" size="sm" disabled={true} title="Permanent deletion is disabled">
-                              Delete Permanently
+                             <Button 
+                               variant="outline" 
+                               size="sm" 
+                               className="h-8 px-2"
+                               onClick={() => restoreOrder(order.id)} 
+                               disabled={isRestoring}
+                             >
+                              <Undo className="h-3 w-3" />
+                              <span className="hidden sm:inline ml-1">Restore</span>
                             </Button>
                           </>
                         )}
@@ -319,16 +351,29 @@ function OrdersList({ status }: { status: 'active' | 'trashed' | 'fake' }) {
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    {status === 'active' && isNew(order.createdAt) && (
-                      <span className="relative flex h-3 w-3" title="New Order">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-sky-500"></span>
-                      </span>
-                    )}
-                    {order.isFakeOrder && (
-                      <Flag className="h-4 w-4 text-red-500" title="Fake Order" />
-                    )}
-                    <span className="font-medium">{getOrderDisplayNumber(order.orderNumber)}</span>
+                    {(() => {
+                      const orderInfo = getOrderAnalyticalInfo(order);
+                      return (
+                        <>
+                          {orderInfo.isVeryNew && (
+                            <span className="relative flex h-3 w-3" title="Very New Order (< 2hrs)">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                            </span>
+                          )}
+                          {orderInfo.isNew && !orderInfo.isVeryNew && (
+                            <span className="relative flex h-3 w-3" title="New Order (< 24hrs)">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-3 w-3 bg-sky-500"></span>
+                            </span>
+                          )}
+                          {order.isFakeOrder && (
+                            <Flag className="h-4 w-4 text-red-500" title="Fake Order" />
+                          )}
+                          <span className="font-medium">{orderInfo.compactNumber}</span>
+                        </>
+                      );
+                    })()}
                   </div>
                   <div className="text-right">
                     <div className="font-semibold">৳{order.total.toLocaleString()}</div>
@@ -361,77 +406,74 @@ function OrdersList({ status }: { status: 'active' | 'trashed' | 'fake' }) {
                 </div>
 
                 {/* Actions */}
-                <div className="flex flex-wrap gap-2 pt-2 border-t">
-                  {status === 'active' ? (
-                    <>
-                      <OrderDetailsDialog order={order} />
-                      {!['SHIPPED', 'DELIVERED', 'CANCELED'].includes(order.status) && (
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <Edit className="mr-2 h-4 w-4" /> Assign
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent><CourierAssignmentForm order={order} /></DialogContent>
-                        </Dialog>
-                      )}
-                      <ShipNowButton order={order} />
+                <div className="flex items-center justify-between pt-3 border-t">
+                  <div className="flex items-center gap-1">
+                    {status === 'active' ? (
+                      <>
+                        <OrderDetailsDialog order={order} />
+                        {!['SHIPPED', 'DELIVERED', 'CANCELED'].includes(order.status) && (
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm" className="h-8 px-2">
+                                <Edit className="h-3 w-3 mr-1" /> Assign
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent><CourierAssignmentForm order={order} /></DialogContent>
+                          </Dialog>
+                        )}
+                        <ShipNowButton order={order} />
+                      </>
+                    ) : status === 'fake' ? (
+                      <>
+                        <OrderDetailsDialog order={order} />
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-8 px-2"
+                          disabled={isMarkingFake} 
+                          onClick={() => handleMarkAsFake(order.id, true)}
+                        >
+                          <FlagOff className="h-3 w-3 mr-1" /> Unmark
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-8 px-2"
+                          onClick={() => restoreOrder(order.id)} 
+                          disabled={isRestoring}
+                        >
+                          <Undo className="h-3 w-3 mr-1" /> Restore
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {status !== 'trashed' && (
                       <Button 
                         variant={order.isFakeOrder ? "secondary" : "outline"} 
-                        size="sm" 
+                        size="sm"
+                        className="h-8 w-8 p-0"
                         disabled={isMarkingFake} 
                         onClick={() => handleMarkAsFake(order.id, order.isFakeOrder || false)}
+                        title={order.isFakeOrder ? "Unmark as fake" : "Mark as fake"}
                       >
-                        {order.isFakeOrder ? (
-                          <>
-                            <FlagOff className="mr-2 h-4 w-4" />
-                            Unmark Fake
-                          </>
-                        ) : (
-                          <>
-                            <Flag className="mr-2 h-4 w-4" />
-                            Mark Fake
-                          </>
-                        )}
+                        {order.isFakeOrder ? <FlagOff className="h-3 w-3" /> : <Flag className="h-3 w-3" />}
                       </Button>
-                      <Button 
-                        variant="destructive" 
-                        size="sm" 
-                        disabled={isTrashing} 
-                        onClick={() => handleTrashOrder(order.id)}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Trash
-                      </Button>
-                    </>
-                  ) : status === 'fake' ? (
-                    <>
-                      <OrderDetailsDialog order={order} />
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        disabled={isMarkingFake} 
-                        onClick={() => handleMarkAsFake(order.id, true)}
-                      >
-                        <FlagOff className="mr-2 h-4 w-4" /> Unmark Fake
-                      </Button>
-                      <Button 
-                        variant="destructive" 
-                        size="sm" 
-                        disabled={isTrashing} 
-                        onClick={() => handleTrashOrder(order.id)}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Trash
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                       <Button variant="outline" size="sm" onClick={() => restoreOrder(order.id)} disabled={isRestoring}>
-                        <Undo className="mr-2 h-4 w-4" /> Restore
-                      </Button>
-                    </>
-                  )}
+                    )}
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      disabled={isTrashing} 
+                      onClick={() => handleTrashOrder(order.id)}
+                      title="Move to trash"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))
@@ -454,10 +496,20 @@ function OrdersList({ status }: { status: 'active' | 'trashed' | 'fake' }) {
 
 export default function OrdersPage() {
   const [activeTab, setActiveTab] = useState('active');
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const queryClient = useQueryClient();
 
-  const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ['orders'] });
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await queryClient.invalidateQueries({ queryKey: ['orders'] });
+      await queryClient.refetchQueries({ queryKey: ['orders'] });
+      showToast.success('Orders refreshed successfully!');
+    } catch (error) {
+      showToast.error('Failed to refresh orders');
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 500); // Small delay for UX
+    }
   };
 
   return (
@@ -466,8 +518,14 @@ export default function OrdersPage() {
         <h1 className="text-2xl font-bold">Orders</h1>
         <div className="flex items-center gap-2">
           <OrderFilters />
-          <Button variant="outline" size="icon" onClick={handleRefresh}>
-            <RefreshCw className="h-4 w-4" />
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={handleRefresh} 
+            disabled={isRefreshing}
+            className="shrink-0"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
           </Button>
         </div>
       </div>

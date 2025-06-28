@@ -6,6 +6,7 @@ import { useProducts } from '@/hooks/useProducts'
 import { useOrders } from '@/hooks/useOrders'
 import { useCategories } from '@/hooks/useCategories'
 import { useCustomers } from '@/hooks/useCustomers'
+import { useOrderStatistics } from '@/hooks/useOrderStatistics'
 import {
   LineChart,
   Line,
@@ -115,6 +116,7 @@ function DashboardSkeleton() {
 export default function DashboardPage() {
   const { data: products, isLoading: productsLoading } = useProducts()
   const { data: orders, isLoading: ordersLoading } = useOrders()
+  const { data: orderStats, isLoading: orderStatsLoading } = useOrderStatistics()
   const { categories, isLoading: categoriesLoading } = useCategories()
   const { customers, loading: customersLoading } = useCustomers('')
   const [salesData, setSalesData] = useState<any[]>([])
@@ -142,23 +144,22 @@ export default function DashboardPage() {
     return Math.floor(seconds) + ' seconds ago'
   }
 
-  // Analytics Calculations
-  const today = new Date()
-  const isToday = (date: Date) => {
-    const d = new Date(date)
-    return d.getDate() === today.getDate() &&
-           d.getMonth() === today.getMonth() &&
-           d.getFullYear() === today.getFullYear()
-  }
-
-  const todaysSales = Array.isArray(orders) ? orders.filter((o: any) => isToday(o.createdAt)).reduce((sum, o) => sum + o.total, 0) : 0
-  const newCustomers = Array.isArray(customers) ? customers.filter((c: any) => isToday(c.createdAt)).length : 0
-  const pendingOrders = Array.isArray(orders) ? orders.filter((order: any) => order.status === 'PENDING').length : 0
-  const processingOrders = Array.isArray(orders) ? orders.filter((order: any) => order.status === 'PROCESSING').length : 0
+  // Analytics Calculations - Use order statistics hook when available
+  const todaysSales = orderStats?.revenueToday || 0
+  const newCustomers = Array.isArray(customers) ? customers.filter((c: any) => {
+    const today = new Date()
+    const createdAt = new Date(c.createdAt)
+    return createdAt.getDate() === today.getDate() &&
+           createdAt.getMonth() === today.getMonth() &&
+           createdAt.getFullYear() === today.getFullYear()
+  }).length : 0
+  
+  const pendingOrders = orderStats?.pending || 0
+  const processingOrders = orderStats?.processing || 0
   const lowStockProducts = Array.isArray(products) ? products.filter((p: any) => p.stock > 0 && p.stock < 10).length : 0
 
-  const totalSales = Array.isArray(orders) ? orders.reduce((sum: number, order: any) => sum + order.total, 0) : 0
-  const totalOrders = Array.isArray(orders) ? orders.length : 0
+  const totalSales = orderStats?.revenue || 0
+  const totalOrders = orderStats?.total || 0
   const totalCustomers = Array.isArray(customers) ? customers.length : 0
   const totalProducts = Array.isArray(products) ? products.length : 0
   
@@ -295,7 +296,7 @@ export default function DashboardPage() {
   }, [products, categories])
 
   // Show loading state if any data is still loading
-  if (productsLoading || ordersLoading || categoriesLoading || customersLoading) {
+  if (productsLoading || ordersLoading || orderStatsLoading || categoriesLoading || customersLoading) {
     return <DashboardSkeleton />
   }
 
@@ -398,6 +399,61 @@ export default function DashboardPage() {
           <span className="text-lg font-bold">{lowStockProducts}</span>
         </div>
       </div>
+
+      {/* Order Status Overview */}
+      {orderStats && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Order Status Overview</h2>
+            <a href="/admin/orders" className="text-sm text-primary hover:underline">View All Orders</a>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="flex flex-col items-center justify-center p-3 bg-gradient-to-br from-sky-100 to-white rounded-xl border border-sky-200 shadow-sm relative">
+              <div className="flex items-center gap-1 mb-1">
+                <Package className="h-4 w-4 text-sky-600" />
+                {orderStats.newToday > 0 && (
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                  </span>
+                )}
+              </div>
+              <span className="text-lg font-bold">{orderStats.total}</span>
+              <span className="text-xs text-muted-foreground text-center">All Orders</span>
+              {orderStats.newToday > 0 && (
+                <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {orderStats.newToday}
+                </div>
+              )}
+            </div>
+            <div className="flex flex-col items-center justify-center p-3 bg-gradient-to-br from-yellow-100 to-white rounded-xl border border-yellow-200 shadow-sm">
+              <Clock className="h-4 w-4 text-yellow-600 mb-1" />
+              <span className="text-lg font-bold">{orderStats.pending}</span>
+              <span className="text-xs text-muted-foreground">Pending</span>
+            </div>
+            <div className="flex flex-col items-center justify-center p-3 bg-gradient-to-br from-blue-100 to-white rounded-xl border border-blue-200 shadow-sm">
+              <Activity className="h-4 w-4 text-blue-600 mb-1" />
+              <span className="text-lg font-bold">{orderStats.processing}</span>
+              <span className="text-xs text-muted-foreground">Processing</span>
+            </div>
+            <div className="flex flex-col items-center justify-center p-3 bg-gradient-to-br from-purple-100 to-white rounded-xl border border-purple-200 shadow-sm">
+              <Truck className="h-4 w-4 text-purple-600 mb-1" />
+              <span className="text-lg font-bold">{orderStats.shipped}</span>
+              <span className="text-xs text-muted-foreground">Shipped</span>
+            </div>
+            <div className="flex flex-col items-center justify-center p-3 bg-gradient-to-br from-green-100 to-white rounded-xl border border-green-200 shadow-sm">
+              <CheckCircle className="h-4 w-4 text-green-600 mb-1" />
+              <span className="text-lg font-bold">{orderStats.delivered}</span>
+              <span className="text-xs text-muted-foreground">Delivered</span>
+            </div>
+            <div className="flex flex-col items-center justify-center p-3 bg-gradient-to-br from-red-100 to-white rounded-xl border border-red-200 shadow-sm">
+              <AlertTriangle className="h-4 w-4 text-red-600 mb-1" />
+              <span className="text-lg font-bold">{orderStats.fake}</span>
+              <span className="text-xs text-muted-foreground">Fake Orders</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">

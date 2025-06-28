@@ -10,6 +10,42 @@ export const getOrderDisplayNumber = (orderNumber: string): string => {
   return orderNumber.replace('ORD-', '#');
 };
 
+// Get compact order number for mobile/small displays
+export const getCompactOrderNumber = (orderNumber: string): string => {
+  const display = getOrderDisplayNumber(orderNumber);
+  // For very long order numbers, show first 3 and last 3 characters with dots
+  if (display.length > 10) {
+    return display.slice(0, 6) + '...' + display.slice(-3);
+  }
+  return display;
+};
+
+// Get analytical order number info
+export const getOrderAnalyticalInfo = (order: {
+  orderNumber: string;
+  createdAt: string | Date;
+  status: string;
+  isFakeOrder?: boolean;
+}) => {
+  const hoursSinceCreated = Math.floor((new Date().getTime() - new Date(order.createdAt).getTime()) / (1000 * 60 * 60));
+  const isNew = hoursSinceCreated < 24;
+  const isVeryNew = hoursSinceCreated < 2;
+  
+  return {
+    displayNumber: getOrderDisplayNumber(order.orderNumber),
+    compactNumber: getCompactOrderNumber(order.orderNumber),
+    isNew,
+    isVeryNew,
+    hoursSinceCreated,
+    statusInfo: {
+      isPending: order.status === 'PENDING',
+      isFake: order.isFakeOrder === true,
+      isCompleted: ['DELIVERED', 'SHIPPED'].includes(order.status),
+      isCancelled: order.status === 'CANCELLED'
+    }
+  };
+};
+
 // Generate smart order code (client-safe)
 export const generateSmartOrderCode = (length: number = 6): string => {
   const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';

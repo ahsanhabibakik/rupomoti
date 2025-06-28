@@ -416,25 +416,51 @@ export function OrderDetailsDialog({ order }: OrderDetailsDialogProps) {
                 {/* Quick Actions */}
                 <div className="space-y-3 rounded-lg border p-4">
                   <h3 className="font-semibold">Quick Actions</h3>
-                  <div className="flex flex-col gap-2">
+                  <div className="grid grid-cols-1 gap-2">
                     <Button 
                       variant={order.isFakeOrder ? "secondary" : "outline"} 
                       size="sm" 
                       disabled={markAsFakeMutation.isPending} 
                       onClick={() => handleMarkAsFake(order.isFakeOrder || false)}
-                      className="justify-start"
+                      className="justify-start text-xs"
                     >
                       {order.isFakeOrder ? (
                         <>
-                          <FlagOff className="mr-2 h-4 w-4" /> 
-                          Unmark as Fake
+                          <FlagOff className="mr-1 h-3 w-3" /> 
+                          Unmark Fake
                         </>
                       ) : (
                         <>
-                          <Flag className="mr-2 h-4 w-4" /> 
-                          Mark as Fake
+                          <Flag className="mr-1 h-3 w-3" /> 
+                          Mark Fake
                         </>
                       )}
+                    </Button>
+                    {!['SHIPPED', 'DELIVERED', 'CANCELED'].includes(order.status) && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="justify-start text-xs"
+                        onClick={() => {
+                          // You can implement courier assignment logic here
+                          showToast.info('Courier assignment feature coming soon!');
+                        }}
+                      >
+                        <Truck className="mr-1 h-3 w-3" />
+                        Assign Courier
+                      </Button>
+                    )}
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="justify-start text-xs"
+                      onClick={() => {
+                        // You can implement print invoice logic here
+                        window.print();
+                      }}
+                    >
+                      <FileText className="mr-1 h-3 w-3" />
+                      Print Invoice
                     </Button>
                   </div>
                 </div>

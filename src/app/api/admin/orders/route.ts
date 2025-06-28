@@ -5,7 +5,7 @@ import { OrderStatus, Prisma } from "@prisma/client";
 
 export async function GET(req: Request) {
   const session = await auth();
-  if (!session?.user?.isAdmin) {
+  if (!session?.user?.isAdmin && session?.user?.role !== 'ADMIN' && session?.user?.role !== 'MANAGER') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
