@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/app/auth'
 import { prisma } from '@/lib/prisma'
-import { generateUniqueOrderNumber } from '@/lib/utils/order-number'
+import { generateUniqueOrderNumber } from '@/lib/server/order-number-generator'
 
 export async function GET() {
   try {

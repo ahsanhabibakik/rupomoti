@@ -21,11 +21,12 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { CourierBadge } from '@/components/ui/CourierBadge';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Edit, Package, RefreshCw, Trash2, Undo, AlertTriangle } from 'lucide-react';
+import { Edit, Package, RefreshCw, Trash2, Undo, AlertTriangle, Flag, FlagOff } from 'lucide-react';
 import { OrderTableSkeleton } from '@/components/admin/OrderTableSkeleton';
 import { DataTablePagination } from '@/components/ui/DataTablePagination';
 import { showToast } from '@/lib/toast';
 import { OrderFilters } from './_components/OrderFilters';
+import { getOrderDisplayNumber } from '@/lib/utils/order-number';
 
 // Manually define the type to include the fields we need
 type OrderWithDetails = (Prisma.OrderGetPayload<{
@@ -39,13 +40,14 @@ type OrderWithDetails = (Prisma.OrderGetPayload<{
   };
 }>) & {
   user: { isFlagged: boolean } | null;
+  isFakeOrder?: boolean;
 };
 
 function isNew(date: string | Date) {
   return differenceInHours(new Date(), new Date(date)) < 24;
 }
 
-function OrdersList({ status }: { status: 'active' | 'trashed' }) {
+function OrdersList({ status }: { status: 'active' | 'trashed' | 'fake' }) {
   const router = useRouter();
   const searchParams = useSearchParams() || new URLSearchParams();
   const queryClient = useQueryClient();
@@ -68,10 +70,15 @@ function OrdersList({ status }: { status: 'active' | 'trashed' }) {
         limit: limit.toString(),
       });
       const response = await fetch(`/api/admin/orders?${query.toString()}`);
-      if (!response.ok) throw new Error('Network response was not ok');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Network error' }));
+        throw new Error(errorData.error || 'Failed to fetch orders');
+      }
       return response.json();
     },
-    placeholderData: (previousData) => previousData,
+    placeholderData: (previousData: any) => previousData,
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    refetchOnWindowFocus: false, // Don't refetch on window focus
   });
 
   const { mutate: trashOrder, isPending: isTrashing } = useMutation({
@@ -95,10 +102,33 @@ function OrdersList({ status }: { status: 'active' | 'trashed' }) {
     },
     onError: () => showToast.error('Failed to restore order.'),
   });
+
+  const { mutate: markAsFakeOrder, isPending: isMarkingFake } = useMutation({
+    mutationFn: ({ orderId, isFake }: { orderId: string; isFake: boolean }) => 
+      fetch(`/api/admin/orders/${orderId}`, { 
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ markAsFake: isFake })
+      }),
+    onSuccess: async (_: any, { isFake }: { isFake: boolean }) => {
+      showToast.success(isFake ? 'Order marked as fake and user flagged.' : 'Order unmarked as fake.');
+      await queryClient.invalidateQueries({ queryKey: ['orders'] });
+    },
+    onError: () => showToast.error('Failed to update order.'),
+  });
   
   const handleTrashOrder = (orderId: string) => {
     if (window.confirm('Are you sure you want to move this order to the trash? This will also flag the user.')) {
       trashOrder(orderId);
+    }
+  };
+
+  const handleMarkAsFake = (orderId: string, currentStatus: boolean) => {
+    const action = currentStatus ? 'unmark' : 'mark';
+    const message = `Are you sure you want to ${action} this order as fake?${!currentStatus ? ' This will also flag the user.' : ''}`;
+    
+    if (window.confirm(message)) {
+      markAsFakeOrder({ orderId, isFake: !currentStatus });
     }
   };
   
@@ -115,14 +145,28 @@ function OrdersList({ status }: { status: 'active' | 'trashed' }) {
     router.push(`/admin/orders?${params.toString()}`);
   };
 
-  if (isLoading && !isPlaceholderData) return <OrderTableSkeleton />;
+  if (isLoading && !isPlaceholderData) return (
+    <div className="p-4 md:p-6">
+      <OrderTableSkeleton />
+    </div>
+  );
   if (error) return <div className="text-red-500 text-center py-10">Failed to load orders.</div>;
   
   const { orders, totalOrders, totalPages } = data ?? { orders: [], totalOrders: 0, totalPages: 0 };
 
   return (
     <div className="space-y-4">
-       <div className="border rounded-lg">
+       {/* Loading overlay for search/filter operations */}
+       {isPlaceholderData && (
+         <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center z-10">
+           <div className="flex items-center gap-2 text-muted-foreground">
+             <RefreshCw className="h-4 w-4 animate-spin" />
+             <span>Updating...</span>
+           </div>
+         </div>
+       )}
+       
+       <div className={`border rounded-lg ${isPlaceholderData ? 'relative' : ''}`}>
         <Table>
           <TableHeader>
             <TableRow>
@@ -140,7 +184,8 @@ function OrdersList({ status }: { status: 'active' | 'trashed' }) {
                 <TableCell colSpan={6} className="text-center h-48">
                   <Package className="mx-auto h-12 w-12 text-gray-400" />
                   <p className="mt-2 text-sm text-gray-500">
-                    {status === 'trashed' ? 'Trash is empty.' : 'No orders found.'}
+                    {status === 'trashed' ? 'Trash is empty.' : 
+                     status === 'fake' ? 'No fake orders found.' : 'No orders found.'}
                   </p>
                 </TableCell>
               </TableRow>
@@ -155,7 +200,10 @@ function OrdersList({ status }: { status: 'active' | 'trashed' }) {
                           <span className="relative inline-flex rounded-full h-3 w-3 bg-sky-500"></span>
                         </span>
                       )}
-                      <div className="font-medium">#{order.orderNumber}</div>
+                      {order.isFakeOrder && (
+                        <Flag className="h-4 w-4 text-red-500" title="Fake Order" />
+                      )}
+                      <div className="font-medium">{getOrderDisplayNumber(order.orderNumber)}</div>
                     </div>
                     <div className="text-sm text-muted-foreground mt-1">
                       {format(new Date(order.createdAt), "dd MMM yyyy, h:mm a")}
@@ -196,6 +244,35 @@ function OrdersList({ status }: { status: 'active' | 'trashed' }) {
                             </Dialog>
                           )}
                           <ShipNowButton order={order} />
+                          <Button 
+                            variant={order.isFakeOrder ? "secondary" : "outline"} 
+                            size="icon" 
+                            disabled={isMarkingFake} 
+                            onClick={() => handleMarkAsFake(order.id, order.isFakeOrder || false)}
+                            title={order.isFakeOrder ? "Unmark as fake" : "Mark as fake"}
+                          >
+                            {order.isFakeOrder ? <FlagOff className="h-4 w-4" /> : <Flag className="h-4 w-4" />}
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="icon" 
+                            disabled={isTrashing} 
+                            onClick={() => handleTrashOrder(order.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      ) : status === 'fake' ? (
+                        <>
+                          <OrderDetailsDialog order={order} />
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            disabled={isMarkingFake} 
+                            onClick={() => handleMarkAsFake(order.id, true)}
+                          >
+                            <FlagOff className="mr-2 h-4 w-4" /> Unmark Fake
+                          </Button>
                           <Button 
                             variant="destructive" 
                             size="icon" 
@@ -257,12 +334,16 @@ export default function OrdersPage() {
         </div>
       </div>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="active">Active</TabsTrigger>
+            <TabsTrigger value="fake">Fake Orders</TabsTrigger>
             <TabsTrigger value="trashed">Trashed</TabsTrigger>
         </TabsList>
         <TabsContent value="active">
             <OrdersList status="active" />
+        </TabsContent>
+        <TabsContent value="fake">
+            <OrdersList status="fake" />
         </TabsContent>
         <TabsContent value="trashed">
             <OrdersList status="trashed" />

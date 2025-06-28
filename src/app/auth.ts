@@ -14,6 +14,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   pages: {
     signIn: '/signin',
   },
+  trustHost: true,
+  useSecureCookies: process.env.NODE_ENV === 'production',
+  debug: process.env.NODE_ENV === 'development',
+  experimental: {
+    enableWebAuthn: false,
+  },
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,

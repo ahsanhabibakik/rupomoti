@@ -25,15 +25,48 @@ export async function PATCH(
   }
 
   try {
+    const body = await request.json();
     const order = await prisma.order.findUnique({
         where: { id: params.orderId },
+        include: { user: true }
     });
 
     if (!order) {
         return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    // This endpoint is only for restoring orders
+    // Handle different actions
+    if (body.restore) {
+      // Restore order from trash
+      await prisma.order.update({
+          where: { id: params.orderId },
+          data: { deletedAt: null },
+      });
+      return NextResponse.json({ success: true, message: 'Order restored successfully.' });
+    }
+
+    if (body.markAsFake !== undefined) {
+      // Mark order as fake and optionally flag the user
+      const updateData: any = { isFakeOrder: body.markAsFake };
+      
+      await prisma.order.update({
+          where: { id: params.orderId },
+          data: updateData,
+      });
+
+      // If marking as fake and user exists, flag the user
+      if (body.markAsFake && order.userId) {
+        await prisma.user.update({
+          where: { id: order.userId },
+          data: { isFlagged: true }
+        });
+      }
+
+      const message = body.markAsFake ? 'Order marked as fake and user flagged.' : 'Order unmarked as fake.';
+      return NextResponse.json({ success: true, message });
+    }
+
+    // Default restore behavior for backward compatibility
     await prisma.order.update({
         where: { id: params.orderId },
         data: { deletedAt: null },
@@ -41,8 +74,8 @@ export async function PATCH(
 
     return NextResponse.json({ success: true, message: 'Order restored successfully.' });
   } catch (error) {
-    console.error('Failed to restore order:', error);
-    return NextResponse.json({ error: 'Failed to restore order' }, { status: 500 });
+    console.error('Failed to update order:', error);
+    return NextResponse.json({ error: 'Failed to update order' }, { status: 500 });
   }
 }
 
