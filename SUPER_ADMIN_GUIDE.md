@@ -7,12 +7,14 @@ This document describes the Super Admin functionality in the Rupomoti applicatio
 Two Super Admin accounts have been created:
 
 ### 1. Delwer Admin
+
 - **Email:** `admin@delwer.com`
 - **Password:** `SuperAdmin123!`
 - **Role:** SUPER_ADMIN
 - **Permissions:** Full access to all features
 
 ### 2. Akik Admin  
+
 - **Email:** `admin@akik.com`
 - **Password:** `SuperAdmin123!`
 - **Role:** SUPER_ADMIN
@@ -30,15 +32,18 @@ The application now supports the following roles:
 ## Scripts Available
 
 ### Create/Update Super Admins
+
 ```bash
 pnpm run seed:super-admins
 ```
 This script will:
+
 - Create new super admin users if they don't exist
 - Update existing users to super admin role if they already exist
 - Set proper permissions and admin flags
 
 ### Verify Super Admins
+
 ```bash
 pnpm run verify:super-admins
 ```
