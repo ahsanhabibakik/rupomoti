@@ -1,14 +1,13 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { X, Package, CreditCard, Banknote, MapPin, User, Phone, MapPinIcon, MessageSquare, Loader2 } from 'lucide-react'
+import { X, Package, CreditCard, Banknote, MapPin, User, MapPinIcon, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
-import { DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import {
   Select,
   SelectContent,
@@ -271,37 +270,20 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   }
 
   return (
-    <AnimatePresence>
-      {open && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="w-full max-w-4xl bg-white rounded-lg shadow-xl max-h-[90vh] overflow-hidden">
+        <DialogTitle className="sr-only">Checkout</DialogTitle>
+        <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-pearl-500 to-pearl-600 text-white">
+          <h2 className="text-xl font-semibold">Complete Your Order</h2>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => onOpenChange(false)}
-          />
-
-          {/* Modal */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl bg-white rounded-lg shadow-xl z-50 max-h-[90vh] overflow-hidden"
+            className="text-white hover:bg-white/10"
           >
-            <DialogTitle className="sr-only">Checkout</DialogTitle>
-            <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-pearl-500 to-pearl-600 text-white">
-              <h2 className="text-xl font-semibold">Complete Your Order</h2>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onOpenChange(false)}
-                className="text-white hover:bg-white/10"
-              >
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
 
             <div className="overflow-y-auto max-h-[calc(90vh-80px)]">
               <form onSubmit={handleSubmit} className="p-6">
@@ -568,9 +550,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 </div>
               </form>
             </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+      </DialogContent>
+    </Dialog>
   )
 }
