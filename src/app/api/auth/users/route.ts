@@ -6,7 +6,7 @@ export async function GET() {
   try {
     const session = await auth();
 
-    if (!session || session.user?.role !== 'ADMIN') {
+    if (!session || !['SUPER_ADMIN', 'ADMIN'].includes(session.user?.role as string)) {
       return NextResponse.json(
         { message: "Unauthorized" },
         { status: 401 }
@@ -42,7 +42,7 @@ export async function PATCH(req: Request) {
   try {
     const session = await auth();
 
-    if (!session || session.user?.role !== 'ADMIN') {
+    if (!session || !['SUPER_ADMIN', 'ADMIN'].includes(session.user?.role as string)) {
       return NextResponse.json(
         { message: "Unauthorized" },
         { status: 401 }
