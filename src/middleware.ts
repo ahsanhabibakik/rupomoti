@@ -10,14 +10,17 @@ export default async function middleware(req: NextRequest) {
   
   // Check if user is trying to access admin routes
   if (nextUrl.pathname.startsWith('/admin')) {
-    // Allow access to admin login page
+    // Allow access to admin login page (redirect to main signin)
     if (nextUrl.pathname === '/admin/login') {
-      return NextResponse.next()
+      const signinUrl = new URL('/signin', nextUrl.origin)
+      signinUrl.searchParams.set('callbackUrl', '/admin')
+      return NextResponse.redirect(signinUrl)
     }
     
     // For other admin routes, check if user is logged in and is admin
     if (!isLoggedIn) {
-      const loginUrl = new URL('/admin/login', nextUrl.origin)
+      const loginUrl = new URL('/signin', nextUrl.origin)
+      loginUrl.searchParams.set('callbackUrl', nextUrl.pathname)
       return NextResponse.redirect(loginUrl)
     }
     
@@ -28,7 +31,8 @@ export default async function middleware(req: NextRequest) {
     const hasAdminAccess = isAdmin || userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' || userRole === 'MANAGER'
     
     if (!hasAdminAccess) {
-      const loginUrl = new URL('/admin/login', nextUrl.origin)
+      const loginUrl = new URL('/signin', nextUrl.origin)
+      loginUrl.searchParams.set('callbackUrl', nextUrl.pathname)
       return NextResponse.redirect(loginUrl)
     }
   }
