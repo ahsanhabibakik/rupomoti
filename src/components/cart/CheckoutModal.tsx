@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -17,8 +16,10 @@ import {
   User, 
   X, 
   Loader2,
-  MapPinIcon 
+  MapPinIcon , Truck, Smartphone, CheckCircle 
 } from 'lucide-react'
+import { Dialog, DialogContent, DialogOverlay, DialogPortal, DialogTitle } from '@/components/ui/dialog'
+import { useForm, FieldValues, SubmitHandler } from 'react-hook-form'
 import { useAppSelector, useAppDispatch } from '@/redux/hooks'
 import { clearCart } from '@/redux/slices/cartSlice'
 import { useSession } from 'next-auth/react'

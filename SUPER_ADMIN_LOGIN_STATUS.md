@@ -3,12 +3,14 @@
 ## Status: ✅ CONFIGURED CORRECTLY
 
 ### Super Admin Credentials
+
 - **Email:** admin@delwer.com
 - **Password:** SuperAdmin123!
 - **Role:** SUPER_ADMIN  
 - **IsAdmin:** true
 
 ### Second Super Admin
+
 - **Email:** admin@akik.com
 - **Password:** SuperAdmin123!
 - **Role:** SUPER_ADMIN
