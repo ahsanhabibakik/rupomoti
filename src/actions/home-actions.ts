@@ -20,13 +20,13 @@ export async function getHomePageData() {
     stock: { gt: 0 }
   }
 
-  const [featuredProducts, popularProducts, newArrivals] = await Promise.all([
+  const [featuredProducts, popularProducts, newArrivals, regularProducts] = await Promise.all([
     prisma.product.findMany({
       where: { 
         ...baseWhere,
         isFeatured: true 
       },
-      take: 8,
+      take: 12,
       orderBy: { createdAt: 'desc' },
       include: { category: true },
     }),
@@ -35,7 +35,7 @@ export async function getHomePageData() {
         ...baseWhere,
         isPopular: true 
       },
-      take: 8,
+      take: 12,
       orderBy: { createdAt: 'desc' },
       include: { category: true },
     }),
@@ -44,15 +44,43 @@ export async function getHomePageData() {
         ...baseWhere,
         isNewArrival: true 
       },
-      take: 4,
+      take: 12,
+      orderBy: { createdAt: 'desc' },
+      include: { category: true },
+    }),
+    // Get regular products (not featured, not popular, not new arrivals)
+    prisma.product.findMany({
+      where: { 
+        ...baseWhere,
+        isFeatured: false,
+        isPopular: false,
+        isNewArrival: false
+      },
+      take: 12,
       orderBy: { createdAt: 'desc' },
       include: { category: true },
     }),
   ])
 
+  // Smart product count logic
+  const getOptimalProductCount = (products: any[]) => {
+    const count = products.length
+    if (count >= 8) return 8
+    if (count >= 4) return 4
+    if (count >= 3) return count
+    return 0 // Hide section if less than 3 products
+  }
+
   return {
-    featuredProducts,
-    popularProducts,
-    newArrivals,
+    featuredProducts: featuredProducts.slice(0, getOptimalProductCount(featuredProducts)),
+    popularProducts: popularProducts.slice(0, getOptimalProductCount(popularProducts)),
+    newArrivals: newArrivals.slice(0, getOptimalProductCount(newArrivals)),
+    regularProducts: regularProducts.slice(0, getOptimalProductCount(regularProducts)),
+    counts: {
+      featured: featuredProducts.length,
+      popular: popularProducts.length,
+      newArrivals: newArrivals.length,
+      regular: regularProducts.length,
+    }
   }
 }

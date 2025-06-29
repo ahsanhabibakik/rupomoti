@@ -26,6 +26,7 @@ export function ProductCard({ product, compact = false, className }: ProductCard
   const dispatch = useAppDispatch()
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist()
   const [isImageLoading, setIsImageLoading] = useState(true)
+  const [isHovered, setIsHovered] = useState(false)
 
   const safePrice = typeof price === 'number' && !isNaN(price) ? price : 0
   const discountedPrice = discount > 0 && typeof price === 'number' && !isNaN(price)
@@ -81,20 +82,40 @@ export function ProductCard({ product, compact = false, className }: ProductCard
         compact && "rounded-lg shadow-sm",
         className
       )}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       {/* Image Container */}
       <Link href={`/product/${product.slug || id}`} className={cn(
         "block relative w-full overflow-hidden",
         compact ? "aspect-[4/3]" : "aspect-square"
       )}>
+        {/* Main Image */}
         <Image
           src={images[0] || '/placeholder.png'}
           alt={name || 'Unnamed Product'}
           fill
-          className="object-cover"
+          className={cn(
+            "object-cover transition-opacity duration-300",
+            isHovered && images[1] ? "opacity-0" : "opacity-100"
+          )}
           sizes={compact ? "(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw" : "(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 50vw"}
           onLoad={() => setIsImageLoading(false)}
         />
+        
+        {/* Hover Image */}
+        {images[1] && (
+          <Image
+            src={images[1]}
+            alt={`${name || 'Unnamed Product'} - alternate view`}
+            fill
+            className={cn(
+              "object-cover transition-opacity duration-300",
+              isHovered ? "opacity-100" : "opacity-0"
+            )}
+            sizes={compact ? "(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw" : "(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 50vw"}
+          />
+        )}
         {/* Loading Overlay */}
         {isImageLoading && (
           <div className="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center">
@@ -217,7 +238,7 @@ export function ProductCard({ product, compact = false, className }: ProductCard
               onClick={handleAddToCart}
               disabled={isOutOfStock}
               className={cn(
-                "flex-1 bg-primary hover:bg-primary-dark text-accent rounded-lg font-medium shadow",
+                "flex-1 bg-amber-900 hover:bg-amber-950 text-white rounded-lg font-medium shadow-lg hover:shadow-xl transition-all duration-300",
                 compact ? "h-7 text-[10px] px-2" : "h-9 text-xs"
               )}
             >

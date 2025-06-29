@@ -13,6 +13,7 @@ import { AnimatedSection } from '@/components/ui/AnimatedSection'
 import CategorySection from '@/components/home/CategorySection'
 import SlidableProductSection from '@/components/home/SlidableProductSection'
 import GridProductSection from '@/components/home/GridProductSection'
+import RegularProductSection from '@/components/home/RegularProductSection'
 import SeasonalOffersBanner from '@/components/home/SeasonalOffersBanner'
 import { getCategories } from '@/actions/getCategories'
 
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
 }
 
 export default async function HomePage() {
-  const { popularProducts, newArrivals, featuredProducts } = await getHomePageData()
+  const { popularProducts, newArrivals, featuredProducts, regularProducts } = await getHomePageData()
   const categories = await getCategories({ active: true, level: 0 })
 
   return (
@@ -35,14 +36,39 @@ export default async function HomePage() {
         <HeroSlider />
       </section>
 
-      {/* Modern Categories Section */}
+      {/* Shop by Category Section */}
       <AnimatedSection>
         <div className="container mx-auto max-w-7xl">
           <CategorySection categories={categories} />
         </div>
       </AnimatedSection>
 
-      {/* Popular Products Section - Grid on Mobile */}
+      {/* Featured Collections Section */}
+      <AnimatedSection>
+        <div className="container mx-auto max-w-7xl">
+          <GridProductSection 
+            title="Featured Collections"
+            products={featuredProducts}
+            viewAllLink="/shop?filter=featured"
+            className="bg-background"
+            mobileColumns={2}
+            desktopColumns={4}
+            showMoreProducts={8}
+          />
+        </div>
+      </AnimatedSection>
+
+      {/* Latest Collection Section - Slider */}
+      <AnimatedSection>
+        <SlidableProductSection 
+          title="Latest Collection"
+          products={newArrivals}
+          viewAllLink="/shop?filter=new-arrivals"
+          className="bg-secondary/50"
+        />
+      </AnimatedSection>
+
+      {/* Popular Pieces Section */}
       <AnimatedSection>
         <div className="container mx-auto max-w-7xl">
           <GridProductSection 
@@ -57,29 +83,15 @@ export default async function HomePage() {
         </div>
       </AnimatedSection>
 
-      {/* New Arrivals Section - Slider (Keep as is) */}
+      {/* Regular Products Section */}
       <AnimatedSection>
-        <SlidableProductSection 
-          title="Latest Collection"
-          products={newArrivals}
-          viewAllLink="/shop?filter=new-arrivals"
-          className="bg-secondary"
+        <RegularProductSection 
+          title="Our Collection"
+          products={regularProducts}
+          viewAllLink="/shop"
+          className="bg-gray-50"
+          maxProducts={8}
         />
-      </AnimatedSection>
-
-      {/* Featured Products - Grid on Mobile */}
-      <AnimatedSection>
-        <div className="container mx-auto max-w-7xl">
-          <GridProductSection 
-            title="Featured Collections"
-            products={featuredProducts}
-            viewAllLink="/shop?filter=featured"
-            className="bg-background"
-            mobileColumns={2}
-            desktopColumns={4}
-            showMoreProducts={8}
-          />
-        </div>
       </AnimatedSection>
 
       {/* Testimonials Section */}

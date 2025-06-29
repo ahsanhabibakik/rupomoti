@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { ProductCard } from '@/components/products/ProductCard'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
@@ -120,6 +121,7 @@ async function getInitialProducts() {
 }
 
 export default function ShopPage() {
+  const searchParams = useSearchParams()
   const [initialData, setInitialData] = useState<{ products: Product[], total: number }>({ products: [], total: 0 });
   const [categories, setCategories] = useState<Category[]>([]);
   
@@ -138,6 +140,29 @@ export default function ShopPage() {
   const debouncedPriceRange = useDebounce(priceRange, 500);
   
   const lastProductElementRef = useRef<HTMLDivElement>(null);
+
+  // Handle URL filter parameters
+  useEffect(() => {
+    const filterParam = searchParams?.get('filter')
+    if (filterParam) {
+      switch (filterParam) {
+        case 'featured':
+          setSelectedCategories([])
+          setSortBy('featured')
+          break
+        case 'new-arrivals':
+          setSelectedCategories([])
+          setSortBy('newest')
+          break
+        case 'popular':
+          setSelectedCategories([])
+          setSortBy('popular')
+          break
+        default:
+          break
+      }
+    }
+  }, [searchParams])
 
   const fetchProducts = useCallback(async (isNewSearch: boolean) => {
     if (!isNewSearch && !hasMore) return;
