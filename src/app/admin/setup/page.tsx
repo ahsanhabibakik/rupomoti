@@ -72,7 +72,7 @@ export default function AdminSetupPage() {
         description: 'Admin user created successfully',
       })
 
-      router.push('/admin/login')
+      router.push('/signin?callbackUrl=/admin')
     } catch (error: any) {
       toast({
         variant: 'destructive',

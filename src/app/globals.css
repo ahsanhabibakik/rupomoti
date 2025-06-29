@@ -57,75 +57,151 @@
     --brand-primary: #1F382D; /* Deep Heart Green */
     --brand-secondary: #C62828; /* Heart Red */
     --brand-accent: #FFC857; /* Warm Gold */
+
+    /* Customizable Theme Colors (can be overridden by SuperAdmin) */
+    --color-primary: #4A2E21;
+    --color-secondary: #C8B38A;
+    --color-accent: #E8CBAF;
+    --color-success: #10B981;
+    --color-warning: #F59E0B;
+    --color-danger: #EF4444;
+    --color-info: #3B82F6;
+    --color-purple: #8B5CF6;
+
+    /* Dynamic custom colors for theme customization */
+    --custom-bg-primary: var(--color-primary);
+    --custom-bg-secondary: var(--color-secondary);
+    --custom-bg-accent: var(--color-accent);
+    --custom-text-primary: #FFFFFF;
+    --custom-text-secondary: #000000;
+    --custom-border: var(--color-accent);
+
+    /* Brand gradient combinations */
+    --gradient-brand: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    --gradient-accent: linear-gradient(135deg, var(--color-accent), var(--color-secondary));
+    --gradient-custom: linear-gradient(135deg, var(--custom-bg-primary), var(--custom-bg-accent));
   }
  
   .dark {
-    --background: 28 34% 10%; /* Darker Cocoa Brown */
-    --foreground: 40 43% 88%; /* Champagne Sheen */
+    --background: 28 34% 8%; /* Darker Cocoa Brown */
+    --foreground: 40 43% 92%; /* Brighter Champagne Sheen */
  
-    --card: 28 34% 12%;
-    --card-foreground: 40 43% 88%;
+    --card: 28 34% 10%;
+    --card-foreground: 40 43% 92%;
  
-    --popover: 28 34% 10%;
-    --popover-foreground: 40 43% 88%;
+    --popover: 28 34% 8%;
+    --popover-foreground: 40 43% 92%;
  
     /* Brand Colors - Dark Mode */
     --brand: 39 37% 66%;
-    --brand-foreground: 40 43% 88%;
+    --brand-foreground: 40 43% 92%;
  
-    /* Primary - Champagne Sheen */
-    --primary: 40 43% 88%;
-    --primary-foreground: 28 34% 10%;
+    /* Primary - Bright Champagne for visibility */
+    --primary: 40 43% 92%;
+    --primary-foreground: 28 34% 8%;
  
-    /* Secondary - Darker gray-brown */
-    --secondary: 28 34% 15%;
-    --secondary-foreground: 40 43% 88%;
+    /* Secondary - Lighter for contrast */
+    --secondary: 28 34% 18%;
+    --secondary-foreground: 40 43% 92%;
  
-    /* Muted */
-    --muted: 28 34% 15%;
-    --muted-foreground: 40 43% 75%;
+    /* Muted - Better contrast */
+    --muted: 28 34% 16%;
+    --muted-foreground: 40 43% 80%;
  
     /* Accent - Warm Oyster Gold */
-    --accent: 39 37% 66%;
-    --accent-foreground: 28 34% 10%;
+    --accent: 39 37% 70%;
+    --accent-foreground: 28 34% 8%;
  
     /* Destructive - Rose-Gold */
-    --destructive: 8 58% 71%;
-    --destructive-foreground: 28 34% 10%;
+    --destructive: 8 58% 75%;
+    --destructive-foreground: 28 34% 8%;
 
     /* Success */
-    --success: 158 24% 40%;
-    --success-foreground: 40 43% 88%;
+    --success: 158 24% 45%;
+    --success-foreground: 40 43% 92%;
 
     /* Info */
-    --info: 196 35% 86%;
-    --info-foreground: 28 34% 10%;
+    --info: 196 35% 80%;
+    --info-foreground: 28 34% 8%;
 
     /* Warning */
-    --warning: 39 50% 55%;
-    --warning-foreground: 28 34% 10%;
+    --warning: 39 50% 60%;
+    --warning-foreground: 28 34% 8%;
  
-    --border: 28 34% 15%;
-    --input: 28 34% 15%;
-    --ring: 39 37% 66%;
+    --border: 28 34% 20%;
+    --input: 28 34% 16%;
+    --ring: 39 37% 70%;
+
+    /* Customizable Theme Colors (Dark Mode - inherit from light unless overridden) */
+    --color-primary: var(--color-primary, #4A2E21);
+    --color-secondary: var(--color-secondary, #C8B38A);
+    --color-accent: var(--color-accent, #E8CBAF);
+    --color-success: var(--color-success, #10B981);
+    --color-warning: var(--color-warning, #F59E0B);
+    --color-danger: var(--color-danger, #EF4444);
+    --color-info: var(--color-info, #3B82F6);
+    --color-purple: var(--color-purple, #8B5CF6);
   }
-}
- 
-@layer base {
+
+  /* Ensure compatibility with Tailwind v4 */
   * {
     border-color: hsl(var(--border));
   }
+  
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-    @apply antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+  
   h1, h2, h3, h4, h5, h6 {
     color: hsl(var(--foreground));
+    font-weight: 600;
   }
+  
+  /* Ensure dark mode headings have better contrast */
+  .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+    color: hsl(var(--foreground));
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+  
   p {
     color: hsl(var(--muted-foreground));
+  }
+
+  /* Input field improvements for dark mode */
+  .dark input[type="text"],
+  .dark input[type="email"],
+  .dark input[type="password"],
+  .dark input[type="search"],
+  .dark input[type="number"],
+  .dark input[type="tel"],
+  .dark input[type="url"],
+  .dark textarea,
+  .dark select {
+    background-color: hsl(var(--input));
+    color: hsl(var(--foreground));
+    border-color: hsl(var(--border));
+  }
+
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    color: hsl(var(--muted-foreground));
+    opacity: 0.8;
+  }
+
+  /* Button improvements for dark mode */
+  .dark button {
+    color: inherit;
+  }
+
+  .dark .bg-primary {
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+
+  .dark .text-primary {
+    color: hsl(var(--primary));
   }
 }
 
@@ -138,6 +214,71 @@
   }
   .text-muted-foreground {
     color: hsl(var(--muted-foreground));
+  }
+
+  /* Custom color utilities */
+  .bg-custom-primary {
+    background-color: var(--custom-bg-primary);
+  }
+  .bg-custom-secondary {
+    background-color: var(--custom-bg-secondary);
+  }
+  .bg-custom-accent {
+    background-color: var(--custom-bg-accent);
+  }
+  .text-custom-primary {
+    color: var(--custom-text-primary);
+  }
+  .text-custom-secondary {
+    color: var(--custom-text-secondary);
+  }
+  .border-custom {
+    border-color: var(--custom-border);
+  }
+  .gradient-brand {
+    background: var(--gradient-brand);
+  }
+  .gradient-accent {
+    background: var(--gradient-accent);
+  }
+  .gradient-custom {
+    background: var(--gradient-custom);
+  }
+
+  /* Theme color utilities */
+  .bg-theme-primary {
+    background-color: var(--color-primary);
+  }
+  .bg-theme-secondary {
+    background-color: var(--color-secondary);
+  }
+  .bg-theme-accent {
+    background-color: var(--color-accent);
+  }
+  .bg-theme-success {
+    background-color: var(--color-success);
+  }
+  .bg-theme-warning {
+    background-color: var(--color-warning);
+  }
+  .bg-theme-danger {
+    background-color: var(--color-danger);
+  }
+  .bg-theme-info {
+    background-color: var(--color-info);
+  }
+  .bg-theme-purple {
+    background-color: var(--color-purple);
+  }
+
+  .text-theme-primary {
+    color: var(--color-primary);
+  }
+  .text-theme-secondary {
+    color: var(--color-secondary);
+  }
+  .text-theme-accent {
+    color: var(--color-accent);
   }
 }
 
@@ -819,3 +960,89 @@
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
   }
+
+  /* Admin Theme Isolation - Keep consistent with brand colors */
+  [data-admin-theme-container].admin-dark {
+    --background: 28 34% 10%; /* Darker Cocoa Brown */
+    --foreground: 40 43% 88%; /* Champagne Sheen */
+    --card: 28 34% 12%;
+    --card-foreground: 40 43% 88%;
+    --popover: 28 34% 10%;
+    --popover-foreground: 40 43% 88%;
+    --primary: 40 43% 88%; /* Champagne Sheen */
+    --primary-foreground: 28 34% 10%;
+    --secondary: 28 34% 15%;
+    --secondary-foreground: 40 43% 88%;
+    --muted: 28 34% 15%;
+    --muted-foreground: 40 43% 75%;
+    --accent: 39 37% 66%; /* Warm Oyster Gold */
+    --accent-foreground: 28 34% 10%;
+    --destructive: 8 58% 71%;
+    --destructive-foreground: 28 34% 10%;
+    --border: 28 34% 15%;
+    --input: 28 34% 15%;
+    --ring: 39 37% 66%;
+  }
+
+  [data-admin-theme-container].admin-light {
+    --background: 28 80% 98%; /* pearlWhite */
+    --foreground: 28 34% 21%; /* cocoaBrown */
+    --card: 28 80% 98%;
+    --card-foreground: 28 34% 21%;
+    --popover: 28 80% 98%;
+    --popover-foreground: 28 34% 21%;
+    --primary: 28 34% 21%; /* Cocoa Brown */
+    --primary-foreground: 40 43% 88%; /* Champagne Sheen */
+    --secondary: 40 43% 88%; /* Champagne Sheen */
+    --secondary-foreground: 28 34% 21%;
+    --muted: 40 43% 92%;
+    --muted-foreground: 28 34% 35%;
+    --accent: 39 37% 66%; /* Warm Oyster Gold */
+    --accent-foreground: 28 34% 21%;
+    --destructive: 8 58% 71%;
+    --destructive-foreground: 28 80% 98%;
+    --border: 40 43% 88%;
+    --input: 40 43% 92%;
+    --ring: 39 37% 66%;
+  }
+
+  /* Ensure main site always uses light theme */
+  body:not([data-admin-theme-container]) {
+    color-scheme: light !important;
+    --background: 28 80% 98% !important; /* pearlWhite */
+    --foreground: 28 34% 21% !important; /* cocoaBrown */
+  }
+
+  body:not([data-admin-theme-container]) * {
+    color-scheme: light !important;
+  }
+
+  /* Force light theme for main site elements */
+  :not([data-admin-theme-container]) .dark {
+    --background: 28 80% 98% !important; /* Override dark mode */
+    --foreground: 28 34% 21% !important;
+  }
+
+  /* Ensure admin theme isolation works properly */
+  [data-admin-theme-container] {
+    color-scheme: light;
+  }
+
+  [data-admin-theme-container].admin-dark {
+    color-scheme: dark;
+  }
+
+  /* Prevent system theme interference */
+  @media (prefers-color-scheme: dark) {
+    body:not([data-admin-theme-container]) {
+      --background: 28 80% 98% !important;
+      --foreground: 28 34% 21% !important;
+      color-scheme: light !important;
+    }
+    
+    :not([data-admin-theme-container]) {
+      --background: 28 80% 98% !important;
+      --foreground: 28 34% 21% !important;
+    }
+  }
+ 

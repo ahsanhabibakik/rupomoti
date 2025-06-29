@@ -8,16 +8,15 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
-    domains: [
-      "images.unsplash.com",
-      "plus.unsplash.com",
-      "res.cloudinary.com",
-      "mir-s3-cdn-cf.behance.net",           // ← add this
-    ],
-    remotePatterns:  [
+    remotePatterns: [
       {
         protocol: "https",
         hostname: "images.unsplash.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "plus.unsplash.com",
         pathname: "/**",
       },
       {
@@ -27,12 +26,32 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "mir-s3-cdn-cf.behance.net",  // ← add this
+        hostname: "mir-s3-cdn-cf.behance.net",
+        pathname: "/**",
+      },
+      {
+        protocol: "http",
+        hostname: "localhost",
+        port: "3000",
+        pathname: "/images/**",
+      },
+      {
+        protocol: "https",
+        hostname: "rupomoti.vercel.app",
+        pathname: "/images/**",
+      },
+      {
+        protocol: "https",
+        hostname: "rupomoti.com",
+        pathname: "/images/**",
+      },
+      {
+        protocol: "https",
+        hostname: "developers.google.com",
         pathname: "/**",
       },
     ],
     unoptimized: process.env.NODE_ENV === 'development',
-    domains: ['images.unsplash.com', 'plus.unsplash.com', 'res.cloudinary.com'],
   },
   experimental: {
     optimizePackageImports: ['lucide-react'],

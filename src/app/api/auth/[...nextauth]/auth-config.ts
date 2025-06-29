@@ -58,8 +58,8 @@ export const authConfig: AuthOptions = {
     strategy: "jwt",
   },
   pages: {
-    signIn: '/admin/login',
-    error: '/admin/login',
+    signIn: '/signin',
+    error: '/signin',
   },
   callbacks: {
     async jwt({ token, user }) {

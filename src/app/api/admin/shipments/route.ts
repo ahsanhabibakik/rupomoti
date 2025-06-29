@@ -183,7 +183,7 @@ async function getRedxAreaInfo(district: string, areaName: string) {
 // --- Main API Handler ---
 export async function POST(request: Request) {
     const session = await auth();
-    if (session?.user?.role !== 'ADMIN' && session?.user?.role !== 'MANAGER') {
+    if (!session || !['SUPER_ADMIN', 'ADMIN', 'MANAGER'].includes(session.user?.role as string)) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

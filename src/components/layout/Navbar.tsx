@@ -30,7 +30,7 @@ const navLinks = [
   { name: "Home", href: "/" },
   { name: "Shop", href: "/shop" },
   { name: "New Arrivals", href: "/new-arrivals" },
-  { name: "Best Sellers", href: "/best-sellers" },
+  { name: "Track Order", href: "/order-tracking" },
   { name: "About Us", href: "/about" },
   { name: "Contact", href: "/contact" },
 ];
@@ -105,7 +105,7 @@ function MobileNav() {
 
     // Split navigation links into two columns
     const leftColumnLinks = navLinks.slice(0, 3); // Home, Shop, New Arrivals
-    const rightColumnLinks = navLinks.slice(3);   // Best Sellers, About Us, Contact
+    const rightColumnLinks = navLinks.slice(3);   // Track Order, About Us, Contact
 
     return (
         <Sheet open={isOpen} onOpenChange={setIsOpen}>

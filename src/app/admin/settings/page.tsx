@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -11,6 +12,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form'
 import { toast } from 'sonner'
 import { Switch } from '@/components/ui/switch'
+import SafeSuperAdminThemeManager from '@/components/admin/SafeSuperAdminThemeManager'
+import { Settings, Palette, Shield } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 
 const settingSchema = z.object({
   key: z.string(),
@@ -20,8 +24,11 @@ const settingSchema = z.object({
 type Setting = z.infer<typeof settingSchema>;
 
 export default function SettingsPage() {
+  const { data: session } = useSession()
   const [settings, setSettings] = useState<Setting[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const isSuperAdmin = session?.user?.role === 'SUPER_ADMIN'
 
   const form = useForm({
     resolver: zodResolver(z.object({})),
@@ -34,7 +41,7 @@ export default function SettingsPage() {
       if (response.ok) {
         const data = await response.json();
         setSettings(data);
-        const defaultValues = data.reduce((acc, setting) => {
+        const defaultValues = data.reduce((acc: any, setting: any) => {
           acc[setting.key] = setting.value;
           return acc;
         }, {});
@@ -79,7 +86,43 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Site Settings</h1>
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <Settings className="h-8 w-8" />
+            Site Settings
+          </h1>
+          <p className="text-muted-foreground">
+            Manage your application settings and preferences
+          </p>
+        </div>
+        {isSuperAdmin && (
+          <Badge variant="secondary" className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white border-0">
+            <Shield className="h-3 w-3 mr-1" />
+            Super Admin
+          </Badge>
+        )}
+      </div>
+
+      {/* Theme Color Management - Only for Super Admin */}
+      {isSuperAdmin && (
+        <Card className="border-0 shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Palette className="h-5 w-5 text-purple-500" />
+              Theme Color Management
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Customize the global theme colors for the admin dashboard. Changes require 2FA verification in production.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <SafeSuperAdminThemeManager />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* General Settings */}
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <Card>
@@ -95,7 +138,7 @@ export default function SettingsPage() {
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                       <div className="space-y-0.5">
-                        <FormLabel className="text-base">{setting.label || setting.key}</FormLabel>
+                        <FormLabel className="text-base">{(setting as any).label || setting.key}</FormLabel>
                       </div>
                       <FormControl>
                         <Input {...field} className="w-auto" />

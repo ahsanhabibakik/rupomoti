@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/app/auth';
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 // GET: /api/reviews?productId=... or /api/reviews?mine=1
 export async function GET(req: Request) {
   const session = await auth();
@@ -82,4 +84,4 @@ export async function DELETE(req: Request) {
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
   await prisma.review.delete({ where: { id, userId: session.user.id } });
   return NextResponse.json({ success: true });
-} 
+}
