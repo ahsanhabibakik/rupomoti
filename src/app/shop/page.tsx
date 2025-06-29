@@ -8,6 +8,7 @@ import { Slider } from '@/components/ui/slider'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Input } from '@/components/ui/input'
 import { ProductCardSkeleton } from '@/components/products/ProductCardSkeleton'
+import { ShopSkeleton } from '@/components/products/ShopSkeleton'
 import { useDebounce } from '@/hooks/useDebounce'
 import {
   Sheet,
@@ -36,7 +37,7 @@ const sortOptions = [
   { id: 'popular', name: 'Most Popular' },
 ]
 
-const PAGE_SIZE = 9;
+const PAGE_SIZE = 30; // Increased from 9 to 30 for better UX
 
 function FilterSection({
   selectedCategories,
@@ -115,15 +116,24 @@ function FilterSection({
 }
 
 async function getInitialProducts() {
-  const res = await fetch(`http://localhost:3000/api/products?limit=${PAGE_SIZE}&sort=newest`, { cache: 'no-store' });
-  if (!res.ok) return { products: [], total: 0 };
-  const data = await res.json();
-  return data;
+  try {
+    const res = await fetch(`http://localhost:3000/api/products?limit=${PAGE_SIZE}&sort=newest&page=1`, { cache: 'no-store' });
+    if (!res.ok) return { products: [], total: 0, hasMore: false };
+    const data = await res.json();
+    return {
+      products: data.products || [],
+      total: data.total || 0,
+      hasMore: data.hasMore || false
+    };
+  } catch (error) {
+    console.error('Failed to fetch initial products:', error);
+    return { products: [], total: 0, hasMore: false };
+  }
 }
 
 export default function ShopPage() {
   const searchParams = useSearchParams()
-  const [initialData, setInitialData] = useState<{ products: Product[], total: number }>({ products: [], total: 0 });
+  const [initialData, setInitialData] = useState<{ products: Product[], total: number, hasMore: boolean }>({ products: [], total: 0, hasMore: false });
   const [categories, setCategories] = useState<Category[]>([]);
   
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -201,25 +211,31 @@ export default function ShopPage() {
         setPage(currentPage);
       }
       
-      setHasMore(newProducts.length === PAGE_SIZE);
+      setHasMore(data.hasMore || false);
     } catch (error) {
       console.error("Failed to fetch products:", error);
+      setHasMore(false);
     } finally {
       setLoading(false);
       if (isInitialLoad) setIsInitialLoad(false);
     }
-  }, [debouncedSearchInput, selectedCategories, debouncedPriceRange, sortBy]);
+  }, [debouncedSearchInput, selectedCategories, debouncedPriceRange, sortBy, hasMore, page, isInitialLoad]);
 
   useEffect(() => {
     async function loadInitialData() {
+      setLoading(true);
+      setIsInitialLoad(true);
+      
       const [productsData, categoriesData] = await Promise.all([
         getInitialProducts(),
         getCategories({ level: 0, active: true })
       ]);
+      
       setInitialData(productsData);
       setProducts(productsData.products);
       setCategories(categoriesData);
-      setHasMore(productsData.products.length === PAGE_SIZE);
+      setHasMore(productsData.hasMore);
+      setPage(1);
       setIsInitialLoad(false);
       setLoading(false);
     }
@@ -235,7 +251,10 @@ export default function ShopPage() {
           fetchProducts(false);
         }
       },
-      { threshold: 1.0 }
+      { 
+        threshold: 0.1,
+        rootMargin: '200px' // Load more products when user is 200px away from the last element
+      }
     );
 
     const currentRef = lastProductElementRef.current;
@@ -248,13 +267,18 @@ export default function ShopPage() {
         observer.unobserve(currentRef);
       }
     };
-  }, [loading, hasMore, isInitialLoad]);
+  }, [loading, hasMore, isInitialLoad, fetchProducts]);
   
   useEffect(() => {
     if (isInitialLoad) return;
-    const timeoutId = setTimeout(() => fetchProducts(true), 100);
+    
+    // Reset pagination when filters change
+    setPage(1);
+    setProducts([]);
+    
+    const timeoutId = setTimeout(() => fetchProducts(true), 300);
     return () => clearTimeout(timeoutId);
-  }, [debouncedSearchInput, selectedCategories, debouncedPriceRange, sortBy, isInitialLoad]);
+  }, [debouncedSearchInput, selectedCategories, debouncedPriceRange, sortBy, isInitialLoad, fetchProducts]);
 
 
   const handleClearFilters = () => {
@@ -267,10 +291,17 @@ export default function ShopPage() {
   const hasActiveFilters = 
     selectedCategories.length > 0 ||
     priceRange[0] > 0 ||
-    priceRange[1] < 100000;
+    priceRange[1] < 100000 ||
+    debouncedSearchInput.trim() !== '';
     
   const showSkeletons = isInitialLoad || (loading && products.length === 0);
-  const currentProducts = isInitialLoad ? initialData.products : products;
+  const currentProducts = showSkeletons ? [] : products;
+  const showProductCount = !showSkeletons && !isInitialLoad;
+
+  // Show full page skeleton for initial load
+  if (isInitialLoad) {
+    return <ShopSkeleton />
+  }
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
@@ -312,7 +343,13 @@ export default function ShopPage() {
         <main className="flex-1">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <p className="text-muted-foreground text-sm">
-              {showSkeletons ? 'Searching...' : `Showing ${currentProducts.length} of ${initialData.total} products`}
+              {showSkeletons ? (
+                'Loading products...'
+              ) : showProductCount ? (
+                `Showing ${currentProducts.length} ${hasActiveFilters ? 'filtered' : ''} products${initialData.total > 0 ? ` of ${initialData.total} total` : ''}`
+              ) : (
+                'Searching...'
+              )}
               {!loading && !hasMore && currentProducts.length > 0 && " (end of results)"}
             </p>
             <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -356,13 +393,17 @@ export default function ShopPage() {
 
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8">
             {showSkeletons ? (
+              // Show exactly 30 skeleton cards for initial load
               Array.from({ length: PAGE_SIZE }).map((_, index) => (
-                <ProductCardSkeleton key={index} />
+                <ProductCardSkeleton 
+                  key={`skeleton-${index}`} 
+                  className="transform transition-all duration-200" 
+                />
               ))
             ) : currentProducts.length > 0 ? (
               currentProducts.map((product, index) => {
                 const isLastElement = index === currentProducts.length - 1;
-                return isLastElement ? (
+                return isLastElement && hasMore ? (
                   <div ref={lastProductElementRef} key={product.id}>
                     <ProductCard product={product} />
                   </div>
@@ -374,17 +415,32 @@ export default function ShopPage() {
               <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
                 <Frown className="w-16 h-16 text-muted-foreground mb-4" />
                 <h3 className="text-2xl font-semibold mb-2">No Products Found</h3>
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground mb-4">
                   Try adjusting your filters or search terms.
                 </p>
+                {hasActiveFilters && (
+                  <Button variant="outline" onClick={handleClearFilters}>
+                    Clear All Filters
+                  </Button>
+                )}
               </div>
             )}
           </div>
 
-          {loading && !showSkeletons && (
-            <div className="flex justify-center items-center py-10 mt-6">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="ml-3 text-muted-foreground">Loading more products...</p>
+          {loading && !showSkeletons && hasMore && (
+            <div className="flex justify-center items-center py-12 mt-8">
+              <div className="flex flex-col items-center space-y-3">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground">Loading more products...</p>
+              </div>
+            </div>
+          )}
+
+          {!loading && !hasMore && currentProducts.length > PAGE_SIZE && (
+            <div className="flex justify-center items-center py-8 mt-8 border-t">
+              <p className="text-sm text-muted-foreground">
+                You've reached the end of our collection
+              </p>
             </div>
           )}
         </main>

@@ -10,6 +10,7 @@ export type Category = PrismaCategory
 export interface ProductLegacy {
   id: string
   name: string
+  slug: string
   description: string
   price: number
   salePrice?: number | null
@@ -17,12 +18,18 @@ export interface ProductLegacy {
   stock: number
   images: string[]
   categoryId: string
-  category: any
+  category?: {
+    name: string
+    slug: string
+  }
   isFeatured: boolean
   isNewArrival: boolean
   isPopular: boolean
-  rating?: number
+  status: string
+  weight?: number | null
+  dimensions?: string | null
+  material?: string | null
+  care?: string | null
   createdAt: Date
   updatedAt: Date
-  slug: string
 } 
