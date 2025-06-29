@@ -192,6 +192,9 @@ export default function ShopPage() {
   const fetchProducts = useCallback(async (isNewSearch: boolean) => {
     if (!isNewSearch && !hasMore) return;
     
+    // Prevent multiple simultaneous requests
+    if (loading && !isNewSearch) return;
+    
     // Set appropriate loading state
     if (isNewSearch) {
       setIsFilterLoading(true);
@@ -232,7 +235,7 @@ export default function ShopPage() {
       setIsFilterLoading(false);
       if (isInitialLoad) setIsInitialLoad(false);
     }
-  }, [debouncedSearchInput, selectedCategories, debouncedPriceRange, sortBy, hasMore, page, isInitialLoad]);
+  }, [debouncedSearchInput, selectedCategories, debouncedPriceRange, sortBy, hasMore, page, isInitialLoad, loading]);
 
   useEffect(() => {
     async function loadInitialData() {
@@ -266,7 +269,7 @@ export default function ShopPage() {
       },
       { 
         threshold: 0.1,
-        rootMargin: '300px' // Increased from 200px for earlier loading
+        rootMargin: '100px' // Reduced from 300px to prevent too early loading
       }
     );
 
@@ -413,19 +416,27 @@ export default function ShopPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8 relative">
-            {/* Filter loading overlay - only shown during filter changes, not scroll loading */}
-            {isFilterLoading && products.length > 0 && (
+          {/* Filter loading overlay - only shown during filter changes, not scroll loading */}
+          {isFilterLoading && products.length > 0 && (
+            <div className="relative mb-6">
               <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] flex items-center justify-center z-10 rounded-lg">
-                <div className="bg-background/80 backdrop-blur-sm rounded-lg px-4 py-3 shadow-lg border">
+                <div className="bg-background/90 backdrop-blur-sm rounded-lg px-6 py-4 shadow-lg border animate-in fade-in duration-200">
                   <div className="flex items-center space-x-3">
                     <Loader2 className="h-5 w-5 animate-spin text-primary" />
                     <p className="text-sm font-medium">Applying filters...</p>
                   </div>
                 </div>
               </div>
-            )}
+              {/* Placeholder content to maintain layout */}
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8 opacity-50">
+                {products.slice(0, 6).map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            </div>
+          )}
 
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8">
             {showSkeletons ? (
               // Show exactly 30 skeleton cards for initial load
               Array.from({ length: PAGE_SIZE }).map((_, index) => (
@@ -437,6 +448,7 @@ export default function ShopPage() {
             ) : currentProducts.length > 0 ? (
               currentProducts.map((product, index) => {
                 const isLastElement = index === currentProducts.length - 1;
+                
                 return isLastElement && hasMore ? (
                   <div ref={lastProductElementRef} key={product.id}>
                     <ProductCard product={product} />
@@ -461,12 +473,15 @@ export default function ShopPage() {
             )}
           </div>
 
-          {loading && !showSkeletons && hasMore && (
-            <div className="flex justify-center items-center py-12 mt-8">
-              <div className="flex flex-col items-center space-y-3">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="text-sm text-muted-foreground">Loading more products...</p>
-              </div>
+          {/* Infinite scroll loading indicator - shows skeleton cards at the bottom */}
+          {loading && !showSkeletons && hasMore && !isFilterLoading && (
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8 mt-6">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <ProductCardSkeleton 
+                  key={`loading-skeleton-${index}`} 
+                  className="animate-pulse" 
+                />
+              ))}
             </div>
           )}
 
