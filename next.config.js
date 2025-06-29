@@ -35,6 +35,18 @@ const nextConfig = {
         port: "3000",
         pathname: "/images/**",
       },
+        {
+        protocol: "https",
+        hostname: "rupomoti.vercel.app",
+        port: "3000",
+        pathname: "/images/**",
+      },
+        {
+        protocol: "https",
+        hostname: "rupomoti.com",
+        port: "3000",
+        pathname: "/images/**",
+      },
     ],
     unoptimized: process.env.NODE_ENV === 'development',
   },
