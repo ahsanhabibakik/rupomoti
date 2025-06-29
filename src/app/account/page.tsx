@@ -25,6 +25,9 @@ import Link from 'next/link'
 import { showToast } from '@/lib/toast'
 import { ProfileEditModal } from '@/components/account/ProfileEditModal'
 import { ReviewModal } from '@/components/account/ReviewModal'
+import { useWishlist } from '@/hooks/useWishlist'
+import { useAppDispatch } from '@/redux/hooks'
+import { addToCart } from '@/redux/slices/cartSlice'
 
 const tabs = [
   // Main tabs
@@ -41,12 +44,15 @@ const tabs = [
 export default function AccountPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const dispatch = useAppDispatch()
   const [activeTab, setActiveTab] = useState('profile')
+
+  // Wishlist hook
+  const { wishlistItems, removeFromWishlist, isLoading: wishlistLoading, error: wishlistError } = useWishlist()
 
   // Dynamic data states - ensure all are arrays
   const [profile, setProfile] = useState<any>(null)
   const [orders, setOrders] = useState<any[]>([])
-  const [wishlist, setWishlist] = useState<any[]>([])
   const [reviews, setReviews] = useState<any[]>([])
   const [addresses, setAddresses] = useState<any[]>([])
   const [payments, setPayments] = useState<any[]>([])
@@ -99,7 +105,6 @@ export default function AccountPage() {
   const [loading, setLoading] = useState({
     profile: false,
     orders: false,
-    wishlist: false,
     reviews: false,
     addresses: false,
     payments: false,
@@ -108,7 +113,6 @@ export default function AccountPage() {
   const [error, setError] = useState({
     profile: '',
     orders: '',
-    wishlist: '',
     reviews: '',
     addresses: '',
     payments: '',
@@ -149,24 +153,6 @@ export default function AccountPage() {
           setOrders([]) // Ensure it's an array even on error
         })
         .finally(() => setLoading((l) => ({ ...l, orders: false })))
-    }
-  }, [activeTab])
-
-  // Fetch wishlist
-  useEffect(() => {
-    if (activeTab === 'wishlist') {
-      setLoading((l) => ({ ...l, wishlist: true }))
-      fetch('/api/wishlist')
-        .then((r) => r.json())
-        .then((data) => {
-          // Ensure wishlist is always an array
-          setWishlist(Array.isArray(data) ? data : [])
-        })
-        .catch(() => {
-          setError((e) => ({ ...e, wishlist: 'Failed to load wishlist' }))
-          setWishlist([]) // Ensure it's an array even on error
-        })
-        .finally(() => setLoading((l) => ({ ...l, wishlist: false })))
     }
   }, [activeTab])
 
@@ -464,6 +450,29 @@ export default function AccountPage() {
       }
     } catch (error) {
       showToast.error('Failed to delete payment method')
+    }
+  }
+
+  // Wishlist functions
+  const handleAddToCart = (item: any) => {
+    if (!item.product) return
+    
+    dispatch(addToCart({
+      id: item.product.id,
+      name: item.product.name,
+      price: item.product.price,
+      image: item.product.images?.[0] || '/images/placeholder.jpg',
+      category: 'Unknown',
+      quantity: 1
+    }))
+    showToast.success(`"${item.product.name}" added to cart!`)
+  }
+
+  const handleRemoveFromWishlist = async (productId: string) => {
+    try {
+      await removeFromWishlist(productId)
+    } catch (error) {
+      console.error('Error removing from wishlist:', error)
     }
   }
 
@@ -1428,41 +1437,86 @@ export default function AccountPage() {
               )}
 
               {activeTab === 'wishlist' && (
-                loading.wishlist ? (
-                  <div>Loading wishlist...</div>
-                ) : error.wishlist ? (
-                  <div className="text-red-500">{error.wishlist}</div>
+                wishlistLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pearl-600"></div>
+                  </div>
+                ) : wishlistError ? (
+                  <div className="text-center py-8">
+                    <div className="text-red-500 mb-4">Failed to load wishlist</div>
+                    <button 
+                      onClick={() => window.location.reload()}
+                      className="px-4 py-2 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700"
+                    >
+                      Try Again
+                    </button>
+                  </div>
                 ) : (
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-6">
-                      Wishlist
-                    </h3>
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        Wishlist ({wishlistItems.length})
+                      </h3>
+                      {wishlistItems.length > 0 && (
+                        <Link
+                          href="/shop"
+                          className="text-pearl-600 hover:text-pearl-700 text-sm font-medium"
+                        >
+                          Continue Shopping
+                        </Link>
+                      )}
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {wishlist.length === 0 ? (
-                        <div className="col-span-2 text-center py-8 text-gray-500">
+                      {wishlistItems.length === 0 ? (
+                        <div className="col-span-2 text-center py-12 text-gray-500">
                           <Heart className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-                          <p>Your wishlist is empty.</p>
+                          <p className="text-lg mb-2">Your wishlist is empty</p>
+                          <p className="text-sm text-gray-400 mb-6">Save items you love for easy shopping later</p>
+                          <Link
+                            href="/shop"
+                            className="inline-flex items-center px-6 py-3 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700 transition-colors"
+                          >
+                            Start Shopping
+                          </Link>
                         </div>
                       ) : (
-                        wishlist.map((item) => (
-                          <div key={item.id} className="border rounded-lg p-4">
-                            <div className="relative w-full h-48 mb-4">
+                        wishlistItems.map((item) => (
+                          <div key={item.id} className="border rounded-lg p-4 hover:shadow-lg transition-shadow">
+                            <div className="relative w-full h-48 mb-4 group">
                               <Image
                                 src={item.product?.images?.[0] || '/images/placeholder.jpg'}
                                 alt={item.product?.name || 'Product'}
                                 fill
                                 className="rounded-lg object-cover"
                               />
+                              <button
+                                onClick={() => handleRemoveFromWishlist(item.productId)}
+                                className="absolute top-2 right-2 p-1 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50"
+                                title="Remove from wishlist"
+                              >
+                                <Trash2 className="w-4 h-4 text-red-600" />
+                              </button>
                             </div>
-                            <h4 className="text-sm font-medium text-gray-900 mb-2">
-                              {item.product?.name || 'Product'}
-                            </h4>
-                            <p className="text-sm font-medium text-gray-900 mb-4">
-                              ৳{item.product?.price || 0}
-                            </p>
-                            <button className="w-full px-4 py-2 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700">
-                              Add to Cart
-                            </button>
+                            <div className="flex-1">
+                              <Link 
+                                href={`/products/${item.product?.slug || item.productId}`}
+                                className="hover:text-pearl-600 transition-colors"
+                              >
+                                <h4 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2">
+                                  {item.product?.name || 'Product'}
+                                </h4>
+                              </Link>
+                              <p className="text-lg font-semibold text-gray-900 mb-4">
+                                ৳{item.product?.price || 0}
+                              </p>
+                              <button 
+                                onClick={() => handleAddToCart(item)}
+                                className="w-full px-4 py-2 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700 transition-colors flex items-center justify-center gap-2"
+                              >
+                                <Package className="w-4 h-4" />
+                                Add to Cart
+                              </button>
+                            </div>
                           </div>
                         ))
                       )}
