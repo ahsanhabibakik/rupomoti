@@ -4,9 +4,10 @@ import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import Credentials from "next-auth/providers/credentials"
 import Google from "next-auth/providers/google"
+import type { Adapter } from "next-auth/adapters"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  adapter: PrismaAdapter(prisma) as Adapter,
   secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: 'jwt',
@@ -17,8 +18,34 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
   useSecureCookies: process.env.NODE_ENV === 'production',
   debug: process.env.NODE_ENV === 'development',
-  experimental: {
-    enableWebAuthn: false,
+  cookies: {
+    pkceCodeVerifier: {
+      name: "next-auth.pkce.code_verifier",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+    state: {
+      name: "next-auth.state",
+      options: {
+        httpOnly: true,
+        sameSite: "lax", 
+        path: "/",
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+    csrfToken: {
+      name: "next-auth.csrf-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
   },
   providers: [
     Google({
@@ -66,13 +93,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.name = token.name ?? null
         session.user.email = token.email as string
         session.user.image = token.picture ?? null
-        session.user.role = token.role as string
+        session.user.role = token.role as 'USER' | 'ADMIN' | 'SUPER_ADMIN'
         session.user.isAdmin = token.isAdmin as boolean
       }
       return session
     },
     async jwt({ token, user }) {
-      if (user) {
+      if (user && user.id) {
         token.id = user.id
         token.name = user.name
         token.email = user.email
