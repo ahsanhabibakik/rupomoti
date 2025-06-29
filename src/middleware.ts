@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/app/auth'
+import { getToken } from 'next-auth/jwt'
 
 export default async function middleware(req: NextRequest) {
   const { nextUrl } = req
   
-  // Get session using the auth function
-  const session = await auth()
-  const isLoggedIn = !!session?.user
+  // Get token using NextAuth JWT which works in Edge Runtime
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
+  const isLoggedIn = !!token
   
   // Check if user is trying to access admin routes
   if (nextUrl.pathname.startsWith('/admin')) {
@@ -21,9 +21,8 @@ export default async function middleware(req: NextRequest) {
       return NextResponse.redirect(loginUrl)
     }
     
-    const user = session?.user
-    const userRole = user?.role as string
-    const isAdmin = user?.isAdmin as boolean
+    const userRole = token?.role as string
+    const isAdmin = token?.isAdmin as boolean
     
     // Allow access for SUPER_ADMIN, ADMIN, MANAGER roles, or if isAdmin is true
     const hasAdminAccess = isAdmin || userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' || userRole === 'MANAGER'
