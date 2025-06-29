@@ -104,19 +104,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.name = user.name
         token.email = user.email
         token.picture = user.image
-        const dbUser = await prisma.user.findUnique({
-          where: { email: user.email! },
-        })
+        
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { email: user.email! },
+          })
 
-        // If the user is found in the database, populate the token
-        if (dbUser) {
-          token.id = dbUser.id
-          token.name = dbUser.name
-          token.email = dbUser.email
-          token.picture = dbUser.image
-          token.role = dbUser.role
-          token.isAdmin =
-            dbUser.role === 'ADMIN' || dbUser.role === 'SUPER_ADMIN'
+          // If the user is found in the database, populate the token
+          if (dbUser) {
+            token.id = dbUser.id
+            token.name = dbUser.name
+            token.email = dbUser.email
+            token.picture = dbUser.image
+            token.role = dbUser.role
+            token.isAdmin =
+              dbUser.role === 'ADMIN' || dbUser.role === 'SUPER_ADMIN'
+          }
+        } catch (error) {
+          console.error('Error fetching user in JWT callback:', error)
+          // Continue with basic token info if DB query fails
+          token.role = 'USER'
+          token.isAdmin = false
         }
       }
       return token
