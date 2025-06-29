@@ -6,14 +6,31 @@ import Credentials from "next-auth/providers/credentials"
 import Google from "next-auth/providers/google"
 import type { Adapter } from "next-auth/adapters"
 
+// Create a safe adapter that handles edge runtime issues
+const createSafeAdapter = () => {
+  try {
+    if (process.env.NEXT_RUNTIME === 'edge') {
+      console.warn('Using JWT-only mode in edge runtime')
+      return undefined
+    }
+    return PrismaAdapter(prisma) as Adapter
+  } catch (error) {
+    console.error('Failed to create Prisma adapter:', error)
+    return undefined
+  }
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma) as Adapter,
-  secret: process.env.NEXTAUTH_SECRET,
+  adapter: createSafeAdapter(),
+  secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-for-development',
+  basePath: '/api/auth',
   session: {
     strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
     signIn: '/signin',
+    error: '/signin',
   },
   trustHost: true,
   useSecureCookies: process.env.NODE_ENV === 'production',
@@ -48,10 +65,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   providers: [
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? [
+      Google({
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      })
+    ] : []),
     Credentials({
       name: "credentials",
       credentials: {
@@ -63,26 +82,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           throw new Error("Invalid credentials")
         }
 
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email as string,
-          },
-        })
+        try {
+          const user = await prisma.user.findUnique({
+            where: {
+              email: credentials.email as string,
+            },
+          })
 
-        if (!user || !user.password) {
-          throw new Error("Invalid credentials")
+          if (!user || !user.password) {
+            throw new Error("Invalid credentials")
+          }
+
+          const isCorrectPassword = await bcrypt.compare(
+            credentials.password as string,
+            user.password
+          )
+
+          if (!isCorrectPassword) {
+            throw new Error("Invalid credentials")
+          }
+
+          return user
+        } catch (error) {
+          console.error("Auth error:", error)
+          throw new Error("Authentication failed")
         }
-
-        const isCorrectPassword = await bcrypt.compare(
-          credentials.password as string,
-          user.password
-        )
-
-        if (!isCorrectPassword) {
-          throw new Error("Invalid credentials")
-        }
-
-        return user
       },
     }),
   ],
@@ -104,19 +128,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.name = user.name
         token.email = user.email
         token.picture = user.image
-        const dbUser = await prisma.user.findUnique({
-          where: { email: user.email! },
-        })
+        
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { email: user.email! },
+          })
 
-        // If the user is found in the database, populate the token
-        if (dbUser) {
-          token.id = dbUser.id
-          token.name = dbUser.name
-          token.email = dbUser.email
-          token.picture = dbUser.image
-          token.role = dbUser.role
-          token.isAdmin =
-            dbUser.role === 'ADMIN' || dbUser.role === 'SUPER_ADMIN'
+          // If the user is found in the database, populate the token
+          if (dbUser) {
+            token.id = dbUser.id
+            token.name = dbUser.name
+            token.email = dbUser.email
+            token.picture = dbUser.image
+            token.role = dbUser.role
+            token.isAdmin =
+              dbUser.role === 'ADMIN' || dbUser.role === 'SUPER_ADMIN'
+          }
+        } catch (error) {
+          console.error('Error fetching user in JWT callback:', error)
+          // Continue with basic token info if DB query fails
+          token.role = 'USER'
+          token.isAdmin = false
         }
       }
       return token
