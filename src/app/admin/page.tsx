@@ -75,18 +75,19 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getOrderAnalyticalInfo } from '@/lib/utils/order-number'
+import SafeSuperAdminThemeManager from '@/components/admin/SafeSuperAdminThemeManager'
 
 const THEME_COLORS = {
-  primary: '#4A2E21',
-  gold: '#C8B38A',
-  accent: '#E8CBAF',
+  primary: 'var(--color-primary)',
+  gold: 'var(--color-secondary)',
+  accent: 'var(--color-accent)',
   taupe: '#8C7760',
   rose: '#D7AFA4',
-  success: '#10B981',
-  warning: '#F59E0B',
-  danger: '#EF4444',
-  info: '#3B82F6',
-  purple: '#8B5CF6',
+  success: 'var(--color-success)',
+  warning: 'var(--color-warning)',
+  danger: 'var(--color-danger)',
+  info: 'var(--color-info)',
+  purple: 'var(--color-purple)',
   indigo: '#6366F1',
   pink: '#EC4899',
 }
@@ -792,11 +793,11 @@ export default function DashboardPage() {
                         }}
                       />
                       <Area 
-                        type="monotone" 
+                        type="monotone"
                         dataKey="total"
                         stroke={THEME_COLORS.primary}
-                        strokeWidth={2}
                         fill="url(#salesGradient)"
+                        strokeWidth={2}
                       />
                     </AreaChart>
                   </ResponsiveContainer>
@@ -804,98 +805,28 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            {/* Category Distribution */}
+            {/* Recent Orders */}
             <Card className="lg:col-span-4 border-0 shadow-sm">
               <CardHeader>
                 <CardTitle className="text-base sm:text-lg font-semibold flex items-center gap-2">
-                  <PieChartIcon className="h-5 w-5 text-purple-500" />
-                  Category Distribution
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-60 sm:h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={categoryData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={40}
-                        outerRadius={80}
-                        paddingAngle={5}
-                        dataKey="value"
-                      >
-                        {categoryData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.fill} />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        formatter={(value: number) => [value, 'Products']}
-                        contentStyle={{ 
-                          backgroundColor: 'white', 
-                          border: '1px solid #e2e8f0',
-                          borderRadius: '8px',
-                          fontSize: '12px'
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Top Products and Low Stock */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <Card className="border-0 shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-base sm:text-lg font-semibold flex items-center gap-2">
-                  <Star className="h-5 w-5 text-yellow-500" />
-                  Top Products
+                  <ShoppingCart className="h-5 w-5 text-green-500" />
+                  Recent Orders
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {topProducts.slice(0, 5).map((product, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  {recentOrders.slice(0, 5).map((order: any) => (
+                    <div key={order.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div className="flex-1">
-                        <h4 className="font-medium text-gray-900 text-sm">{product.name}</h4>
-                        <p className="text-xs text-gray-600">{product.quantity} sold</p>
+                        <p className="font-medium text-sm">#{order.orderNumber || order.id.slice(-8).toUpperCase()}</p>
+                        <p className="text-xs text-gray-600">{order.customer?.name || 'Guest'}</p>
+                        <p className="text-xs text-gray-500">{timeAgo(order.createdAt)}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold text-gray-900 text-sm">৳{product.total.toLocaleString('bn-BD')}</p>
-                        <div className="flex items-center gap-1">
-                          <Star className="h-3 w-3 text-yellow-500" />
-                          <span className="text-xs text-gray-500">#{index + 1}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-base sm:text-lg font-semibold flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-orange-500" />
-                  Low Stock Alert
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {lowStockProducts.slice(0, 5).map((product, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-100">
-                      <div className="flex-1">
-                        <h4 className="font-medium text-gray-900 text-sm">{product.name}</h4>
-                        <p className="text-xs text-orange-600">Only {product.stock} left in stock</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-orange-700 text-sm">Stock: {product.stock}</p>
-                        <Progress 
-                          value={(product.stock / 10) * 100} 
-                          className="w-16 h-2"
-                        />
+                        <p className="font-semibold text-sm">৳{order.total.toLocaleString('bn-BD')}</p>
+                        <Badge variant="outline" className="text-xs">
+                          {order.status}
+                        </Badge>
                       </div>
                     </div>
                   ))}
@@ -907,251 +838,51 @@ export default function DashboardPage() {
 
         <TabsContent value="analytics" className="space-y-6">
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {/* Monthly Revenue Chart */}
+            {/* Monthly Sales Chart */}
             <Card className="border-0 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-base sm:text-lg font-semibold flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-green-500" />
-                  Monthly Revenue (Last 6 Months)
-                </CardTitle>
+                <CardTitle className="text-base sm:text-lg font-semibold">Monthly Sales</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-60 sm:h-80">
+                <div className="h-80">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={monthlyData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis 
-                        dataKey="month" 
-                        tick={{ fontSize: 11 }}
-                        tickLine={false}
-                        axisLine={false}
-                      />
-                      <YAxis 
-                        tick={{ fontSize: 11 }}
-                        tickLine={false}
-                        axisLine={false}
-                        tickFormatter={(value) => `৳${(value / 1000).toFixed(0)}k`}
-                      />
-                      <Tooltip 
-                        formatter={(value: number) => [`৳${value.toLocaleString()}`, 'Revenue']}
-                        contentStyle={{ 
-                          backgroundColor: 'white', 
-                          border: '1px solid #e2e8f0',
-                          borderRadius: '8px',
-                          fontSize: '12px'
-                        }}
-                      />
-                      <Bar 
-                        dataKey="total" 
-                        fill={THEME_COLORS.success}
-                        radius={[4, 4, 0, 0]}
-                      />
+                      <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} tickFormatter={(value) => `৳${(value / 1000).toFixed(0)}k`} />
+                      <Tooltip formatter={(value: number) => [`৳${value.toLocaleString()}`, 'Sales']} />
+                      <Bar dataKey="total" fill={THEME_COLORS.primary} radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Order Status Distribution */}
+            {/* Category Distribution */}
             <Card className="border-0 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-base sm:text-lg font-semibold flex items-center gap-2">
-                  <PieChartIcon className="h-5 w-5 text-indigo-500" />
-                  Order Status Distribution
-                </CardTitle>
+                <CardTitle className="text-base sm:text-lg font-semibold">Product Categories</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-60 sm:h-80">
+                <div className="h-80">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={[
-                          { name: 'Pending', value: orderStats?.pending || 0, fill: THEME_COLORS.warning },
-                          { name: 'Processing', value: orderStats?.processing || 0, fill: THEME_COLORS.info },
-                          { name: 'Shipped', value: orderStats?.shipped || 0, fill: THEME_COLORS.purple },
-                          { name: 'Delivered', value: orderStats?.delivered || 0, fill: THEME_COLORS.success },
-                          { name: 'Fake', value: orderStats?.fake || 0, fill: THEME_COLORS.danger },
-                        ].filter(item => item.value > 0)}
+                        data={categoryData}
                         cx="50%"
                         cy="50%"
-                        outerRadius={80}
+                        innerRadius={60}
+                        outerRadius={120}
+                        paddingAngle={5}
                         dataKey="value"
-                        label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
                       >
-                        {[
-                          { name: 'Pending', value: orderStats?.pending || 0, fill: THEME_COLORS.warning },
-                          { name: 'Processing', value: orderStats?.processing || 0, fill: THEME_COLORS.info },
-                          { name: 'Shipped', value: orderStats?.shipped || 0, fill: THEME_COLORS.purple },
-                          { name: 'Delivered', value: orderStats?.delivered || 0, fill: THEME_COLORS.success },
-                          { name: 'Fake', value: orderStats?.fake || 0, fill: THEME_COLORS.danger },
-                        ].filter(item => item.value > 0).map((entry, index) => (
+                        {categoryData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.fill} />
                         ))}
                       </Pie>
-                      <Tooltip 
-                        formatter={(value: number) => [value, 'Orders']}
-                        contentStyle={{ 
-                          backgroundColor: 'white', 
-                          border: '1px solid #e2e8f0',
-                          borderRadius: '8px',
-                          fontSize: '12px'
-                        }}
-                      />
+                      <Tooltip />
                     </PieChart>
                   </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Performance Metrics */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-50 to-indigo-50">
-              <CardHeader>
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <Target className="h-5 w-5 text-blue-500" />
-                  Conversion Rate
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-blue-700">{analytics.conversionRate}%</div>
-                <p className="text-sm text-blue-600 mt-1">Orders vs Total Customers</p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-sm bg-gradient-to-br from-green-50 to-emerald-50">
-              <CardHeader>
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <DollarSign className="h-5 w-5 text-green-500" />
-                  Avg Order Value
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-700">৳{analytics.averageOrderValue}</div>
-                <p className="text-sm text-green-600 mt-1">Revenue per Order</p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-sm bg-gradient-to-br from-purple-50 to-pink-50">
-              <CardHeader>
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <UserPlus className="h-5 w-5 text-purple-500" />
-                  New Customers Today
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-purple-700">{analytics.newCustomersToday}</div>
-                <p className="text-sm text-purple-600 mt-1">New registrations today</p>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="orders" className="space-y-6">
-          <Card className="border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-base sm:text-lg font-semibold flex items-center gap-2">
-                <ListOrdered className="h-5 w-5 text-blue-500" />
-                Recent Orders
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {recentOrders.map((order: any) => (
-                  <div key={order.id} className="flex items-center justify-between p-3 sm:p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-gray-900 text-sm sm:text-base">
-                          Order {getOrderAnalyticalInfo(order).displayNumber}
-                        </h4>
-                        <p className="text-xs sm:text-sm text-gray-600">
-                          {order.customer?.name || 'Guest'} • {timeAgo(order.createdAt)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-gray-900 text-sm sm:text-base">৳{order.total.toLocaleString('bn-BD')}</p>
-                      <Badge variant="secondary" className="mt-1 text-xs">
-                        {order.status}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="insights" className="space-y-6">
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {/* Top Customers */}
-            {hasFullAccess && (
-              <Card className="border-0 shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-base sm:text-lg font-semibold flex items-center gap-2">
-                    <Users className="h-5 w-5 text-purple-500" />
-                    Top Customers
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {topCustomers.slice(0, 5).map((customerData: any, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-purple-50 rounded-lg border border-purple-100">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="w-8 h-8">
-                            <AvatarFallback className="bg-purple-200 text-purple-700">
-                              {customerData.customer.name?.charAt(0) || 'U'}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <h4 className="font-medium text-gray-900 text-sm">{customerData.customer.name}</h4>
-                            <p className="text-xs text-purple-600">{customerData.orderCount} orders</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-semibold text-purple-700 text-sm">৳{customerData.totalSpent.toLocaleString('bn-BD')}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Recent Activity */}
-            <Card className="border-0 shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-base sm:text-lg font-semibold flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-green-500" />
-                  Recent Activity
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {recentActivity.map((activity) => (
-                    <div key={activity.id} className="flex items-start gap-3 p-3 border rounded-lg">
-                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                        <activity.icon className="h-4 w-4 text-green-600" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">{activity.message}</p>
-                        <div className="flex items-center gap-2 mt-1 flex-wrap">
-                          <p className="text-xs text-gray-600">{activity.user}</p>
-                          <span className="text-xs text-gray-400">•</span>
-                          <p className="text-xs text-gray-600">{timeAgo(activity.time)}</p>
-                          {activity.amount && (
-                            <>
-                              <span className="text-xs text-gray-400">•</span>
-                              <p className="text-xs font-medium text-green-600">{activity.amount}</p>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -1160,6 +891,76 @@ export default function DashboardPage() {
 
         <TabsContent value="stock" className="space-y-6">
           <StockManagement />
+        </TabsContent>
+
+        <TabsContent value="orders" className="space-y-6">
+          {/* Recent Activity */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base sm:text-lg font-semibold flex items-center gap-2">
+                <Activity className="h-5 w-5 text-blue-500" />
+                Recent Activity
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {recentActivity.map((activity) => (
+                  <div key={activity.id} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
+                    <div className="p-2 rounded-full bg-white">
+                      <activity.icon className={`h-4 w-4 ${activity.color}`} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{activity.message}</p>
+                      <p className="text-xs text-gray-600">by {activity.user}</p>
+                      <p className="text-xs text-gray-500">{timeAgo(activity.time)}</p>
+                    </div>
+                    {activity.amount && (
+                      <div className="text-sm font-semibold text-green-600">
+                        {activity.amount}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="insights" className="space-y-6">
+          {/* Top Products */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base sm:text-lg font-semibold flex items-center gap-2">
+                <Star className="h-5 w-5 text-yellow-500" />
+                Top Selling Products
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {topProducts.map((product: any, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{product.name}</p>
+                        <p className="text-xs text-gray-600">{product.quantity} sold</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-sm">৳{Math.round(product.total).toLocaleString('bn-BD')}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Super Admin Theme Manager */}
+          {isSuperAdmin && (
+            <SafeSuperAdminThemeManager />
+          )}
         </TabsContent>
       </Tabs>
     </div>

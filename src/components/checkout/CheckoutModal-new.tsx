@@ -108,7 +108,6 @@ interface FormErrors {
   district?: string
   upazila?: string
   address?: string
-  note?: string
 }
 
 interface SavedAddress {

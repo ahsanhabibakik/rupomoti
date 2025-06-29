@@ -17,7 +17,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <PersistGate loading={null} persistor={persistor}>
         <SessionProvider>
           <QueryClientProvider client={queryClient}>
-            <ThemeProvider defaultTheme="light" enableSystem={false}>
+            <ThemeProvider defaultTheme="light" enableSystem={false} storageKey="main-site-theme">
               {children}
               <Toaster
                 position="bottom-right"

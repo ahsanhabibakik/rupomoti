@@ -18,6 +18,7 @@ type ThemeProviderState = {
   theme: Theme
   setTheme: (theme: Theme) => void
   resolvedTheme: 'dark' | 'light'
+  systemTheme?: 'dark' | 'light'
 }
 
 const initialState: ThemeProviderState = {
@@ -30,39 +31,91 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 
 export function ThemeProvider({
   children,
+  defaultTheme = 'light',
   storageKey = 'theme',
-  enableSystem = false, // Disable system theme detection for persistent light mode
+  attribute = 'class',
+  enableSystem = false,
   disableTransitionOnChange = false,
   ...props
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window === 'undefined') return 'light' // Always default to light on server
-    const stored = localStorage.getItem(storageKey) as Theme
-    // Force light mode - ignore system or dark preferences
-    return stored === 'light' || !stored ? 'light' : 'light'
+    if (typeof window === 'undefined') return defaultTheme
+    
+    // Force light mode for main site
+    if (storageKey === 'main-site-theme') {
+      return 'light'
+    }
+    
+    try {
+      const stored = localStorage.getItem(storageKey) as Theme
+      return stored || defaultTheme
+    } catch {
+      return defaultTheme
+    }
   })
+
+  const [systemTheme, setSystemTheme] = useState<'dark' | 'light'>('light')
+
+  // Listen for system theme changes
+  useEffect(() => {
+    if (!enableSystem) return
+
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+    setSystemTheme(media.matches ? 'dark' : 'light')
+
+    const listener = (e: MediaQueryListEvent) => {
+      setSystemTheme(e.matches ? 'dark' : 'light')
+    }
+
+    media.addEventListener('change', listener)
+    return () => media.removeEventListener('change', listener)
+  }, [enableSystem])
+
+  // Calculate resolved theme
+  const resolvedTheme = theme === 'system' ? systemTheme : theme
 
   useEffect(() => {
     const root = window.document.documentElement
 
-    root.classList.remove('light', 'dark')
+    // For main site, always force light mode
+    if (storageKey === 'main-site-theme') {
+      root.classList.remove('dark')
+      root.classList.add('light')
+      root.style.colorScheme = 'light'
+      root.setAttribute('data-theme', 'light')
+      return
+    }
 
-    // Always resolve to light mode
-    root.classList.add('light')
+    root.classList.remove('light', 'dark')
+    
+    if (attribute === 'class') {
+      root.classList.add(resolvedTheme)
+    } else {
+      root.setAttribute(attribute, resolvedTheme)
+    }
     
     // Set color-scheme for better browser integration
-    root.style.colorScheme = 'light'
-  }, [theme, enableSystem])
+    root.style.colorScheme = resolvedTheme
+    root.setAttribute('data-theme', resolvedTheme)
+  }, [resolvedTheme, attribute, storageKey])
 
   const value = {
-    theme: 'light' as Theme, // Always return light
-    setTheme: () => {
-      // Only allow light theme to be set
-      const finalTheme = 'light'
-      localStorage.setItem(storageKey, finalTheme)
-      setTheme(finalTheme)
+    theme,
+    setTheme: (newTheme: Theme) => {
+      // Prevent theme changes on main site
+      if (storageKey === 'main-site-theme') {
+        return
+      }
+      
+      try {
+        localStorage.setItem(storageKey, newTheme)
+        setTheme(newTheme)
+      } catch {
+        // Handle localStorage errors gracefully
+      }
     },
-    resolvedTheme: 'light' as const,
+    resolvedTheme: storageKey === 'main-site-theme' ? 'light' : resolvedTheme,
+    systemTheme,
   }
 
   useEffect(() => {

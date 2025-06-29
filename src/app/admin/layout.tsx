@@ -38,11 +38,15 @@ import {
   AlertCircle,
   Mail,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { cn } from '@/lib/utils'
+import { useTheme } from '@/components/theme-provider'
+import { AdminThemeProvider } from '@/components/admin/AdminThemeProvider'
+import { AdminThemeToggle } from '@/components/admin/AdminThemeToggle'
+import { CustomColorManager } from '@/components/admin/CustomColorManager'
 
 const navigation = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard, badge: null },
@@ -199,7 +203,6 @@ export default function AdminLayout({
   const router = useRouter()
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [theme, setTheme] = useState('light')
   const [showNotifications, setShowNotifications] = useState(false)
   const notifications = [
     { id: 1, text: 'New order placed by John Doe', time: '2 min ago', type: 'order' },
@@ -213,19 +216,6 @@ export default function AdminLayout({
       router.push(`/signin?callbackUrl=${encodeURIComponent(pathname || '')}`)
     }
   }, [status, router, pathname])
-
-  useEffect(() => {
-    const stored = typeof window !== 'undefined' ? localStorage.getItem('theme') : null
-    if (stored) setTheme(stored)
-    document.documentElement.classList.toggle('dark', stored === 'dark')
-  }, [])
-
-  const toggleTheme = () => {
-    const newTheme = theme === 'dark' ? 'light' : 'dark'
-    setTheme(newTheme)
-    if (typeof window !== 'undefined') localStorage.setItem('theme', newTheme)
-    document.documentElement.classList.toggle('dark', newTheme === 'dark')
-  }
 
   if (status === 'loading') {
     return (
@@ -262,7 +252,8 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-neutral-900 dark:text-white">
+    <AdminThemeProvider>
+      <div className="min-h-screen bg-gray-50 dark:bg-neutral-900 dark:text-white" data-admin-theme-container>
       {/* Top Bar - Mobile */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white dark:bg-neutral-800 border-b border-gray-200 dark:border-neutral-700 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -297,13 +288,7 @@ export default function AdminLayout({
             <Bell className="h-5 w-5 text-gray-600 dark:text-gray-400" />
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 font-bold">{notifications.length}</span>
           </button>
-          <button
-            onClick={toggleTheme}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors"
-            aria-label="Toggle dark mode"
-          >
-            {theme === 'dark' ? <Sun className="h-5 w-5 text-yellow-400" /> : <Moon className="h-5 w-5 text-gray-700" />}
-          </button>
+          <AdminThemeToggle />
         </div>
       </div>
 
@@ -343,7 +328,7 @@ export default function AdminLayout({
         <div className="relative">
           <button
             onClick={() => setShowNotifications((v) => !v)}
-            className="p-2 rounded-full bg-white/80 dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 shadow hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors relative"
+            className="p-2 rounded-full bg-white/80 dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 shadow hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors"
             aria-label="Show notifications"
           >
             <Bell className="h-5 w-5 text-primary" />
@@ -379,13 +364,8 @@ export default function AdminLayout({
             </div>
           )}
         </div>
-        <button
-          onClick={toggleTheme}
-          className="p-2 rounded-full bg-white/80 dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 shadow hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors"
-          aria-label="Toggle dark mode"
-        >
-          {theme === 'dark' ? <Sun className="h-5 w-5 text-yellow-400" /> : <Moon className="h-5 w-5 text-gray-700" />}
-        </button>
+        <CustomColorManager />
+        <AdminThemeToggle />
       </div>
 
       {/* Desktop sidebar */}
@@ -404,5 +384,6 @@ export default function AdminLayout({
         </div>
       </div>
     </div>
+    </AdminThemeProvider>
   )
-} 
+}
