@@ -31,7 +31,7 @@ export { prismaClient as prisma }
 // Re-export the connection check function
 export async function checkDatabaseConnection() {
   // Only run on server-side and not in Edge Runtime
-  if (typeof window !== 'undefined' || typeof EdgeRuntime !== 'undefined') {
+  if (typeof window !== 'undefined' || process.env.NEXT_RUNTIME === 'edge') {
     console.warn('Database connection check skipped on client-side or Edge Runtime')
     return false
   }
@@ -47,7 +47,7 @@ export async function checkDatabaseConnection() {
 }
 
 // Only check connection in development and on server-side (not Edge Runtime)
-if (process.env.NODE_ENV === 'development' && typeof window === 'undefined' && typeof EdgeRuntime === 'undefined') {
+if (process.env.NODE_ENV === 'development' && typeof window === 'undefined' && process.env.NEXT_RUNTIME !== 'edge') {
   checkDatabaseConnection()
     .then((isConnected) => {
       if (!isConnected) {
