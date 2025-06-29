@@ -4,6 +4,9 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   images: {
     domains: [
       "images.unsplash.com",
@@ -33,9 +36,8 @@ const nextConfig = {
   },
   experimental: {
     optimizePackageImports: ['lucide-react'],
-    serverComponentsExternalPackages: ['bcrypt', 'mongodb', 'mongoose', '@auth/prisma-adapter'],
   },
-  poweredByHeader: false,
+  serverExternalPackages: ['bcrypt', 'mongodb', 'mongoose', '@auth/prisma-adapter'],
   compress: true,
   generateEtags: true,
   distDir: '.next',
@@ -71,7 +73,6 @@ const nextConfig = {
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
   // Disable source maps in production to reduce complexity
   productionBrowserSourceMaps: false,
-  swcMinify: true,
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },

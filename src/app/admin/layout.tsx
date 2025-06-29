@@ -126,13 +126,18 @@ function Sidebar({ className, onClose }: { className?: string; onClose?: () => v
               className={cn(
                 'flex items-center justify-between px-4 py-3 text-sm rounded-lg transition-all duration-200 group',
                 isActive
-                  ? 'bg-primary text-white shadow-md'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700'
+                  ? 'bg-primary text-primary-foreground shadow-lg border border-primary/20'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700 hover:text-primary'
               )}
               onClick={onClose}
             >
               <div className="flex items-center">
-                <item.icon className={cn("w-5 h-5 mr-3", isActive ? "text-white" : "text-gray-500 group-hover:text-primary")} />
+                <item.icon className={cn(
+                  "w-5 h-5 mr-3", 
+                  isActive 
+                    ? "text-primary-foreground" 
+                    : "text-gray-500 group-hover:text-primary"
+                )} />
                 <span className="font-medium">{item.name}</span>
               </div>
               {item.badge && (
@@ -140,7 +145,9 @@ function Sidebar({ className, onClose }: { className?: string; onClose?: () => v
                   variant={isActive ? "secondary" : "default"} 
                   className={cn(
                     "text-xs",
-                    isActive ? "bg-white/20 text-white" : "bg-primary/10 text-primary"
+                    isActive 
+                      ? "bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30" 
+                      : "bg-primary/10 text-primary"
                   )}
                 >
                   {item.badge}
@@ -244,7 +251,7 @@ export default function AdminLayout({
   }
 
   const userRole = session.user?.role;
-  if (userRole !== 'ADMIN' && userRole !== 'MANAGER') {
+  if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN' && userRole !== 'MANAGER') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
         <h1 className="text-2xl font-bold">Access Denied</h1>

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from 'next-auth';
 import { z } from 'zod';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/app/auth';
 import { prisma } from "@/lib/prisma";
 import { Prisma, PaymentStatus, OrderStatus } from '@prisma/client';
 
@@ -14,53 +13,108 @@ const patchBodySchema = z.object({
   courierName: z.string().optional().nullable(),
   trackingId: z.string().optional().nullable(),
   note: z.string().optional(),
+  restore: z.boolean().optional(),
+  markAsFake: z.boolean().optional(),
 });
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { orderId: string } }
 ) {
+  const session = await auth();
+  if (!session?.user?.isAdmin) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id || (session.user.role !== 'ADMIN' && session.user.role !== 'MANAGER')) {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
-
-    const { orderId } = params;
-    if (!orderId) {
-      return new NextResponse("Order ID is required", { status: 400 });
-    }
-
     const body = await request.json();
     const validation = patchBodySchema.safeParse(body);
 
     if (!validation.success) {
       return NextResponse.json({ error: 'Invalid input', issues: validation.error.issues }, { status: 400 });
     }
-    
-    const updates = validation.data;
-    const { note, ...updateData } = updates;
 
+    const order = await prisma.order.findUnique({
+        where: { id: params.orderId },
+        include: { user: true }
+    });
+
+    if (!order) {
+        return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    }
+
+    const updates = validation.data;
+    const { note, restore, markAsFake, ...updateData } = updates;
+
+    // Handle special actions
+    if (restore) {
+      await prisma.order.update({
+          where: { id: params.orderId },
+          data: { deletedAt: null },
+      });
+      return NextResponse.json({ success: true, message: 'Order restored successfully.' });
+    }
+
+    if (markAsFake !== undefined) {
+      const updatedOrder = await prisma.$transaction(async (tx) => {
+        // Update order
+        const order = await tx.order.update({
+          where: { id: params.orderId },
+          data: { isFakeOrder: markAsFake },
+        });
+
+        // If marking as fake and user exists, flag the user
+        if (markAsFake && order.userId) {
+          await tx.user.update({
+            where: { id: order.userId },
+            data: { isFlagged: true }
+          });
+        }
+
+        // Create audit log
+        if (session.user.id) {
+          await tx.auditLog.create({
+            data: {
+              model: 'Order',
+              recordId: params.orderId,
+              userId: session.user.id,
+              action: 'UPDATE',
+              field: 'isFakeOrder',
+              oldValue: String(order.isFakeOrder),
+              newValue: String(markAsFake),
+            }
+          });
+        }
+
+        return order;
+      });
+
+      const message = markAsFake ? 'Order marked as fake and user flagged.' : 'Order unmarked as fake.';
+      return NextResponse.json(updatedOrder);
+    }
+
+    // Handle regular order updates
     const updatedOrder = await prisma.$transaction(async (tx) => {
       const originalOrder = await tx.order.findUnique({
-        where: { id: orderId },
+        where: { id: params.orderId },
       });
 
       if (!originalOrder) {
-        throw Object.assign(new Error("Order not found"), { status: 404 });
+        throw new Error("Order not found");
       }
 
       const auditLogs: Prisma.AuditLogCreateManyInput[] = [];
       const userId = session.user.id;
 
+      // Create audit logs for changes
       for (const key in updateData) {
         const typedKey = key as keyof typeof updateData;
         const oldValue = originalOrder[typedKey];
         const newValue = updateData[typedKey];
-        if (oldValue !== newValue) {
+        if (oldValue !== newValue && userId) {
           auditLogs.push({
             model: 'Order',
-            recordId: orderId,
+            recordId: params.orderId,
             userId,
             action: 'UPDATE',
             field: key,
@@ -70,10 +124,10 @@ export async function PATCH(
         }
       }
       
-      if (note) {
+      if (note && userId) {
         auditLogs.push({
             model: 'Order',
-            recordId: orderId,
+            recordId: params.orderId,
             userId,
             action: 'NOTE',
             field: 'note',
@@ -93,7 +147,7 @@ export async function PATCH(
       }
       
       const updated = await tx.order.update({
-        where: { id: orderId },
+        where: { id: params.orderId },
         data: updateData,
       });
       
@@ -101,19 +155,9 @@ export async function PATCH(
     });
 
     return NextResponse.json(updatedOrder);
-
-  } catch (error: unknown) {
-    console.error("Error updating order:", error);
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Invalid input', issues: error.issues }, { status: 400 });
-    }
-    // For custom errors with a status property
-    if (error && typeof error === 'object' && 'status' in error) {
-      const httpError = error as { status: number; message: string };
-      return new NextResponse(httpError.message, { status: httpError.status });
-    }
-
-    return new NextResponse("Internal Server Error", { status: 500 });
+  } catch (error) {
+    console.error('Failed to update order:', error);
+    return NextResponse.json({ error: 'Failed to update order' }, { status: 500 });
   }
 }
 
@@ -121,29 +165,38 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { orderId: string } }
 ) {
+  const session = await auth();
+  if (!session?.user?.isAdmin) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id || (session.user.role !== 'ADMIN' && session.user.role !== 'MANAGER')) {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
-
-    const { orderId } = params;
-    if (!orderId) {
-      return new NextResponse("Order ID is required", { status: 400 });
-    }
-
-    await prisma.order.update({
-      where: { id: orderId },
-      data: { deletedAt: new Date() },
+    const order = await prisma.order.findUnique({
+      where: { id: params.orderId },
+      select: { userId: true },
     });
 
-    return new NextResponse(null, { status: 204 }); // No Content
-    
-  } catch (error: unknown) {
-    console.error("[ORDER_DELETE]", error);
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-        return new NextResponse("Order not found", { status: 404 });
+    if (!order) {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
-    return new NextResponse("Internal Server Error", { status: 500 });
+
+    await prisma.$transaction(async (tx) => {
+      await tx.order.update({
+        where: { id: params.orderId },
+        data: { deletedAt: new Date() },
+      });
+
+      if (order.userId) {
+        await tx.user.update({
+          where: { id: order.userId },
+          data: { isFlagged: true },
+        });
+      }
+    });
+
+    return NextResponse.json({ success: true, message: 'Order moved to trash.' });
+  } catch (error) {
+    console.error('Failed to delete order:', error);
+    return NextResponse.json({ error: 'Failed to delete order' }, { status: 500 });
   }
 } 

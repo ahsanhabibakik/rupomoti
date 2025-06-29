@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthSession } from '@/lib/auth'
+import { auth } from '@/app/auth'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
@@ -55,7 +55,7 @@ const couponSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const session = await getAuthSession()
+    const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -95,7 +95,7 @@ const updateCouponSchema = couponSchema.extend({
 
 export async function PUT(request: Request) {
   try {
-    const session = await getAuthSession()
+    const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -128,7 +128,7 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getAuthSession()
+    const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

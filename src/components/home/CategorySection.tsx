@@ -1,77 +1,132 @@
 'use client'
 
+import { useRef, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Category } from '@prisma/client'
-import { ArrowRight } from 'lucide-react'
 
 interface CategorySectionProps {
   categories: Category[]
 }
 
 export default function CategorySection({ categories }: CategorySectionProps) {
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(true)
+
+  const handleScroll = () => {
+    const container = scrollContainerRef.current
+    if (container) {
+      setCanScrollLeft(container.scrollLeft > 0)
+      setCanScrollRight(container.scrollLeft < container.scrollWidth - container.clientWidth)
+    }
+  }
+
+  const scrollLeft = () => {
+    const container = scrollContainerRef.current
+    if (container) {
+      container.scrollBy({ left: -250, behavior: 'smooth' })
+    }
+  }
+
+  const scrollRight = () => {
+    const container = scrollContainerRef.current
+    if (container) {
+      container.scrollBy({ left: 250, behavior: 'smooth' })
+    }
+  }
+
   if (!categories || categories.length === 0) {
-    return (
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-2xl font-semibold text-gray-700">No categories to display.</h2>
-          <p className="text-gray-500 mt-2">Please check back later.</p>
-        </div>
-      </section>
-    )
+    return null
   }
 
   return (
-    <section className="py-16 bg-white sm:py-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+    <section className="py-12 bg-gray-50">
+      <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center mb-8">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
             Shop by Category
           </h2>
-          <p className="mt-4 text-lg leading-6 text-gray-500">
-            Find the perfect piece from our curated collections.
-          </p>
+          
+          {/* Desktop Navigation */}
+          {categories.length > 4 && (
+            <div className="hidden md:flex gap-2">
+              <button
+                onClick={scrollLeft}
+                disabled={!canScrollLeft}
+                className={`p-2 rounded-full border transition-all duration-200 ${
+                  canScrollLeft 
+                    ? 'text-gray-700 hover:text-orange-600 hover:shadow-md bg-white' 
+                    : 'text-gray-300 cursor-not-allowed bg-gray-50'
+                }`}
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={scrollRight}
+                disabled={!canScrollRight}
+                className={`p-2 rounded-full border transition-all duration-200 ${
+                  canScrollRight 
+                    ? 'text-gray-700 hover:text-orange-600 hover:shadow-md bg-white' 
+                    : 'text-gray-300 cursor-not-allowed bg-gray-50'
+                }`}
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+          )}
         </div>
 
-        <div className="grid grid-cols-1 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 sm:gap-x-6 lg:gap-x-8">
-          {categories.map((category) => (
-            <motion.div
-              key={category.id}
-              className="group relative"
-              whileHover={{ y: -5 }}
-              transition={{ duration: 0.2 }}
-            >
-              <div className="relative w-full h-80 bg-white rounded-lg overflow-hidden group-hover:opacity-75 sm:aspect-w-2 sm:aspect-h-1 sm:h-64 lg:aspect-w-1 lg:aspect-h-1 shadow-lg hover:shadow-2xl transition-shadow">
-                <Image
-                  src={category.image || '/placeholder.png'}
-                  alt={category.name}
-                  fill
-                  className="w-full h-full object-center object-cover"
-                />
-              </div>
-              <h3 className="mt-6 text-base font-semibold text-gray-900">
-                <Link href={`/shop?category=${category.slug}`}>
-                  <span className="absolute inset-0" />
-                  {category.name}
-                </Link>
-              </h3>
-              <p className="text-sm text-gray-500 line-clamp-2">
-                {category.description}
-              </p>
-            </motion.div>
-          ))}
-        </div>
-
-        <div className="mt-12 text-center">
-          <Link
-            href="/shop"
-            className="inline-flex items-center text-orange-600 font-semibold hover:text-orange-500"
+        {/* Slidable Categories Container */}
+        <div className="relative">
+          <div
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+            className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-4"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            See all categories <ArrowRight className="ml-2 h-4 w-4" />
-          </Link>
+            {categories.map((category, index) => (
+              <motion.div
+                key={category.id}
+                className="flex-none"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+              >
+                <Link
+                  href={`/category/${category.slug}`}
+                  className="block group"
+                >
+                  <div className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 w-40 sm:w-48">
+                    <div className="relative aspect-square mb-3 overflow-hidden rounded-lg bg-gray-100">
+                      {category.image ? (
+                        <Image
+                          src={category.image}
+                          alt={category.name}
+                          fill
+                          className="object-cover transition-transform duration-300 group-hover:scale-105"
+                          sizes="(max-width: 640px) 160px, 192px"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
+                          <span className="text-orange-600 text-2xl font-bold">
+                            {category.name.charAt(0)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <h3 className="text-center text-sm font-semibold text-gray-900 group-hover:text-orange-600 transition-colors duration-200">
+                      {category.name}
+                    </h3>
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
   )
-} 
+}

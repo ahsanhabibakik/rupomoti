@@ -27,13 +27,15 @@ import { ProfileEditModal } from '@/components/account/ProfileEditModal'
 import { ReviewModal } from '@/components/account/ReviewModal'
 
 const tabs = [
-  { id: 'profile', label: 'Profile', icon: User },
-  { id: 'orders', label: 'Orders', icon: Package },
-  { id: 'wishlist', label: 'Wishlist', icon: Heart },
-  { id: 'reviews', label: 'My Reviews', icon: Star },
-  { id: 'addresses', label: 'Addresses', icon: MapPin },
-  { id: 'payment', label: 'Payment Methods', icon: CreditCard },
-  { id: 'settings', label: 'Settings', icon: Settings },
+  // Main tabs
+  { id: 'profile', label: 'Profile', icon: User, category: 'main' },
+  { id: 'orders', label: 'Orders', icon: Package, category: 'main' },
+  { id: 'wishlist', label: 'Wishlist', icon: Heart, category: 'main' },
+  { id: 'reviews', label: 'Reviews', icon: Star, category: 'main' },
+  // Secondary tabs
+  { id: 'addresses', label: 'Addresses', icon: MapPin, category: 'secondary' },
+  { id: 'payment', label: 'Payment', icon: CreditCard, category: 'secondary' },
+  { id: 'settings', label: 'Settings', icon: Settings, category: 'secondary' },
 ]
 
 export default function AccountPage() {
@@ -282,40 +284,65 @@ export default function AccountPage() {
 
   const handleSaveAddress = async (e: any) => {
     e.preventDefault()
+    console.log('Saving address:', { editingAddress, addressForm })
+    
     try {
+      const method = editingAddress ? 'PUT' : 'POST'
+      const body = editingAddress 
+        ? { id: editingAddress.id, ...addressForm } 
+        : addressForm
+      
+      console.log('API request:', { method, body })
+      
       const res = await fetch('/api/addresses', {
-        method: editingAddress ? 'PUT' : 'POST',
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editingAddress ? { id: editingAddress.id, ...addressForm } : addressForm),
+        body: JSON.stringify(body),
       })
+      
+      const responseData = await res.json()
+      console.log('API response:', { status: res.status, data: responseData })
+      
       if (res.ok) {
-        const newAddress = await res.json()
         if (editingAddress) {
-          setAddresses(addresses.map(a => a.id === editingAddress.id ? newAddress : a))
+          setAddresses(addresses.map(a => a.id === editingAddress.id ? responseData : a))
         } else {
-          setAddresses([newAddress, ...addresses])
+          setAddresses([responseData, ...addresses])
         }
         setShowAddressModal(false)
         showToast.success(`Address ${editingAddress ? 'updated' : 'added'} successfully!`)
+      } else {
+        showToast.error(responseData.error || `Failed to ${editingAddress ? 'update' : 'add'} address`)
       }
     } catch (error) {
+      console.error('Error saving address:', error)
       showToast.error(`Failed to ${editingAddress ? 'update' : 'add'} address`)
     }
   }
 
   const handleDeleteAddress = async (addressId: string) => {
     if (!confirm('Are you sure you want to delete this address?')) return
+    
+    console.log('Deleting address:', addressId)
+    
     try {
       const res = await fetch('/api/addresses', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: addressId }),
       })
+      
+      const responseData = await res.json()
+      console.log('Delete response:', { status: res.status, data: responseData })
+      
       if (res.ok) {
         setAddresses(addresses.filter(a => a.id !== addressId))
         showToast.success('Address deleted successfully!')
+      } else {
+        showToast.error(responseData.error || 'Failed to delete address')
       }
     } catch (error) {
+      console.error('Error deleting address:', error)
       showToast.error('Failed to delete address')
     }
   }
@@ -458,12 +485,107 @@ export default function AccountPage() {
   const isAdminOrManager = isAdmin || isManager
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-secondary/30 py-6 md:py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Sidebar */}
-          <div className="md:col-span-1">
-            <div className="bg-white rounded-2xl shadow-sm p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 md:gap-8">
+          {/* Mobile/Tablet Navigation */}
+          <div className="lg:hidden">
+            <div className="bg-background rounded-xl shadow-sm p-4 mb-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="relative w-12 h-12">
+                  <Image
+                    src={session?.user?.image || '/images/default-avatar.png'}
+                    alt="Profile"
+                    fill
+                    className="rounded-full object-cover"
+                  />
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold text-primary">
+                    {session?.user?.name}
+                  </h2>
+                  <p className="text-xs text-muted-foreground">{session?.user?.email}</p>
+                  {isAdminOrManager && (
+                    <span className="inline-flex items-center gap-1 mt-1 px-2 py-1 text-xs bg-accent/20 text-accent rounded-full">
+                      <Shield size={10} />
+                      {isAdmin ? 'Admin' : 'Manager'}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Two Column Mobile Navigation */}
+              <div className="grid grid-cols-2 gap-2 mb-4">
+                {/* Main Column */}
+                <div className="space-y-1">
+                  <h3 className="text-xs font-semibold text-muted-foreground mb-2 px-2">Main</h3>
+                  {tabs.filter(tab => tab.category === 'main').map((tab) => {
+                    const Icon = tab.icon
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`w-full flex items-center space-x-2 px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
+                          activeTab === tab.id
+                            ? 'bg-primary text-background'
+                            : 'text-foreground hover:bg-secondary'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4" />
+                        <span>{tab.label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+
+                {/* Secondary Column */}
+                <div className="space-y-1">
+                  <h3 className="text-xs font-semibold text-muted-foreground mb-2 px-2">More</h3>
+                  {tabs.filter(tab => tab.category === 'secondary').map((tab) => {
+                    const Icon = tab.icon
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`w-full flex items-center space-x-2 px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
+                          activeTab === tab.id
+                            ? 'bg-primary text-background'
+                            : 'text-foreground hover:bg-secondary'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4" />
+                        <span>{tab.label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Admin Dashboard & Sign out */}
+              <div className="border-t pt-3 space-y-2">
+                {isAdminOrManager && (
+                  <Link
+                    href="/admin"
+                    className="w-full flex items-center space-x-2 px-3 py-2 text-xs font-medium text-accent bg-accent/10 hover:bg-accent/20 rounded-lg transition-colors"
+                  >
+                    <Shield className="w-4 h-4" />
+                    <span>Admin Dashboard</span>
+                  </Link>
+                )}
+                <button
+                  onClick={() => signOut()}
+                  className="w-full flex items-center space-x-2 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign out</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop Sidebar */}
+          <div className="hidden lg:block lg:col-span-1">
+            <div className="bg-background rounded-2xl shadow-sm p-6 sticky top-6">
               <div className="flex items-center space-x-4 mb-6">
                 <div className="relative w-16 h-16">
                   <Image
@@ -474,12 +596,12 @@ export default function AccountPage() {
                   />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
+                  <h2 className="text-lg font-semibold text-primary">
                     {session?.user?.name}
                   </h2>
-                  <p className="text-sm text-gray-500">{session?.user?.email}</p>
+                  <p className="text-sm text-muted-foreground">{session?.user?.email}</p>
                   {isAdminOrManager && (
-                    <span className="inline-flex items-center gap-1 mt-1 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">
+                    <span className="inline-flex items-center gap-1 mt-1 px-2 py-1 text-xs bg-accent/20 text-accent rounded-full">
                       <Shield size={10} />
                       {isAdmin ? 'Admin' : 'Manager'}
                     </span>
@@ -491,7 +613,7 @@ export default function AccountPage() {
                 {isAdminOrManager && (
                   <Link
                     href="/admin"
-                    className="w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                    className="w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium text-accent bg-accent/10 hover:bg-accent/20 rounded-lg transition-colors"
                   >
                     <Shield className="w-5 h-5" />
                     <span>Admin Dashboard</span>
@@ -506,8 +628,8 @@ export default function AccountPage() {
                       onClick={() => setActiveTab(tab.id)}
                       className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
                         activeTab === tab.id
-                          ? 'bg-pearl-50 text-pearl-600'
-                          : 'text-gray-600 hover:bg-gray-50'
+                          ? 'bg-primary text-background'
+                          : 'text-foreground hover:bg-secondary'
                       }`}
                     >
                       <Icon className="w-5 h-5" />
@@ -518,7 +640,7 @@ export default function AccountPage() {
 
                 <button
                   onClick={() => signOut()}
-                  className="w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  className="w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
                 >
                   <LogOut className="w-5 h-5" />
                   <span>Sign out</span>
@@ -528,13 +650,13 @@ export default function AccountPage() {
           </div>
 
           {/* Main Content */}
-          <div className="md:col-span-3">
+          <div className="lg:col-span-3">
             <motion.div
               key={activeTab}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="bg-white rounded-2xl shadow-sm p-6"
+              className="bg-background rounded-2xl shadow-sm p-4 md:p-6"
             >
               {activeTab === 'profile' && (
                 loading.profile ? (
@@ -889,13 +1011,15 @@ export default function AccountPage() {
                               <div className="flex items-center space-x-2">
                                 <button
                                   onClick={() => handleOpenReviewModal(review.product, review)}
-                                  className="text-blue-600 hover:text-blue-700"
+                                  className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                                  title="Edit Review"
                                 >
                                   <Edit className="h-4 w-4" />
                                 </button>
                                 <button
                                   onClick={() => handleDeleteReview(review.id)}
-                                  className="text-red-600 hover:text-red-700"
+                                  className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                                  title="Delete Review"
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </button>
@@ -925,6 +1049,16 @@ export default function AccountPage() {
                       Try Again
                     </button>
                   </div>
+                ) : !session ? (
+                  <div className="text-center py-12 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <div className="text-yellow-800 mb-4">Please sign in to manage your addresses</div>
+                    <button 
+                      onClick={() => router.push('/signin')}
+                      className="px-6 py-3 bg-pearl-600 text-white rounded-lg hover:bg-pearl-700"
+                    >
+                      Sign In
+                    </button>
+                  </div>
                 ) : (
                   <div>
                     <div className="flex justify-between items-center mb-6">
@@ -939,6 +1073,14 @@ export default function AccountPage() {
                         Add New Address
                       </button>
                     </div>
+                    
+                    {/* Debug Info */}
+                    {process.env.NODE_ENV === 'development' && (
+                      <div className="mb-4 p-3 bg-gray-100 rounded-lg text-sm">
+                        <p>Debug: Session user ID: {session?.user?.id || 'No session'}</p>
+                        <p>Debug: Addresses count: {addresses.length}</p>
+                      </div>
+                    )}
                     
                     {addresses.length === 0 ? (
                       <div className="text-center py-12 bg-gray-50 rounded-lg">
@@ -1014,7 +1156,8 @@ export default function AccountPage() {
                       <button
                         type="button"
                         onClick={() => setShowAddressModal(false)}
-                        className="text-gray-400 hover:text-gray-600"
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="Close"
                       >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1155,7 +1298,8 @@ export default function AccountPage() {
                       <button
                         type="button"
                         onClick={() => setShowPaymentModal(false)}
-                        className="text-gray-400 hover:text-gray-600"
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="Close"
                       >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1530,4 +1674,4 @@ export default function AccountPage() {
       />
     </div>
   )
-} 
+}

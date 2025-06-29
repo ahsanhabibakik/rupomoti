@@ -25,7 +25,6 @@ import {
   Search, 
   RotateCw,
   Filter,
-  X as XIcon,
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Image from 'next/image';
@@ -48,6 +47,76 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { ProductTableSkeleton } from '@/components/admin/ProductTableSkeleton';
+
+interface DataTablePaginationProps {
+  page: number;
+  totalPages: number;
+  totalRecords: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
+}
+
+function DataTablePagination({ 
+  page, 
+  totalPages, 
+  totalRecords, 
+  pageSize, 
+  onPageChange, 
+  onPageSizeChange 
+}: DataTablePaginationProps) {
+  const startRecord = totalRecords > 0 ? (page - 1) * pageSize + 1 : 0;
+  const endRecord = Math.min(page * pageSize, totalRecords);
+
+  return (
+    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="text-sm text-muted-foreground">
+        Showing {startRecord}-{endRecord} of {totalRecords} records.
+      </div>
+      <div className="flex flex-col sm:flex-row items-center gap-4">
+        <div className="flex items-center gap-2">
+          <span className="text-sm">Rows per page:</span>
+          <Select
+            value={pageSize.toString()}
+            onValueChange={(value) => onPageSizeChange(Number(value))}
+          >
+            <SelectTrigger className="w-20">
+              <SelectValue placeholder={pageSize.toString()} />
+            </SelectTrigger>
+            <SelectContent>
+              {[10, 20, 30, 50, 100, 200].map((size) => (
+                <SelectItem key={size} value={size.toString()}>
+                  {size}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(page - 1)}
+            disabled={page <= 1}
+          >
+            Previous
+          </Button>
+          <span className="text-sm font-medium">
+            Page {page} of {totalPages || 1}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(page + 1)}
+            disabled={page >= totalPages}
+          >
+            Next
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const INITIAL_PRICE_RANGE = [0, 50000];
 
@@ -96,8 +165,8 @@ export default function ProductsPage() {
       Object.entries(filters).forEach(([key, value]) => {
         if (value) {
             if (key === 'priceRange') {
-                if (value[0] > INITIAL_PRICE_RANGE[0]) searchParams.set('minPrice', value[0].toString());
-                if (value[1] < INITIAL_PRICE_RANGE[1]) searchParams.set('maxPrice', value[1].toString());
+                if (Number(value[0]) > INITIAL_PRICE_RANGE[0]) searchParams.set('minPrice', String(value[0]));
+                if (Number(value[1]) < INITIAL_PRICE_RANGE[1]) searchParams.set('maxPrice', String(value[1]));
             } else if (key === 'categoryId' && value !== 'all-categories') {
                 searchParams.set(key, String(value));
             } else if (key === 'stockStatus' && value !== 'all') {
@@ -147,7 +216,7 @@ export default function ProductsPage() {
     }
   }, [filters, activeTab, pagination.page, pagination.pageSize, isLoading, fetchProducts]);
   
-  const handleFilterChange = (key: string, value: any) => {
+  const handleFilterChange = (key: keyof typeof filters, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value, page: 1 }));
   };
 
@@ -178,7 +247,7 @@ export default function ProductsPage() {
     }).length;
   }, [filters]);
   
-  const handleSoftDelete = useCallback(async (productId: string) => {
+  const handleSoftDelete = (productId: string) => {
     if (!confirm('Are you sure you want to move this product to the trash?')) return;
     showToast.promise(
         fetch(`/api/admin/products?id=${productId}`, { method: 'DELETE' })
@@ -186,12 +255,16 @@ export default function ProductsPage() {
             if (!res.ok) { const d = await res.json(); throw new Error(d.error) }
             return res.json();
         })
-        .then(() => fetchProducts()),
-        { loading: 'Moving to trash...', success: 'Product moved to trash', error: (e) => e.message }
+        .then(() => fetchProducts(false)),
+        { 
+          loading: 'Moving to trash...', 
+          success: 'Product moved to trash!', 
+          error: (e: Error) => e.message 
+        }
     );
-  }, [fetchProducts]);
+  };
 
-  const handleRestore = useCallback(async (productId: string) => {
+  const handleRestore = (productId: string) => {
     if (!confirm('Are you sure you want to restore this product?')) return;
     showToast.promise(
         fetch(`/api/admin/products?id=${productId}&action=restore`, { method: 'PATCH' })
@@ -199,12 +272,16 @@ export default function ProductsPage() {
             if (!res.ok) { const d = await res.json(); throw new Error(d.error) }
             return res.json();
         })
-        .then(() => fetchProducts()),
-        { loading: 'Restoring product...', success: 'Product restored', error: (e) => e.message }
+        .then(() => fetchProducts(false)),
+        { 
+          loading: 'Restoring product...', 
+          success: 'Product restored!', 
+          error: (e: Error) => e.message 
+        }
     );
-  }, [fetchProducts]);
+  };
 
-  const handlePermanentDelete = useCallback(async (productId: string) => {
+  const handlePermanentDelete = (productId: string) => {
     if (!confirm('This action is irreversible. Are you sure you want to permanently delete this product?')) return;
     showToast.promise(
         fetch(`/api/admin/products?id=${productId}&action=delete-permanent`, { method: 'PATCH' })
@@ -212,15 +289,19 @@ export default function ProductsPage() {
             if (!res.ok) { const d = await res.json(); throw new Error(d.error) }
             return res.json();
         })
-        .then(() => fetchProducts()),
-        { loading: 'Deleting permanently...', success: 'Product deleted', error: (e) => e.message }
+        .then(() => fetchProducts(false)),
+        { 
+          loading: 'Deleting permanently...', 
+          success: 'Product deleted!', 
+          error: (e: Error) => e.message 
+        }
     );
-  }, [fetchProducts]);
+  };
 
-  const handleEdit = useCallback((product: Product) => {
+  const handleEdit = (product: Product) => {
     setEditingProduct(product);
     setIsDialogOpen(true);
-  }, []);
+  };
 
   const openAddDialog = () => {
     setEditingProduct(null);
@@ -232,9 +313,7 @@ export default function ProductsPage() {
   };
 
   const handlePageChange = (newPage: number) => {
-    if (newPage > 0 && newPage <= pagination.totalPages) {
-      setPagination(prev => ({ ...prev, page: newPage }));
-    }
+    setPagination(p => ({ ...p, page: newPage }));
   };
 
   const FilterControls = () => (
@@ -422,36 +501,14 @@ export default function ProductsPage() {
         </div>
       </Tabs>
 
-      {!isLoading && <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="text-sm text-muted-foreground">
-          Showing {products.length > 0 ? (pagination.page - 1) * pagination.pageSize + 1 : 0}
-          -
-          {Math.min(pagination.page * pagination.pageSize, pagination.totalCount)} of {pagination.totalCount} products.
-        </div>
-        <div className="flex flex-col sm:flex-row items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-sm">Rows per page:</span>
-            <Select
-              value={pagination.pageSize.toString()}
-              onValueChange={(value) => handlePageSizeChange(Number(value))}
-            >
-              <SelectTrigger className="w-20">
-                <SelectValue placeholder={pagination.pageSize.toString()} />
-              </SelectTrigger>
-              <SelectContent>
-                {[10, 20, 30, 50, 100, 200].map(size => (
-                  <SelectItem key={size} value={size.toString()}>{size}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.page - 1)} disabled={pagination.page <= 1}>Previous</Button>
-            <span className="text-sm font-medium">Page {pagination.page} of {pagination.totalPages || 1}</span>
-            <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.page + 1)} disabled={pagination.page >= pagination.totalPages}>Next</Button>
-          </div>
-        </div>
-      </div>}
+      {!isLoading && <DataTablePagination 
+        page={pagination.page}
+        totalPages={pagination.totalPages}
+        totalRecords={pagination.totalCount}
+        pageSize={pagination.pageSize}
+        onPageChange={handlePageChange}
+        onPageSizeChange={handlePageSizeChange}
+      />}
 
       {isDialogOpen && <ProductDialog
         open={isDialogOpen}

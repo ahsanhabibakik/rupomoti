@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server';
+import { verifyAdminAccess } from '@/lib/admin-auth';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authConfig } from '@/lib/auth-config';
 
 export async function GET(request: Request) {
   try {
-    const session = await getServerSession(authConfig);
-    if (!session || !session.user || session.user.role !== 'ADMIN') {
+    const { authorized } = await verifyAdminAccess();
+    if (!authorized) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -93,8 +92,8 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authConfig);
-    if (!session || !session.user || session.user.role !== 'ADMIN') {
+    const { authorized } = await verifyAdminAccess();
+    if (!authorized) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -113,8 +112,8 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const session = await getServerSession(authConfig);
-    if (!session || !session.user || session.user.role !== 'ADMIN') {
+    const { authorized } = await verifyAdminAccess();
+    if (!authorized) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -135,8 +134,8 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
     try {
-      const session = await getServerSession(authConfig);
-      if (!session || !session.user || session.user.role !== 'ADMIN') {
+      const { authorized } = await verifyAdminAccess();
+      if (!authorized) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
   
@@ -161,8 +160,8 @@ export async function DELETE(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const session = await getServerSession(authConfig);
-    if (!session || !session.user || session.user.role !== 'ADMIN') {
+    const { authorized } = await verifyAdminAccess();
+    if (!authorized) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

@@ -4,11 +4,20 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 }
 
-const prismaClient =
-  globalForPrisma.prisma ??
-  new PrismaClient({
+// Ensure Prisma only runs on server-side
+const createPrismaClient = () => {
+  if (typeof window !== 'undefined') {
+    throw new Error('PrismaClient cannot be used on the client-side')
+  }
+  
+  return new PrismaClient({
     log: ['query'],
   })
+}
+
+const prismaClient =
+  globalForPrisma.prisma ??
+  createPrismaClient()
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prismaClient
 
@@ -16,6 +25,12 @@ export { prismaClient as prisma }
 
 // Re-export the connection check function
 export async function checkDatabaseConnection() {
+  // Only run on server-side
+  if (typeof window !== 'undefined') {
+    console.warn('Database connection check skipped on client-side')
+    return false
+  }
+  
   try {
     await prismaClient.$connect()
     console.log('✅ Database connection established')
@@ -26,8 +41,8 @@ export async function checkDatabaseConnection() {
   }
 }
 
-// Only check connection in development
-if (process.env.NODE_ENV === 'development') {
+// Only check connection in development and on server-side
+if (process.env.NODE_ENV === 'development' && typeof window === 'undefined') {
   checkDatabaseConnection()
     .then((isConnected) => {
       if (!isConnected) {

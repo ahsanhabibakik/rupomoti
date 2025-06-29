@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { prisma } from '@/lib/prisma'
+import { getProduct } from '@/lib/actions/product-actions'
 import { ProductDetails } from './_components/product-details'
 import { ReviewSection } from './_components/review-section'
 
@@ -11,9 +11,7 @@ interface ProductPageProps {
 }
 
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
-  const product = await prisma.product.findUnique({
-    where: { slug: params.slug },
-  })
+  const product = await getProduct(params.slug)
 
   if (!product) {
     return {
@@ -41,25 +39,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
-  const product = await prisma.product.findUnique({
-    where: { slug: params.slug },
-    include: {
-      category: true,
-      reviews: {
-        include: {
-          user: {
-            select: {
-              name: true,
-              image: true,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      },
-    },
-  })
+  const product = await getProduct(params.slug)
 
   if (!product) {
     notFound()

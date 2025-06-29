@@ -1,20 +1,10 @@
 import Link from 'next/link'
-import { prisma } from '@/lib/prisma'
+import { getHomePageData } from '@/actions/home-actions'
 import { ProductCard } from '@/components/products/ProductCard'
 import { Button } from '@/components/ui/button'
 
-async function getFeaturedProducts() {
-  return prisma.product.findMany({
-    where: { isFeatured: true },
-    take: 4,
-    include: {
-      category: true,
-    },
-  })
-}
-
 export default async function NotFound() {
-  const featuredProducts = await getFeaturedProducts()
+  const { featuredProducts } = await getHomePageData()
 
   return (
     <div className="container mx-auto text-center py-16">

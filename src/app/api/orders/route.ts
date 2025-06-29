@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { auth } from '@/app/auth'
 import { prisma } from '@/lib/prisma'
+import { generateUniqueOrderNumber } from '@/lib/server/order-number-generator'
+import { StockManager } from '@/lib/stock-manager'
 
 export async function GET() {
   try {
@@ -31,7 +32,7 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
 
     if (!session) {
       return NextResponse.json(
@@ -70,7 +71,7 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
 
     if (!session) {
       return NextResponse.json(
@@ -105,10 +106,12 @@ export async function DELETE(request: Request) {
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     const body = await req.json();
+    
+    console.log('Order API - Received data:', JSON.stringify(body, null, 2));
+    
     const {
-      orderNumber,
       recipientName,
       recipientPhone,
       recipientEmail,
@@ -130,9 +133,6 @@ export async function POST(req: Request) {
     const userId = payloadUserId || session?.user?.id || undefined;
 
     // Validate required fields
-    if (!orderNumber) {
-      return NextResponse.json({ error: 'Missing required field: orderNumber' }, { status: 400 });
-    }
     if (!recipientName) {
       return NextResponse.json({ error: 'Missing required field: recipientName' }, { status: 400 });
     }
@@ -198,21 +198,29 @@ export async function POST(req: Request) {
 
       // Use a transaction to ensure atomicity
       const order = await prisma.$transaction(async (tx) => {
-        // 1. Check stock and create a list of updates
-        for (const item of items) {
-          const product = await tx.product.findUnique({
-            where: { id: item.productId },
-          });
+        // 1. Check stock availability using StockManager
+        const stockCheck = await StockManager.checkStockAvailability(
+          items.map((item: { productId: string; quantity: number }) => ({
+            productId: item.productId,
+            quantity: item.quantity
+          }))
+        );
 
-          if (!product || product.stock < item.quantity) {
-            throw new Error(`Insufficient stock for product: ${product?.name || item.productId}`);
-          }
+        if (!stockCheck.allAvailable) {
+          const unavailableItems = stockCheck.checks
+            .filter(check => !check.available)
+            .map(check => `${check.productName || check.productId}: ${check.reason}`)
+            .join(', ');
+          throw new Error(`Stock not available: ${unavailableItems}`);
         }
         
-        // 2. Create the order
+        // 2. Generate unique order number
+        const newOrderNumber = await generateUniqueOrderNumber();
+        
+        // 3. Create the order
         const createdOrder = await tx.order.create({
           data: {
-            orderNumber,
+            orderNumber: newOrderNumber,
             customerId: customerRecord.id,
             userId: userId || undefined,
             status: 'PENDING',
@@ -232,7 +240,7 @@ export async function POST(req: Request) {
             recipientZone: recipientZone || '',
             recipientArea: recipientArea || '',
             items: {
-              create: items.map((item: any) => ({
+              create: items.map((item: { productId: string; quantity: number; price: number }) => ({
                 productId: item.productId,
                 quantity: item.quantity,
                 price: item.price,
@@ -249,16 +257,17 @@ export async function POST(req: Request) {
           },
         });
 
-        // 3. Update stock for each item
-        for (const item of items) {
-          await tx.product.update({
-            where: { id: item.productId },
-            data: {
-              stock: {
-                decrement: item.quantity,
-              },
-            },
-          });
+        // 4. Reserve stock using StockManager
+        try {
+          await StockManager.reserveStockForOrder(
+            createdOrder.id,
+            items.map((item: { productId: string; quantity: number }) => ({
+              productId: item.productId,
+              quantity: item.quantity
+            }))
+          );
+        } catch (stockError) {
+          throw new Error(`Failed to reserve stock: ${stockError instanceof Error ? stockError.message : 'Unknown error'}`);
         }
 
         return createdOrder;
@@ -281,17 +290,28 @@ export async function POST(req: Request) {
           createdAt: order.createdAt
         }
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Order creation failed:', error);
     
-      if (error instanceof Error && error.message.includes('Insufficient stock')) {
+      if (error instanceof Error && error.message.includes('Stock not available')) {
         return NextResponse.json({ error: error.message }, { status: 409 }); // 409 Conflict
       }
     
       return NextResponse.json({ error: 'An unexpected error occurred while processing your order.' }, { status: 500 });
     }
-  } catch (error: any) {
-    console.error('Failed to parse request body or handle session:', error);
-    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+  } catch (error) {
+    console.error('Failed to create order:', error);
+    
+    // Provide more specific error messages
+    if (error instanceof Error && error.message) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    
+    // Check if it's a Prisma validation error
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
+      return NextResponse.json({ error: 'Duplicate order number. Please try again.' }, { status: 400 });
+    }
+    
+    return NextResponse.json({ error: 'Failed to create order. Please try again.' }, { status: 500 });
   }
 }

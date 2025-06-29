@@ -81,7 +81,8 @@ export function ReviewModal({ isOpen, onClose, product, existingReview, onReview
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            title="Close"
           >
             <X className="w-5 h-5" />
           </button>
@@ -117,7 +118,8 @@ export function ReviewModal({ isOpen, onClose, product, existingReview, onReview
                   onClick={() => setRating(star)}
                   onMouseEnter={() => setHoveredRating(star)}
                   onMouseLeave={() => setHoveredRating(0)}
-                  className="transition-colors"
+                  className="p-1 rounded transition-colors hover:bg-gray-50"
+                  title={`Rate ${star} star${star > 1 ? 's' : ''}`}
                 >
                   <Star
                     className={`w-8 h-8 ${

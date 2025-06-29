@@ -4,10 +4,6 @@ import { Providers } from '@/components/providers'
 import './globals.css'
 import { Metadata } from 'next'
 import { Analytics } from '@vercel/analytics/react'
-import { Toaster } from '@/components/ui/toaster'
-import { cn } from '@/lib/utils'
-import { Navbar } from '@/components/layout/Navbar'
-import Footer from '@/components/layout/Footer'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -81,8 +77,7 @@ export default function RootLayout({
           <RootLayoutClient>
             {children}
           </RootLayoutClient>
-          <Toaster />
-          <Analytics />
+          {process.env.NODE_ENV === 'production' && <Analytics />}
         </Providers>
       </body>
     </html>

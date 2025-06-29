@@ -3,10 +3,12 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { section: string } }
+  { params }: { params: Promise<{ section: string }> }
 ) {
+  let section: string = '';
   try {
-    const section = params.section;
+    const resolvedParams = await params;
+    section = resolvedParams.section;
 
     if (!section) {
       return NextResponse.json({ error: 'Section is required' }, { status: 400 });
@@ -25,7 +27,7 @@ export async function GET(
 
     return NextResponse.json(media);
   } catch (error) {
-    console.error(`Error fetching media for section ${params.section}:`, error);
+    console.error(`Error fetching media for section ${section || 'unknown'}:`, error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 } 

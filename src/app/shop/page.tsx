@@ -62,7 +62,7 @@ function FilterSection({
     <div className="space-y-8">
       <div>
         <h3 className="font-semibold text-foreground mb-4">Categories</h3>
-        <div className="space-y-3">
+        <div className="max-h-64 overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
           {categories.map((category) => (
             <label key={category.id} className="flex items-center space-x-3 cursor-pointer group">
               <input

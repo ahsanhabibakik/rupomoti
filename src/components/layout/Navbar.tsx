@@ -1,20 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from "next-auth/react";
-import { Menu, X, Search, ShoppingCart, ChevronDown, User, Shield, LogOut, Settings } from "lucide-react";
+import { Menu, Search, ShoppingCart, User, Shield, LogOut, Settings } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { setCartDrawerOpen } from "@/redux/slices/uiSlice";
 import SearchModal from "@/components/search/SearchModal";
+import MobileSearchBar from "@/components/search/MobileSearchBar";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
-  SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
 import {
@@ -102,6 +101,11 @@ function UserMenu() {
 
 function MobileNav() {
     const [isOpen, setIsOpen] = useState(false);
+    const { data: session } = useSession();
+
+    // Split navigation links into two columns
+    const leftColumnLinks = navLinks.slice(0, 3); // Home, Shop, New Arrivals
+    const rightColumnLinks = navLinks.slice(3);   // Best Sellers, About Us, Contact
 
     return (
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -111,23 +115,112 @@ function MobileNav() {
                     <span className="sr-only">Open Menu</span>
                 </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[300px]">
-                <div className="flex items-center justify-center py-2 border-b mb-4">
+            <SheetContent side="left" className="w-[320px]">
+                {/* Logo Section */}
+                <div className="flex items-center justify-center py-2 border-b mb-6">
                     <Link href="/" className="flex items-center gap-2 mx-auto pb-4" onClick={() => setIsOpen(false)}>
                         <Image src="/images/branding/logo.png" alt="Rupomoti" width={80} height={35} className="object-contain -mt-4" />
                     </Link>
                 </div>
-                <div className="mt-4 flex flex-col gap-4">
-                    {navLinks.map((link) => (
+                
+                {/* Two Column Navigation */}
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                    {/* Left Column */}
+                    <div className="flex flex-col gap-3">
+                        <h3 className="text-sm font-semibold text-muted-foreground mb-2 border-b pb-1">Main</h3>
+                        {leftColumnLinks.map((link) => (
+                            <Link 
+                                key={link.href}
+                                href={link.href}
+                                className="text-base font-medium text-foreground hover:text-primary transition-colors py-1"
+                                onClick={() => setIsOpen(false)}
+                            >
+                                {link.name}
+                            </Link>
+                        ))}
+                    </div>
+                    
+                    {/* Right Column */}
+                    <div className="flex flex-col gap-3">
+                        <h3 className="text-sm font-semibold text-muted-foreground mb-2 border-b pb-1">More</h3>
+                        {rightColumnLinks.map((link) => (
+                            <Link 
+                                key={link.href}
+                                href={link.href}
+                                className="text-base font-medium text-foreground hover:text-primary transition-colors py-1"
+                                onClick={() => setIsOpen(false)}
+                            >
+                                {link.name}
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Additional Quick Links */}
+                <div className="border-t pt-4 mb-4">
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-3">Quick Links</h3>
+                    <div className="grid grid-cols-2 gap-2">
                         <Link 
-                            key={link.href}
-                            href={link.href}
-                            className="text-lg font-medium text-foreground hover:text-primary transition-colors"
+                            href="/wishlist"
+                            className="text-sm text-foreground hover:text-primary transition-colors py-2"
                             onClick={() => setIsOpen(false)}
                         >
-                            {link.name}
+                            Wishlist
                         </Link>
-                    ))}
+                        <Link 
+                            href="/order-tracking"
+                            className="text-sm text-foreground hover:text-primary transition-colors py-2"
+                            onClick={() => setIsOpen(false)}
+                        >
+                            Track Order
+                        </Link>
+                        <Link 
+                            href="/faq"
+                            className="text-sm text-foreground hover:text-primary transition-colors py-2"
+                            onClick={() => setIsOpen(false)}
+                        >
+                            FAQ
+                        </Link>
+                        <Link 
+                            href="/shipping-returns"
+                            className="text-sm text-foreground hover:text-primary transition-colors py-2"
+                            onClick={() => setIsOpen(false)}
+                        >
+                            Shipping
+                        </Link>
+                    </div>
+                </div>
+
+                {/* User Section */}
+                <div className="border-t pt-4">
+                    {session ? (
+                        <div className="flex items-center gap-3 p-3 bg-secondary rounded-lg">
+                            {session.user?.image ? (
+                                <Image src={session.user.image} alt="User" width={32} height={32} className="rounded-full" />
+                            ) : (
+                                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                                    <User className="h-4 w-4 text-primary-foreground" />
+                                </div>
+                            )}
+                            <div className="flex-1">
+                                <p className="text-sm font-medium">{session.user?.name}</p>
+                                <p className="text-xs text-muted-foreground">{session.user?.email}</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="flex gap-2">
+                            <Link href="/signin" className="flex-1">
+                                <Button variant="outline" className="w-full" onClick={() => setIsOpen(false)}>
+                                    Sign In
+                                </Button>
+                            </Link>
+                            <Link href="/signup" className="flex-1">
+                                <Button className="w-full" onClick={() => setIsOpen(false)}>
+                                    Sign Up
+                                </Button>
+                            </Link>
+                        </div>
+                    )}
                 </div>
             </SheetContent>
         </Sheet>
@@ -140,32 +233,40 @@ export function Navbar() {
   const cartItems = useAppSelector((state) => state.cart.items);
   const cartCount = cartItems.reduce((total, item) => total + (item.quantity || 0), 0);
 
+  const handleMobileSearch = () => {
+    setIsSearchOpen(true);
+  };
+
   return (
     <>
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-sm">
-        <div className="container flex h-16 items-center justify-between px-4">
+        {/* Main navbar */}
+        <div className="container flex h-16 items-center justify-between px-4 max-w-7xl mx-auto">
           
-          <div className="flex flex-1 items-center justify-start md:flex-none">
+          {/* Left section: Mobile menu + Desktop logo */}
+          <div className="flex items-center gap-4 flex-shrink-0">
             <MobileNav />
             <Link href="/" className="hidden md:flex items-center gap-2">
-              <Image src="/images/branding/logo.png" alt="Rupomoti" width={110} height={40} className="object-contain -mt-1" />
+              <Image src="/images/branding/logo.png" alt="Rupomoti" width={110} height={40} className="object-contain" />
             </Link>
           </div>
 
-          <div className="flex flex-1 items-center justify-center md:hidden">
+          {/* Center section: Mobile logo + Desktop navigation */}
+          <div className="flex items-center justify-center md:hidden flex-1">
             <Link href="/" className="flex items-center gap-2">
-               <Image src="/images/branding/logo.png" alt="Rupomoti" width={110} height={40} className="object-contain -mt-1"/>
+               <Image src="/images/branding/logo.png" alt="Rupomoti" width={90} height={32} className="object-contain"/>
             </Link>
           </div>
 
-          <nav className="hidden md:flex items-center gap-6 flex-1 justify-center">
+          <nav className="hidden md:flex items-center gap-8 flex-1 justify-center max-w-2xl">
             {navLinks.map((link) => (
               <NavLink key={link.href} href={link.href}>{link.name}</NavLink>
             ))}
           </nav>
 
-          <div className="flex flex-1 items-center justify-end gap-2">
-            <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)}>
+          {/* Right section: Actions */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)} className="hidden md:flex">
               <Search className="h-5 w-5" />
               <span className="sr-only">Search</span>
             </Button>
@@ -173,12 +274,19 @@ export function Navbar() {
               <ShoppingCart className="h-5 w-5" />
               <span className="sr-only">Open Cart</span>
               {cartCount > 0 && (
-                  <span className="absolute top-0 right-0 -mt-1 -mr-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
                       {cartCount}
                   </span>
               )}
             </Button>
             <UserMenu />
+          </div>
+        </div>
+        
+        {/* Mobile search bar - second row */}
+        <div className="md:hidden border-t bg-background/95">
+          <div className="container px-4 py-2 max-w-7xl mx-auto">
+            <MobileSearchBar onSearch={handleMobileSearch} />
           </div>
         </div>
       </header>

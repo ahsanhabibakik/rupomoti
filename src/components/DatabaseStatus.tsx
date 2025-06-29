@@ -5,7 +5,7 @@ import { showToast } from '@/lib/toast'
 
 export function DatabaseStatus() {
   const [isConnected, setIsConnected] = useState(false)
-  const prevConnectedRef = useRef(false)
+  const prevConnectedRef = useRef<boolean | null>(null)
 
   useEffect(() => {
     const checkConnection = () => {
@@ -15,8 +15,10 @@ export function DatabaseStatus() {
           const wasConnected = prevConnectedRef.current
           const isNowConnected = data.status === 'connected'
           
-          // Only show toast if connection status has changed
-          if (wasConnected !== isNowConnected) {
+          setIsConnected(isNowConnected)
+          
+          // Only show toast if connection status has changed after the initial check
+          if (prevConnectedRef.current !== null && wasConnected !== isNowConnected) {
             if (isNowConnected) {
               showToast.success('Database connected successfully')
             } else {
@@ -24,15 +26,17 @@ export function DatabaseStatus() {
             }
           }
           
-          setIsConnected(isNowConnected)
           prevConnectedRef.current = isNowConnected
         })
         .catch(() => {
           const wasConnected = prevConnectedRef.current
-          if (wasConnected) {
+          setIsConnected(false)
+          
+          // Only show toast if connection status has changed after the initial check
+          if (prevConnectedRef.current !== null && wasConnected) {
             showToast.error('Database connection lost')
           }
-          setIsConnected(false)
+          
           prevConnectedRef.current = false
         })
     }
