@@ -28,19 +28,22 @@ export default function GridProductSection({
   const displayProducts = products.slice(0, showMoreProducts)
 
   return (
-    <section className={`py-8 md:py-12 ${className}`}>
+    <section className={`py-12 md:py-16 ${className}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 md:mb-8">
-          <div>
-            <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-primary mb-2">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 md:mb-12">
+          <div className="flex-1">
+            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-3">
               {title}
             </h2>
-            <p className="text-sm md:text-base text-muted-foreground">
-              Discover our carefully curated selection
+            <p className="text-base md:text-lg text-muted-foreground">
+              Surprise Your Loved Ones
             </p>
           </div>
-          <Button asChild variant="outline" className="mt-4 sm:mt-0 text-sm">
+          <Button 
+            asChild 
+            className="mt-4 sm:mt-0 bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3 rounded-full font-semibold"
+          >
             <Link href={viewAllLink} className="flex items-center gap-2">
               View All
               <ArrowRight className="w-4 h-4" />

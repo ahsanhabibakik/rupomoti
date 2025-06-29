@@ -15,6 +15,7 @@ import SlidableProductSection from '@/components/home/SlidableProductSection'
 import GridProductSection from '@/components/home/GridProductSection'
 import RegularProductSection from '@/components/home/RegularProductSection'
 import SeasonalOffersBanner from '@/components/home/SeasonalOffersBanner'
+import ModernBlogSection from '@/components/home/ModernBlogSection'
 import { getCategories } from '@/actions/getCategories'
 
 export const metadata: Metadata = {
@@ -45,16 +46,18 @@ export default async function HomePage() {
 
       {/* Featured Collections Section */}
       <AnimatedSection>
-        <div className="container mx-auto max-w-7xl">
-          <GridProductSection 
-            title="Featured Collections"
-            products={featuredProducts}
-            viewAllLink="/shop?filter=featured"
-            className="bg-background"
-            mobileColumns={2}
-            desktopColumns={4}
-            showMoreProducts={8}
-          />
+        <div className="bg-white border-t border-b border-gray-100">
+          <div className="container mx-auto max-w-7xl">
+            <GridProductSection 
+              title="Best Selling Flowers & Gifts"
+              products={featuredProducts}
+              viewAllLink="/shop?filter=featured"
+              className="bg-white"
+              mobileColumns={2}
+              desktopColumns={4}
+              showMoreProducts={8}
+            />
+          </div>
         </div>
       </AnimatedSection>
 
@@ -70,16 +73,18 @@ export default async function HomePage() {
 
       {/* Popular Pieces Section */}
       <AnimatedSection>
-        <div className="container mx-auto max-w-7xl">
-          <GridProductSection 
-            title="Popular Pieces"
-            products={popularProducts}
-            viewAllLink="/shop?filter=popular"
-            className="bg-background"
-            mobileColumns={2}
-            desktopColumns={4}
-            showMoreProducts={8}
-          />
+        <div className="bg-white border-t border-b border-gray-100">
+          <div className="container mx-auto max-w-7xl">
+            <GridProductSection 
+              title="Popular Pieces"
+              products={popularProducts}
+              viewAllLink="/shop?filter=popular"
+              className="bg-white"
+              mobileColumns={2}
+              desktopColumns={4}
+              showMoreProducts={8}
+            />
+          </div>
         </div>
       </AnimatedSection>
 
@@ -91,6 +96,15 @@ export default async function HomePage() {
           viewAllLink="/shop"
           className="bg-gray-50"
           maxProducts={8}
+        />
+      </AnimatedSection>
+
+      {/* Modern Blog Section */}
+      <AnimatedSection>
+        <ModernBlogSection 
+          maxPosts={4}
+          showFeaturedOnly={false}
+          className="bg-background"
         />
       </AnimatedSection>
 

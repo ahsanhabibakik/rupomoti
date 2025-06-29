@@ -83,54 +83,54 @@
   }
  
   .dark {
-    --background: 28 34% 10%; /* Darker Cocoa Brown */
-    --foreground: 40 43% 88%; /* Champagne Sheen */
+    --background: 28 34% 8%; /* Darker Cocoa Brown */
+    --foreground: 40 43% 92%; /* Brighter Champagne Sheen */
  
-    --card: 28 34% 12%;
-    --card-foreground: 40 43% 88%;
+    --card: 28 34% 10%;
+    --card-foreground: 40 43% 92%;
  
-    --popover: 28 34% 10%;
-    --popover-foreground: 40 43% 88%;
+    --popover: 28 34% 8%;
+    --popover-foreground: 40 43% 92%;
  
     /* Brand Colors - Dark Mode */
     --brand: 39 37% 66%;
-    --brand-foreground: 40 43% 88%;
+    --brand-foreground: 40 43% 92%;
  
-    /* Primary - Champagne Sheen */
-    --primary: 40 43% 88%;
-    --primary-foreground: 28 34% 10%;
+    /* Primary - Bright Champagne for visibility */
+    --primary: 40 43% 92%;
+    --primary-foreground: 28 34% 8%;
  
-    /* Secondary - Darker gray-brown */
-    --secondary: 28 34% 15%;
-    --secondary-foreground: 40 43% 88%;
+    /* Secondary - Lighter for contrast */
+    --secondary: 28 34% 18%;
+    --secondary-foreground: 40 43% 92%;
  
-    /* Muted */
-    --muted: 28 34% 15%;
-    --muted-foreground: 40 43% 75%;
+    /* Muted - Better contrast */
+    --muted: 28 34% 16%;
+    --muted-foreground: 40 43% 80%;
  
     /* Accent - Warm Oyster Gold */
-    --accent: 39 37% 66%;
-    --accent-foreground: 28 34% 10%;
+    --accent: 39 37% 70%;
+    --accent-foreground: 28 34% 8%;
  
     /* Destructive - Rose-Gold */
-    --destructive: 8 58% 71%;
-    --destructive-foreground: 28 34% 10%;
+    --destructive: 8 58% 75%;
+    --destructive-foreground: 28 34% 8%;
 
     /* Success */
-    --success: 158 24% 40%;
-    --success-foreground: 40 43% 88%;
+    --success: 158 24% 45%;
+    --success-foreground: 40 43% 92%;
 
     /* Info */
-    --info: 196 35% 86%;
-    --info-foreground: 28 34% 10%;
+    --info: 196 35% 80%;
+    --info-foreground: 28 34% 8%;
 
     /* Warning */
-    --warning: 39 50% 55%;
-    --warning-foreground: 28 34% 10%;
+    --warning: 39 50% 60%;
+    --warning-foreground: 28 34% 8%;
  
-    --border: 28 34% 15%;
-    --input: 28 34% 15%;
-    --ring: 39 37% 66%;
+    --border: 28 34% 20%;
+    --input: 28 34% 16%;
+    --ring: 39 37% 70%;
 
     /* Customizable Theme Colors (Dark Mode - inherit from light unless overridden) */
     --color-primary: var(--color-primary, #4A2E21);
@@ -156,10 +156,52 @@
   
   h1, h2, h3, h4, h5, h6 {
     color: hsl(var(--foreground));
+    font-weight: 600;
+  }
+  
+  /* Ensure dark mode headings have better contrast */
+  .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+    color: hsl(var(--foreground));
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   }
   
   p {
     color: hsl(var(--muted-foreground));
+  }
+
+  /* Input field improvements for dark mode */
+  .dark input[type="text"],
+  .dark input[type="email"],
+  .dark input[type="password"],
+  .dark input[type="search"],
+  .dark input[type="number"],
+  .dark input[type="tel"],
+  .dark input[type="url"],
+  .dark textarea,
+  .dark select {
+    background-color: hsl(var(--input));
+    color: hsl(var(--foreground));
+    border-color: hsl(var(--border));
+  }
+
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    color: hsl(var(--muted-foreground));
+    opacity: 0.8;
+  }
+
+  /* Button improvements for dark mode */
+  .dark button {
+    color: inherit;
+  }
+
+  .dark .bg-primary {
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+
+  .dark .text-primary {
+    color: hsl(var(--primary));
   }
 }
 

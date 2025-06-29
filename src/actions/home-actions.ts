@@ -1,9 +1,10 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
+import { Product } from '@/types/product'
 
-export async function getProducts(filter: { [key: string]: boolean }) {
-  return await prisma.product.findMany({
+export async function getProducts(filter: { [key: string]: boolean }): Promise<Product[]> {
+  const products = await prisma.product.findMany({
     where: filter,
     take: 4,
     orderBy: { createdAt: 'desc' },
@@ -11,6 +12,7 @@ export async function getProducts(filter: { [key: string]: boolean }) {
       category: true,
     },
   })
+  return products as Product[]
 }
 
 export async function getHomePageData() {
@@ -72,10 +74,10 @@ export async function getHomePageData() {
   }
 
   return {
-    featuredProducts: featuredProducts.slice(0, getOptimalProductCount(featuredProducts)),
-    popularProducts: popularProducts.slice(0, getOptimalProductCount(popularProducts)),
-    newArrivals: newArrivals.slice(0, getOptimalProductCount(newArrivals)),
-    regularProducts: regularProducts.slice(0, getOptimalProductCount(regularProducts)),
+    featuredProducts: featuredProducts.slice(0, getOptimalProductCount(featuredProducts)) as Product[],
+    popularProducts: popularProducts.slice(0, getOptimalProductCount(popularProducts)) as Product[],
+    newArrivals: newArrivals.slice(0, getOptimalProductCount(newArrivals)) as Product[],
+    regularProducts: regularProducts.slice(0, getOptimalProductCount(regularProducts)) as Product[],
     counts: {
       featured: featuredProducts.length,
       popular: popularProducts.length,

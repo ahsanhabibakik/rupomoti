@@ -1,4 +1,13 @@
-export interface Product {
+import { Product as PrismaProduct, Category as PrismaCategory } from '@prisma/client'
+
+export type Product = PrismaProduct & {
+  category: PrismaCategory
+}
+
+export type Category = PrismaCategory
+
+// Legacy interface for backward compatibility
+export interface ProductLegacy {
   id: string
   name: string
   slug: string
