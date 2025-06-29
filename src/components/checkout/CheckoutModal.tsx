@@ -129,7 +129,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   const [deliveryZone, setDeliveryZone] = useState<DeliveryZoneKey>('INSIDE_DHAKA')
   const [paymentMethod, setPaymentMethod] = useState('CASH_ON_DELIVERY')
   const [addresses, setAddresses] = useState<SavedAddress[]>([])
-  const [selectedAddressId, setSelectedAddressId] = useState<string>('')
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('manual')
   const [showAddressDetails, setShowAddressDetails] = useState(false)
   const [availableUpazilas, setAvailableUpazilas] = useState<Array<{ value: string, label: string }>>([])
   const [formData, setFormData] = useState<FormData>({
@@ -185,7 +185,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   // Handle address selection
   const handleAddressSelect = (addressId: string) => {
     setSelectedAddressId(addressId)
-    if (addressId === '') {
+    if (addressId === 'manual') {
       // Manual address entry
       setFormData(prev => ({
         ...prev,
@@ -488,7 +488,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                             <SelectValue placeholder="Select a saved address" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">
+                            <SelectItem value="manual">
                               <div className="flex items-center gap-2">
                                 <Plus className="h-4 w-4" />
                                 Enter address manually
