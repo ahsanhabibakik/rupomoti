@@ -79,6 +79,8 @@ export function ProductCard({ product, compact = false, className }: ProductCard
     <div
       className={cn(
         "product-card-enhanced bg-base border border-accent-light rounded-xl shadow-premium transition-premium flex flex-col overflow-hidden",
+        // Responsive sizing - more compact on mobile
+        "sm:rounded-xl rounded-lg sm:shadow-premium shadow-sm",
         compact && "rounded-lg shadow-sm",
         className
       )}
@@ -88,7 +90,8 @@ export function ProductCard({ product, compact = false, className }: ProductCard
       {/* Image Container */}
       <Link href={`/product/${product.slug || id}`} className={cn(
         "block relative w-full overflow-hidden",
-        compact ? "aspect-[4/3]" : "aspect-square"
+        // Responsive aspect ratio - more compact on mobile
+        compact ? "aspect-[4/3]" : "aspect-[4/3] sm:aspect-square"
       )}>
         {/* Main Image */}
         <Image
@@ -128,30 +131,37 @@ export function ProductCard({ product, compact = false, className }: ProductCard
         {/* Badges */}
         <div className={cn(
           "absolute top-2 left-2 flex flex-row flex-wrap gap-1.5 z-10 max-w-[80%]",
+          // Responsive badge positioning
+          "sm:top-2 sm:left-2 sm:gap-1.5 top-1 left-1 gap-1",
           compact && "top-1 left-1 gap-1"
         )}>
           {isNewArrival && (
             <Badge className={cn(
               "bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 shadow-lg",
-              compact ? "text-[10px] px-1 py-0" : "text-xs"
+              // Responsive badge sizing
+              "text-[10px] px-1 py-0 sm:text-xs sm:px-2 sm:py-1",
+              compact && "text-[10px] px-1 py-0"
             )}>New</Badge>
           )}
           {isPopular && (
             <Badge className={cn(
               "bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 shadow-lg",
-              compact ? "text-[10px] px-1 py-0" : "text-xs"
+              "text-[10px] px-1 py-0 sm:text-xs sm:px-2 sm:py-1",
+              compact && "text-[10px] px-1 py-0"
             )}>Popular</Badge>
           )}
           {isFeatured && (
             <Badge className={cn(
               "bg-gradient-to-r from-purple-500 to-indigo-500 text-white border-0 shadow-lg",
-              compact ? "text-[10px] px-1 py-0" : "text-xs"
+              "text-[10px] px-1 py-0 sm:text-xs sm:px-2 sm:py-1",
+              compact && "text-[10px] px-1 py-0"
             )}>Featured</Badge>
           )}
           {discount > 0 && (
             <Badge className={cn(
               "bg-gradient-to-r from-red-500 to-pink-500 text-white border-0 shadow-lg font-bold",
-              compact ? "text-[10px] px-1 py-0" : "text-xs"
+              "text-[10px] px-1 py-0 sm:text-xs sm:px-2 sm:py-1",
+              compact && "text-[10px] px-1 py-0"
             )}>-{discount}%</Badge>
           )}
         </div>
@@ -170,13 +180,18 @@ export function ProductCard({ product, compact = false, className }: ProductCard
       {/* Content */}
       <div className={cn(
         "flex-1 flex flex-col",
-        compact ? "p-1.5" : "p-2"
+        // Responsive padding
+        "p-1.5 sm:p-2",
+        compact && "p-1.5"
       )}>
         <div> {/* Content that stays at the top */}
           <Link href={`/product/${id}`} className="block">
             <h3 className={cn(
               "font-semibold text-neutral mb-1 line-clamp-2 hover:text-primary transition-colors",
-              compact ? "text-xs h-[32px]" : "text-sm h-[40px]"
+              // Responsive text sizing
+              "text-xs sm:text-sm",
+              "h-[32px] sm:h-[40px]",
+              compact && "text-xs h-[32px]"
             )}>
               {name || 'Unnamed Product'}
             </h3>
@@ -184,14 +199,18 @@ export function ProductCard({ product, compact = false, className }: ProductCard
           {/* Rating - wrapper ensures consistent height */}
           <div className={cn(
             "mb-1 flex items-center gap-1",
-            compact ? "h-4" : "h-5"
+            // Responsive height
+            "h-4 sm:h-5",
+            compact && "h-4"
           )}>
             {rating && rating > 0 && (
               <>
                 {renderStars(rating)}
                 <span className={cn(
                   "text-gray-500 ml-1",
-                  compact ? "text-[10px]" : "text-xs"
+                  // Responsive text size
+                  "text-[10px] sm:text-xs",
+                  compact && "text-[10px]"
                 )}>({rating.toFixed(1)})</span>
               </>
             )}
@@ -200,7 +219,9 @@ export function ProductCard({ product, compact = false, className }: ProductCard
           <div className="flex items-baseline gap-2 mb-1">
             <span className={cn(
               "font-bold",
-              compact ? "text-sm" : "text-md",
+              // Responsive price sizing
+              "text-sm sm:text-md",
+              compact && "text-sm",
               salePrice ? "text-red-600" : "text-primary"
             )}>
               ৳{salePrice ? salePrice.toLocaleString() : price?.toLocaleString()}
@@ -208,7 +229,9 @@ export function ProductCard({ product, compact = false, className }: ProductCard
             {salePrice && (
               <span className={cn(
                 "text-gray-500 line-through",
-                compact ? "text-[10px]" : "text-xs"
+                // Responsive crossed price sizing
+                "text-[10px] sm:text-xs",
+                compact && "text-[10px]"
               )}>
                 ৳{price?.toLocaleString()}
               </span>
@@ -218,8 +241,13 @@ export function ProductCard({ product, compact = false, className }: ProductCard
         
         <div className="mt-auto pt-1"> {/* Wrapper to push content below to the bottom */}
           {/* Stock Status */}
-          {typeof stock === 'number' && !compact && (
-            <div className="flex items-center justify-between text-xs mb-1">
+          {typeof stock === 'number' && (
+            <div className={cn(
+              "flex items-center justify-between text-xs mb-1",
+              // Hide stock on mobile when compact, show on larger screens
+              "hidden sm:flex",
+              compact && "hidden"
+            )}>
               <span className="text-gray-600">Stock:</span>
               <span className={cn(
                 "font-medium",
@@ -232,6 +260,8 @@ export function ProductCard({ product, compact = false, className }: ProductCard
           {/* Action Buttons */}
           <div className={cn(
             "flex gap-1.5",
+            // Responsive gap
+            "gap-1 sm:gap-1.5",
             compact && "gap-1"
           )}>
             <Button
@@ -239,27 +269,37 @@ export function ProductCard({ product, compact = false, className }: ProductCard
               disabled={isOutOfStock}
               className={cn(
                 "flex-1 bg-amber-900 hover:bg-amber-950 text-white rounded-lg font-medium shadow-lg hover:shadow-xl transition-all duration-300",
-                compact ? "h-7 text-[10px] px-2" : "h-9 text-xs"
+                // Responsive button sizing
+                "h-7 text-[10px] px-2 sm:h-9 sm:text-xs sm:px-3",
+                compact && "h-7 text-[10px] px-2"
               )}
             >
               <ShoppingCart className={cn(
-                compact ? "w-3 h-3 mr-1" : "w-4 h-4 mr-1.5"
+                // Responsive icon sizing
+                "w-3 h-3 mr-1 sm:w-4 sm:h-4 sm:mr-1.5",
+                compact && "w-3 h-3 mr-1"
               )} />
-              {compact ? "Add" : "Add to Cart"}
+              {/* Responsive button text */}
+              <span className="hidden sm:inline">Add to Cart</span>
+              <span className="sm:hidden">Add</span>
             </Button>
             <Button
               variant="outline"
               size="icon"
               className={cn(
                 "rounded-lg border-gray-300 hover:border-gray-400 hover:bg-gray-50",
-                compact ? "h-7 w-7" : "h-9 w-9"
+                // Responsive button sizing
+                "h-7 w-7 sm:h-9 sm:w-9",
+                compact && "h-7 w-7"
               )}
               onClick={handleWishlistToggle}
             >
               <Heart
                 className={cn(
                   "transition-all duration-300",
-                  compact ? "h-3 w-3" : "h-4 w-4",
+                  // Responsive icon sizing
+                  "h-3 w-3 sm:h-4 sm:w-4",
+                  compact && "h-3 w-3",
                   isInWishlist() ? "fill-red-500 text-red-500" : "text-gray-600 hover:text-red-500"
                 )}
               />

@@ -5,6 +5,7 @@ import { X, Filter, Sparkles, Clock, TrendingUp, Search as SearchIcon, ArrowRigh
 import { BsSearch } from "react-icons/bs";
 import Image from "next/image";
 import Link from "next/link";
+import { safeRenderPrice, safeRenderCategory } from '@/lib/search-utils'
 
 interface Product {
   id: string;
@@ -283,14 +284,14 @@ export default function SearchModal({ isOpen, onClose }: { isOpen: boolean; onCl
                             <div className="flex items-center gap-2">
                               {product.salePrice ? (
                                 <>
-                                  <span className="text-red-600 font-bold text-sm">৳{product.salePrice.toLocaleString()}</span>
-                                  <span className="text-gray-500 line-through text-xs">৳{product.price.toLocaleString()}</span>
+                                  <span className="text-red-600 font-bold text-sm">{safeRenderPrice(product.salePrice)}</span>
+                                  <span className="text-gray-500 line-through text-xs">{safeRenderPrice(product.price)}</span>
                                 </>
                               ) : (
-                                <span className="text-gray-800 font-bold text-sm">৳{product.price.toLocaleString()}</span>
+                                <span className="text-gray-800 font-bold text-sm">{safeRenderPrice(product.price)}</span>
                               )}
                             </div>
-                            <span className="text-xs text-gray-500">{product.category}</span>
+                            <span className="text-xs text-gray-500">{safeRenderCategory(product.category)}</span>
                           </div>
                         </div>
                       </Link>

@@ -164,6 +164,14 @@ export default function ShopPage() {
     }
   }, [searchParams])
 
+  // Handle URL search parameter
+  useEffect(() => {
+    const searchParam = searchParams?.get('search')
+    if (searchParam) {
+      setSearchInput(searchParam)
+    }
+  }, [searchParams])
+
   const fetchProducts = useCallback(async (isNewSearch: boolean) => {
     if (!isNewSearch && !hasMore) return;
     setLoading(true);
@@ -199,7 +207,7 @@ export default function ShopPage() {
       setLoading(false);
       if (isInitialLoad) setIsInitialLoad(false);
     }
-  }, [debouncedSearchInput, selectedCategories, debouncedPriceRange, sortBy, page, hasMore, isInitialLoad]);
+  }, [debouncedSearchInput, selectedCategories, debouncedPriceRange, sortBy, hasMore, isInitialLoad]);
 
   useEffect(() => {
     async function loadInitialData() {
@@ -222,7 +230,7 @@ export default function ShopPage() {
 
     const observer = new IntersectionObserver(
       entries => {
-        if (entries[0].isIntersecting && !loading) {
+        if (entries[0].isIntersecting && !loading && hasMore) {
           fetchProducts(false);
         }
       },
@@ -239,13 +247,13 @@ export default function ShopPage() {
         observer.unobserve(currentRef);
       }
     };
-  }, [loading, fetchProducts, isInitialLoad]);
+  }, [loading, hasMore, isInitialLoad]);
   
   useEffect(() => {
     if (isInitialLoad) return;
     const timeoutId = setTimeout(() => fetchProducts(true), 100);
     return () => clearTimeout(timeoutId);
-  }, [debouncedSearchInput, selectedCategories, debouncedPriceRange, sortBy, isInitialLoad, fetchProducts]);
+  }, [debouncedSearchInput, selectedCategories, debouncedPriceRange, sortBy, isInitialLoad]);
 
 
   const handleClearFilters = () => {
@@ -345,7 +353,7 @@ export default function ShopPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8">
             {showSkeletons ? (
               Array.from({ length: PAGE_SIZE }).map((_, index) => (
                 <ProductCardSkeleton key={index} />
