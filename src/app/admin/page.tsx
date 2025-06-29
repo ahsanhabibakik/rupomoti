@@ -12,8 +12,9 @@ import { StockManagement } from '@/components/admin/StockManagement'
 import {
   LineChart,
   Line,
-  BarChart,
-  Bar,
+  BarChart              <h1 className="text-2xl sm:text-3xl font-bold text-foreground dark:text-foreground">
+                Dashboard
+              </h1>  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -579,7 +580,7 @@ export default function DashboardPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
                 Dashboard
               </h1>
               {isSuperAdmin && (
@@ -641,7 +642,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
-                  <p className="text-lg sm:text-2xl font-bold text-gray-900 mb-2">{stat.value}</p>
+                  <p className="text-lg sm:text-2xl font-bold text-foreground mb-2">{stat.value}</p>
                   <div className="flex items-center flex-wrap gap-1">
                     {stat.changeType === 'positive' ? (
                       <ArrowUpRight className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
@@ -714,7 +715,7 @@ export default function DashboardPage() {
                 className={`flex flex-col items-center justify-center p-3 sm:p-4 rounded-lg border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all duration-200 group bg-white ${action.color}`}
               >
                 <action.icon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600 group-hover:scale-110 mb-2 transition-all" />
-                <span className="text-xs sm:text-sm font-medium text-gray-900 text-center group-hover:font-semibold transition-all">
+                <span className="text-xs sm:text-sm font-medium text-foreground text-center group-hover:font-semibold transition-all">
                   {action.title}
                 </span>
               </a>

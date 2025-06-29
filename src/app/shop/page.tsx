@@ -17,7 +17,8 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { SlidersHorizontal, Search, X, Loader2, Frown } from 'lucide-react'
-import { Product, Category } from '@prisma/client'
+import { Category } from '@prisma/client'
+import { Product } from '@/types/product'
 import { getCategories } from '@/actions/getCategories'
 
 const categories = [
@@ -207,7 +208,7 @@ export default function ShopPage() {
       setLoading(false);
       if (isInitialLoad) setIsInitialLoad(false);
     }
-  }, [debouncedSearchInput, selectedCategories, debouncedPriceRange, sortBy, hasMore, isInitialLoad]);
+  }, [debouncedSearchInput, selectedCategories, debouncedPriceRange, sortBy]);
 
   useEffect(() => {
     async function loadInitialData() {

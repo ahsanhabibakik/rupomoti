@@ -25,7 +25,7 @@ const searchPlaceholders = [
 export default function MobileSearchBar({ onSearch, className }: MobileSearchBarProps) {
   const [query, setQuery] = useState('')
   const [currentPlaceholder, setCurrentPlaceholder] = useState(0)
-  const [isVisible, setIsVisible] = useState(false)
+  const [isVisible, setIsVisible] = useState(true)
 
   useEffect(() => {
     // Rotate placeholders every 3 seconds
@@ -36,18 +36,16 @@ export default function MobileSearchBar({ onSearch, className }: MobileSearchBar
     return () => clearInterval(interval)
   }, [])
 
-  useEffect(() => {
-    // Smooth animation for placeholder changes
-    setIsVisible(false)
-    const timeout = setTimeout(() => setIsVisible(true), 150)
-    return () => clearTimeout(timeout)
-  }, [currentPlaceholder])
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (query.trim()) {
       onSearch(query.trim())
     }
+  }
+
+  const handleInputClick = () => {
+    // Open search modal immediately on mobile when input is clicked
+    onSearch('')
   }
 
   return (
@@ -59,12 +57,13 @@ export default function MobileSearchBar({ onSearch, className }: MobileSearchBar
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onClick={handleInputClick}
             placeholder={searchPlaceholders[currentPlaceholder]}
             className={cn(
               "w-full pl-10 pr-10 py-2.5 rounded-full border-2 border-accent/30 focus:border-primary transition-all duration-300",
-              "placeholder:transition-opacity placeholder:duration-300",
-              isVisible ? "placeholder:opacity-100" : "placeholder:opacity-50"
+              "placeholder:transition-opacity placeholder:duration-300 placeholder:opacity-100"
             )}
+            readOnly
           />
           {query && (
             <Button

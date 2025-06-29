@@ -1,41 +1,77 @@
 'use client'
 
-import { useState } from 'react'
-import { Bell, Check, Trash2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Bell, Check, Trash2 } from 'l      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-foreground dark:text-foreground">Notifications</h1>
+        <Button 
+          variant="outline" 
+          onClick={() => {
+            notifications.forEach(n => !n.read && markAsRead(n.id))
+          }}
+          disabled={notifications.every(n => n.read)}
+        >
+          Mark All Read
+        </Button>
+      </div>react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { showToast } from '@/lib/toast'
+
+interface Notification {
+  id: string
+  type: 'order' | 'inventory' | 'review' | 'user' | 'system'
+  title: string
+  message: string
+  timestamp: string
+  read: boolean
+  metadata?: any
+}
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      type: 'order',
-      title: 'New Order Received',
-      message: 'Order #12345 has been placed by John Doe',
-      timestamp: '2024-03-07T10:30:00Z',
-      read: false,
+  const queryClient = useQueryClient()
+  
+  const { data: notifications = [], isLoading } = useQuery({
+    queryKey: ['admin-notifications'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/notifications')
+      if (!response.ok) throw new Error('Failed to fetch notifications')
+      return response.json()
     },
-    {
-      id: 2,
-      type: 'inventory',
-      title: 'Low Stock Alert',
-      message: 'Product "Wireless Headphones" is running low on stock',
-      timestamp: '2024-03-07T09:15:00Z',
-      read: true,
+    refetchInterval: 30000, // Refetch every 30 seconds
+  })
+
+  const { mutate: markAsRead } = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/admin/notifications/${id}/read`, {
+        method: 'PATCH',
+      })
+      if (!response.ok) throw new Error('Failed to mark as read')
+      return response.json()
     },
-    {
-      id: 3,
-      type: 'review',
-      title: 'New Product Review',
-      message: 'A new review has been submitted for "Smart Watch"',
-      timestamp: '2024-03-06T15:45:00Z',
-      read: false,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-notifications'] })
+      showToast.success('Notification marked as read')
     },
-  ])
+  })
+
+  const { mutate: deleteNotification } = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/admin/notifications/${id}`, {
+        method: 'DELETE',
+      })
+      if (!response.ok) throw new Error('Failed to delete notification')
+      return response.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-notifications'] })
+      showToast.success('Notification deleted')
+    },
+  })
 
   const [settings, setSettings] = useState({
     emailNotifications: true,
@@ -45,16 +81,6 @@ export default function NotificationsPage() {
     reviewNotifications: true,
     marketingNotifications: false,
   })
-
-  const markAsRead = (id: number) => {
-    setNotifications(notifications.map(notification =>
-      notification.id === id ? { ...notification, read: true } : notification
-    ))
-  }
-
-  const deleteNotification = (id: number) => {
-    setNotifications(notifications.filter(notification => notification.id !== id))
-  }
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -83,7 +109,7 @@ export default function NotificationsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Notifications</h1>
+        <h1 className="text-3xl font-bold text-foreground">Notifications</h1>
         <Button variant="outline" onClick={() => setNotifications([])}>
           Clear All
         </Button>
@@ -99,7 +125,12 @@ export default function NotificationsPage() {
         <TabsContent value="all">
           <Card>
             <CardContent className="p-0">
-              {notifications.length === 0 ? (
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center p-8 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  <p className="mt-2 text-sm text-muted-foreground">Loading notifications...</p>
+                </div>
+              ) : notifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-8 text-center">
                   <Bell className="w-12 h-12 text-muted-foreground mb-4" />
                   <p className="text-lg font-medium">No notifications</p>
@@ -148,6 +179,23 @@ export default function NotificationsPage() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          onClick={() => deleteNotification(notification.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="unread">
+          <Card>
+            <CardContent className="p-0">
+              {notifications.filter(n => !n.read).length === 0 ? (
                           onClick={() => deleteNotification(notification.id)}
                         >
                           <Trash2 className="w-4 h-4" />
