@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Sparkles, Clock, Star, Filter, Grid, List } from 'lucide-react'
 import { Suspense } from 'react'
 import { ProductCardSkeleton } from '@/components/products/ProductCardSkeleton'
+import NewArrivalsPagination from '@/components/pagination/NewArrivalsPagination'
 
 const prisma = new PrismaClient()
 
@@ -33,9 +34,7 @@ async function getNewArrivals(page = 1, limit = 24, category?: string, sort = 'c
       prisma.product.findMany({
         where: whereClause,
         include: {
-          category: {
-            select: { name: true, slug: true }
-          }
+          category: true
         },
         orderBy: sort === 'price' ? { price: 'asc' } : 
                  sort === 'name' ? { name: 'asc' } : 
@@ -67,10 +66,11 @@ async function getCategories() {
 }
 
 export default async function NewArrivalsPage({ searchParams }: PageProps) {
-  const page = Number(searchParams.page) || 1
-  const limit = Number(searchParams.limit) || 24
-  const category = searchParams.category as string | undefined
-  const sort = searchParams.sort as string | undefined
+  const resolvedSearchParams = await searchParams
+  const page = Number(resolvedSearchParams.page) || 1
+  const limit = Number(resolvedSearchParams.limit) || 24
+  const category = resolvedSearchParams.category as string | undefined
+  const sort = resolvedSearchParams.sort as string | undefined
 
   const { products: newArrivals, total, hasMore } = await getNewArrivals(page, limit, category, sort)
   const categories = await getCategories()
@@ -163,35 +163,14 @@ export default async function NewArrivalsPage({ searchParams }: PageProps) {
             </div>
 
             {/* Pagination and Load More Section */}
-            <div className="flex flex-col sm:flex-row items-center justify-between mt-12">
-              <div className="text-sm text-muted-foreground mb-4 sm:mb-0">
-                Showing {Math.min((page - 1) * limit + 1, total)} - {Math.min(page * limit, total)} of {total} results
-              </div>
-              
-              <div className="flex gap-4">
-                <Button 
-                  variant="outline" 
-                  disabled={page === 1} 
-                  onClick={() => {
-                    const newPage = page - 1
-                    router.push(`?page=${newPage}&limit=${limit}${category ? `&category=${category}` : ''}${sort ? `&sort=${sort}` : ''}`)
-                  }}
-                >
-                  Previous
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  disabled={!hasMore} 
-                  onClick={() => {
-                    const newPage = page + 1
-                    router.push(`?page=${newPage}&limit=${limit}${category ? `&category=${category}` : ''}${sort ? `&sort=${sort}` : ''}`)
-                  }}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
+            <NewArrivalsPagination 
+              page={page}
+              limit={limit}
+              category={category}
+              sort={sort}
+              hasMore={hasMore}
+              total={total}
+            />
           </>
         )}
       </div>
