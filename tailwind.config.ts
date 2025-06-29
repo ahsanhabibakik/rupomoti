@@ -1,22 +1,13 @@
 import type { Config } from "tailwindcss"
 
 const config = {
-  darkMode: ["class"],
   content: [
     './pages/**/*.{ts,tsx}',
     './components/**/*.{ts,tsx}',
     './app/**/*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
   ],
-  prefix: "",
   theme: {
-    container: {
-      center: true,
-      padding: "2rem",
-      screens: {
-        "2xl": "1400px",
-      },
-    },
     extend: {
       colors: {
         // --- Pearl Essence Theme Colors ---
@@ -56,16 +47,6 @@ const config = {
           // DEFAULT: "#E6F0F3", // Alternative: lighter blue
         },
         // Premium Jewelry Color Palette
-        primary: {
-          DEFAULT: "#0D1E78", // Deep Sapphire Blue
-          light: "#1A237E",
-          dark: "#000051",
-        },
-        accent: {
-          DEFAULT: "#E8CBAF", // Champagne Gold
-          light: "#F5E6D3",
-          dark: "#D4B483",
-        },
         base: {
           DEFAULT: "#FDF9F4", // Ivory / Pearl White
           light: "#FFFDFA",
@@ -94,7 +75,7 @@ const config = {
           rose: "#B76E79",
         },
         sapphire: {
-          DEFAULT: "#0D1E78", // Updated to Deep Sapphire Blue
+          DEFAULT: "#0D1E78", // Deep Sapphire Blue
           light: "#1A237E",
           dark: "#000051",
         },
@@ -131,6 +112,14 @@ const config = {
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+        },
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
+        },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
@@ -139,6 +128,10 @@ const config = {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
         },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
         popover: {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
@@ -146,6 +139,21 @@ const config = {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        // Courier Colors
+        pathao: {
+          light: '#fce8e6', // A light, pale red
+          dark: '#e63946',  // The official Pathao red
+        },
+        redx: {
+          DEFAULT: '#d90429', // A strong, royal red
+        },
+        carrybee: {
+          DEFAULT: '#ffca3a', // A vibrant yellow
+          dark: '#c47d00',
+        },
+        'steadfast-green': {
+          DEFAULT: '#2a9d8f', // A calm, steady green
         },
       },
       fontFamily: {

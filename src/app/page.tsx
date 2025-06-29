@@ -1,205 +1,204 @@
 import { Metadata } from 'next'
 import Image from 'next/image'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ProductCard } from '@/components/products/ProductCard'
-import productsJson from '@/data/products.json'
-import { GemIcon, Crown, Diamond, Sparkles } from 'lucide-react'
 import { HeroSlider } from '@/components/hero/HeroSlider'
-import Link from 'next/link'
+import { Product } from '@/types/product'
+import { getHomePageData } from '@/actions/home-actions'
+import { GemIcon, Crown, Diamond, Sparkles, ArrowRight } from 'lucide-react'
+import Loading from './loading'
+import { AnimatedSection } from '@/components/ui/AnimatedSection'
+import CategorySection from '@/components/home/CategorySection'
+import SlidableProductSection from '@/components/home/SlidableProductSection'
+import GridProductSection from '@/components/home/GridProductSection'
+import RegularProductSection from '@/components/home/RegularProductSection'
+import SeasonalOffersBanner from '@/components/home/SeasonalOffersBanner'
+import ModernBlogSection from '@/components/home/ModernBlogSection'
+import { getCategories } from '@/actions/getCategories'
 
 export const metadata: Metadata = {
   title: 'Rupomoti - Elegant Pearl Jewelry Collection',
   description: 'Discover our exquisite collection of elegant pearl jewelry pieces. From timeless classics to modern designs, find the perfect pearl piece for every occasion.',
 }
 
-export default function HomePage() {
-  const products = productsJson.products
-
-  // Get best sellers (for demo, we'll use the first 4 products)
-  const bestSellers = products.slice(0, 4).map(product => ({
-    ...product,
-    isBestSeller: true,
-  }))
-
-  // Get new arrivals (for demo, we'll use the last 4 products)
-  const newArrivals = products.slice(-4).map(product => ({
-    ...product,
-    isNew: true,
-  }))
-
-  const categories = [
-    { 
-      id: 'necklaces',
-      name: 'Pearl Necklaces', 
-      count: '24',
-      icon: Crown,
-      image: '/images/pearl/jewelery1.jpeg',
-      description: 'Elegant pearl necklaces for every occasion'
-    },
-    { 
-      id: 'rings',
-      name: 'Pearl Rings', 
-      count: '38',
-      icon: Diamond,
-      image: '/images/pearl/jewelery2.jpeg',
-      description: 'Stunning pearl rings that make a statement'
-    },
-    { 
-      id: 'earrings',
-      name: 'Pearl Earrings', 
-      count: '16',
-      icon: Sparkles,
-      image: '/images/pearl/jewelery3.jpeg',
-      description: 'Beautiful pearl earrings for everyday elegance'
-    },
-    { 
-      id: 'bracelets',
-      name: 'Pearl Bracelets', 
-      count: '29',
-      icon: GemIcon,
-      image: '/images/pearl/jewelery4.jpeg',
-      description: 'Delicate pearl bracelets that complement any style'
-    }
-  ]
+export default async function HomePage() {
+  const { popularProducts, newArrivals, featuredProducts, regularProducts } = await getHomePageData()
+  const categories = await getCategories({ active: true, level: 0 })
 
   return (
     <div className="flex flex-col min-h-screen">
+      {/* Seasonal Offers Banner */}
+      <SeasonalOffersBanner />
+      
       {/* Hero Section */}
       <section className="bg-transparent">
         <HeroSlider />
       </section>
 
-      {/* Categories Section */}
-      <section className="py-12 px-4 sm:py-16 bg-gradient-to-b from-base to-base-light">
-        <div className="container mx-auto">
-          <div className="text-center mb-8 sm:mb-12">
-            <Badge className="bg-accent/10 text-accent mb-4">Collections</Badge>
-            <h2 className="text-2xl sm:text-3xl font-bold text-neutral">Browse by Category</h2>
-            <p className="text-neutral-light mt-2">Discover our curated collections of fine pearl jewelry</p>
+      {/* Shop by Category Section */}
+      <AnimatedSection>
+        <div className="container mx-auto max-w-7xl">
+          <CategorySection categories={categories} />
+        </div>
+      </AnimatedSection>
+
+      {/* Featured Collections Section */}
+      <AnimatedSection>
+        <div className="bg-white border-t border-b border-gray-100">
+          <div className="container mx-auto max-w-7xl">
+            <GridProductSection 
+              title="Best Selling Flowers & Gifts"
+              products={featuredProducts}
+              viewAllLink="/shop?filter=featured"
+              className="bg-white"
+              mobileColumns={2}
+              desktopColumns={4}
+              showMoreProducts={8}
+            />
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-            {categories.map((category) => {
-              const Icon = category.icon
-              return (
-                <Link
-                  key={category.id}
-                  href={`/shop?category=${category.id}`}
-                  className="group relative overflow-hidden rounded-xl sm:rounded-2xl shadow-premium hover:shadow-accent transition-all duration-300"
-                >
-                  <div className="aspect-[4/5] relative">
-                    <Image
-                      src={category.image}
-                      alt={category.name}
-                      className="object-cover transition-transform duration-500 group-hover:scale-110"
-                      fill
-                      sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 50vw"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-neutral/80 via-neutral/30 to-transparent" />
-                  </div>
-                  <div className="absolute inset-0 p-3 sm:p-6 flex flex-col justify-end text-base">
-                    <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
-                      <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-accent" />
-                      <Badge className="bg-accent/20 text-accent text-xs sm:text-sm">{category.count} items</Badge>
+        </div>
+      </AnimatedSection>
+
+      {/* Latest Collection Section - Slider */}
+      <AnimatedSection>
+        <SlidableProductSection 
+          title="Latest Collection"
+          products={newArrivals}
+          viewAllLink="/shop?filter=new-arrivals"
+          className="bg-secondary/50"
+        />
+      </AnimatedSection>
+
+      {/* Popular Pieces Section */}
+      <AnimatedSection>
+        <div className="bg-white border-t border-b border-gray-100">
+          <div className="container mx-auto max-w-7xl">
+            <GridProductSection 
+              title="Popular Pieces"
+              products={popularProducts}
+              viewAllLink="/shop?filter=popular"
+              className="bg-white"
+              mobileColumns={2}
+              desktopColumns={4}
+              showMoreProducts={8}
+            />
+          </div>
+        </div>
+      </AnimatedSection>
+
+      {/* Regular Products Section */}
+      <AnimatedSection>
+        <RegularProductSection 
+          title="Our Collection"
+          products={regularProducts}
+          viewAllLink="/shop"
+          className="bg-gray-50"
+          maxProducts={8}
+        />
+      </AnimatedSection>
+
+      {/* Modern Blog Section */}
+      <AnimatedSection>
+        <ModernBlogSection 
+          maxPosts={4}
+          showFeaturedOnly={false}
+          className="bg-background"
+        />
+      </AnimatedSection>
+
+      {/* Testimonials Section */}
+      <AnimatedSection>
+        <section className="py-12 md:py-16 bg-muted">
+          <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-8 md:mb-12">
+              <h2 className="text-2xl md:text-3xl font-bold text-primary mb-4">
+                What Our Customers Say
+              </h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                Discover why thousands of customers trust us for their jewelry needs
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+              {[
+                {
+                  text: "The quality of the pearls is exceptional. I've received so many compliments!",
+                  name: "Sarah Ahmed",
+                  role: "Verified Customer"
+                },
+                {
+                  text: "Beautiful craftsmanship and excellent customer service. Highly recommended!",
+                  name: "Fatima Khan",
+                  role: "Jewelry Enthusiast"
+                },
+                {
+                  text: "Perfect for special occasions. The packaging was elegant and delivery was prompt.",
+                  name: "Ayesha Rahman",
+                  role: "Happy Customer"
+                }
+              ].map((testimonial, index) => (
+                <div key={index} className="bg-background p-6 rounded-lg shadow-sm border border-accent/20">
+                  <div className="mb-4">
+                    <div className="flex text-accent mb-2">
+                      {[...Array(5)].map((_, i) => (
+                        <Sparkles key={i} className="w-4 h-4 fill-current" />
+                      ))}
                     </div>
-                    <h3 className="text-base sm:text-xl font-semibold mb-1 sm:mb-2">{category.name}</h3>
-                    <p className="text-xs sm:text-sm text-base/80 opacity-0 group-hover:opacity-100 transition-opacity line-clamp-2">
-                      {category.description}
+                    <p className="text-foreground text-sm md:text-base italic">
+                      &ldquo;{testimonial.text}&rdquo;
                     </p>
                   </div>
+                  <div className="border-t border-accent/20 pt-4">
+                    <p className="font-semibold text-primary text-sm">{testimonial.name}</p>
+                    <p className="text-muted-foreground text-xs">{testimonial.role}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </AnimatedSection>
+
+      {/* Enhanced CTA Section */}
+      <AnimatedSection>
+        <section className="py-12 md:py-16 lg:py-20 bg-gradient-to-r from-primary to-accent relative overflow-hidden">
+          {/* Decorative elements */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-4 left-4 md:top-8 md:left-8">
+              <Diamond className="w-8 h-8 md:w-12 md:h-12 text-background" />
+            </div>
+            <div className="absolute bottom-4 right-4 md:bottom-8 md:right-8">
+              <GemIcon className="w-6 h-6 md:w-10 md:h-10 text-background" />
+            </div>
+            <div className="absolute top-1/2 left-1/4 transform -translate-y-1/2">
+              <Crown className="w-4 h-4 md:w-6 md:h-6 text-background" />
+            </div>
+          </div>
+          
+          <div className="container mx-auto max-w-7xl text-center px-4 sm:px-6 lg:px-8 relative">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-background mb-4 md:mb-6">
+              Find Your Perfect Piece
+            </h2>
+            <p className="text-base md:text-lg lg:text-xl text-secondary mb-6 md:mb-8 max-w-2xl mx-auto">
+              Explore our collection of elegant jewelry crafted with the finest materials
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center items-center">
+              <Button asChild size="lg" className="w-full sm:w-auto bg-background text-primary hover:bg-secondary px-6 md:px-8 py-3 rounded-full shadow-lg text-base md:text-lg font-semibold transition-all duration-300 hover:scale-105">
+                <Link href="/shop" className="flex items-center justify-center gap-2">
+                  Shop Now
+                  <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
                 </Link>
-              )
-            })}
+              </Button>
+              <Button asChild variant="outline" size="lg" className="w-full sm:w-auto border-background text-background hover:bg-background hover:text-primary px-6 md:px-8 py-3 rounded-full text-base md:text-lg font-semibold transition-all duration-300 hover:scale-105">
+                <Link href="/about">
+                  Learn More
+                </Link>
+              </Button>
+            </div>
           </div>
-        </div>
-      </section>
-
-      {/* Best Sellers Section */}
-      <section className="py-12 px-4 sm:py-16 bg-base-light">
-        <div className="container mx-auto">
-          <div className="text-center mb-8 sm:mb-12">
-            <Badge className="bg-accent/10 text-accent mb-4">Best Sellers</Badge>
-            <h2 className="text-2xl sm:text-3xl font-bold text-neutral">Most Popular Pieces</h2>
-            <p className="text-neutral-light mt-2">Our customers&apos; favorite pearl jewelry pieces</p>
-          </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-            {bestSellers.map((product) => (
-              <ProductCard
-                key={product.id}
-                id={product.id}
-                name={product.name}
-                description={product.description}
-                price={product.price}
-                image={product.images[0]}
-                isBestSeller={product.isBestSeller}
-                isOutOfStock={product.isOutOfStock}
-                discount={product.discount}
-              />
-            ))}
-          </div>
-          <div className="text-center mt-8">
-            <Button asChild variant="outline" size="lg" className="border-accent text-accent hover:bg-accent hover:text-primary">
-              <Link href="/shop?sort=popular">View All Best Sellers</Link>
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* New Arrivals Section */}
-      <section className="py-12 px-4 sm:py-16 bg-base">
-        <div className="container mx-auto">
-          <div className="text-center mb-8 sm:mb-12">
-            <Badge className="bg-primary/10 text-primary mb-4">New Arrivals</Badge>
-            <h2 className="text-2xl sm:text-3xl font-bold text-neutral">Latest Collection</h2>
-            <p className="text-neutral-light mt-2">Discover our newest pearl jewelry pieces</p>
-          </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-            {newArrivals.map((product) => (
-              <ProductCard
-                key={product.id}
-                id={product.id}
-                name={product.name}
-                description={product.description}
-                price={product.price}
-                image={product.images[0]}
-                isNew={product.isNew}
-                isOutOfStock={product.isOutOfStock}
-                discount={product.discount}
-              />
-            ))}
-          </div>
-          <div className="text-center mt-8">
-            <Button asChild variant="outline" size="lg" className="border-primary text-primary hover:bg-primary hover:text-accent">
-              <Link href="/shop?sort=newest">View All New Arrivals</Link>
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Products */}
-      <section className="py-12 px-4 sm:py-16 bg-base-light">
-        <div className="container mx-auto">
-          <div className="text-center mb-8 sm:mb-12">
-            <Badge className="bg-accent/10 text-accent mb-4">Featured</Badge>
-            <h2 className="text-2xl sm:text-3xl font-bold text-neutral">Featured Collections</h2>
-            <p className="text-neutral-light mt-2">Our most popular and exclusive pearl pieces</p>
-          </div>
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
-            {products.map((product) => (
-              <ProductCard
-                key={product.id}
-                id={product.id}
-                name={product.name}
-                description={product.description}
-                price={product.price}
-                image={product.images[0]}
-                isOutOfStock={product.isOutOfStock}
-                discount={product.discount}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
+        </section>
+      </AnimatedSection>
     </div>
   )
 }

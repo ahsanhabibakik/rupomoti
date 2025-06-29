@@ -1,181 +1,292 @@
-@layer utilities {
-  /* Premium Jewelry Color Palette */
-  .bg-primary { background-color: #0D1E78; } /* Deep Sapphire Blue */
-  .bg-primary-light { background-color: #1A237E; }
-  .bg-primary-dark { background-color: #000051; }
-  
-  .bg-accent { background-color: #E8CBAF; } /* Champagne Gold */
-  .bg-accent-light { background-color: #F5E6D3; }
-  .bg-accent-dark { background-color: #D4B483; }
-  
-  .bg-base { background-color: #FDF9F4; } /* Ivory / Pearl White */
-  .bg-base-light { background-color: #FFFDFA; }
-  .bg-base-dark { background-color: #F8F6F0; }
-  
-  .bg-neutral { background-color: #4A2E21; } /* Soft Cocoa Brown */
-  .bg-neutral-light { background-color: #8B6E4F; }
-  .bg-neutral-dark { background-color: #2D1B13; }
-  
-  .bg-highlight { background-color: #F5E7DD; } /* Pearl Pink / Rose Beige */
-  .bg-highlight-light { background-color: #FDF9F4; }
-  .bg-highlight-dark { background-color: #E6D5C7; }
-  
-  /* Text Colors */
-  .text-primary { color: #0D1E78; }
-  .text-accent { color: #E8CBAF; }
-  .text-base { color: #FDF9F4; }
-  .text-neutral { color: #4A2E21; }
-  .text-highlight { color: #F5E7DD; }
-  
-  /* Legacy colors for backward compatibility */
-  .bg-pearl { background-color: #FDF9F4; }
-  .bg-pearl-light { background-color: #FFFDFA; }
-  .bg-pearl-dark { background-color: #F8F6F0; }
-  .text-charcoal { color: #4A2E21; }
-  .text-charcoal-light { color: #8B6E4F; }
-  .text-charcoal-dark { color: #2D1B13; }
-  .bg-charcoal { background-color: #4A2E21; }
-  .bg-slate { background-color: #666666; }
-  .bg-gold { background-color: #E8CBAF; }
-  .bg-sapphire { background-color: #0D1E78; }
-  /* Add more as needed */
-}
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 @layer base {
   :root {
-    --background: 48 33% 97%; /* Ivory / Pearl White */
-    --foreground: 25 35% 20%; /* Soft Cocoa Brown */
+    --background: 28 80% 98%; /* pearlWhite */
+    --foreground: 28 34% 21%; /* cocoaBrown */
 
-    --card: 48 33% 97%;
-    --card-foreground: 25 35% 20%;
+    --card: 28 80% 98%;
+    --card-foreground: 28 34% 21%;
  
-    --popover: 48 33% 97%;
-    --popover-foreground: 25 35% 20%;
+    --popover: 28 80% 98%;
+    --popover-foreground: 28 34% 21%;
  
-    /* Brand Colors - Premium Jewelry */
-    --brand: 35 65% 70%; /* Champagne Gold */
-    --brand-foreground: 240 65% 30%; /* Deep Sapphire Blue */
+    /* Brand Colors - Pearl Essence */
+    --brand: 39 37% 66%; /* warmOysterGold */
+    --brand-foreground: 28 34% 21%;
  
-    /* Primary - Deep Sapphire Blue */
-    --primary: 240 65% 30%;
-    --primary-foreground: 35 65% 70%;
+    /* Primary - Cocoa Brown */
+    --primary: 28 34% 21%;
+    --primary-foreground: 40 43% 88%; /* champagneSheen */
  
-    /* Secondary - Ivory / Pearl White */
-    --secondary: 48 33% 97%;
-    --secondary-foreground: 25 35% 20%;
+    /* Secondary - Champagne Sheen */
+    --secondary: 40 43% 88%;
+    --secondary-foreground: 28 34% 21%;
  
-    /* Muted - Pearl Pink / Rose Beige */
-    --muted: 35 45% 90%;
-    --muted-foreground: 25 35% 40%;
+    /* Muted - Lighter version of Champagne Sheen */
+    --muted: 40 43% 92%;
+    --muted-foreground: 28 34% 35%;
  
-    /* Accent - Champagne Gold */
-    --accent: 35 65% 70%;
-    --accent-foreground: 240 65% 30%;
+    /* Accent - Warm Oyster Gold */
+    --accent: 39 37% 66%;
+    --accent-foreground: 28 34% 21%;
  
-    /* Destructive - Rose Gold */
-    --destructive: 350 65% 70%;
-    --destructive-foreground: 0 0% 13%;
+    /* Destructive - Based on Rose-Gold */
+    --destructive: 8 58% 71%;
+    --destructive-foreground: 28 80% 98%;
 
-    /* Success - Emerald */
-    --success: 160 65% 30%;
-    --success-foreground: 48 33% 97%;
+    /* Success - A complementary soft green */
+    --success: 158 24% 40%;
+    --success-foreground: 28 80% 98%;
 
-    /* Info - Sapphire Light */
-    --info: 240 65% 50%;
-    --info-foreground: 48 33% 97%;
+    /* Info - Soft Mist Blue */
+    --info: 196 35% 86%;
+    --info-foreground: 28 34% 21%;
 
-    /* Warning - Gold Dark */
-    --warning: 35 65% 50%;
-    --warning-foreground: 48 33% 97%;
+    /* Warning - A stronger gold */
+    --warning: 39 50% 55%;
+    --warning-foreground: 28 34% 21%;
  
-    --border: 35 65% 70%;
-    --input: 35 65% 70%;
-    --ring: 35 65% 70%;
+    --border: 40 43% 88%;
+    --input: 40 43% 92%;
+    --ring: 39 37% 66%;
  
     --radius: 0.5rem;
+
+    /* QalbBox Brand Colors */
+    --brand-primary: #1F382D; /* Deep Heart Green */
+    --brand-secondary: #C62828; /* Heart Red */
+    --brand-accent: #FFC857; /* Warm Gold */
+
+    /* Customizable Theme Colors (can be overridden by SuperAdmin) */
+    --color-primary: #4A2E21;
+    --color-secondary: #C8B38A;
+    --color-accent: #E8CBAF;
+    --color-success: #10B981;
+    --color-warning: #F59E0B;
+    --color-danger: #EF4444;
+    --color-info: #3B82F6;
+    --color-purple: #8B5CF6;
+
+    /* Dynamic custom colors for theme customization */
+    --custom-bg-primary: var(--color-primary);
+    --custom-bg-secondary: var(--color-secondary);
+    --custom-bg-accent: var(--color-accent);
+    --custom-text-primary: #FFFFFF;
+    --custom-text-secondary: #000000;
+    --custom-border: var(--color-accent);
+
+    /* Brand gradient combinations */
+    --gradient-brand: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    --gradient-accent: linear-gradient(135deg, var(--color-accent), var(--color-secondary));
+    --gradient-custom: linear-gradient(135deg, var(--custom-bg-primary), var(--custom-bg-accent));
   }
  
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 48 33% 97%;
+    --background: 28 34% 8%; /* Darker Cocoa Brown */
+    --foreground: 40 43% 92%; /* Brighter Champagne Sheen */
  
-    --card: 240 10% 3.9%;
-    --card-foreground: 48 33% 97%;
+    --card: 28 34% 10%;
+    --card-foreground: 40 43% 92%;
  
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 48 33% 97%;
+    --popover: 28 34% 8%;
+    --popover-foreground: 40 43% 92%;
  
     /* Brand Colors - Dark Mode */
-    --brand: 35 65% 70%;
-    --brand-foreground: 48 33% 97%;
+    --brand: 39 37% 66%;
+    --brand-foreground: 40 43% 92%;
  
-    /* Primary - Deep Sapphire Blue */
-    --primary: 240 65% 30%;
-    --primary-foreground: 35 65% 70%;
+    /* Primary - Bright Champagne for visibility */
+    --primary: 40 43% 92%;
+    --primary-foreground: 28 34% 8%;
  
-    /* Secondary - Pearl Dark */
-    --secondary: 240 10% 3.9%;
-    --secondary-foreground: 48 33% 97%;
+    /* Secondary - Lighter for contrast */
+    --secondary: 28 34% 18%;
+    --secondary-foreground: 40 43% 92%;
  
-    /* Muted - Dark Gray */
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
+    /* Muted - Better contrast */
+    --muted: 28 34% 16%;
+    --muted-foreground: 40 43% 80%;
  
-    /* Accent - Champagne Gold */
-    --accent: 35 65% 70%;
-    --accent-foreground: 240 65% 30%;
+    /* Accent - Warm Oyster Gold */
+    --accent: 39 37% 70%;
+    --accent-foreground: 28 34% 8%;
  
-    /* Destructive - Rose Gold */
-    --destructive: 350 65% 70%;
-    --destructive-foreground: 48 33% 97%;
+    /* Destructive - Rose-Gold */
+    --destructive: 8 58% 75%;
+    --destructive-foreground: 28 34% 8%;
 
-    /* Success - Emerald */
-    --success: 160 65% 30%;
-    --success-foreground: 48 33% 97%;
+    /* Success */
+    --success: 158 24% 45%;
+    --success-foreground: 40 43% 92%;
 
-    /* Info - Sapphire Light */
-    --info: 240 65% 50%;
-    --info-foreground: 48 33% 97%;
+    /* Info */
+    --info: 196 35% 80%;
+    --info-foreground: 28 34% 8%;
 
-    /* Warning - Gold Dark */
-    --warning: 35 65% 50%;
-    --warning-foreground: 48 33% 97%;
+    /* Warning */
+    --warning: 39 50% 60%;
+    --warning-foreground: 28 34% 8%;
  
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 35 65% 70%;
+    --border: 28 34% 20%;
+    --input: 28 34% 16%;
+    --ring: 39 37% 70%;
+
+    /* Customizable Theme Colors (Dark Mode - inherit from light unless overridden) */
+    --color-primary: var(--color-primary, #4A2E21);
+    --color-secondary: var(--color-secondary, #C8B38A);
+    --color-accent: var(--color-accent, #E8CBAF);
+    --color-success: var(--color-success, #10B981);
+    --color-warning: var(--color-warning, #F59E0B);
+    --color-danger: var(--color-danger, #EF4444);
+    --color-info: var(--color-info, #3B82F6);
+    --color-purple: var(--color-purple, #8B5CF6);
   }
-}
- 
-@layer base {
+
+  /* Ensure compatibility with Tailwind v4 */
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
+  
   body {
-    @apply bg-base text-neutral antialiased;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
     font-feature-settings: "rlig" 1, "calt" 1;
-    background-image: 
-      radial-gradient(circle at 20% 80%, rgba(253, 249, 244, 0.8) 0%, transparent 50%),
-      radial-gradient(circle at 80% 20%, rgba(232, 203, 175, 0.3) 0%, transparent 50%),
-      radial-gradient(circle at 40% 40%, rgba(255, 253, 250, 0.6) 0%, transparent 50%);
   }
+  
   h1, h2, h3, h4, h5, h6 {
-    @apply font-display text-neutral;
+    color: hsl(var(--foreground));
+    font-weight: 600;
   }
+  
+  /* Ensure dark mode headings have better contrast */
+  .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+    color: hsl(var(--foreground));
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+  
   p {
-    @apply font-body text-neutral-light;
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* Input field improvements for dark mode */
+  .dark input[type="text"],
+  .dark input[type="email"],
+  .dark input[type="password"],
+  .dark input[type="search"],
+  .dark input[type="number"],
+  .dark input[type="tel"],
+  .dark input[type="url"],
+  .dark textarea,
+  .dark select {
+    background-color: hsl(var(--input));
+    color: hsl(var(--foreground));
+    border-color: hsl(var(--border));
+  }
+
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    color: hsl(var(--muted-foreground));
+    opacity: 0.8;
+  }
+
+  /* Button improvements for dark mode */
+  .dark button {
+    color: inherit;
+  }
+
+  .dark .bg-primary {
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+
+  .dark .text-primary {
+    color: hsl(var(--primary));
   }
 }
 
-/* Animations */
+@layer utilities {
+  .bg-background {
+    background-color: hsl(var(--background));
+  }
+  .text-foreground {
+    color: hsl(var(--foreground));
+  }
+  .text-muted-foreground {
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* Custom color utilities */
+  .bg-custom-primary {
+    background-color: var(--custom-bg-primary);
+  }
+  .bg-custom-secondary {
+    background-color: var(--custom-bg-secondary);
+  }
+  .bg-custom-accent {
+    background-color: var(--custom-bg-accent);
+  }
+  .text-custom-primary {
+    color: var(--custom-text-primary);
+  }
+  .text-custom-secondary {
+    color: var(--custom-text-secondary);
+  }
+  .border-custom {
+    border-color: var(--custom-border);
+  }
+  .gradient-brand {
+    background: var(--gradient-brand);
+  }
+  .gradient-accent {
+    background: var(--gradient-accent);
+  }
+  .gradient-custom {
+    background: var(--gradient-custom);
+  }
+
+  /* Theme color utilities */
+  .bg-theme-primary {
+    background-color: var(--color-primary);
+  }
+  .bg-theme-secondary {
+    background-color: var(--color-secondary);
+  }
+  .bg-theme-accent {
+    background-color: var(--color-accent);
+  }
+  .bg-theme-success {
+    background-color: var(--color-success);
+  }
+  .bg-theme-warning {
+    background-color: var(--color-warning);
+  }
+  .bg-theme-danger {
+    background-color: var(--color-danger);
+  }
+  .bg-theme-info {
+    background-color: var(--color-info);
+  }
+  .bg-theme-purple {
+    background-color: var(--color-purple);
+  }
+
+  .text-theme-primary {
+    color: var(--color-primary);
+  }
+  .text-theme-secondary {
+    color: var(--color-secondary);
+  }
+  .text-theme-accent {
+    color: var(--color-accent);
+  }
+}
+
+/* Enhanced Animations */
 @keyframes fade-up {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(30px);
   }
   to {
     opacity: 1;
@@ -183,238 +294,47 @@
   }
 }
 
-.animate-fade-up {
-  animation: fade-up 0.5s ease-out forwards;
-  animation-delay: var(--slide-delay, 0ms);
-}
-
-/* Slider Progress */
-.slider-progress {
-  height: 2px;
-  background: linear-gradient(to right, var(--primary) var(--progress), transparent 0);
-  transition: --progress 0.1s linear;
-}
-
-/* Category Grid */
-.category-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
-  gap: 1rem;
-}
-
-@media (max-width: 768px) {
-  .category-grid {
-    grid-template-columns: 1fr;
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-/* Product Layouts */
-.new-arrivals-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 2rem;
-}
-
-@media (max-width: 768px) {
-  .new-arrivals-grid {
-    grid-template-columns: 1fr;
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
-.featured-slider {
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
-.featured-slider::-webkit-scrollbar {
-  display: none;
-}
-
-/* Social Feed */
-.social-feed {
-  background: linear-gradient(135deg, #F8F6F0 0%, #E6E2D8 100%);
-}
-
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: #F8F6F0;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #E6CBA8;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #D4B483;
-}
-
-/* Loading Shimmer */
-.loading-shimmer {
-  background: linear-gradient(90deg, #F8F6F0 25%, #E6E2D8 50%, #F8F6F0 75%);
-  background-size: 200% 100%;
-  animation: shimmer 2s infinite;
-}
-
-.loading-shimmer::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  background: inherit;
-  animation: shimmer 2s infinite;
-}
-
-/* Focus Ring */
-.focus-ring {
-  @apply focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2;
-}
-
-/* Selection */
-::selection {
-  background-color: #E6CBA8;
-  color: #222222;
-}
-
-/* Component Styles */
-@layer components {
-  .btn-primary {
-    @apply bg-gold text-charcoal hover:bg-gold-dark transition-colors duration-200 focus-ring;
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
   }
-  
-  .btn-secondary {
-    @apply bg-pearl text-charcoal border border-gold hover:bg-pearl-dark transition-colors duration-200 focus-ring;
-  }
-  
-  .btn-accent {
-    @apply bg-sapphire text-pearl hover:bg-sapphire-dark transition-colors duration-200 focus-ring;
-  }
-  
-  .btn-outline {
-    @apply border border-gold text-charcoal hover:bg-gold hover:text-charcoal transition-colors duration-200 focus-ring;
-  }
-  
-  .card {
-    @apply bg-pearl-light border border-pearl-dark rounded-lg shadow-pearl;
-  }
-  
-  .card-hover {
-    @apply hover:shadow-gold transition-shadow duration-200;
-  }
-  
-  .card-gold {
-    @apply bg-gradient-gold text-charcoal;
-  }
-  
-  .input {
-    @apply bg-pearl-light border border-pearl-dark focus:border-gold focus:ring-2 focus:ring-gold/20 transition-colors duration-200;
-  }
-  
-  .input-error {
-    @apply border-red-500 focus:border-red-500 focus:ring-red-500/20;
-  }
-  
-  .label {
-    @apply text-charcoal font-medium;
-  }
-  
-  .nav-link {
-    @apply text-charcoal hover:text-gold transition-colors duration-200;
-  }
-  
-  .footer-link {
-    @apply text-slate hover:text-gold transition-colors duration-200;
-  }
-  
-  .product-card {
-    @apply bg-pearl-light border border-pearl-dark rounded-lg overflow-hidden shadow-pearl hover:shadow-gold transition-all duration-300;
-  }
-  
-  .product-image {
-    @apply relative overflow-hidden;
-  }
-  
-  .product-image img {
-    @apply transition-transform duration-300 hover:scale-105;
-  }
-  
-  .product-badge {
-    @apply absolute top-2 right-2 bg-gold text-charcoal px-2 py-1 rounded-full text-xs font-medium;
-  }
-  
-  .product-title {
-    @apply text-charcoal font-semibold text-lg;
-  }
-  
-  .product-price {
-    @apply text-gold font-bold text-xl;
-  }
-  
-  .category-card {
-    @apply relative overflow-hidden rounded-lg shadow-pearl hover:shadow-gold transition-all duration-300;
-  }
-  
-  .category-overlay {
-    @apply absolute inset-0 bg-gradient-to-t from-charcoal/80 via-charcoal/30 to-transparent;
-  }
-  
-  .category-title {
-    @apply absolute bottom-4 left-4 text-pearl font-semibold text-xl;
-  }
-  
-  .skeleton {
-    @apply bg-pearl-dark animate-pulse rounded;
-  }
-  
-  .skeleton-text {
-    @apply h-4 bg-pearl-dark rounded;
-  }
-  
-  .skeleton-image {
-    @apply h-48 bg-pearl-dark rounded;
-  }
-  
-  .modal-overlay {
-    @apply fixed inset-0 bg-charcoal/50 backdrop-blur-sm;
-  }
-  
-  .modal-content {
-    @apply bg-pearl-light border border-pearl-dark rounded-lg shadow-gold;
-  }
-  
-  .toast {
-    @apply bg-pearl-light border border-pearl-dark shadow-gold;
-  }
-  
-  .toast-hide {
-    @apply opacity-0 transform translate-y-2;
-  }
-  
-  .tooltip {
-    @apply bg-charcoal text-pearl px-2 py-1 rounded text-sm;
-  }
-  
-  .badge {
-    @apply bg-pearl-dark text-charcoal px-2 py-1 rounded-full text-xs font-medium;
-  }
-  
-  .badge-gold {
-    @apply bg-gold text-charcoal;
-  }
-  
-  .badge-pearl {
-    @apply bg-pearl text-charcoal;
-  }
-  
-  .badge-sapphire {
-    @apply bg-sapphire text-pearl;
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
@@ -427,8 +347,702 @@
   }
 }
 
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(232, 203, 175, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(232, 203, 175, 0.6);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.6s ease-out forwards;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.8s ease-out forwards;
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.8s ease-out forwards;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.8s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.6s ease-out forwards;
+}
+
 .animate-float {
   animation: float 3s ease-in-out infinite;
 }
 
-/* Add a @layer utilities block to define custom classes (like bg-pearl) so that Tailwind recognizes them. */
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Animation Delays */
+.animation-delay-100 { animation-delay: 0.1s; }
+.animation-delay-200 { animation-delay: 0.2s; }
+.animation-delay-300 { animation-delay: 0.3s; }
+.animation-delay-400 { animation-delay: 0.4s; }
+.animation-delay-500 { animation-delay: 0.5s; }
+.animation-delay-600 { animation-delay: 0.6s; }
+.animation-delay-700 { animation-delay: 0.7s; }
+.animation-delay-800 { animation-delay: 0.8s; }
+
+/* Enhanced Product Card Styles */
+.product-card-enhanced {
+  position: relative;
+  background-color: white;
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.5s ease;
+  overflow: hidden;
+  border: 1px solid #f3f4f6;
+  transform: translateY(0);
+}
+
+.product-card-enhanced:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 25px rgba(0, 0, 0, 0.1);
+  border-color: #e5e7eb;
+}
+
+.product-card-enhanced::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #E8CBAF, #D4B483, #E8CBAF);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.product-card-enhanced:hover::before {
+  transform: scaleX(1);
+}
+
+/* Enhanced Category Card Styles */
+.category-card-enhanced {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.5s ease;
+  transform: translateY(0);
+}
+
+.category-card-enhanced:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+}
+
+.category-card-enhanced .category-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.2), transparent);
+  transition: all 0.5s ease;
+}
+
+.category-card-enhanced:hover .category-overlay {
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.4), transparent);
+}
+
+/* Enhanced Button Styles */
+.btn-enhanced {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  transform: translateY(0);
+}
+
+.btn-enhanced:hover {
+  transform: translateY(-2px);
+}
+
+.btn-enhanced::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btn-enhanced:hover::before {
+  left: 100%;
+}
+
+/* Enhanced Section Styles */
+.section-enhanced {
+  position: relative;
+  overflow: hidden;
+}
+
+.section-enhanced::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(232, 203, 175, 0.5), transparent);
+}
+
+/* Enhanced Stats Cards */
+.stats-card-enhanced {
+  text-align: center;
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.stats-card-enhanced:hover {
+  background-color: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Enhanced Badge Styles */
+.badge-enhanced {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: linear-gradient(135deg, var(--accent), var(--accent-foreground));
+  color: white;
+  box-shadow: 0 2px 8px rgba(232, 203, 175, 0.3);
+}
+
+/* Enhanced Loading States */
+.loading-enhanced {
+  position: relative;
+  overflow: hidden;
+  background-color: #e5e7eb;
+  border-radius: 0.25rem;
+}
+
+.loading-enhanced::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  animation: shimmer 1.5s infinite;
+}
+
+/* Enhanced Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(232, 203, 175, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #E8CBAF, #D4B483);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #D4B483, #E8CBAF);
+}
+
+/* Hide scrollbars for category carousel */
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Safari and Chrome */
+  }
+  
+  /* Custom thin scrollbar */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db #f3f4f6;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    border-radius: 3px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 3px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+  }
+  
+  .scrollbar-thumb-gray-300::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+  }
+  
+  .scrollbar-track-gray-100::-webkit-scrollbar-track {
+    background: #f3f4f6;
+  }
+}
+
+/* Enhanced Focus States */
+.focus-enhanced:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(232, 203, 175, 0.3);
+}
+
+/* Enhanced Selection */
+::selection {
+  background: rgba(232, 203, 175, 0.3);
+  color: #4A2E21;
+}
+
+/* Enhanced Mobile Responsiveness */
+@media (max-width: 768px) {
+  .product-card-enhanced:hover {
+    transform: translateY(-4px);
+  }
+  
+  .category-card-enhanced:hover {
+    transform: translateY(-4px);
+  }
+  
+  .stats-card-enhanced:hover {
+    transform: translateY(-2px);
+  }
+}
+
+/* Enhanced Grid Layouts */
+.category-grid-enhanced {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .category-grid-enhanced {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+  }
+}
+
+.product-grid-enhanced {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .product-grid-enhanced {
+    grid-template-columns: 1fr; /* Single column on mobile */
+    gap: 1rem;
+  }
+}
+
+/* Enhanced Typography */
+.text-gradient {
+  background: linear-gradient(135deg, #4A2E21, #8B6E4F);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-glow {
+  text-shadow: 0 0 10px rgba(232, 203, 175, 0.5);
+}
+
+/* Enhanced Shadows */
+.shadow-premium {
+  box-shadow: 0 10px 25px rgba(74, 46, 33, 0.1);
+}
+
+.shadow-premium-hover {
+  box-shadow: 0 20px 40px rgba(74, 46, 33, 0.15);
+}
+
+/* Enhanced Transitions */
+.transition-premium {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transition-premium-slow {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Enhanced Backdrop Effects */
+.backdrop-premium {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Enhanced Gradients */
+.gradient-premium {
+  background: linear-gradient(135deg, #FDF9F4 0%, #F5E6D3 50%, #FDF9F4 100%);
+}
+
+.gradient-accent {
+  background: linear-gradient(135deg, #E8CBAF 0%, #D4B483 100%);
+}
+
+.gradient-primary {
+  background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
+}
+
+/* Compact Category Styles */
+.category-compact {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.category-compact-card {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.category-compact-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+}
+
+.category-compact-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.1));
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 1rem;
+  color: white;
+}
+
+.category-compact-icon {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 2rem;
+  height: 2rem;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(4px);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.category-compact-badge {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  background: rgba(255, 255, 255, 0.9);
+  color: #4A2E21;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .category-compact {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+}
+
+/* Ensure Select dropdowns have proper z-index */
+@layer components {
+  [data-radix-popper-content-wrapper] {
+    z-index: 9999 !important;
+  }
+  
+  .radix-select-content {
+    z-index: 9999 !important;
+  }
+  
+  /* Fix for Select dropdown positioning */
+  [data-radix-select-content] {
+    z-index: 9999 !important;
+  }
+  
+  /* Ensure proper stacking context for admin panels */
+  .admin-content {
+    position: relative;
+    z-index: 1;
+  }
+  
+  /* Fix for dialog and modal z-index */
+  [data-radix-dialog-overlay] {
+    z-index: 9998 !important;
+  }
+  
+  [data-radix-dialog-content] {
+    z-index: 9999 !important;
+  }
+}
+
+/* Container utility for consistent responsive behavior */
+.container-responsive {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 1400px;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .container-responsive {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-responsive {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+/* Ensure modal backgrounds are not transparent */
+[data-radix-dialog-overlay] {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(4px) !important;
+}
+  
+[data-radix-dialog-content] {
+  z-index: 9999 !important;
+  background-color: hsl(var(--background)) !important;
+}
+
+/* Responsive breakpoint adjustments for better scaling */
+@media (min-width: 1200px) and (max-width: 1600px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 1600px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+/* Fix scrollbar styling */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Additional responsive utilities for better zoom handling */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .responsive-text-sm {
+      font-size: 0.875rem;
+    }
+    .responsive-text-base {
+      font-size: 0.9rem; 
+    }
+    .responsive-text-lg {
+      font-size: 1rem;
+    }
+  }
+
+  @media (min-width: 1024px) and (max-width: 1366px) {
+    .responsive-padding {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+  }
+
+  /* Better handling for different container sizes */
+  .container-fluid {
+    width: 100%;
+    max-width: 100vw;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .container-fluid {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .container-fluid {
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .container-fluid {
+      max-width: 1400px;
+    }
+  }
+  
+/* Enhanced toast styling */
+  .sonner-toast {
+    font-family: inherit !important;
+  }
+  
+  [data-sonner-toaster] {
+    --normal-bg: hsl(var(--background));
+    --normal-border: hsl(var(--border));
+    --normal-text: hsl(var(--foreground));
+    --success-bg: hsl(var(--success));
+    --success-border: hsl(var(--success));
+    --success-text: hsl(var(--success-foreground));
+    --error-bg: hsl(var(--destructive));
+    --error-border: hsl(var(--destructive));
+    --error-text: hsl(var(--destructive-foreground));
+    --warning-bg: hsl(var(--warning));
+    --warning-border: hsl(var(--warning));
+    --warning-text: hsl(var(--warning-foreground));
+    --info-bg: hsl(var(--info));
+    --info-border: hsl(var(--info));
+    --info-text: hsl(var(--info-foreground));
+  }
+
+  [data-sonner-toast] {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  /* Admin Theme Isolation - Keep consistent with brand colors */
+  [data-admin-theme-container].admin-dark {
+    --background: 28 34% 10%; /* Darker Cocoa Brown */
+    --foreground: 40 43% 88%; /* Champagne Sheen */
+    --card: 28 34% 12%;
+    --card-foreground: 40 43% 88%;
+    --popover: 28 34% 10%;
+    --popover-foreground: 40 43% 88%;
+    --primary: 40 43% 88%; /* Champagne Sheen */
+    --primary-foreground: 28 34% 10%;
+    --secondary: 28 34% 15%;
+    --secondary-foreground: 40 43% 88%;
+    --muted: 28 34% 15%;
+    --muted-foreground: 40 43% 75%;
+    --accent: 39 37% 66%; /* Warm Oyster Gold */
+    --accent-foreground: 28 34% 10%;
+    --destructive: 8 58% 71%;
+    --destructive-foreground: 28 34% 10%;
+    --border: 28 34% 15%;
+    --input: 28 34% 15%;
+    --ring: 39 37% 66%;
+  }
+
+  [data-admin-theme-container].admin-light {
+    --background: 28 80% 98%; /* pearlWhite */
+    --foreground: 28 34% 21%; /* cocoaBrown */
+    --card: 28 80% 98%;
+    --card-foreground: 28 34% 21%;
+    --popover: 28 80% 98%;
+    --popover-foreground: 28 34% 21%;
+    --primary: 28 34% 21%; /* Cocoa Brown */
+    --primary-foreground: 40 43% 88%; /* Champagne Sheen */
+    --secondary: 40 43% 88%; /* Champagne Sheen */
+    --secondary-foreground: 28 34% 21%;
+    --muted: 40 43% 92%;
+    --muted-foreground: 28 34% 35%;
+    --accent: 39 37% 66%; /* Warm Oyster Gold */
+    --accent-foreground: 28 34% 21%;
+    --destructive: 8 58% 71%;
+    --destructive-foreground: 28 80% 98%;
+    --border: 40 43% 88%;
+    --input: 40 43% 92%;
+    --ring: 39 37% 66%;
+  }
+
+  /* Ensure main site always uses light theme */
+  body:not([data-admin-theme-container]) {
+    color-scheme: light !important;
+    --background: 28 80% 98% !important; /* pearlWhite */
+    --foreground: 28 34% 21% !important; /* cocoaBrown */
+  }
+
+  body:not([data-admin-theme-container]) * {
+    color-scheme: light !important;
+  }
+
+  /* Force light theme for main site elements */
+  :not([data-admin-theme-container]) .dark {
+    --background: 28 80% 98% !important; /* Override dark mode */
+    --foreground: 28 34% 21% !important;
+  }
+
+  /* Ensure admin theme isolation works properly */
+  [data-admin-theme-container] {
+    color-scheme: light;
+  }
+
+  [data-admin-theme-container].admin-dark {
+    color-scheme: dark;
+  }
+
+  /* Prevent system theme interference */
+  @media (prefers-color-scheme: dark) {
+    body:not([data-admin-theme-container]) {
+      --background: 28 80% 98% !important;
+      --foreground: 28 34% 21% !important;
+      color-scheme: light !important;
+    }
+    
+    :not([data-admin-theme-container]) {
+      --background: 28 80% 98% !important;
+      --foreground: 28 34% 21% !important;
+    }
+  }
+ 

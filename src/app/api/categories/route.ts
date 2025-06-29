@@ -1,33 +1,42 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { auth } from '@/app/auth'
 import { prisma } from '@/lib/prisma'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const pageSize = parseInt(searchParams.get('pageSize') || '10', 10);
+    const search = searchParams.get('search') || '';
+
+    const where: any = {};
+    if (search) {
+      where.name = {
+        contains: search,
+        mode: 'insensitive',
+      };
+    }
+
+    const totalCategories = await prisma.category.count({ where });
     const categories = await prisma.category.findMany({
+      where,
+      orderBy: {
+        name: 'asc'
+      },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
       include: {
-        parent: true,
-        children: {
-          include: {
-            children: true,
-            _count: {
-              select: { products: true }
-            }
-          }
-        },
         _count: {
           select: { products: true }
         }
-      },
-      orderBy: [
-        { parent: { sortOrder: 'asc' } },
-        { sortOrder: 'asc' },
-        { name: 'asc' }
-      ]
-    })
+      }
+    });
 
-    return NextResponse.json(categories)
+    return NextResponse.json({
+      categories,
+      totalCount: totalCategories,
+      totalPages: Math.ceil(totalCategories / pageSize),
+    });
   } catch (error) {
     console.error('Error fetching categories:', error)
     return NextResponse.json(
@@ -39,7 +48,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
 
     if (!session?.user?.email) {
       return NextResponse.json(
@@ -146,7 +155,7 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
 
     if (!session?.user?.email) {
       return NextResponse.json(
@@ -276,7 +285,7 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
 
     if (!session?.user?.email) {
       return NextResponse.json(

@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { auth } from '@/app/auth'
 import { prisma } from '@/lib/prisma'
+import { generateUniqueOrderNumber } from '@/lib/server/order-number-generator'
+import { StockManager } from '@/lib/stock-manager'
 
 export async function GET() {
   try {
@@ -31,7 +32,7 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
 
     if (!session) {
       return NextResponse.json(
@@ -70,7 +71,7 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
 
     if (!session) {
       return NextResponse.json(
@@ -105,107 +106,174 @@ export async function DELETE(request: Request) {
 
 export async function POST(req: Request) {
   try {
+    const session = await auth();
+    const body = await req.json();
+    
+    console.log('Order API - Received data:', JSON.stringify(body, null, 2));
+    
     const {
-      orderNumber,
-      customer,
+      recipientName,
+      recipientPhone,
+      recipientEmail,
+      recipientCity,
+      recipientZone,
+      recipientArea,
+      deliveryAddress,
+      orderNote,
       items,
       subtotal,
       deliveryFee,
       total,
       deliveryZone,
-      deliveryAddress,
-      orderNote,
       paymentMethod,
-      userId
-    } = await req.json()
+      userId: payloadUserId
+    } = body;
+
+    // Use session userId if not provided
+    const userId = payloadUserId || session?.user?.id || undefined;
 
     // Validate required fields
-    if (!orderNumber || !customer || !items || !Array.isArray(items) || items.length === 0) {
-      return NextResponse.json({ 
-        error: 'Missing required fields: orderNumber, customer, or items' 
-      }, { status: 400 })
+    if (!recipientName) {
+      return NextResponse.json({ error: 'Missing required field: recipientName' }, { status: 400 });
+    }
+    if (!recipientPhone) {
+      return NextResponse.json({ error: 'Missing required field: recipientPhone' }, { status: 400 });
+    }
+    if (!deliveryAddress) {
+      return NextResponse.json({ error: 'Missing required field: deliveryAddress' }, { status: 400 });
+    }
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return NextResponse.json({ error: 'Missing or empty items array' }, { status: 400 });
+    }
+    if (!deliveryZone) {
+      return NextResponse.json({ error: 'Missing required field: deliveryZone' }, { status: 400 });
+    }
+    if (subtotal === undefined || subtotal === null) {
+      return NextResponse.json({ error: 'Missing required field: subtotal' }, { status: 400 });
+    }
+    if (deliveryFee === undefined || deliveryFee === null) {
+      return NextResponse.json({ error: 'Missing required field: deliveryFee' }, { status: 400 });
+    }
+    if (total === undefined || total === null) {
+      return NextResponse.json({ error: 'Missing required field: total' }, { status: 400 });
+    }
+    if (!paymentMethod) {
+      return NextResponse.json({ error: 'Missing required field: paymentMethod' }, { status: 400 });
     }
 
-    if (!customer.name || !customer.phone || !customer.address) {
-      return NextResponse.json({ 
-        error: 'Customer name, phone, and address are required' 
-      }, { status: 400 })
-    }
-
-    if (!deliveryZone || !deliveryAddress) {
-      return NextResponse.json({ 
-        error: 'Delivery zone and address are required' 
-      }, { status: 400 })
-    }
-
+    // Optional: recipientCity, recipientZone, recipientArea, recipientEmail, orderNote
+    // Defensive: fallback to empty string if not provided
     try {
-      // Create or find customer
+      // Create or find customer by phone
       let customerRecord = await prisma.customer.findUnique({
-        where: { phone: customer.phone }
-      })
+        where: { phone: recipientPhone }
+      });
 
       if (!customerRecord) {
         customerRecord = await prisma.customer.create({
           data: {
-            name: customer.name,
-            phone: customer.phone,
-            email: customer.email,
-            address: customer.address,
-            zone: deliveryZone,
+            name: recipientName,
+            phone: recipientPhone,
+            email: recipientEmail || '',
+            address: deliveryAddress,
+            city: recipientCity || '',
+            zone: recipientZone || '',
             userId: userId || undefined
           }
-        })
+        });
       } else {
         // Update existing customer with latest info
         customerRecord = await prisma.customer.update({
           where: { id: customerRecord.id },
           data: {
-            name: customer.name,
-            email: customer.email,
-            address: customer.address,
-            zone: deliveryZone,
+            name: recipientName,
+            email: recipientEmail || '',
+            address: deliveryAddress,
+            city: recipientCity || '',
+            zone: recipientZone || '',
             userId: userId || customerRecord.userId
           }
-        })
+        });
       }
 
-      // Create the order
-      const order = await prisma.order.create({
-        data: {
-          orderNumber,
-          customerId: customerRecord.id,
-          userId: userId || undefined,
-          status: 'PENDING',
-          paymentStatus: 'PENDING',
-          paymentMethod: paymentMethod || 'CASH_ON_DELIVERY',
-          subtotal,
-          deliveryFee,
-          discount: 0,
-          total,
-          deliveryZone,
-          deliveryAddress,
-          orderNote: orderNote || undefined,
-          items: {
-            create: items.map((item: any) => ({
-              productId: item.productId,
-              name: item.name,
-              price: item.price,
-              quantity: item.quantity,
-              image: item.image,
-            })),
-          },
-        },
-        include: { 
-          customer: true,
-          items: {
-            include: {
-              product: true
-            }
-          }
-        },
-      })
+      // Use a transaction to ensure atomicity
+      const order = await prisma.$transaction(async (tx) => {
+        // 1. Check stock availability using StockManager
+        const stockCheck = await StockManager.checkStockAvailability(
+          items.map((item: { productId: string; quantity: number }) => ({
+            productId: item.productId,
+            quantity: item.quantity
+          }))
+        );
 
-      console.log('Order created successfully:', order.orderNumber)
+        if (!stockCheck.allAvailable) {
+          const unavailableItems = stockCheck.checks
+            .filter(check => !check.available)
+            .map(check => `${check.productName || check.productId}: ${check.reason}`)
+            .join(', ');
+          throw new Error(`Stock not available: ${unavailableItems}`);
+        }
+        
+        // 2. Generate unique order number
+        const newOrderNumber = await generateUniqueOrderNumber();
+        
+        // 3. Create the order
+        const createdOrder = await tx.order.create({
+          data: {
+            orderNumber: newOrderNumber,
+            customerId: customerRecord.id,
+            userId: userId || undefined,
+            status: 'PENDING',
+            paymentStatus: 'PENDING',
+            paymentMethod: paymentMethod || 'CASH_ON_DELIVERY',
+            subtotal: subtotal || 0,
+            deliveryFee: deliveryFee || 0,
+            discount: 0,
+            total: total || 0,
+            deliveryZone,
+            deliveryAddress,
+            orderNote: orderNote || undefined,
+            recipientName,
+            recipientPhone,
+            recipientEmail: recipientEmail || '',
+            recipientCity: recipientCity || '',
+            recipientZone: recipientZone || '',
+            recipientArea: recipientArea || '',
+            items: {
+              create: items.map((item: { productId: string; quantity: number; price: number }) => ({
+                productId: item.productId,
+                quantity: item.quantity,
+                price: item.price,
+              })),
+            },
+          },
+          include: {
+            customer: true,
+            items: {
+              include: {
+                product: true
+              }
+            }
+          },
+        });
+
+        // 4. Reserve stock using StockManager
+        try {
+          await StockManager.reserveStockForOrder(
+            createdOrder.id,
+            items.map((item: { productId: string; quantity: number }) => ({
+              productId: item.productId,
+              quantity: item.quantity
+            }))
+          );
+        } catch (stockError) {
+          throw new Error(`Failed to reserve stock: ${stockError instanceof Error ? stockError.message : 'Unknown error'}`);
+        }
+
+        return createdOrder;
+      });
+
+      console.log('Order created successfully:', order.orderNumber);
 
       return NextResponse.json({
         success: true,
@@ -221,23 +289,29 @@ export async function POST(req: Request) {
           },
           createdAt: order.createdAt
         }
-      })
-    } catch (dbError: any) {
-      console.error('Database error:', dbError)
-      
-      // Handle specific Prisma errors
-      if (dbError.code === 'P2002') {
-        return NextResponse.json({ 
-          error: 'Order number already exists. Please try again.' 
-        }, { status: 400 })
+      });
+    } catch (error) {
+      console.error('Order creation failed:', error);
+    
+      if (error instanceof Error && error.message.includes('Stock not available')) {
+        return NextResponse.json({ error: error.message }, { status: 409 }); // 409 Conflict
       }
-      
-      throw dbError
+    
+      return NextResponse.json({ error: 'An unexpected error occurred while processing your order.' }, { status: 500 });
     }
-  } catch (error: any) {
-    console.error('Error creating order:', error)
-    return NextResponse.json({ 
-      error: error.message || 'Failed to create order' 
-    }, { status: 500 })
+  } catch (error) {
+    console.error('Failed to create order:', error);
+    
+    // Provide more specific error messages
+    if (error instanceof Error && error.message) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    
+    // Check if it's a Prisma validation error
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
+      return NextResponse.json({ error: 'Duplicate order number. Please try again.' }, { status: 400 });
+    }
+    
+    return NextResponse.json({ error: 'Failed to create order. Please try again.' }, { status: 500 });
   }
-} 
+}

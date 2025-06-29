@@ -1,148 +1,132 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { Category } from '@prisma/client'
 
-const categories = [
-  {
-    id: 1,
-    name: 'Necklaces',
-    image: '/images/categories/necklaces.jpg',
-    href: '/categories/necklaces',
-    description: 'Elegant necklaces for every occasion',
-  },
-  {
-    id: 2,
-    name: 'Earrings',
-    image: '/images/categories/earrings.jpg',
-    href: '/categories/earrings',
-    description: 'Stunning earrings to complement your style',
-  },
-  {
-    id: 3,
-    name: 'Rings',
-    image: '/images/categories/rings.jpg',
-    href: '/categories/rings',
-    description: 'Beautiful rings that make a statement',
-  },
-  {
-    id: 4,
-    name: 'Bracelets',
-    image: '/images/categories/bracelets.jpg',
-    href: '/categories/bracelets',
-    description: 'Charming bracelets for your wrist',
-  },
-  {
-    id: 5,
-    name: 'Pearl Sets',
-    image: '/images/categories/sets.jpg',
-    href: '/categories/sets',
-    description: 'Complete pearl jewelry sets',
-  },
-  {
-    id: 6,
-    name: 'Gifts',
-    image: '/images/categories/gifts.jpg',
-    href: '/categories/gifts',
-    description: 'Perfect gifts for your loved ones',
-  },
-]
+interface CategorySectionProps {
+  categories: Category[]
+}
 
-export default function CategorySection() {
-  const [hoveredId, setHoveredId] = useState<number | null>(null)
+export default function CategorySection({ categories }: CategorySectionProps) {
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(true)
+
+  const handleScroll = () => {
+    const container = scrollContainerRef.current
+    if (container) {
+      setCanScrollLeft(container.scrollLeft > 0)
+      setCanScrollRight(container.scrollLeft < container.scrollWidth - container.clientWidth)
+    }
+  }
+
+  const scrollLeft = () => {
+    const container = scrollContainerRef.current
+    if (container) {
+      container.scrollBy({ left: -250, behavior: 'smooth' })
+    }
+  }
+
+  const scrollRight = () => {
+    const container = scrollContainerRef.current
+    if (container) {
+      container.scrollBy({ left: 250, behavior: 'smooth' })
+    }
+  }
+
+  if (!categories || categories.length === 0) {
+    return null
+  }
 
   return (
-    <section className="py-16 bg-gradient-to-b from-orange-50 to-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Explore Our Collections
+    <section className="py-12 bg-gray-50">
+      <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center mb-8">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+            Shop by Category
           </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Discover our exquisite range of pearl jewelry, crafted with precision
-            and passion
-          </p>
+          
+          {/* Desktop Navigation */}
+          {categories.length > 4 && (
+            <div className="hidden md:flex gap-2">
+              <button
+                onClick={scrollLeft}
+                disabled={!canScrollLeft}
+                className={`p-2 rounded-full border transition-all duration-200 ${
+                  canScrollLeft 
+                    ? 'text-gray-700 hover:text-orange-600 hover:shadow-md bg-white' 
+                    : 'text-gray-300 cursor-not-allowed bg-gray-50'
+                }`}
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={scrollRight}
+                disabled={!canScrollRight}
+                className={`p-2 rounded-full border transition-all duration-200 ${
+                  canScrollRight 
+                    ? 'text-gray-700 hover:text-orange-600 hover:shadow-md bg-white' 
+                    : 'text-gray-300 cursor-not-allowed bg-gray-50'
+                }`}
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+          )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {categories.map((category) => (
-            <motion.div
-              key={category.id}
-              className="group relative overflow-hidden rounded-2xl shadow-lg"
-              onHoverStart={() => setHoveredId(category.id)}
-              onHoverEnd={() => setHoveredId(null)}
-              whileHover={{ y: -5 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Link href={category.href}>
-                <div className="relative aspect-[4/3]">
-                  <Image
-                    src={category.image}
-                    alt={category.name}
-                    fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                </div>
-                <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                  <h3 className="text-2xl font-semibold mb-2">{category.name}</h3>
-                  <p className="text-sm text-white/80 mb-4">
-                    {category.description}
-                  </p>
-                  <motion.div
-                    className="flex items-center text-orange-300"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{
-                      opacity: hoveredId === category.id ? 1 : 0,
-                      x: hoveredId === category.id ? 0 : -20,
-                    }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <span className="text-sm font-medium">Shop Now</span>
-                    <svg
-                      className="w-4 h-4 ml-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </motion.div>
-                </div>
-              </Link>
-            </motion.div>
-          ))}
-        </div>
-
-        <div className="text-center mt-12">
-          <Link
-            href="/categories"
-            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 transition-colors"
+        {/* Slidable Categories Container */}
+        <div className="relative">
+          <div
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+            className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-4"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            View All Categories
-            <svg
-              className="ml-2 -mr-1 w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 8l4 4m0 0l-4 4m4-4H3"
-              />
-            </svg>
-          </Link>
+            {categories.map((category, index) => (
+              <motion.div
+                key={category.id}
+                className="flex-none"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+              >
+                <Link
+                  href={`/category/${category.slug}`}
+                  className="block group"
+                >
+                  <div className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 w-40 sm:w-48">
+                    <div className="relative aspect-square mb-3 overflow-hidden rounded-lg bg-gray-100">
+                      {category.image ? (
+                        <Image
+                          src={category.image}
+                          alt={category.name}
+                          fill
+                          className="object-cover transition-transform duration-300 group-hover:scale-105"
+                          sizes="(max-width: 640px) 160px, 192px"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
+                          <span className="text-orange-600 text-2xl font-bold">
+                            {category.name.charAt(0)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <h3 className="text-center text-sm font-semibold text-gray-900 group-hover:text-orange-600 transition-colors duration-200">
+                      {category.name}
+                    </h3>
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
   )
-} 
+}

@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -14,12 +14,12 @@ import { useCoupons } from '@/hooks/useCoupons'
 const couponSchema = z.object({
   code: z.string().min(3, 'Code must be at least 3 characters'),
   type: z.enum(['percentage', 'fixed']),
-  value: z.number().min(0),
-  minAmount: z.number().min(0).optional(),
-  maxAmount: z.number().min(0).optional(),
-  startDate: z.string(),
-  endDate: z.string(),
-  usageLimit: z.number().min(0).optional(),
+  value: z.coerce.number().min(0),
+  minimumAmount: z.coerce.number().min(0).optional(),
+  maximumDiscount: z.coerce.number().min(0).optional(),
+  validFrom: z.string(),
+  validUntil: z.string(),
+  usageLimit: z.coerce.number().min(0).optional(),
 })
 
 type CouponFormValues = z.infer<typeof couponSchema>
@@ -33,6 +33,7 @@ interface CouponDialogProps {
 
 export function CouponDialog({ open, onOpenChange, coupon, onClose }: CouponDialogProps) {
   const { createCoupon, updateCoupon } = useCoupons()
+  const [formError, setFormError] = useState<string | null>(null)
 
   const form = useForm<CouponFormValues>({
     resolver: zodResolver(couponSchema),
@@ -40,11 +41,11 @@ export function CouponDialog({ open, onOpenChange, coupon, onClose }: CouponDial
       code: '',
       type: 'percentage',
       value: 0,
-      minAmount: undefined,
-      maxAmount: undefined,
-      startDate: new Date().toISOString().split('T')[0],
-      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      usageLimit: undefined,
+      minimumAmount: '' as any,
+      maximumDiscount: '' as any,
+      validFrom: new Date().toISOString().split('T')[0],
+      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      usageLimit: '' as any,
     },
   })
 
@@ -52,15 +53,28 @@ export function CouponDialog({ open, onOpenChange, coupon, onClose }: CouponDial
     if (coupon) {
       form.reset({
         ...coupon,
-        startDate: new Date(coupon.startDate).toISOString().split('T')[0],
-        endDate: new Date(coupon.endDate).toISOString().split('T')[0],
+        minimumAmount: coupon.minimumAmount ?? '',
+        maximumDiscount: coupon.maximumDiscount ?? '',
+        usageLimit: coupon.usageLimit ?? '',
+        validFrom: new Date(coupon.validFrom).toISOString().split('T')[0],
+        validUntil: new Date(coupon.validUntil).toISOString().split('T')[0],
       })
     } else {
-      form.reset()
+      form.reset({
+        code: '',
+        type: 'percentage',
+        value: 0,
+        minimumAmount: '' as any,
+        maximumDiscount: '' as any,
+        validFrom: new Date().toISOString().split('T')[0],
+        validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        usageLimit: '' as any,
+      })
     }
   }, [coupon, form])
 
   const onSubmit = async (data: CouponFormValues) => {
+    setFormError(null)
     try {
       if (coupon) {
         await updateCoupon(coupon.id, data)
@@ -69,8 +83,17 @@ export function CouponDialog({ open, onOpenChange, coupon, onClose }: CouponDial
       }
       onOpenChange(false)
       onClose()
-    } catch (error) {
-      console.error('Error submitting coupon:', error)
+    } catch (error: any) {
+      let message = 'Failed to submit coupon.'
+      if (error?.info && Array.isArray(error.info)) {
+        // Zod validation errors
+        message = error.info.map((e: any) => e.message).join(', ')
+      } else if (error?.info?.error) {
+        message = error.info.error
+      } else if (error?.message) {
+        message = error.message
+      }
+      setFormError(message)
     }
   }
 
@@ -79,6 +102,9 @@ export function CouponDialog({ open, onOpenChange, coupon, onClose }: CouponDial
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>{coupon ? 'Edit Coupon' : 'Add Coupon'}</DialogTitle>
+          <DialogDescription>
+            {coupon ? 'Update the details of this coupon.' : 'Create a new coupon to offer discounts to your customers.'}
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -133,7 +159,6 @@ export function CouponDialog({ open, onOpenChange, coupon, onClose }: CouponDial
                       <Input
                         type="number"
                         {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
                       />
                     </FormControl>
                     <FormMessage />
@@ -145,15 +170,15 @@ export function CouponDialog({ open, onOpenChange, coupon, onClose }: CouponDial
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="minAmount"
+                name="minimumAmount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Minimum Amount (Optional)</FormLabel>
+                    <FormLabel>Minimum Spend (Optional)</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
                         {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        value={field.value ?? ''}
                       />
                     </FormControl>
                     <FormMessage />
@@ -163,15 +188,15 @@ export function CouponDialog({ open, onOpenChange, coupon, onClose }: CouponDial
 
               <FormField
                 control={form.control}
-                name="maxAmount"
+                name="maximumDiscount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Maximum Amount (Optional)</FormLabel>
+                    <FormLabel>Maximum Discount (Optional)</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
                         {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        value={field.value ?? ''}
                       />
                     </FormControl>
                     <FormMessage />
@@ -183,10 +208,10 @@ export function CouponDialog({ open, onOpenChange, coupon, onClose }: CouponDial
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="startDate"
+                name="validFrom"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Start Date</FormLabel>
+                    <FormLabel>Valid From</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} />
                     </FormControl>
@@ -197,10 +222,10 @@ export function CouponDialog({ open, onOpenChange, coupon, onClose }: CouponDial
 
               <FormField
                 control={form.control}
-                name="endDate"
+                name="validUntil"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>End Date</FormLabel>
+                    <FormLabel>Valid Until</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} />
                     </FormControl>
@@ -220,13 +245,17 @@ export function CouponDialog({ open, onOpenChange, coupon, onClose }: CouponDial
                     <Input
                       type="number"
                       {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                      value={field.value ?? ''}
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            {formError && (
+              <div className="text-red-600 text-sm mb-2">{formError}</div>
+            )}
 
             <div className="flex justify-end gap-4">
               <Button

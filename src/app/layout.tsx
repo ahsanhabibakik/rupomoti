@@ -1,10 +1,14 @@
 import { Inter } from 'next/font/google'
 import { RootLayoutClient } from '@/components/layout/RootLayoutClient'
-import { Providers } from './providers'
+import { Providers } from '@/components/providers'
 import './globals.css'
 import { Metadata } from 'next'
+import { Analytics } from '@vercel/analytics/react'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXTAUTH_URL || 'http://localhost:3000'),
@@ -12,7 +16,7 @@ export const metadata: Metadata = {
     default: 'Rupomoti - Elegant Jewelry Collection',
     template: '%s | Rupomoti'
   },
-  description: 'Discover our exquisite collection of elegant jewelry pieces. From timeless classics to modern designs, find the perfect piece for every occasion.',
+  description: 'Rupomoti is a premier online store for exquisite pearl jewelry in Bangladesh. Discover our collection of pearl necklaces, earrings, bracelets, and more.',
   keywords: ['jewelry', 'necklaces', 'rings', 'earrings', 'bracelets', 'bangladesh jewelry', 'luxury jewelry'],
   authors: [{ name: 'Rupomoti' }],
   creator: 'Rupomoti',
@@ -70,9 +74,11 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <Providers>
-          <RootLayoutClient>{children}</RootLayoutClient>
+          <RootLayoutClient>
+            {children}
+          </RootLayoutClient>
+          {process.env.NODE_ENV === 'production' && <Analytics />}
         </Providers>
-        <div id="portal-root" />
       </body>
     </html>
   )

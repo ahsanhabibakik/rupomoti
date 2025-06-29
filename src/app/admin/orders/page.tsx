@@ -1,7 +1,8 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import {
   Table,
   TableBody,
@@ -9,532 +10,973 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Calendar } from '@/components/ui/calendar'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
-import { format } from 'date-fns'
-import { CalendarIcon, Loader2, Package, Truck, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
-import { showToast } from '@/lib/toast'
-import { Badge } from '@/components/ui/badge'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
-import Image from 'next/image'
+} from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { format, differenceInHours } from 'date-fns';
+import { Prisma } from '@prisma/client';
+import { OrderDetailsDialog } from '@/components/admin/OrderDetailsDialog';
+import { CourierAssignmentForm } from '@/components/admin/CourierAssignmentForm';
+import { ShipNowButton } from '@/components/admin/ShipNowButton';
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import { CourierBadge } from '@/components/ui/CourierBadge';
+import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Edit, Package, RefreshCw, Trash2, Undo, AlertTriangle, Flag, FlagOff, Download, FileText, Printer, CheckSquare, Square } from 'lucide-react';
+import { OrderTableSkeleton } from '@/components/admin/OrderTableSkeleton';
+import { DataTablePagination } from '@/components/ui/DataTablePagination';
+import { showToast } from '@/lib/toast';
+import { OrderFilters } from './_components/OrderFilters';
+import { getOrderDisplayNumber, getOrderAnalyticalInfo } from '@/lib/utils/order-number';
 
-interface Order {
-  id: string
-  orderNumber: string
-  customer: {
-    name: string
-    email: string
-    phone: string
-    address: string
-  }
-  total: number
-  status: string
-  paymentStatus: string
-  createdAt: string
-  items: Array<{
-    name: string
-    price: number
-    quantity: number
-    image: string
-  }>
-  steadfastInfo?: {
-    trackingId?: string
-    consignmentId?: string
-    status?: string
-    lastUpdate?: string
-    lastMessage?: string
-  }
+// Manually define the type to include the fields we need
+type OrderWithDetails = (Prisma.OrderGetPayload<{
+  include: {
+    customer: true;
+    items: {
+      include: {
+        product: true;
+      };
+    };
+  };
+}>) & {
+  user: { isFlagged: boolean } | null;
+  isFakeOrder?: boolean;
+};
+
+function isNew(date: string | Date) {
+  return differenceInHours(new Date(), new Date(date)) < 24;
 }
 
-export default function OrdersPage() {
-  const router = useRouter()
-  const [orders, setOrders] = useState<Order[]>([])
-  const [loading, setLoading] = useState(true)
-  const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const [filters, setFilters] = useState({
-    status: '',
-    startDate: null as Date | null,
-    endDate: null as Date | null,
-  })
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
-  const [actionLoading, setActionLoading] = useState(false)
-  const [processingOrder, setProcessingOrder] = useState<string | null>(null)
+function OrdersList({ status }: { status: 'active' | 'trashed' | 'fake' }) {
+  const router = useRouter();
+  const searchParams = useSearchParams() || new URLSearchParams();
+  const queryClient = useQueryClient();
 
-  const fetchOrders = useCallback(async () => {
-    try {
-      setLoading(true)
-      const searchParams = new URLSearchParams({
+  // State management
+  const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
+  const [isSelectAll, setIsSelectAll] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+
+  const search = searchParams.get('search');
+  const from = searchParams.get('from');
+  const to = searchParams.get('to');
+  const page = Number(searchParams.get('page') ?? 1);
+  const limit = Number(searchParams.get('limit') ?? 10);
+
+  const { data, error, isLoading, isPlaceholderData } = useQuery({
+    queryKey: ['orders', { status, search, from, to, page, limit }],
+    queryFn: async () => {
+      const query = new URLSearchParams({
+        status: status,
+        search: search ?? '',
+        from: from ?? '',
+        to: to ?? '',
         page: page.toString(),
-        limit: '10',
-      })
+        limit: limit.toString(),
+      });
+      const response = await fetch(`/api/admin/orders?${query.toString()}`, {
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Network error' }));
+        throw new Error(errorData.error || 'Failed to fetch orders');
+      }
+      return response.json();
+    },
+    placeholderData: (previousData: any) => previousData,
+    staleTime: 0, // Always consider data stale to ensure fresh data
+    refetchOnWindowFocus: true, // Refetch when window gains focus
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
 
-      if (filters.status) searchParams.append('status', filters.status)
-      if (filters.startDate) searchParams.append('startDate', filters.startDate.toISOString())
-      if (filters.endDate) searchParams.append('endDate', filters.endDate.toISOString())
+  const { mutate: trashOrder, isPending: isTrashing } = useMutation({
+    mutationFn: (orderId: string) => fetch(`/api/admin/orders/${orderId}`, { method: 'DELETE' }),
+    onSuccess: async () => {
+      showToast.success('Order moved to trash.');
+      await queryClient.invalidateQueries({ queryKey: ['orders'] });
+    },
+    onError: () => showToast.error('Failed to move order to trash.'),
+  });
 
-      const response = await fetch(`/api/admin/orders?${searchParams}`)
-      const data = await response.json()
-
-      if (!response.ok) throw new Error(data.error)
-
-      setOrders(data.orders)
-      setTotalPages(data.pages)
-    } catch (error) {
-      showToast.error('Failed to fetch orders')
-      console.error('Error fetching orders:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [page, filters])
-
-  useEffect(() => {
-    fetchOrders()
-  }, [fetchOrders])
-
-  const handleOrderAction = async (orderId: string, action: string, data?: any) => {
-    try {
-      setProcessingOrder(orderId)
-      const response = await fetch('/api/admin/orders', {
-        method: 'POST',
+  const { mutate: restoreOrder, isPending: isRestoring } = useMutation({
+    mutationFn: (orderId: string) => fetch(`/api/admin/orders/${orderId}`, { 
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId, action, ...data }),
-      })
+        body: JSON.stringify({ restore: true })
+    }),
+    onSuccess: async () => {
+      showToast.success('Order restored successfully.');
+      await queryClient.invalidateQueries({ queryKey: ['orders'] });
+    },
+    onError: () => showToast.error('Failed to restore order.'),
+  });
 
-      const responseData = await response.json()
-      if (!response.ok) throw new Error(responseData.error)
-
-      showToast.success('Order updated successfully')
-      fetchOrders()
-    } catch (error: any) {
-      showToast.error(error.message || 'Failed to update order')
-      console.error('Error updating order:', error)
-    } finally {
-      setProcessingOrder(null)
+  const { mutate: markAsFakeOrder, isPending: isMarkingFake } = useMutation({
+    mutationFn: ({ orderId, isFake }: { orderId: string; isFake: boolean }) => 
+      fetch(`/api/admin/orders/${orderId}`, { 
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ markAsFake: isFake })
+      }),
+    onSuccess: async (_: any, variables: { orderId: string; isFake: boolean }) => {
+      showToast.success(variables.isFake ? 'Order marked as fake and user flagged.' : 'Order unmarked as fake.');
+      await queryClient.invalidateQueries({ queryKey: ['orders'] });
+    },
+    onError: () => showToast.error('Failed to update order.'),
+  });
+  
+  const handleTrashOrder = (orderId: string) => {
+    if (window.confirm('Are you sure you want to move this order to the trash? This will also flag the user.')) {
+      trashOrder(orderId);
     }
-  }
+  };
 
-  const handleConfirmOrder = async (order: Order) => {
-    await handleOrderAction(order.id, 'confirm_order')
-  }
+  const handleMarkAsFake = (orderId: string, currentStatus: boolean) => {
+    const action = currentStatus ? 'unmark' : 'mark';
+    const message = `Are you sure you want to ${action} this order as fake?${!currentStatus ? ' This will also flag the user.' : ''}`;
+    
+    if (window.confirm(message)) {
+      markAsFakeOrder({ orderId, isFake: !currentStatus });
+    }
+  };
+  
+  const handlePageChange = (newPage: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('page', newPage.toString());
+    router.push(`/admin/orders?${params.toString()}`);
+  };
 
-  const handleCreateShipment = async (order: Order) => {
-    await handleOrderAction(order.id, 'create_shipment')
-  }
+  const handlePageSizeChange = (newSize: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('limit', newSize.toString());
+    params.set('page', '1');
+    router.push(`/admin/orders?${params.toString()}`);
+  };
 
-  const handleUpdateStatus = async (orderId: string, status: string) => {
-    await handleOrderAction(orderId, 'update_status', { status })
-  }
+  // Bulk selection functions
+  const handleSelectOrder = (orderId: string, checked: boolean) => {
+    const newSelected = new Set(selectedOrders);
+    if (checked) {
+      newSelected.add(orderId);
+    } else {
+      newSelected.delete(orderId);
+    }
+    setSelectedOrders(newSelected);
+    setIsSelectAll(newSelected.size === orders.length && orders.length > 0);
+  };
 
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      PENDING: 'warning',
-      PROCESSING: 'default',
-      CONFIRMED: 'default',
-      SHIPPED: 'info',
-      DELIVERED: 'success',
-      CANCELLED: 'destructive',
-    } as const
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedOrders(new Set(orders.map((order: OrderWithDetails) => order.id)));
+      setIsSelectAll(true);
+    } else {
+      setSelectedOrders(new Set());
+      setIsSelectAll(false);
+    }
+  };
 
-    return (
-      <Badge variant={variants[status as keyof typeof variants] || 'default'}>
-        {status}
-      </Badge>
-    )
-  }
+  const clearSelection = () => {
+    setSelectedOrders(new Set());
+    setIsSelectAll(false);
+  };
 
-  const getPaymentStatusBadge = (status: string) => {
-    const variants = {
-      PENDING: 'warning',
-      PAID: 'success',
-      FAILED: 'destructive',
-      REFUNDED: 'default',
-    } as const
+  // PDF generation functions
+  const generateOrderPDF = async (order: OrderWithDetails) => {
+    try {
+      setIsGeneratingPDF(true);
+      
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        showToast.error('Please allow popups to generate PDF');
+        return;
+      }
 
-    return (
-      <Badge variant={variants[status as keyof typeof variants] || 'default'}>
-        {status}
-      </Badge>
-    )
-  }
+      const orderInfo = getOrderAnalyticalInfo(order);
+      
+      const styles = `
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; line-height: 1.6; }
+          .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 20px; }
+          .order-info { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+          .section { border: 1px solid #ddd; padding: 15px; border-radius: 5px; }
+          .section h3 { margin-top: 0; color: #333; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+          .items-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          .items-table th, .items-table td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+          .items-table th { background-color: #f5f5f5; }
+          .total-section { text-align: right; margin-top: 20px; font-size: 18px; font-weight: bold; }
+          @media print { body { margin: 0; } }
+        </style>
+      `;
+
+      const customerSection = `
+        <div class="section">
+          <h3>Customer Information</h3>              <p><strong>Name:</strong> ${order.recipientName || order.customer.name}</p>
+              <p><strong>Phone:</strong> ${order.recipientPhone || order.customer.phone}</p>
+              <p><strong>Email:</strong> ${order.customer.email || 'N/A'}</p>
+              <p><strong>Address:</strong> ${(order as any).shippingAddress || order.customer.address || 'N/A'}</p>
+        </div>
+      `;
+
+      const statusSection = `
+        <div class="section">
+          <h3>Order Status</h3>
+          <p><strong>Order Status:</strong> ${order.status}</p>
+          <p><strong>Payment Status:</strong> ${order.paymentStatus}</p>
+          ${order.courierName ? `<p><strong>Courier:</strong> ${order.courierName}</p>` : ''}
+          ${order.courierTrackingCode ? `<p><strong>Tracking:</strong> ${order.courierTrackingCode}</p>` : ''}
+        </div>
+      `;
+
+      const itemsRows = order.items?.map((item: any) => `
+        <tr>
+          <td>${item.product.name}</td>
+          <td>${item.quantity}</td>
+          <td>৳${item.price.toLocaleString()}</td>
+          <td>৳${(item.price * item.quantity).toLocaleString()}</td>
+        </tr>
+      `).join('') || '';
+
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Order ${orderInfo.displayNumber}</title>
+          ${styles}
+        </head>
+        <body>
+          <div class="header">
+            <h1>Order Invoice</h1>
+            <h2>Order #${orderInfo.displayNumber}</h2>
+            <p>Date: ${format(new Date(order.createdAt), "dd MMM yyyy, h:mm a")}</p>
+          </div>
+          
+          <div class="order-info">
+            ${customerSection}
+            ${statusSection}
+          </div>
+
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Unit Price</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsRows}
+            </tbody>
+          </table>
+
+          <div class="total-section">
+            <p>Total Amount: ৳${order.total.toLocaleString()}</p>
+          </div>
+        </body>
+        </html>
+      `;
+
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      
+      printWindow.onload = () => {
+        setTimeout(() => {
+          printWindow.print();
+          printWindow.close();
+        }, 500);
+      };
+
+      showToast.success('PDF generated successfully');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      showToast.error('Failed to generate PDF');
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
+  const generateBulkPDF = async () => {
+    if (selectedOrders.size === 0) {
+      showToast.error('Please select orders to export');
+      return;
+    }
+
+    try {
+      setIsGeneratingPDF(true);
+      const selectedOrdersList = orders.filter((order: OrderWithDetails) => 
+        selectedOrders.has(order.id)
+      );
+
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        showToast.error('Please allow popups to generate PDF');
+        return;
+      }
+
+      const styles = `
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; line-height: 1.4; font-size: 12px; }
+          .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+          .order-card { border: 1px solid #ddd; margin-bottom: 15px; padding: 15px; page-break-inside: avoid; }
+          .order-header { background-color: #f5f5f5; padding: 10px; margin: -15px -15px 10px -15px; }
+          .order-details { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+          .section h4 { margin: 0 0 8px 0; color: #333; }
+          .items-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
+          .items-table th, .items-table td { border: 1px solid #ddd; padding: 5px; text-align: left; }
+          .items-table th { background-color: #f9f9f9; }
+          @media print { body { margin: 0; font-size: 10px; } .order-card { page-break-inside: avoid; } }
+        </style>
+      `;
+
+      const headerContent = `
+        <div class="header">
+          <h1>Bulk Orders Export</h1>
+          <p>Generated on: ${format(new Date(), "dd MMM yyyy, h:mm a")}</p>
+          <p>Total Orders: ${selectedOrdersList.length}</p>
+        </div>
+      `;
+
+      const ordersContent = selectedOrdersList.map((order: OrderWithDetails) => {
+        const orderInfo = getOrderAnalyticalInfo(order);
+        const itemsRows = order.items?.map((item: any) => `
+          <tr>
+            <td>${item.product.name}</td>
+            <td>${item.quantity}</td>
+            <td>৳${item.price.toLocaleString()}</td>
+            <td>৳${(item.price * item.quantity).toLocaleString()}</td>
+          </tr>
+        `).join('') || '';
+
+        return `
+          <div class="order-card">
+            <div class="order-header">
+              <h3>Order #${orderInfo.displayNumber} - ৳${order.total.toLocaleString()}</h3>
+              <p>Date: ${format(new Date(order.createdAt), "dd MMM yyyy, h:mm a")}</p>
+            </div>
+            
+            <div class="order-details">
+              <div class="section">
+                <h4>Customer Information</h4>
+                <p><strong>Name:</strong> ${order.recipientName || order.customer.name}</p>
+                <p><strong>Phone:</strong> ${order.recipientPhone || order.customer.phone}</p>
+                <p><strong>Address:</strong> ${(order as any).shippingAddress || order.customer.address || 'N/A'}</p>
+              </div>
+              
+              <div class="section">
+                <h4>Order Status</h4>
+                <p><strong>Status:</strong> ${order.status}</p>
+                <p><strong>Payment:</strong> ${order.paymentStatus}</p>
+                ${order.courierName ? `<p><strong>Courier:</strong> ${order.courierName}</p>` : ''}
+              </div>
+            </div>
+
+            <table class="items-table">
+              <thead>
+                <tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr>
+              </thead>
+              <tbody>
+                ${itemsRows}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }).join('');
+
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Bulk Orders Export</title>
+          ${styles}
+        </head>
+        <body>
+          ${headerContent}
+          ${ordersContent}
+        </body>
+        </html>
+      `;
+
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      
+      printWindow.onload = () => {
+        setTimeout(() => {
+          printWindow.print();
+          printWindow.close();
+        }, 500);
+      };
+
+      showToast.success(`PDF generated for ${selectedOrdersList.length} orders`);
+    } catch (error) {
+      console.error('Error generating bulk PDF:', error);
+      showToast.error('Failed to generate bulk PDF');
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+  
+  if (isLoading && !isPlaceholderData) return (
+    <div className="p-4 md:p-6">
+      <OrderTableSkeleton />
+    </div>
+  );
+  if (error) return <div className="text-red-500 text-center py-10">Failed to load orders.</div>;
+  
+  const { orders, totalOrders, totalPages } = data ?? { orders: [], totalOrders: 0, totalPages: 0 };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Orders</h1>
-        <div className="flex items-center gap-4">
-          <Select
-            value={filters.status}
-            onValueChange={(value) => setFilters({ ...filters, status: value })}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">All</SelectItem>
-              <SelectItem value="PENDING">Pending</SelectItem>
-              <SelectItem value="PROCESSING">Processing</SelectItem>
-              <SelectItem value="CONFIRMED">Confirmed</SelectItem>
-              <SelectItem value="SHIPPED">Shipped</SelectItem>
-              <SelectItem value="DELIVERED">Delivered</SelectItem>
-              <SelectItem value="CANCELLED">Cancelled</SelectItem>
-            </SelectContent>
-          </Select>
+    <div className="space-y-4">
+       {/* Loading overlay for search/filter operations */}
+       {isPlaceholderData && (
+         <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center z-10">
+           <div className="flex items-center gap-2 text-muted-foreground">
+             <RefreshCw className="h-4 w-4 animate-spin" />
+             <span>Updating...</span>
+           </div>
+         </div>
+       )}
 
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="w-[240px] justify-start text-left font-normal">
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {filters.startDate && filters.endDate ? (
-                  `${format(filters.startDate, 'LLL dd, y')} - ${format(filters.endDate, 'LLL dd, y')}`
-                ) : (
-                  <span>Pick a date range</span>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                initialFocus
-                mode="range"
-                defaultMonth={filters.startDate || undefined}
-                selected={{
-                  from: filters.startDate || undefined,
-                  to: filters.endDate || undefined,
-                }}
-                onSelect={(range: any) => {
-                  setFilters({
-                    ...filters,
-                    startDate: range?.from || null,
-                    endDate: range?.to || null,
-                  })
-                }}
-                numberOfMonths={2}
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-      ) : (
-        <>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
+       {/* Bulk Actions Bar */}
+       {selectedOrders.size > 0 && (
+         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+           <div className="flex items-center gap-2">
+             <CheckSquare className="h-4 w-4 text-blue-600" />
+             <span className="text-sm font-medium text-blue-800">
+               {selectedOrders.size} order{selectedOrders.size !== 1 ? 's' : ''} selected
+             </span>
+           </div>
+           <div className="flex items-center gap-2 flex-wrap">
+             <Button
+               variant="outline"
+               size="sm"
+               onClick={generateBulkPDF}
+               disabled={isGeneratingPDF}
+               className="h-8 text-xs"
+             >
+               <FileText className="mr-1 h-3 w-3" />
+               Export PDF
+             </Button>
+             <Button
+               variant="outline"
+               size="sm"
+               onClick={() => console.log('Bulk print action')}
+               disabled={isGeneratingPDF}
+               className="h-8 text-xs"
+             >
+               <Printer className="mr-1 h-3 w-3" />
+               Print All
+             </Button>
+             <Button
+               variant="outline"
+               size="sm"
+               onClick={clearSelection}
+               className="h-8 text-xs"
+             >
+               Clear
+             </Button>
+           </div>
+         </div>
+       )}
+       
+       <div className={`border rounded-lg ${isPlaceholderData ? 'relative' : ''}`}>
+        {/* Desktop Table */}
+        <div className="hidden md:block">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-12">
+                  <Checkbox
+                    checked={isSelectAll}
+                    onCheckedChange={handleSelectAll}
+                    aria-label="Select all orders"
+                  />
+                </TableHead>
+                <TableHead>Order</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Courier</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+                <TableHead className="text-center">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {orders.length === 0 ? (
                 <TableRow>
-                  <TableHead>Order</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Items</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Payment</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableCell colSpan={7} className="text-center h-48">
+                    <Package className="mx-auto h-12 w-12 text-gray-400" />
+                    <p className="mt-2 text-sm text-gray-500">
+                      {status === 'trashed' ? 'Trash is empty.' : 
+                       status === 'fake' ? 'No fake orders found.' : 'No orders found.'}
+                    </p>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {orders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-medium">
-                      #{order.orderNumber}
-                    </TableCell>
+              ) : (
+                orders.map((order: OrderWithDetails) => (
+                  <TableRow key={order.id} className={isPlaceholderData ? 'opacity-50' : ''}>
                     <TableCell>
-                      <div className="space-y-1">
-                        <p className="font-medium">{order.customer.name}</p>
-                        <p className="text-sm text-muted-foreground">{order.customer.phone}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex -space-x-2">
-                        {order.items.slice(0, 3).map((item, index) => (
-                          <div
-                            key={index}
-                            className="relative h-8 w-8 rounded-full border-2 border-background overflow-hidden"
-                          >
-                            <Image
-                              src={item.image}
-                              alt={item.name}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                        ))}
-                        {order.items.length > 3 && (
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-muted text-xs">
-                            +{order.items.length - 3}
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>৳{order.total.toLocaleString()}</TableCell>
-                    <TableCell>{getStatusBadge(order.status)}</TableCell>
-                    <TableCell>{getPaymentStatusBadge(order.paymentStatus)}</TableCell>
-                    <TableCell>
-                      {format(new Date(order.createdAt), 'MMM d, yyyy')}
+                      <Checkbox
+                        checked={selectedOrders.has(order.id)}
+                        onCheckedChange={(checked: boolean) => handleSelectOrder(order.id, checked)}
+                        aria-label={`Select order ${getOrderAnalyticalInfo(order).displayNumber}`}
+                      />
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              View Details
+                        {(() => {
+                          const orderInfo = getOrderAnalyticalInfo(order);
+                          return (
+                            <>
+                              {orderInfo.isVeryNew && (
+                                <span className="relative flex h-3 w-3" title="Very New Order (< 2hrs)">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                                </span>
+                              )}
+                              {orderInfo.isNew && !orderInfo.isVeryNew && (
+                                <span className="relative flex h-3 w-3" title="New Order (< 24hrs)">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-3 w-3 bg-sky-500"></span>
+                                </span>
+                              )}
+                              {order.isFakeOrder && (
+                                <Flag className="h-4 w-4 text-red-500" title="Fake Order" />
+                              )}
+                              <div className="font-medium">{orderInfo.displayNumber}</div>
+                            </>
+                          );
+                        })()}
+                      </div>
+                      <div className="text-sm text-muted-foreground mt-1">
+                        {format(new Date(order.createdAt), "dd MMM yyyy, h:mm a")}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className='flex items-center gap-2'>
+                          {order.user?.isFlagged && <span title='This user has been flagged'><AlertTriangle className="h-4 w-4 text-destructive" /></span>}
+                          <span>{order.recipientName || order.customer.name}</span>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {order.recipientPhone || order.customer.phone}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col items-start gap-1">
+                          <StatusBadge status={order.status} />
+                          <StatusBadge status={order.paymentStatus} />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <CourierBadge courierName={order.courierName} trackingId={order.courierTrackingCode} />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      ৳{order.total.toLocaleString()}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        {status === 'active' ? (
+                          <>
+                            <OrderDetailsDialog order={order} />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => generateOrderPDF(order)}
+                              disabled={isGeneratingPDF}
+                              title="Print/Export PDF"
+                            >
+                              <Printer className="h-3 w-3" />
                             </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-3xl">
-                            <DialogHeader>
-                              <DialogTitle>Order #{order.orderNumber}</DialogTitle>
-                            </DialogHeader>
-                            <ScrollArea className="max-h-[60vh]">
-                              <div className="space-y-6 p-1">
-                                {/* Order Status */}
-                                <div className="flex items-center justify-between">
-                                  <div className="space-y-1">
-                                    <p className="text-sm text-muted-foreground">Order Status</p>
-                                    {getStatusBadge(order.status)}
-                                  </div>
-                                  <div className="space-y-1">
-                                    <p className="text-sm text-muted-foreground">Payment Status</p>
-                                    {getPaymentStatusBadge(order.paymentStatus)}
-                                  </div>
-                                </div>
-
-                                <Separator />
-
-                                {/* Customer Information */}
-                                <div>
-                                  <h3 className="font-medium mb-2">Customer Information</h3>
-                                  <div className="grid gap-2 text-sm">
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Name</span>
-                                      <span>{order.customer.name}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Phone</span>
-                                      <span>{order.customer.phone}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Email</span>
-                                      <span>{order.customer.email}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Address</span>
-                                      <span className="text-right">{order.customer.address}</span>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <Separator />
-
-                                {/* Order Items */}
-                                <div>
-                                  <h3 className="font-medium mb-2">Order Items</h3>
-                                  <div className="space-y-4">
-                                    {order.items.map((item, index) => (
-                                      <div key={index} className="flex gap-4">
-                                        <div className="relative h-16 w-16 rounded overflow-hidden flex-shrink-0">
-                                          <Image
-                                            src={item.image}
-                                            alt={item.name}
-                                            fill
-                                            className="object-cover"
-                                          />
-                                        </div>
-                                        <div className="flex-1">
-                                          <h4 className="font-medium">{item.name}</h4>
-                                          <div className="text-sm text-muted-foreground">
-                                            <span>৳{item.price.toLocaleString()}</span>
-                                            <span className="mx-2">×</span>
-                                            <span>{item.quantity}</span>
-                                          </div>
-                                        </div>
-                                        <div className="text-right">
-                                          <p className="font-medium">
-                                            ৳{(item.price * item.quantity).toLocaleString()}
-                                          </p>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-
-                                <Separator />
-
-                                {/* Order Total */}
-                                <div className="space-y-2">
-                                  <div className="flex justify-between text-sm">
-                                    <span>Subtotal</span>
-                                    <span>৳{order.total.toLocaleString()}</span>
-                                  </div>
-                                  <div className="flex justify-between font-medium">
-                                    <span>Total</span>
-                                    <span>৳{order.total.toLocaleString()}</span>
-                                  </div>
-                                </div>
-
-                                {/* Steadfast Information */}
-                                {order.steadfastInfo && (
-                                  <>
-                                    <Separator />
-                                    <div>
-                                      <h3 className="font-medium mb-2">Delivery Information</h3>
-                                      <div className="grid gap-2 text-sm">
-                                        {order.steadfastInfo.trackingId && (
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Tracking ID</span>
-                                            <span>{order.steadfastInfo.trackingId}</span>
-                                          </div>
-                                        )}
-                                        {order.steadfastInfo.status && (
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Status</span>
-                                            <span>{order.steadfastInfo.status}</span>
-                                          </div>
-                                        )}
-                                        {order.steadfastInfo.lastUpdate && (
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Last Update</span>
-                                            <span>
-                                              {format(new Date(order.steadfastInfo.lastUpdate), 'PPP')}
-                                            </span>
-                                          </div>
-                                        )}
-                                        {order.steadfastInfo.lastMessage && (
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Latest Update</span>
-                                            <span>{order.steadfastInfo.lastMessage}</span>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                            </ScrollArea>
-
-                            {/* Action Buttons */}
-                            <div className="flex items-center gap-2 mt-6 pt-6 border-t">
-                              {order.status === 'PENDING' && (
-                                <Button
-                                  onClick={() => handleConfirmOrder(order)}
-                                  disabled={processingOrder === order.id}
-                                >
-                                  {processingOrder === order.id ? (
-                                    <>
-                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                      Confirming...
-                                    </>
-                                  ) : (
-                                    'Confirm Order'
-                                  )}
-                                </Button>
-                              )}
-
-                              {order.status === 'CONFIRMED' && !order.steadfastInfo?.trackingId && (
-                                <Button
-                                  onClick={() => handleCreateShipment(order)}
-                                  disabled={processingOrder === order.id}
-                                >
-                                  {processingOrder === order.id ? (
-                                    <>
-                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                      Creating Shipment...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Package className="mr-2 h-4 w-4" />
-                                      Create Shipment
-                                    </>
-                                  )}
-                                </Button>
-                              )}
-
-                              {order.steadfastInfo?.trackingId && (
-                                <Button variant="outline" asChild>
-                                  <a
-                                    href={`https://steadfast.com.bd/track/${order.steadfastInfo.trackingId}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    <Truck className="mr-2 h-4 w-4" />
-                                    Track on Steadfast
-                                  </a>
-                                </Button>
-                              )}
-
-                              <Select
-                                value={order.status}
-                                onValueChange={(value) => handleUpdateStatus(order.id, value)}
-                                disabled={processingOrder === order.id}
-                              >
-                                <SelectTrigger className="w-[140px]">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="PENDING">Pending</SelectItem>
-                                  <SelectItem value="PROCESSING">Processing</SelectItem>
-                                  <SelectItem value="CONFIRMED">Confirmed</SelectItem>
-                                  <SelectItem value="SHIPPED">Shipped</SelectItem>
-                                  <SelectItem value="DELIVERED">Delivered</SelectItem>
-                                  <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
+                            {!['SHIPPED', 'DELIVERED', 'CANCELED'].includes(order.status) && (
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button variant="outline" size="sm" className="h-8 px-2">
+                                    <Edit className="h-3 w-3" />
+                                    <span className="hidden sm:inline ml-1">Assign</span>
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogTitle className="sr-only">Assign Courier</DialogTitle>
+                                  <CourierAssignmentForm order={order} />
+                                </DialogContent>
+                              </Dialog>
+                            )}
+                            <ShipNowButton order={order} />
+                            <Button 
+                              variant={order.isFakeOrder ? "secondary" : "outline"} 
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              disabled={isMarkingFake} 
+                              onClick={() => handleMarkAsFake(order.id, order.isFakeOrder || false)}
+                              title={order.isFakeOrder ? "Unmark as fake" : "Mark as fake"}
+                            >
+                              {order.isFakeOrder ? <FlagOff className="h-3 w-3" /> : <Flag className="h-3 w-3" />}
+                            </Button>
+                            <Button 
+                              variant="destructive" 
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              disabled={isTrashing} 
+                              onClick={() => handleTrashOrder(order.id)}
+                              title="Move to trash"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </>
+                        ) : status === 'fake' ? (
+                          <>
+                            <OrderDetailsDialog order={order} />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => generateOrderPDF(order)}
+                              disabled={isGeneratingPDF}
+                              title="Print/Export PDF"
+                            >
+                              <Printer className="h-3 w-3" />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-8 px-2"
+                              disabled={isMarkingFake} 
+                              onClick={() => handleMarkAsFake(order.id, true)}
+                            >
+                              <FlagOff className="h-3 w-3" />
+                              <span className="hidden sm:inline ml-1">Unmark</span>
+                            </Button>
+                            <Button 
+                              variant="destructive" 
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              disabled={isTrashing} 
+                              onClick={() => handleTrashOrder(order.id)}
+                              title="Move to trash"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                             <Button
+                               variant="outline"
+                               size="sm"
+                               className="h-8 w-8 p-0"
+                               onClick={() => generateOrderPDF(order)}
+                               disabled={isGeneratingPDF}
+                               title="Print/Export PDF"
+                             >
+                               <Printer className="h-3 w-3" />
+                             </Button>
+                             <Button 
+                               variant="outline" 
+                               size="sm" 
+                               className="h-8 px-2"
+                               onClick={() => restoreOrder(order.id)} 
+                               disabled={isRestoring}
+                             >
+                              <Undo className="h-3 w-3" />
+                              <span className="hidden sm:inline ml-1">Restore</span>
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
 
-          <div className="flex items-center justify-between">
-            <Button
-              variant="outline"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-            >
-              Previous
-            </Button>
-            <span>
-              Page {page} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-            >
-              Next
-            </Button>
+        {/* Mobile Card Layout */}
+        <div className="md:hidden">
+          {/* Mobile Bulk Actions */}
+          {selectedOrders.size > 0 && (
+            <div className="bg-blue-50 border border-blue-200 rounded-t-lg p-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckSquare className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-800">
+                  {selectedOrders.size} selected
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={generateBulkPDF}
+                  disabled={isGeneratingPDF}
+                  className="h-8 text-xs px-2"
+                >
+                  <FileText className="mr-1 h-3 w-3" />
+                  PDF
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearSelection}
+                  className="h-8 text-xs px-2"
+                >
+                  Clear
+                </Button>
+              </div>
+            </div>
+          )}
+          
+          {/* Mobile Select All */}
+          {orders.length > 0 && (
+            <div className="bg-gray-50 border-b p-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={isSelectAll}
+                  onCheckedChange={handleSelectAll}
+                  aria-label="Select all orders"
+                />
+                <span className="text-sm text-gray-600">Select All</span>
+              </div>
+              <span className="text-xs text-gray-500">{orders.length} orders</span>
+            </div>
+          )}
+
+          <div className="space-y-0">
+            {orders.length === 0 ? (
+              <div className="text-center py-12 p-4">
+                <Package className="mx-auto h-12 w-12 text-gray-400" />
+                <p className="mt-2 text-sm text-gray-500">
+                  {status === 'trashed' ? 'Trash is empty.' : 
+                   status === 'fake' ? 'No fake orders found.' : 'No orders found.'}
+                </p>
+              </div>
+            ) : (
+              orders.map((order: OrderWithDetails) => (
+                <div key={order.id} className={`border-b last:border-b-0 p-4 ${isPlaceholderData ? 'opacity-50' : ''} ${selectedOrders.has(order.id) ? 'bg-blue-50' : 'bg-white'}`}>
+                  {/* Header with selection */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <Checkbox
+                        checked={selectedOrders.has(order.id)}
+                        onCheckedChange={(checked: boolean) => handleSelectOrder(order.id, checked)}
+                        aria-label={`Select order ${getOrderAnalyticalInfo(order).displayNumber}`}
+                      />
+                      <div className="flex items-center gap-2">
+                        {(() => {
+                          const orderInfo = getOrderAnalyticalInfo(order);
+                          return (
+                            <>
+                              {orderInfo.isVeryNew && (
+                                <span className="relative flex h-3 w-3" title="Very New Order (< 2hrs)">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                                </span>
+                              )}
+                              {orderInfo.isNew && !orderInfo.isVeryNew && (
+                                <span className="relative flex h-3 w-3" title="New Order (< 24hrs)">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-3 w-3 bg-sky-500"></span>
+                                </span>
+                              )}
+                              {order.isFakeOrder && (
+                                <Flag className="h-4 w-4 text-red-500" title="Fake Order" />
+                              )}
+                              <span className="font-semibold text-lg">{orderInfo.compactNumber}</span>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold text-lg text-green-600">৳{order.total.toLocaleString()}</div>
+                      <div className="text-xs text-gray-500">
+                        {format(new Date(order.createdAt), "dd MMM, h:mm a")}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Customer Info with better mobile layout */}
+                  <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2 flex-1">
+                        {order.user?.isFlagged && (
+                          <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" title="This user has been flagged" />
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium text-base truncate">{order.recipientName || order.customer.name}</div>
+                          <div className="text-sm text-gray-600 truncate">
+                            {order.recipientPhone || order.customer.phone}
+                          </div>
+                          {(order as any).shippingAddress && (
+                            <div className="text-xs text-gray-500 mt-1 line-clamp-2">
+                              {(order as any).shippingAddress}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Status with better mobile display */}
+                  <div className="flex flex-wrap gap-2">
+                    <StatusBadge status={order.status} />
+                    <StatusBadge status={order.paymentStatus} />
+                    {order.courierName && (
+                      <CourierBadge courierName={order.courierName} trackingId={order.courierTrackingCode} />
+                    )}
+                  </div>
+
+                  {/* Actions with mobile-optimized layout */}
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <OrderDetailsDialog order={order} />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 px-2"
+                          onClick={() => generateOrderPDF(order)}
+                          disabled={isGeneratingPDF}
+                        >
+                          <Printer className="h-3 w-3 mr-1" />
+                          PDF
+                        </Button>
+                        {status === 'active' ? (
+                          <>
+                            {!['SHIPPED', 'DELIVERED', 'CANCELED'].includes(order.status) && (
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button variant="outline" size="sm" className="h-8 px-2">
+                                    <Edit className="h-3 w-3 mr-1" /> Assign
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogTitle className="sr-only">Assign Courier</DialogTitle>
+                                  <CourierAssignmentForm order={order} />
+                                </DialogContent>
+                              </Dialog>
+                            )}
+                            <ShipNowButton order={order} />
+                          </>
+                        ) : status === 'fake' ? (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-8 px-2"
+                            disabled={isMarkingFake} 
+                            onClick={() => handleMarkAsFake(order.id, true)}
+                          >
+                            <FlagOff className="h-3 w-3 mr-1" /> Unmark
+                          </Button>
+                        ) : (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-8 px-2"
+                            onClick={() => restoreOrder(order.id)} 
+                            disabled={isRestoring}
+                          >
+                            <Undo className="h-3 w-3 mr-1" /> Restore
+                          </Button>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {status !== 'trashed' && (
+                          <Button 
+                            variant={order.isFakeOrder ? "secondary" : "outline"} 
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            disabled={isMarkingFake} 
+                            onClick={() => handleMarkAsFake(order.id, order.isFakeOrder || false)}
+                            title={order.isFakeOrder ? "Unmark as fake" : "Mark as fake"}
+                          >
+                            {order.isFakeOrder ? <FlagOff className="h-3 w-3" /> : <Flag className="h-3 w-3" />}
+                          </Button>
+                        )}
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          disabled={isTrashing} 
+                          onClick={() => handleTrashOrder(order.id)}
+                          title="Move to trash"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
-        </>
+        </div>
+      </div>
+      {totalOrders > 0 && (
+        <DataTablePagination
+            page={page}
+            totalPages={totalPages}
+            totalRecords={totalOrders}
+            pageSize={limit}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+        />
       )}
     </div>
-  )
-} 
+  );
+}
+
+export default function OrdersPage() {
+  const [activeTab, setActiveTab] = useState('active');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const queryClient = useQueryClient();
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await queryClient.invalidateQueries({ queryKey: ['orders'] });
+      await queryClient.refetchQueries({ queryKey: ['orders'] });
+      showToast.success('Orders refreshed successfully!');
+    } catch (error) {
+      showToast.error('Failed to refresh orders');
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 500); // Small delay for UX
+    }
+  };
+
+  return (
+    <div className="p-4 md:p-6 space-y-6">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+        <h1 className="text-2xl font-bold">Orders</h1>
+        <div className="flex items-center gap-2">
+          <OrderFilters />
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={handleRefresh} 
+            disabled={isRefreshing}
+            className="shrink-0"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
+      </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="active">Active</TabsTrigger>
+            <TabsTrigger value="fake">Fake Orders</TabsTrigger>
+            <TabsTrigger value="trashed">Trashed</TabsTrigger>
+        </TabsList>
+        <TabsContent value="active">
+            <OrdersList status="active" />
+        </TabsContent>
+        <TabsContent value="fake">
+            <OrdersList status="fake" />
+        </TabsContent>
+        <TabsContent value="trashed">
+            <OrdersList status="trashed" />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}

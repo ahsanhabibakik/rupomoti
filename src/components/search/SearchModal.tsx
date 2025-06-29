@@ -1,228 +1,328 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { X, Tag, Clock, TrendingUp, Leaf, Filter, Sparkles } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { X, Filter, Sparkles, Clock, TrendingUp, Search as SearchIcon, ArrowRight } from "lucide-react";
 import { BsSearch } from "react-icons/bs";
 import Image from "next/image";
 import Link from "next/link";
-import productsData from "@/data/products.json";
+import { safeRenderPrice, safeRenderCategory } from '@/lib/search-utils'
 
 interface Product {
   id: string;
   name: string;
   description: string;
   price: number;
+  salePrice?: number;
   images: string[];
   category: string;
-  details: any;
-  isNew: boolean;
-  isBestSeller: boolean;
-  isOutOfStock: boolean;
-  discount: number;
+  isNewArrival?: boolean;
+  isPopular?: boolean;
+  isFeatured?: boolean;
+  stock?: number;
+  rating?: number;
 }
 
 export default function SearchModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>(productsData.products);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [activeCategory, setActiveCategory] = useState("all");
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const [popularSearches] = useState([
+  const [isLoading, setIsLoading] = useState(false);
+
+  const categories = ["Necklaces", "Earrings", "Rings", "Bracelets", "Sets"];
+  
+  const popularSearches = [
     "Pearl Necklaces",
-    "Freshwater Pearls",
-    "South Sea Pearls",
-    "Pearl Earrings",
-    "Pearl Rings",
-    "Pearl Bracelets",
-    "Akoya Pearls",
-    "Tahitian Pearls",
-  ]);
+    "Diamond Rings", 
+    "Gold Earrings",
+    "Wedding Sets",
+    "Luxury Jewelry",
+    "Vintage Pieces"
+  ];
 
   // Load recent searches from localStorage
   useEffect(() => {
-    const savedSearches = localStorage.getItem("recentSearches");
-    if (savedSearches) {
-      setRecentSearches(JSON.parse(savedSearches));
+    if (typeof window !== 'undefined') {
+      const savedSearches = localStorage.getItem("recentSearches");
+      if (savedSearches) {
+        setRecentSearches(JSON.parse(savedSearches));
+      }
     }
   }, []);
 
   // Save search to recent searches
-  const saveSearch = (query: string) => {
-    if (!query.trim()) return;
-
-    const updatedSearches = [
-      query,
-      ...recentSearches.filter((search) => search !== query),
-    ].slice(0, 5); // Keep only the 5 most recent searches
-
+  const saveSearch = useCallback((query: string) => {
+    if (!query.trim() || typeof window === 'undefined') return;
+    
+    const updatedSearches = [query, ...recentSearches.filter(s => s !== query)].slice(0, 5);
     setRecentSearches(updatedSearches);
     localStorage.setItem("recentSearches", JSON.stringify(updatedSearches));
-  };
+  }, [recentSearches]);
 
-  // Filter products based on search query and category
+  // Search functionality
+  const searchProducts = useCallback(async (query: string, category: string = "all") => {
+    if (!query.trim()) {
+      setFilteredProducts([]);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const params = new URLSearchParams({
+        search: query,
+        limit: "8"
+      });
+      
+      if (category !== "all") {
+        params.append("categories", category);
+      }
+
+      const response = await fetch(`/api/products?${params.toString()}`);
+      if (response.ok) {
+        const data = await response.json();
+        setFilteredProducts(data.products || []);
+      } else {
+        setFilteredProducts([]);
+      }
+    } catch (error) {
+      console.error("Search error:", error);
+      setFilteredProducts([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Handle search input with debounce
   useEffect(() => {
-    let filtered = productsData.products;
+    const timeoutId = setTimeout(() => {
+      if (searchQuery.trim()) {
+        searchProducts(searchQuery, activeCategory);
+      } else {
+        setFilteredProducts([]);
+      }
+    }, 300);
 
-    // Apply category filter
-    if (activeCategory !== "all") {
-      filtered = filtered.filter(
-        (product: Product) =>
-          product.category?.toLowerCase() === activeCategory.toLowerCase()
-      );
-    }
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, activeCategory, searchProducts]);
 
-    // Apply search query filter
-    if (searchQuery.trim() !== "") {
-      filtered = filtered.filter(
-        (product: Product) =>
-          product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (product.description &&
-            product.description
-              .toLowerCase()
-              .includes(searchQuery.toLowerCase()))
-      );
-    }
-
-    setFilteredProducts(filtered);
-  }, [searchQuery, activeCategory]);
-
-  // Handle search submission
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      saveSearch(searchQuery);
+      saveSearch(searchQuery.trim());
+      onClose();
+      window.location.href = `/shop?search=${encodeURIComponent(searchQuery.trim())}`;
     }
   };
 
-  // Clear recent searches
+  const handleQuickSearch = (query: string) => {
+    saveSearch(query);
+    onClose();
+    window.location.href = `/shop?search=${encodeURIComponent(query)}`;
+  };
+
   const clearRecentSearches = () => {
     setRecentSearches([]);
-    localStorage.removeItem("recentSearches");
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem("recentSearches");
+    }
+  };
+
+  const handleCategoryFilter = (category: string) => {
+    setActiveCategory(category);
+    if (searchQuery.trim()) {
+      searchProducts(searchQuery, category);
+    }
   };
 
   if (!isOpen) return null;
 
   return (
-    <>
-      {/* Backdrop with blur effect */}
+    <div className="fixed inset-0 z-50 flex items-start justify-center">
+      {/* Enhanced Backdrop with gradient blur */}
       <div
-        className="fixed inset-0 bg-charcoal/30 backdrop-blur-md z-40"
+        className="fixed inset-0 bg-gradient-to-br from-black/60 via-black/50 to-black/60 backdrop-blur-lg z-40 transition-all duration-300"
         onClick={onClose}
       />
-
-      {/* Modal */}
-      <div className="fixed top-0 left-0 right-0 flex items-start justify-center p-4 z-50">
-        <div className="bg-pearl-light w-full max-w-3xl rounded-2xl shadow-pearl mt-16 border border-pearl-dark overflow-hidden">
-          {/* Search Input */}
-          <div className="p-4 border-b border-pearl-dark bg-gradient-to-r from-pearl to-pearl-light">
+      
+      {/* Modal Content */}
+      <div className="relative z-50 w-full max-w-4xl mx-4 mt-8 md:mt-16">
+        <div className="bg-white/95 backdrop-blur-xl w-full rounded-3xl shadow-2xl border border-white/20 overflow-hidden transform transition-all duration-300">
+          
+          {/* Search Header */}
+          <div className="p-6 border-b border-gray-200/50 bg-gradient-to-r from-white/90 to-gray-50/90">
             <form onSubmit={handleSearch}>
-              <div className="flex items-center gap-3">
-                <div className="flex-1 relative">
+              <div className="flex items-center gap-4">
+                <div className="flex-1 relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <BsSearch className="h-5 w-5 text-gray-400 group-focus-within:text-orange-500 transition-colors duration-200" />
+                  </div>
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search for pearl jewelry, necklaces, earrings..."
-                    className="w-full px-4 py-3 pl-12 pr-4 border-2 border-pearl-dark rounded-xl focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20 transition-all duration-200 text-charcoal placeholder-slate bg-pearl-light"
+                    placeholder="Search for jewelry, pearls, diamonds, rings..."
+                    className="w-full pl-12 pr-16 py-4 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all duration-300 text-gray-800 placeholder-gray-400 bg-white/80 text-lg font-medium shadow-sm hover:shadow-md"
                     autoFocus
                   />
-                  <button
-                    type="submit"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate hover:text-gold"
-                  >
-                    <BsSearch size={20} />
-                  </button>
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="p-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl hover:from-orange-600 hover:to-red-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50"
+                    >
+                      {isLoading ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                      ) : (
+                        <BsSearch size={18} />
+                      )}
+                    </button>
+                  </div>
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-2.5 hover:bg-pearl-dark rounded-xl transition-colors duration-200 text-slate hover:text-charcoal"
+                  className="p-3 hover:bg-gray-100 rounded-2xl transition-all duration-200 text-gray-500 hover:text-gray-700 group"
                 >
-                  <X size={22} />
+                  <X size={24} className="group-hover:rotate-90 transition-transform duration-200" />
                 </button>
               </div>
             </form>
           </div>
 
           {/* Categories */}
-          <div className="p-3 border-b border-pearl-dark bg-pearl">
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          <div className="p-4 border-b border-gray-200/50 bg-gradient-to-r from-gray-50/80 to-white/80">
+            <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">
+              <span className="text-sm font-semibold text-gray-600 whitespace-nowrap flex items-center gap-2">
+                <Filter size={16} />
+                Categories:
+              </span>
               <button
-                onClick={() => setActiveCategory("all")}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                onClick={() => handleCategoryFilter("all")}
+                className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-300 transform hover:scale-105 shadow-sm ${
                   activeCategory === "all"
-                    ? "bg-gold text-charcoal"
-                    : "bg-pearl-light text-charcoal hover:bg-gold/10 hover:text-gold"
+                    ? "bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg"
+                    : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200 hover:border-orange-300"
                 }`}
               >
-                All
+                <span className="flex items-center gap-2">
+                  <Sparkles size={14} />
+                  All Products
+                </span>
               </button>
-              <button
-                onClick={() => setActiveCategory("necklaces")}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                  activeCategory === "necklaces"
-                    ? "bg-gold text-charcoal"
-                    : "bg-pearl-light text-charcoal hover:bg-gold/10 hover:text-gold"
-                }`}
-              >
-                Necklaces
-              </button>
-              <button
-                onClick={() => setActiveCategory("earrings")}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                  activeCategory === "earrings"
-                    ? "bg-gold text-charcoal"
-                    : "bg-pearl-light text-charcoal hover:bg-gold/10 hover:text-gold"
-                }`}
-              >
-                Earrings
-              </button>
-              <button
-                onClick={() => setActiveCategory("rings")}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                  activeCategory === "rings"
-                    ? "bg-gold text-charcoal"
-                    : "bg-pearl-light text-charcoal hover:bg-gold/10 hover:text-gold"
-                }`}
-              >
-                Rings
-              </button>
-              <button
-                onClick={() => setActiveCategory("bracelets")}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                  activeCategory === "bracelets"
-                    ? "bg-gold text-charcoal"
-                    : "bg-pearl-light text-charcoal hover:bg-gold/10 hover:text-gold"
-                }`}
-              >
-                Bracelets
-              </button>
-              <button
-                onClick={() => setActiveCategory("sets")}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                  activeCategory === "sets"
-                    ? "bg-gold text-charcoal"
-                    : "bg-pearl-light text-charcoal hover:bg-gold/10 hover:text-gold"
-                }`}
-              >
-                Pearl Sets
-              </button>
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  onClick={() => handleCategoryFilter(category)}
+                  className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-300 transform hover:scale-105 shadow-sm ${
+                    activeCategory === category
+                      ? "bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg"
+                      : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200 hover:border-orange-300"
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Search Results */}
+          {/* Content Area */}
           <div className="max-h-[60vh] overflow-y-auto">
-            {searchQuery.trim() === "" ? (
+            {/* Search Results */}
+            {searchQuery && (
               <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-800">Search Results</h3>
+                  {filteredProducts.length > 0 && (
+                    <Link
+                      href={`/shop?search=${encodeURIComponent(searchQuery)}`}
+                      onClick={onClose}
+                      className="text-orange-500 hover:text-orange-600 text-sm font-medium flex items-center gap-1 group"
+                    >
+                      View All ({filteredProducts.length}+)
+                      <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform duration-200" />
+                    </Link>
+                  )}
+                </div>
+                
+                {isLoading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[...Array(4)].map((_, i) => (
+                      <div key={i} className="bg-gray-100 rounded-lg h-48 animate-pulse"></div>
+                    ))}
+                  </div>
+                ) : filteredProducts.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {filteredProducts.slice(0, 8).map((product) => (
+                      <Link
+                        key={product.id}
+                        href={`/product/${product.id}`}
+                        onClick={onClose}
+                        className="group bg-white rounded-lg border border-gray-200 hover:border-orange-300 overflow-hidden transition-all duration-300 hover:shadow-lg transform hover:scale-105"
+                      >
+                        <div className="aspect-square relative overflow-hidden">
+                          <Image
+                            src={product.images[0] || '/placeholder.png'}
+                            alt={product.name}
+                            fill
+                            className="object-cover group-hover:scale-110 transition-transform duration-300"
+                          />
+                          {product.isNewArrival && (
+                            <div className="absolute top-2 left-2">
+                              <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">New</span>
+                            </div>
+                          )}
+                          {product.isPopular && (
+                            <div className="absolute top-2 right-2">
+                              <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-medium">Popular</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-3">
+                          <h4 className="font-medium text-gray-800 text-sm line-clamp-2 group-hover:text-orange-600 transition-colors duration-200">
+                            {product.name}
+                          </h4>
+                          <div className="mt-2 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              {product.salePrice ? (
+                                <>
+                                  <span className="text-red-600 font-bold text-sm">{safeRenderPrice(product.salePrice)}</span>
+                                  <span className="text-gray-500 line-through text-xs">{safeRenderPrice(product.price)}</span>
+                                </>
+                              ) : (
+                                <span className="text-gray-800 font-bold text-sm">{safeRenderPrice(product.price)}</span>
+                              )}
+                            </div>
+                            <span className="text-xs text-gray-500">
+                              {safeRenderCategory(product.category)}
+                            </span>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <SearchIcon size={48} className="text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500 mb-2">No products found for "{searchQuery}"</p>
+                    <p className="text-sm text-gray-400">Try adjusting your search or browse our categories</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Default Content (when not searching) */}
+            {!searchQuery && (
+              <div className="p-6 space-y-6">
                 {/* Recent Searches */}
                 {recentSearches.length > 0 && (
-                  <div className="mb-6">
+                  <div>
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-sm font-medium text-slate flex items-center gap-1">
-                        <Clock size={16} />
+                      <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                        <Clock size={18} />
                         Recent Searches
                       </h3>
                       <button
                         onClick={clearRecentSearches}
-                        className="text-xs text-slate hover:text-gold"
+                        className="text-sm text-gray-500 hover:text-gray-700 transition-colors duration-200"
                       >
                         Clear All
                       </button>
@@ -231,10 +331,12 @@ export default function SearchModal({ isOpen, onClose }: { isOpen: boolean; onCl
                       {recentSearches.map((search, index) => (
                         <button
                           key={index}
-                          onClick={() => setSearchQuery(search)}
-                          className="px-3 py-1.5 bg-pearl hover:bg-pearl-dark rounded-full text-sm text-charcoal transition-colors"
+                          onClick={() => handleQuickSearch(search)}
+                          className="px-3 py-2 bg-gray-100 hover:bg-orange-100 text-gray-700 hover:text-orange-700 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 group"
                         >
+                          <Clock size={12} />
                           {search}
+                          <ArrowRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
                         </button>
                       ))}
                     </div>
@@ -243,89 +345,63 @@ export default function SearchModal({ isOpen, onClose }: { isOpen: boolean; onCl
 
                 {/* Popular Searches */}
                 <div>
-                  <h3 className="text-sm font-medium text-slate flex items-center gap-1 mb-3">
-                    <Sparkles size={16} />
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                    <TrendingUp size={18} />
                     Popular Searches
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {popularSearches.map((search, index) => (
                       <button
                         key={index}
-                        onClick={() => setSearchQuery(search)}
-                        className="px-3 py-1.5 bg-gold/10 hover:bg-gold/20 rounded-full text-sm text-gold transition-colors"
+                        onClick={() => handleQuickSearch(search)}
+                        className="px-3 py-2 bg-gradient-to-r from-orange-100 to-red-100 hover:from-orange-200 hover:to-red-200 text-orange-700 hover:text-orange-800 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 group"
                       >
+                        <TrendingUp size={12} />
                         {search}
+                        <ArrowRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
                       </button>
                     ))}
                   </div>
                 </div>
-              </div>
-            ) : filteredProducts.length > 0 ? (
-              <div className="grid gap-3 p-4">
-                {filteredProducts.map((product) => (
-                  <Link
-                    href={`/product/${product.id}`}
-                    key={product.id}
-                    className="flex items-center gap-4 p-4 hover:bg-pearl rounded-xl cursor-pointer border border-pearl-dark transition-all duration-200"
-                    onClick={onClose}
-                  >
-                    <div className="relative w-24 h-24 flex-shrink-0">
-                      <Image
-                        src={product.images[0]}
-                        alt={product.name}
-                        fill
-                        className="object-cover rounded-lg"
-                      />
-                      {product.isNew && (
-                        <span className="absolute top-1 right-1 bg-sapphire text-pearl text-xs font-medium px-2 py-0.5 rounded-full">
-                          New
-                        </span>
-                      )}
-                      {product.discount > 0 && (
-                        <span className="absolute top-1 left-1 bg-gold text-charcoal text-xs font-medium px-2 py-0.5 rounded-full">
-                          -{product.discount}%
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-lg text-charcoal truncate">
-                          {product.name}
-                        </h3>
-                        {product.category && (
-                          <span className="text-xs bg-pearl text-charcoal px-2 py-0.5 rounded-full">
-                            {product.category}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-base font-medium text-gold mt-1">
-                        ${product.price}
-                        {product.discount > 0 && (
-                          <span className="text-sm text-slate line-through ml-2">
-                            ${(product.price / (1 - product.discount / 100)).toFixed(2)}
-                          </span>
-                        )}
-                      </p>
-                      {product.description && (
-                        <p className="text-sm text-slate mt-1 line-clamp-2">
-                          {product.description}
-                        </p>
-                      )}
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center text-slate py-12">
-                <BsSearch className="text-slate" size={24} />
-                <p className="mt-4 text-slate">
-                  No pearl jewelry found matching your search.
-                </p>
+
+                {/* Quick Access */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                    <Sparkles size={18} />
+                    Quick Access
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <Link 
+                      href="/shop?filter=featured" 
+                      onClick={onClose}
+                      className="p-4 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg hover:from-purple-100 hover:to-indigo-100 transition-all duration-200 text-center group border border-purple-200"
+                    >
+                      <div className="text-purple-600 group-hover:text-purple-700 font-semibold">Featured Collection</div>
+                      <div className="text-xs text-purple-500 mt-1">Handpicked for you</div>
+                    </Link>
+                    <Link 
+                      href="/shop?filter=new-arrivals" 
+                      onClick={onClose}
+                      className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg hover:from-green-100 hover:to-emerald-100 transition-all duration-200 text-center group border border-green-200"
+                    >
+                      <div className="text-green-600 group-hover:text-green-700 font-semibold">New Arrivals</div>
+                      <div className="text-xs text-green-500 mt-1">Latest designs</div>
+                    </Link>
+                    <Link 
+                      href="/shop?filter=popular" 
+                      onClick={onClose}
+                      className="p-4 bg-gradient-to-br from-orange-50 to-red-50 rounded-lg hover:from-orange-100 hover:to-red-100 transition-all duration-200 text-center group border border-orange-200"
+                    >
+                      <div className="text-orange-600 group-hover:text-orange-700 font-semibold">Popular Pieces</div>
+                      <div className="text-xs text-orange-500 mt-1">Customer favorites</div>
+                    </Link>
+                  </div>
+                </div>
               </div>
             )}
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

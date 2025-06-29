@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -13,15 +13,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ImageUpload } from '@/components/admin/ImageUpload'
 import { useCategories } from '@/hooks/useCategories'
 import { showToast } from '@/lib/toast'
+import { Switch } from '@/components/ui/switch'
+import { generateSKU } from '@/lib/utils/sku'
+import { RefreshCw } from 'lucide-react'
+import { CategoryCombobox } from './CategoryCombobox'
+import { CategoryDialog } from './CategoryDialog'
 
 const productSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().min(1, 'Description is required'),
-  price: z.string().min(1, 'Price is required').transform(Number),
-  salePrice: z.string().optional().transform((val) => (val ? Number(val) : undefined)),
-  stock: z.string().min(1, 'Stock is required').transform(Number),
+  price: z.coerce.number().positive('Price must be positive'),
+  salePrice: z.coerce.number().positive('Sale price must be positive').optional().nullable(),
+  stock: z.coerce.number().int().min(0, 'Stock cannot be negative'),
   sku: z.string().min(1, 'SKU is required'),
   categoryId: z.string().min(1, 'Category is required'),
+  isFeatured: z.boolean().default(false),
+  isNewArrival: z.boolean().default(false),
+  isPopular: z.boolean().default(false),
 })
 
 type ProductFormValues = z.infer<typeof productSchema>
@@ -34,20 +42,81 @@ interface ProductDialogProps {
 
 export function ProductDialog({ open, onOpenChange, product }: ProductDialogProps) {
   const [images, setImages] = useState<string[]>(product?.images || [])
-  const { data: categories } = useCategories()
+  const [initialImages, setInitialImages] = useState<string[]>(product?.images || [])
+  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false)
+  const [newCategoryId, setNewCategoryId] = useState<string | null>(null)
+  const { categories, isLoading: categoriesLoading, mutate: refreshCategories } = useCategories({ pageSize: 1000 })
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: product || {
       name: '',
       description: '',
-      price: '',
-      salePrice: '',
-      stock: '',
+      price: 0,
+      salePrice: undefined,
+      stock: 0,
       sku: '',
       categoryId: '',
+      isFeatured: false,
+      isNewArrival: false,
+      isPopular: false,
     },
   })
+
+  const {
+    formState: { isDirty },
+  } = form
+
+  useEffect(() => {
+    if (product) {
+      form.reset(product)
+      setImages(product.images || [])
+      setInitialImages(product.images || [])
+    } else {
+      form.reset({
+        name: '',
+        description: '',
+        price: 0,
+        salePrice: undefined,
+        stock: 0,
+        sku: '',
+        categoryId: '',
+        isFeatured: false,
+        isNewArrival: false,
+        isPopular: false,
+      })
+      setImages([])
+      setInitialImages([])
+    }
+  }, [product, form])
+
+  // Auto-generate SKU from name
+  const productName = form.watch('name')
+  useEffect(() => {
+    if (productName && !form.getValues('sku')) {
+      form.setValue('sku', generateSKU(productName))
+    }
+  }, [productName, form])
+
+  useEffect(() => {
+    if (newCategoryId) {
+      form.setValue('categoryId', newCategoryId)
+      setNewCategoryId(null)
+    }
+  }, [newCategoryId, form])
+
+  const handleGenerateSku = () => {
+    const productName = form.getValues('name')
+    if (productName) {
+      form.setValue('sku', generateSKU(productName))
+    } else {
+      showToast.error('Please enter a product name first')
+    }
+  }
+
+  const price = form.watch('price')
+  const salePrice = form.watch('salePrice')
+  const discount = price && salePrice ? Math.round(((price - salePrice) / price) * 100) : 0
 
   const onSubmit = async (data: ProductFormValues) => {
     try {
@@ -56,24 +125,29 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
         return
       }
 
-      // TODO: Add API call to create/update product
-      console.log({ ...data, images })
+      const method = product ? 'PUT' : 'POST'
+      const url = '/api/admin/products'
+      const body = product ? { ...data, images, id: product.id } : { ...data, images }
 
-      await showToast.promise(
-        // Replace with actual API call
-        Promise.resolve('Product created successfully'),
-        {
-          loading: 'Creating product...',
-          success: 'Product created successfully',
-          error: 'Failed to create product'
-        }
-      )
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
 
+      const result = await response.json()
+      if (!response.ok) {
+        showToast.error(result.error || `Failed to ${product ? 'update' : 'create'} product`)
+        return
+      }
+      showToast.success(`Product ${product ? 'updated' : 'created'} successfully`)
       onOpenChange(false)
     } catch (error) {
       showToast.error('Something went wrong')
     }
   }
+
+  const imagesChanged = JSON.stringify(images) !== JSON.stringify(initialImages)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -136,7 +210,9 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
                     <FormControl>
                       <Input type="number" {...field} />
                     </FormControl>
-                    <FormMessage />
+                    {discount > 0 && (
+                      <FormMessage>{discount}% discount</FormMessage>
+                    )}
                   </FormItem>
                 )}
               />
@@ -163,9 +239,14 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>SKU</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
+                    <div className="flex items-center gap-2">
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <Button type="button" variant="outline" onClick={handleGenerateSku}>
+                        <RefreshCw className="h-4 w-4" />
+                      </Button>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -176,26 +257,80 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
               control={form.control}
               name="categoryId"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex flex-col">
                   <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {categories?.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center gap-2">
+                    <CategoryCombobox
+                      categories={categories || []}
+                      value={field.value}
+                      onChange={field.onChange}
+                      disabled={categoriesLoading}
+                    />
+                    <Button type="button" variant="outline" onClick={() => setCategoryDialogOpen(true)}>
+                      Add Category
+                    </Button>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            <CategoryDialog
+              open={categoryDialogOpen}
+              onOpenChange={setCategoryDialogOpen}
+              onCategoryCreated={(newCategory) => {
+                refreshCategories()
+                setNewCategoryId(newCategory.id)
+              }}
+            />
+
+            <div className="grid grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="isFeatured"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <FormLabel>Featured</FormLabel>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="isNewArrival"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <FormLabel>New Arrival</FormLabel>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="isPopular"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <FormLabel>Popular</FormLabel>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <div className="space-y-2">
               <FormLabel>Images</FormLabel>
@@ -210,7 +345,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit">
+              <Button type="submit" disabled={product ? false : !isDirty && !imagesChanged}>
                 {product ? 'Update Product' : 'Create Product'}
               </Button>
             </div>

@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authConfig } from '@/lib/auth-config'
 import { prisma } from '@/lib/prisma'
 
 // GET - Fetch all media sections
 export async function GET() {
   try {
-    const session = await getServerSession(authConfig)
-    if (!session || session.user.role !== 'ADMIN') {
+    const session = await auth()
+    if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -25,8 +23,8 @@ export async function GET() {
 // POST - Create new media section
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authConfig)
-    if (!session || session.user.role !== 'ADMIN') {
+    const session = await auth()
+    if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -57,8 +55,8 @@ export async function POST(request: NextRequest) {
 // PUT - Update media section
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession(authConfig)
-    if (!session || session.user.role !== 'ADMIN') {
+    const session = await auth()
+    if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

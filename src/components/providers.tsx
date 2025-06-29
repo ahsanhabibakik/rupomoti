@@ -1,32 +1,39 @@
 'use client'
 
-import { Provider } from 'react-redux'
-import { PersistGate } from 'redux-persist/integration/react'
-import { persistStore } from 'redux-persist'
-import { store } from '@/redux/store'
-import { Toaster } from 'sonner'
+import { useState } from 'react'
 import { SessionProvider } from 'next-auth/react'
+import { Provider as ReduxProvider } from 'react-redux'
+import { PersistGate } from 'redux-persist/integration/react'
+import { store, persistor } from '@/redux/store'
+import { Toaster } from 'sonner'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ThemeProvider } from '@/components/theme-provider'
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const persistor = persistStore(store)
+  const [queryClient] = useState(() => new QueryClient())
 
   return (
-    <SessionProvider>
-      <Provider store={store}>
-        <PersistGate loading={null} persistor={persistor}>
-          {children}
-          <Toaster
-            position="bottom-right"
-            toastOptions={{
-              style: {
-                background: 'hsl(var(--background))',
-                color: 'hsl(var(--foreground))',
-                border: '1px solid hsl(var(--border))',
-              },
-            }}
-          />
-        </PersistGate>
-      </Provider>
-    </SessionProvider>
+    <ReduxProvider store={store}>
+      <PersistGate loading={null} persistor={persistor}>
+        <SessionProvider>
+          <QueryClientProvider client={queryClient}>
+            <ThemeProvider defaultTheme="light" enableSystem={false} storageKey="main-site-theme">
+              {children}
+              <Toaster
+                position="bottom-right"
+                toastOptions={{
+                  style: {
+                    background: 'hsl(var(--background))',
+                    color: 'hsl(var(--foreground))',
+                    border: '1px solid hsl(var(--border))',
+                    zIndex: 9999,
+                  },
+                }}
+              />
+            </ThemeProvider>
+          </QueryClientProvider>
+        </SessionProvider>
+      </PersistGate>
+    </ReduxProvider>
   )
 } 

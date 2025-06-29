@@ -32,8 +32,8 @@ const roles = [
   {
     id: 1,
     name: 'Super Admin',
-    description: 'Full access to all features and settings',
-    users: 1,
+    description: 'Full access to all features and settings including user and role management',
+    users: 2,
     permissions: {
       products: ['create', 'read', 'update', 'delete'],
       orders: ['create', 'read', 'update', 'delete'],

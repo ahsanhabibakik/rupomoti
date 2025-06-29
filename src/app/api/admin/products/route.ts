@@ -1,95 +1,88 @@
 import { NextResponse } from 'next/server';
+import { verifyAdminAccess } from '@/lib/admin-auth';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authConfig } from '@/lib/auth-config';
 
 export async function GET(request: Request) {
   try {
-    const session = await getServerSession(authConfig);
-    if (!session || !session.user || session.user.role !== 'ADMIN') {
+    const { authorized } = await verifyAdminAccess();
+    if (!authorized) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
     const search = searchParams.get('search') || '';
-    const categoryId = searchParams.get('categoryId') || '';
-    const status = searchParams.get('status') || '';
-    const minPrice = searchParams.get('minPrice') || '';
-    const maxPrice = searchParams.get('maxPrice') || '';
-    const featured = searchParams.get('featured') || '';
-    const sortBy = searchParams.get('sortBy') || 'createdAt';
-    const sortOrder = searchParams.get('sortOrder') || 'desc';
+    const categoryId = searchParams.get('categoryId');
+    const stockStatus = searchParams.get('stockStatus');
+    const minPrice = searchParams.get('minPrice');
+    const maxPrice = searchParams.get('maxPrice');
+    const isFeatured = searchParams.get('isFeatured');
+    const isNewArrival = searchParams.get('isNewArrival');
+    const isPopular = searchParams.get('isPopular');
+    const status = searchParams.get('status');
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const pageSize = parseInt(searchParams.get('pageSize') || '10', 10);
 
-    // Build where clause
     const where: any = {};
     
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
         { sku: { contains: search, mode: 'insensitive' } },
       ];
     }
     
-    if (categoryId) {
+    if (categoryId && categoryId !== 'all-categories') {
       where.categoryId = categoryId;
     }
     
-    if (status) {
-      if (status === 'active') {
-        where.inStock = true;
-      } else if (status === 'inactive') {
-        where.inStock = false;
+    if (stockStatus && stockStatus !== 'all') {
+      if (stockStatus === 'in-stock') {
+        where.stock = { gt: 0 };
+      } else if (stockStatus === 'out-of-stock') {
+        where.stock = { equals: 0 };
+      } else if (stockStatus === 'low-stock') {
+        where.stock = { gt: 0, lt: 10 };
       }
     }
     
-    if (minPrice || maxPrice) {
-      where.price = {};
-      if (minPrice) where.price.gte = parseFloat(minPrice);
-      if (maxPrice) where.price.lte = parseFloat(maxPrice);
+    if (minPrice) {
+      where.price = { ...where.price, gte: parseFloat(minPrice) };
+    }
+    if (maxPrice) {
+      where.price = { ...where.price, lte: parseFloat(maxPrice) };
     }
     
-    if (featured) {
-      where.featured = featured === 'true';
+    if (isFeatured === 'true' || isFeatured === 'false') {
+      where.isFeatured = isFeatured === 'true';
+    }
+    if (isNewArrival === 'true' || isNewArrival === 'false') {
+      where.isNewArrival = isNewArrival === 'true';
+    }
+    if (isPopular === 'true' || isPopular === 'false') {
+      where.isPopular = isPopular === 'true';
+    }
+    if (status) {
+      if (status === 'ACTIVE' || status === 'TRASHED' || status === 'ARCHIVED') {
+        where.status = status;
+      }
+    } else {
+      where.status = 'ACTIVE';
     }
 
-    // Build order by clause
-    const orderBy: any = {};
-    orderBy[sortBy] = sortOrder;
-
-    const [products, total] = await Promise.all([
-      prisma.product.findMany({
-        where,
-        include: {
-          category: true,
-        },
-        orderBy,
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      prisma.product.count({ where }),
-    ]);
-
-    // Get categories for filter dropdown
-    const categories = await prisma.category.findMany({
-      where: { isActive: true },
-      orderBy: { name: 'asc' },
+    const totalProducts = await prisma.product.count({ where });
+    const products = await prisma.product.findMany({
+      where,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
 
-    return NextResponse.json({
+    return NextResponse.json({ 
       products,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit),
-      },
-      filters: {
-        categories,
-        totalProducts: total,
-      },
+      totalCount: totalProducts,
+      totalPages: Math.ceil(totalProducts / pageSize),
     });
   } catch (error) {
     console.error('Failed to fetch products:', error);
@@ -99,73 +92,15 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authConfig);
-    if (!session || !session.user || session.user.role !== 'ADMIN') {
+    const { authorized } = await verifyAdminAccess();
+    if (!authorized) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
-    const {
-      name,
-      description,
-      price,
-      categoryId,
-      images = [],
-      mainImage,
-      sku,
-      weight,
-      dimensions,
-      material,
-      color,
-      brand,
-      tags,
-      metaTitle,
-      metaDescription,
-      isActive = true,
-      featured = false,
-      featuredImage,
-    } = body;
-
-    // Validation
-    if (!name || !description || !price || !categoryId) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-    }
-
-    if (images.length > 10) {
-      return NextResponse.json({ error: 'Maximum 10 images allowed' }, { status: 400 });
-    }
-
-    if (!mainImage) {
-      return NextResponse.json({ error: 'Main image is required' }, { status: 400 });
-    }
-
-    // Ensure main image is first in the array
-    const processedImages = [mainImage, ...images.filter((img: string) => img !== mainImage)].slice(0, 10);
-
+    
     const product = await prisma.product.create({
-      data: {
-        name,
-        description,
-        price: parseFloat(price),
-        categoryId,
-        images: processedImages,
-        mainImage,
-        sku: sku || generateSKU(name),
-        weight: weight ? parseFloat(weight) : null,
-        dimensions,
-        material,
-        color,
-        brand,
-        tags: tags || [],
-        metaTitle: metaTitle || name,
-        metaDescription: metaDescription || description.substring(0, 160),
-        inStock: isActive,
-        featured,
-        featuredImage: featuredImage || mainImage,
-      },
-      include: {
-        category: true,
-      },
+      data: { ...body },
     });
 
     return NextResponse.json({ product });
@@ -177,75 +112,17 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const session = await getServerSession(authConfig);
-    if (!session || !session.user || session.user.role !== 'ADMIN') {
+    const { authorized } = await verifyAdminAccess();
+    if (!authorized) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
-    const {
-      id,
-      name,
-      description,
-      price,
-      categoryId,
-      images = [],
-      mainImage,
-      sku,
-      weight,
-      dimensions,
-      material,
-      color,
-      brand,
-      tags,
-      metaTitle,
-      metaDescription,
-      isActive,
-      featured,
-      featuredImage,
-    } = body;
-
-    // Validation
-    if (!id || !name || !description || !price || !categoryId) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-    }
-
-    if (images.length > 10) {
-      return NextResponse.json({ error: 'Maximum 10 images allowed' }, { status: 400 });
-    }
-
-    if (!mainImage) {
-      return NextResponse.json({ error: 'Main image is required' }, { status: 400 });
-    }
-
-    // Ensure main image is first in the array
-    const processedImages = [mainImage, ...images.filter((img: string) => img !== mainImage)].slice(0, 10);
+    const { id, ...data } = body;
 
     const product = await prisma.product.update({
       where: { id },
-      data: {
-        name,
-        description,
-        price: parseFloat(price),
-        categoryId,
-        images: processedImages,
-        mainImage,
-        sku: sku || generateSKU(name),
-        weight: weight ? parseFloat(weight) : null,
-        dimensions,
-        material,
-        color,
-        brand,
-        tags: tags || [],
-        metaTitle: metaTitle || name,
-        metaDescription: metaDescription || description.substring(0, 160),
-        inStock: isActive,
-        featured,
-        featuredImage: featuredImage || mainImage,
-      },
-      include: {
-        category: true,
-      },
+      data,
     });
 
     return NextResponse.json({ product });
@@ -256,28 +133,73 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+    try {
+      const { authorized } = await verifyAdminAccess();
+      if (!authorized) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+  
+      const { searchParams } = new URL(request.url);
+      const id = searchParams.get('id');
+  
+      if (!id) {
+        return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
+      }
+  
+      await prisma.product.update({
+        where: { id },
+        data: { status: 'TRASHED' },
+      });
+  
+      return NextResponse.json({ success: true, message: 'Product moved to trash.' });
+    } catch (error) {
+      console.error('Error moving product to trash:', error);
+      return NextResponse.json({ error: 'Failed to move product to trash' }, { status: 500 });
+    }
+}
+
+export async function PATCH(request: Request) {
   try {
-    const session = await getServerSession(authConfig);
-    if (!session || !session.user || session.user.role !== 'ADMIN') {
+    const { authorized } = await verifyAdminAccess();
+    if (!authorized) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
+    const action = searchParams.get('action');
 
-    if (!id) {
-      return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
+    if (!id || !action) {
+      return NextResponse.json({ error: 'Product ID and action are required' }, { status: 400 });
     }
 
-    await prisma.product.delete({
-      where: { id },
-    });
+    if (action === 'restore') {
+      await prisma.product.update({
+        where: { id },
+        data: { status: 'ACTIVE' },
+      });
+      return NextResponse.json({ success: true, message: 'Product restored.' });
+    } else if (action === 'delete-permanent') {
+      // Before permanent deletion, check if the product is in any orders
+      const orderItems = await prisma.orderItem.findMany({
+        where: { productId: id },
+      });
 
-    return NextResponse.json({ message: 'Product deleted successfully' });
+      if (orderItems.length > 0) {
+        return NextResponse.json({ error: 'Cannot delete product that is part of an order. Consider archiving it instead.' }, { status: 409 });
+      }
+
+      await prisma.product.delete({
+        where: { id },
+      });
+      return NextResponse.json({ success: true, message: 'Product deleted permanently.' });
+    } else {
+      return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+    }
   } catch (error) {
-    console.error('Failed to delete product:', error);
-    return NextResponse.json({ error: 'Failed to delete product' }, { status: 500 });
-  }
+    console.error('Error updating product status:', error);
+    return NextResponse.json({ error: 'Failed to update product status' }, { status: 500 });
+    }
 }
 
 // Helper function to generate SKU

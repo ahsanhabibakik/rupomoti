@@ -3,8 +3,21 @@ import { showToast } from '@/lib/toast'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
-export function useProducts() {
-  const { data, error, mutate } = useSWR('/api/products', fetcher)
+interface UseProductsOptions {
+  adminView?: boolean;
+  includeOutOfStock?: boolean;
+}
+
+export function useProducts(options: UseProductsOptions = {}) {
+  const { adminView = false, includeOutOfStock = false } = options;
+  
+  // Build query parameters
+  const params = new URLSearchParams();
+  if (adminView) params.set('adminView', 'true');
+  if (includeOutOfStock) params.set('includeOutOfStock', 'true');
+  
+  const url = `/api/products${params.toString() ? `?${params.toString()}` : ''}`;
+  const { data, error, mutate } = useSWR(url, fetcher)
 
   const createProduct = async (productData: any) => {
     return showToast.promise(
@@ -61,7 +74,7 @@ export function useProducts() {
   }
 
   return {
-    data,
+    data: data?.products,
     isLoading: !error && !data,
     error,
     createProduct,

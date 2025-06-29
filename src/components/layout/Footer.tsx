@@ -13,6 +13,9 @@ import {
   Send,
 } from 'lucide-react'
 import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { toast } from 'sonner'
 
 const footerLinks = {
   shop: [
@@ -49,29 +52,39 @@ const socialLinks = [
 
 export default function Footer() {
   const [email, setEmail] = useState("")
-  const [status, setStatus] = useState<null | "success" | "error">(null)
-  const [loading, setLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
-  async function handleSubmit(e: React.FormEvent) {
+  const handleSubscribe = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setLoading(true)
-    setStatus(null)
+    setIsLoading(true)
+
+    if (!email) {
+      toast.error('Please enter your email address.')
+      setIsLoading(false)
+      return
+    }
+
     try {
-      const res = await fetch("/api/newsletter", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ email }),
       })
-      if (res.ok) {
-        setStatus("success")
-        setEmail("")
+
+      const result = await response.json()
+
+      if (response.ok) {
+        toast.success(result.message || 'Thank you for subscribing!')
+        setEmail('')
       } else {
-        setStatus("error")
+        toast.error(result.message || 'An error occurred.')
       }
-    } catch {
-      setStatus("error")
+    } catch (error) {
+      toast.error('Failed to subscribe. Please try again later.')
     } finally {
-      setLoading(false)
+      setIsLoading(false)
     }
   }
 
@@ -246,7 +259,7 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-2 text-pearl-white">
                 <Phone size={18} />
-                <span>01516567541</span>
+                <span>01518926700</span>
               </li>
               <li className="flex items-center gap-2 text-pearl-white">
                 <Mail size={18} />
@@ -261,30 +274,27 @@ export default function Footer() {
             <p className="text-pearl-white">
               Subscribe to our newsletter for pearl care tips and exclusive offers.
             </p>
-            <form className="flex flex-col gap-2" onSubmit={handleSubmit}>
-              <input
-                type="email"
-                placeholder="Your email address"
-                className="px-4 py-2 rounded bg-pearl border border-pearl-white text-pearl-white placeholder-pearl/70 focus:outline-none focus:ring-2 focus:ring-gold"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-                disabled={loading}
-              />
-              <button
+            <form onSubmit={handleSubscribe} className="flex flex-col gap-2">
+              <div className="relative flex-grow w-full">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Input
+                  type="email"
+                  placeholder="Your email address"
+                  className="px-4 py-2 rounded bg-pearl border border-pearl-white text-pearl-white placeholder-pearl/70 focus:outline-none focus:ring-2 focus:ring-gold"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+              <Button
                 type="submit"
                 className="flex items-center justify-center gap-2 bg-gold hover:bg-gold/90 text-pearl-dark py-2 px-4 rounded transition-colors disabled:opacity-60"
-                disabled={loading}
+                disabled={isLoading}
               >
                 <Send size={16} />
-                {loading ? "Subscribing..." : "Subscribe"}
-              </button>
-              {status === "success" && (
-                <span className="text-green-400 text-sm mt-1">Thank you for subscribing!</span>
-              )}
-              {status === "error" && (
-                <span className="text-red-400 text-sm mt-1">Something went wrong. Please try again.</span>
-              )}
+                {isLoading ? "Subscribing..." : "Subscribe"}
+              </Button>
             </form>
           </div>
         </div>

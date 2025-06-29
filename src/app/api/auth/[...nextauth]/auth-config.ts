@@ -77,4 +77,6 @@ export const authConfig: AuthOptions = {
       return session;
     },
   },
-}; 
+};
+
+export const authOptions = authConfig; 
