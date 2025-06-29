@@ -110,12 +110,12 @@ const TrackingTimeline = ({ order }: { order: Order }) => {
         <div className="relative">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className={`p-3 rounded-2xl bg-gradient-to-br ${getStatusColor(order.status)} shadow-lg`}>
-                {getStatusIcon(order.status)}
+              <div className={`p-3 rounded-2xl bg-gradient-to-br ${getStatusColor(order.status || 'PENDING')} shadow-lg`}>
+                {getStatusIcon(order.status || 'PENDING')}
               </div>
               <div>
                 <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                  {order.status.replace('_', ' ')}
+                  {order.status?.replace('_', ' ') || 'Unknown Status'}
                 </h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400">
                   Order #{order.orderNumber}
@@ -258,7 +258,7 @@ export default function OrderTrackingPage() {
         throw new Error('Failed to fetch tracking info');
       }
       const data = await response.json();
-      setOrder(data);
+      setOrder(data.order);
     } catch (error: any) {
       setError(error.message || 'Failed to fetch tracking information.');
       setOrder(null);
@@ -289,8 +289,16 @@ export default function OrderTrackingPage() {
             </div>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6">
               Track Your
-              <span className="block bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
-                Perfect Order
+              <span className="block">
+                <span className="bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent font-bold"
+                      style={{
+                        background: 'linear-gradient(to right, rgb(253 224 71), rgb(254 215 170))',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        color: '#f59e0b' // Fallback color
+                      }}>
+                  Perfect Order
+                </span>
               </span>
             </h1>
             <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto leading-relaxed">
@@ -417,7 +425,7 @@ export default function OrderTrackingPage() {
                                       order.status === 'DELIVERED' ? 'bg-green-500 hover:bg-green-600 text-white' : ''
                                     }`}
                                   >
-                                    {order.status}
+                                    {order.status || 'Unknown'}
                                   </Badge>
                                   <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
                                 </div>

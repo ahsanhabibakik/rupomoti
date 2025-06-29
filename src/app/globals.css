@@ -179,14 +179,14 @@
   .dark input[type="url"],
   .dark textarea,
   .dark select {
-    background-color: hsl(var(--input));
-    color: hsl(var(--foreground));
-    border-color: hsl(var(--border));
+    background-color: hsl(var(--input)) !important;
+    color: hsl(var(--foreground)) !important;
+    border-color: hsl(var(--border)) !important;
   }
 
   .dark input::placeholder,
   .dark textarea::placeholder {
-    color: hsl(var(--muted-foreground));
+    color: hsl(var(--muted-foreground)) !important;
     opacity: 0.8;
   }
 
@@ -202,6 +202,47 @@
 
   .dark .text-primary {
     color: hsl(var(--primary));
+  }
+
+  /* Enhanced input field support for all themes */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="url"],
+  textarea,
+  select {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    border: 1px solid hsl(var(--border));
+    transition: all 0.2s ease-in-out;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    outline: none;
+    border-color: hsl(var(--ring));
+    box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
+  }
+
+  /* Fix for form elements in admin areas */
+  [data-admin-theme-container] input,
+  [data-admin-theme-container] textarea,
+  [data-admin-theme-container] select {
+    background-color: hsl(var(--input));
+    color: hsl(var(--foreground));
+    border-color: hsl(var(--border));
+  }
+
+  [data-admin-theme-container].admin-dark input,
+  [data-admin-theme-container].admin-dark textarea,
+  [data-admin-theme-container].admin-dark select {
+    background-color: hsl(28 34% 15%) !important;
+    color: hsl(40 43% 88%) !important;
+    border-color: hsl(28 34% 25%) !important;
   }
 }
 
@@ -279,6 +320,49 @@
   }
   .text-theme-accent {
     color: var(--color-accent);
+  }
+
+  /* Safe gradient text utilities */
+  .text-gradient-primary {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.8));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-accent {
+    background: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--secondary)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Fallback for gradient text when not supported */
+  @supports not (-webkit-background-clip: text) {
+    .text-gradient-primary,
+    .text-gradient-accent {
+      background: none !important;
+      color: hsl(var(--foreground)) !important;
+      -webkit-text-fill-color: unset !important;
+    }
+  }
+
+  /* Force gradient text to show properly in all browsers */
+  .text-gradient-primary,
+  .text-gradient-accent {
+    /* Ensure proper contrast by providing fallback */
+    text-shadow: none;
+    display: inline-block;
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .text-gradient-primary,
+    .text-gradient-accent {
+      background: none !important;
+      color: hsl(var(--foreground)) !important;
+      -webkit-text-fill-color: unset !important;
+    }
   }
 }
 
@@ -686,6 +770,30 @@
   background-clip: text;
 }
 
+/* Enhanced gradient text with fallback for better browser support */
+.text-gradient-safe {
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  /* Fallback for browsers that don't support background-clip: text */
+  color: hsl(var(--foreground));
+}
+
+@supports not (-webkit-background-clip: text) {
+  .text-gradient-safe,
+  .text-gradient {
+    background: none;
+    color: hsl(var(--foreground));
+  }
+}
+
+/* Ensure gradient text has sufficient contrast */
+.bg-clip-text {
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
 .text-glow {
   text-shadow: 0 0 10px rgba(232, 203, 175, 0.5);
 }
@@ -1043,6 +1151,40 @@
     :not([data-admin-theme-container]) {
       --background: 28 80% 98% !important;
       --foreground: 28 34% 21% !important;
+    }
+
+    /* Ensure all elements respect light mode in main site */
+    :not([data-admin-theme-container]) * {
+      color-scheme: light !important;
+    }
+
+    /* Override any dark mode styles on main site */
+    :not([data-admin-theme-container]) .dark {
+      --background: 28 80% 98% !important;
+      --foreground: 28 34% 21% !important;
+    }
+
+    /* Force specific elements to maintain light theme */
+    :not([data-admin-theme-container]) input,
+    :not([data-admin-theme-container]) textarea,
+    :not([data-admin-theme-container]) select,
+    :not([data-admin-theme-container]) button {
+      background-color: hsl(28 80% 98%) !important;
+      color: hsl(28 34% 21%) !important;
+      border-color: hsl(40 43% 88%) !important;
+    }
+
+    /* Ensure proper text contrast */
+    :not([data-admin-theme-container]) h1,
+    :not([data-admin-theme-container]) h2,
+    :not([data-admin-theme-container]) h3,
+    :not([data-admin-theme-container]) h4,
+    :not([data-admin-theme-container]) h5,
+    :not([data-admin-theme-container]) h6,
+    :not([data-admin-theme-container]) p,
+    :not([data-admin-theme-container]) span,
+    :not([data-admin-theme-container]) div {
+      color: hsl(28 34% 21%) !important;
     }
   }
  

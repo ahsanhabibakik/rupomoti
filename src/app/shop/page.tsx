@@ -151,9 +151,10 @@ export default function ShopPage() {
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isFilterLoading, setIsFilterLoading] = useState(false);
   
-  const debouncedSearchInput = useDebounce(searchInput, 500);
-  const debouncedPriceRange = useDebounce(priceRange, 500);
+  const debouncedSearchInput = useDebounce(searchInput, 300); // Reduced from 500ms
+  const debouncedPriceRange = useDebounce(priceRange, 300); // Reduced from 500ms
   
   const lastProductElementRef = useRef<HTMLDivElement>(null);
 
@@ -190,7 +191,16 @@ export default function ShopPage() {
 
   const fetchProducts = useCallback(async (isNewSearch: boolean) => {
     if (!isNewSearch && !hasMore) return;
-    setLoading(true);
+    
+    // Prevent multiple simultaneous requests
+    if (loading && !isNewSearch) return;
+    
+    // Set appropriate loading state
+    if (isNewSearch) {
+      setIsFilterLoading(true);
+    } else {
+      setLoading(true);
+    }
 
     const currentPage = isNewSearch ? 1 : page + 1;
     const params = new URLSearchParams();
@@ -222,9 +232,10 @@ export default function ShopPage() {
       setHasMore(false);
     } finally {
       setLoading(false);
+      setIsFilterLoading(false);
       if (isInitialLoad) setIsInitialLoad(false);
     }
-  }, [debouncedSearchInput, selectedCategories, debouncedPriceRange, sortBy, hasMore, page, isInitialLoad]);
+  }, [debouncedSearchInput, selectedCategories, debouncedPriceRange, sortBy, hasMore, page, isInitialLoad, loading]);
 
   useEffect(() => {
     async function loadInitialData() {
@@ -252,13 +263,13 @@ export default function ShopPage() {
 
     const observer = new IntersectionObserver(
       entries => {
-        if (entries[0].isIntersecting && !loading && hasMore) {
+        if (entries[0].isIntersecting && !loading && hasMore && !isFilterLoading) {
           fetchProducts(false);
         }
       },
       { 
         threshold: 0.1,
-        rootMargin: '200px' // Load more products when user is 200px away from the last element
+        rootMargin: '100px' // Reduced from 300px to prevent too early loading
       }
     );
 
@@ -272,16 +283,16 @@ export default function ShopPage() {
         observer.unobserve(currentRef);
       }
     };
-  }, [loading, hasMore, isInitialLoad, fetchProducts]);
+  }, [loading, hasMore, isInitialLoad, isFilterLoading, fetchProducts]);
   
   useEffect(() => {
     if (isInitialLoad) return;
     
     // Reset pagination when filters change
     setPage(1);
-    setProducts([]);
+    // Don't clear products immediately to prevent flash
     
-    const timeoutId = setTimeout(() => fetchProducts(true), 300);
+    const timeoutId = setTimeout(() => fetchProducts(true), 200); // Reduced from 300ms
     return () => clearTimeout(timeoutId);
   }, [debouncedSearchInput, selectedCategories, debouncedPriceRange, sortBy, isInitialLoad, fetchProducts]);
 
@@ -298,8 +309,16 @@ export default function ShopPage() {
     priceRange[0] > 0 ||
     priceRange[1] < 100000 ||
     debouncedSearchInput.trim() !== '';
+  
+  const getTotalActiveFilters = () => {
+    let count = 0;
+    if (selectedCategories.length > 0) count += selectedCategories.length;
+    if (priceRange[0] > 0 || priceRange[1] < 100000) count += 1;
+    if (debouncedSearchInput.trim() !== '') count += 1;
+    return count;
+  };
     
-  const showSkeletons = isInitialLoad || (loading && products.length === 0);
+  const showSkeletons = isInitialLoad || (isFilterLoading && products.length === 0);
   const currentProducts = showSkeletons ? [] : products;
   const showProductCount = !showSkeletons && !isInitialLoad;
 
@@ -346,6 +365,7 @@ export default function ShopPage() {
         </aside>
 
         <main className="flex-1">
+
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <p className="text-muted-foreground text-sm">
               {showSkeletons ? (
@@ -396,6 +416,26 @@ export default function ShopPage() {
             </div>
           </div>
 
+          {/* Filter loading overlay - only shown during filter changes, not scroll loading */}
+          {isFilterLoading && products.length > 0 && (
+            <div className="relative mb-6">
+              <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] flex items-center justify-center z-10 rounded-lg">
+                <div className="bg-background/90 backdrop-blur-sm rounded-lg px-6 py-4 shadow-lg border animate-in fade-in duration-200">
+                  <div className="flex items-center space-x-3">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                    <p className="text-sm font-medium">Applying filters...</p>
+                  </div>
+                </div>
+              </div>
+              {/* Placeholder content to maintain layout */}
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8 opacity-50">
+                {products.slice(0, 6).map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8">
             {showSkeletons ? (
               // Show exactly 30 skeleton cards for initial load
@@ -408,6 +448,7 @@ export default function ShopPage() {
             ) : currentProducts.length > 0 ? (
               currentProducts.map((product, index) => {
                 const isLastElement = index === currentProducts.length - 1;
+                
                 return isLastElement && hasMore ? (
                   <div ref={lastProductElementRef} key={product.id}>
                     <ProductCard product={product} />
@@ -432,12 +473,15 @@ export default function ShopPage() {
             )}
           </div>
 
-          {loading && !showSkeletons && hasMore && (
-            <div className="flex justify-center items-center py-12 mt-8">
-              <div className="flex flex-col items-center space-y-3">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="text-sm text-muted-foreground">Loading more products...</p>
-              </div>
+          {/* Infinite scroll loading indicator - shows skeleton cards at the bottom */}
+          {loading && !showSkeletons && hasMore && !isFilterLoading && (
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8 mt-6">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <ProductCardSkeleton 
+                  key={`loading-skeleton-${index}`} 
+                  className="animate-pulse" 
+                />
+              ))}
             </div>
           )}
 

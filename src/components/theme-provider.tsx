@@ -77,12 +77,34 @@ export function ThemeProvider({
   useEffect(() => {
     const root = window.document.documentElement
 
-    // For main site, always force light mode
+    // For main site, always force light mode and prevent any dark mode artifacts
     if (storageKey === 'main-site-theme') {
       root.classList.remove('dark')
       root.classList.add('light')
       root.style.colorScheme = 'light'
       root.setAttribute('data-theme', 'light')
+      
+      // Force specific CSS variables for consistency
+      root.style.setProperty('--background', '28 80% 98%')
+      root.style.setProperty('--foreground', '28 34% 21%')
+      
+      // Remove any system theme media query effects
+      const style = document.createElement('style')
+      style.textContent = `
+        :root {
+          --background: 28 80% 98% !important;
+          --foreground: 28 34% 21% !important;
+          color-scheme: light !important;
+        }
+        body {
+          background-color: hsl(28 80% 98%) !important;
+          color: hsl(28 34% 21%) !important;
+        }
+      `
+      if (!document.getElementById('force-light-theme')) {
+        style.id = 'force-light-theme'
+        document.head.appendChild(style)
+      }
       return
     }
 

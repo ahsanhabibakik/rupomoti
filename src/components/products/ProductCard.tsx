@@ -54,12 +54,10 @@ export function ProductCard({ product, compact = false, className }: ProductCard
   const handleWishlistToggle = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    if (isInWishlist()) {
-      removeFromWishlist()
-      toast.success(`${name || 'Unnamed Product'} has been removed from your wishlist.`)
+    if (isInWishlist(id)) {
+      removeFromWishlist(id)
     } else {
-      addToWishlist()
-      toast.success(`${name || 'Unnamed Product'} has been added to your wishlist.`)
+      addToWishlist(id)
     }
   }
 
@@ -300,7 +298,7 @@ export function ProductCard({ product, compact = false, className }: ProductCard
                   // Responsive icon sizing
                   "h-3 w-3 sm:h-4 sm:w-4",
                   compact && "h-3 w-3",
-                  isInWishlist() ? "fill-red-500 text-red-500" : "text-gray-600 hover:text-red-500"
+                  isInWishlist(id) ? "fill-red-500 text-red-500" : "text-gray-600 hover:text-red-500"
                 )}
               />
             </Button>

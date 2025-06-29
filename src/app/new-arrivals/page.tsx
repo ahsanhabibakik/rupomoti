@@ -90,8 +90,17 @@ export default async function NewArrivalsPage({ searchParams }: PageProps) {
             <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-primary animate-pulse" />
           </div>
           
-          <h1 className="text-2xl sm:text-4xl lg:text-6xl font-bold mb-4 sm:mb-6 bg-gradient-to-r from-primary via-primary/80 to-primary bg-clip-text text-transparent">
-            Latest Jewelry Collection
+          <h1 className="text-2xl sm:text-4xl lg:text-6xl font-bold mb-4 sm:mb-6">
+            <span className="bg-gradient-to-r from-amber-600 via-yellow-600 to-amber-700 bg-clip-text text-transparent font-bold" 
+                  style={{
+                    background: 'linear-gradient(135deg, #D97706, #F59E0B, #B45309)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    color: '#4A2E21' // fallback color
+                  }}>
+              Latest Jewelry Collection
+            </span>
           </h1>
           
           <p className="text-base sm:text-lg text-muted-foreground max-w-3xl mx-auto mb-6 sm:mb-8 leading-relaxed">
