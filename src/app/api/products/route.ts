@@ -1,18 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Prisma, ProductStatus } from '@prisma/client'
-import { slugify } from '@/lib/utils/slugify'
-
-async function generateUniqueSlug(name: string): Promise<string> {
-  const slug = slugify(name)
-  let uniqueSlug = slug
-  let counter = 1
-  while (await prisma.product.findUnique({ where: { slug: uniqueSlug } })) {
-    uniqueSlug = `${slug}-${counter}`
-    counter++
-  }
-  return uniqueSlug
-}
 
 export async function GET(request: Request) {
   try {
@@ -22,6 +10,8 @@ export async function GET(request: Request) {
     const minPrice = Number(searchParams.get('minPrice')) || 0
     const maxPrice = Number(searchParams.get('maxPrice')) || 100000
     const sort = searchParams.get('sort') || 'newest'
+    const page = Number(searchParams.get('page')) || 1
+    const limit = Number(searchParams.get('limit')) || 30
     const status = searchParams.get('status')
     const includeOutOfStock = searchParams.get('includeOutOfStock') === 'true' // For admin views
     const adminView = searchParams.get('adminView') === 'true' // For admin-only access
@@ -74,131 +64,43 @@ export async function GET(request: Request) {
       case 'price-high':
         orderBy = { price: 'desc' }
         break
+      case 'popular':
+        orderBy = { views: 'desc' }
+        break
+      case 'featured':
+        orderBy = { isFeatured: 'desc' }
+        break
       case 'newest':
       default:
         orderBy = { createdAt: 'desc' }
     }
 
+    // Calculate pagination
+    const skip = (page - 1) * limit
+
     const totalProducts = await prisma.product.count({ where })
     const products = await prisma.product.findMany({
       where,
       orderBy,
+      skip,
+      take: limit,
       include: {
         category: true,
       },
     })
 
-    return NextResponse.json({ totalProducts, products })
+    return NextResponse.json({ 
+      products, 
+      total: totalProducts,
+      page,
+      limit,
+      totalPages: Math.ceil(totalProducts / limit),
+      hasMore: page * limit < totalProducts
+    })
   } catch (error) {
     console.error('Error fetching products:', error)
     return NextResponse.json(
       { error: 'Error fetching products' },
-      { status: 500 }
-    )
-  }
-}
-
-export async function POST(request: Request) {
-  try {
-    const session = await auth()
-
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    const json = await request.json()
-
-    const slug = await generateUniqueSlug(json.name)
-
-    const product = await prisma.product.create({
-      data: {
-        ...json,
-        slug,
-      },
-      include: {
-        category: true,
-      },
-    })
-
-    return NextResponse.json(product)
-  } catch (error) {
-    console.error('Error creating product:', error)
-    return NextResponse.json(
-      { error: 'Failed to create product' },
-      { status: 500 }
-    )
-  }
-}
-
-export async function PUT(request: Request) {
-  try {
-    const session = await auth()
-
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    const json = await request.json()
-    const { id, ...data } = json
-
-    if (data.name) {
-      data.slug = await generateUniqueSlug(data.name)
-    }
-
-    const product = await prisma.product.update({
-      where: { id },
-      data,
-      include: {
-        category: true,
-      },
-    })
-
-    return NextResponse.json(product)
-  } catch (error) {
-    console.error('Error updating product:', error)
-    return NextResponse.json(
-      { error: 'Failed to update product' },
-      { status: 500 }
-    )
-  }
-}
-
-export async function DELETE(request: Request) {
-  try {
-    const session = await auth()
-
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    const { searchParams } = new URL(request.url)
-    const id = searchParams.get('id')
-
-    if (!id) {
-      return NextResponse.json(
-        { error: 'Product ID is required' },
-        { status: 400 }
-      )
-    }
-
-    await prisma.product.delete({
-      where: { id },
-    })
-
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Error deleting product:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete product' },
       { status: 500 }
     )
   }
