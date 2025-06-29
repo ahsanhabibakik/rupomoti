@@ -1,35 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/app/auth'
+import { getToken } from 'next-auth/jwt'
 
 export default async function middleware(req: NextRequest) {
   const { nextUrl } = req
   
-  // Get session using the auth function
-  const session = await auth()
-  const isLoggedIn = !!session?.user
+  // Get token using NextAuth JWT which works in Edge Runtime
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
+  const isLoggedIn = !!token
   
   // Check if user is trying to access admin routes
   if (nextUrl.pathname.startsWith('/admin')) {
-    // Allow access to admin login page
+    // Allow access to admin login page (redirect to main signin)
     if (nextUrl.pathname === '/admin/login') {
-      return NextResponse.next()
+      const signinUrl = new URL('/signin', nextUrl.origin)
+      signinUrl.searchParams.set('callbackUrl', '/admin')
+      return NextResponse.redirect(signinUrl)
     }
     
     // For other admin routes, check if user is logged in and is admin
     if (!isLoggedIn) {
-      const loginUrl = new URL('/admin/login', nextUrl.origin)
+      const loginUrl = new URL('/signin', nextUrl.origin)
+      loginUrl.searchParams.set('callbackUrl', nextUrl.pathname)
       return NextResponse.redirect(loginUrl)
     }
     
-    const user = session?.user
-    const userRole = user?.role as string
-    const isAdmin = user?.isAdmin as boolean
+    const userRole = token?.role as string
+    const isAdmin = token?.isAdmin as boolean
     
     // Allow access for SUPER_ADMIN, ADMIN, MANAGER roles, or if isAdmin is true
     const hasAdminAccess = isAdmin || userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' || userRole === 'MANAGER'
     
     if (!hasAdminAccess) {
-      const loginUrl = new URL('/admin/login', nextUrl.origin)
+      const loginUrl = new URL('/signin', nextUrl.origin)
+      loginUrl.searchParams.set('callbackUrl', nextUrl.pathname)
       return NextResponse.redirect(loginUrl)
     }
   }

@@ -12,9 +12,8 @@ import { StockManagement } from '@/components/admin/StockManagement'
 import {
   LineChart,
   Line,
-  BarChart              <h1 className="text-2xl sm:text-3xl font-bold text-foreground dark:text-foreground">
-                Dashboard
-              </h1>  Bar,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,

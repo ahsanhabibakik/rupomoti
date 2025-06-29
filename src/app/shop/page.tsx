@@ -117,7 +117,12 @@ function FilterSection({
 
 async function getInitialProducts() {
   try {
-    const res = await fetch(`http://localhost:3000/api/products?limit=${PAGE_SIZE}&sort=newest&page=1`, { cache: 'no-store' });
+    // Only run on client side
+    if (typeof window === 'undefined') {
+      return { products: [], total: 0, hasMore: false };
+    }
+    
+    const res = await fetch(`/api/products?limit=${PAGE_SIZE}&sort=newest&page=1`, { cache: 'no-store' });
     if (!res.ok) return { products: [], total: 0, hasMore: false };
     const data = await res.json();
     return {
