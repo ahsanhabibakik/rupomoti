@@ -18,11 +18,11 @@ export default function Error({
 
   return (
     <div className="flex min-h-[400px] flex-col items-center justify-center gap-4 text-center">
-      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-red-100">
-        <AlertCircle className="h-10 w-10 text-red-600" />
+      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
+        <AlertCircle className="h-10 w-10 text-red-600 dark:text-red-400" />
       </div>
       <div className="space-y-2">
-        <h2 className="text-2xl font-semibold tracking-tight">
+        <h2 className="text-2xl font-semibold tracking-tight text-foreground">
           Something went wrong!
         </h2>
         <p className="text-muted-foreground">

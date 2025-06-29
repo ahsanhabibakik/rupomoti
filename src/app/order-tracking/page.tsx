@@ -289,8 +289,16 @@ export default function OrderTrackingPage() {
             </div>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6">
               Track Your
-              <span className="block bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
-                Perfect Order
+              <span className="block">
+                <span className="bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent font-bold"
+                      style={{
+                        background: 'linear-gradient(to right, rgb(253 224 71), rgb(254 215 170))',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        color: '#f59e0b' // Fallback color
+                      }}>
+                  Perfect Order
+                </span>
               </span>
             </h1>
             <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto leading-relaxed">

@@ -187,8 +187,16 @@ export default function BlogPage() {
               <BookOpen className="w-4 h-4 mr-2" />
               Our Journal
             </Badge>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              Stories of Elegance
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 text-foreground">
+              <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
+                    style={{
+                      background: 'linear-gradient(to right, hsl(var(--primary)), hsl(var(--secondary)))',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      color: 'hsl(var(--primary))' // Fallback color
+                    }}>
+                Stories of Elegance
+              </span>
             </h1>
             <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
               Discover the timeless beauty of pearls through our curated collection of stories, 
