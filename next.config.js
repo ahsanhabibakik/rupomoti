@@ -50,6 +50,11 @@ const nextConfig = {
         hostname: "developers.google.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "cdn.prosystem.com.bd",
+        pathname: "/**",
+      },
     ],
     unoptimized: process.env.NODE_ENV === 'development',
   },
