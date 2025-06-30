@@ -19,10 +19,13 @@ export default function AboutPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center mb-16">
           <div className="relative aspect-[4/3] rounded-2xl overflow-hidden">
-            <img
-              src="/images/about/store.jpg"
+            <Image
+              src="/images/about.jpg"
               alt="Rupomoti Store"
               className="object-cover w-full h-full"
+              width={800}
+              height={600}
+              priority
             />
           </div>
           <div>
