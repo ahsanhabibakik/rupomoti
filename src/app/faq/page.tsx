@@ -97,10 +97,10 @@ export default function FAQPage() {
   return (
     <main className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative h-[40vh] bg-pearl-pattern">
+      <section className="relative h-[20vh] bg-pearl-pattern">
         <div className="absolute inset-0 bg-gradient-to-b from-charcoal/20 to-charcoal/60" />
         <div className="container relative h-full flex items-center">
-          <div className="max-w-2xl text-pearl">
+          <div className="mx-auto max-w-2xl text-pearl">
             <h1 className="font-display text-5xl md:text-6xl mb-4">
               Frequently Asked Questions
             </h1>
