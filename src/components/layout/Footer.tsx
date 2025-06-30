@@ -276,7 +276,7 @@ export default function Footer() {
             </p>
             <form onSubmit={handleSubscribe} className="flex flex-col gap-2">
               <div className="relative flex-grow w-full">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+               
                 <Input
                   type="email"
                   placeholder="Your email address"
