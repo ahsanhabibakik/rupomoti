@@ -82,65 +82,46 @@
     --gradient-custom: linear-gradient(135deg, var(--custom-bg-primary), var(--custom-bg-accent));
   }
  
+  /* Dark mode styles disabled - light mode only */
   .dark {
-    --background: 28 34% 8%; /* Darker Cocoa Brown */
-    --foreground: 40 43% 92%; /* Brighter Champagne Sheen */
- 
-    --card: 28 34% 10%;
-    --card-foreground: 40 43% 92%;
- 
-    --popover: 28 34% 8%;
-    --popover-foreground: 40 43% 92%;
- 
-    /* Brand Colors - Dark Mode */
+    /* All dark mode styles redirected to light mode */
+    --background: 28 80% 98%; 
+    --foreground: 28 34% 21%; 
+    --card: 28 80% 98%;
+    --card-foreground: 28 34% 21%;
+    --popover: 28 80% 98%;
+    --popover-foreground: 28 34% 21%;
     --brand: 39 37% 66%;
-    --brand-foreground: 40 43% 92%;
- 
-    /* Primary - Bright Champagne for visibility */
-    --primary: 40 43% 92%;
-    --primary-foreground: 28 34% 8%;
- 
-    /* Secondary - Lighter for contrast */
-    --secondary: 28 34% 18%;
-    --secondary-foreground: 40 43% 92%;
- 
-    /* Muted - Better contrast */
-    --muted: 28 34% 16%;
-    --muted-foreground: 40 43% 80%;
- 
-    /* Accent - Warm Oyster Gold */
-    --accent: 39 37% 70%;
-    --accent-foreground: 28 34% 8%;
- 
-    /* Destructive - Rose-Gold */
-    --destructive: 8 58% 75%;
-    --destructive-foreground: 28 34% 8%;
+    --brand-foreground: 28 34% 21%;
+    --primary: 28 34% 21%;
+    --primary-foreground: 40 43% 88%;
+    --secondary: 40 43% 88%;
+    --secondary-foreground: 28 34% 21%;
+    --muted: 40 43% 92%;
+    --muted-foreground: 28 34% 35%;
+    --accent: 39 37% 66%;
+    --accent-foreground: 28 34% 21%;
+    --destructive: 8 58% 71%;
+    --destructive-foreground: 28 80% 98%;
+    --success: 158 24% 40%;
+    --success-foreground: 28 80% 98%;
+    --info: 196 35% 86%;
+    --info-foreground: 28 34% 21%;
+    --warning: 39 50% 55%;
+    --warning-foreground: 28 34% 21%;
+    --border: 40 43% 88%;
+    --input: 40 43% 92%;
+    --ring: 39 37% 66%;
 
-    /* Success */
-    --success: 158 24% 45%;
-    --success-foreground: 40 43% 92%;
-
-    /* Info */
-    --info: 196 35% 80%;
-    --info-foreground: 28 34% 8%;
-
-    /* Warning */
-    --warning: 39 50% 60%;
-    --warning-foreground: 28 34% 8%;
- 
-    --border: 28 34% 20%;
-    --input: 28 34% 16%;
-    --ring: 39 37% 70%;
-
-    /* Customizable Theme Colors (Dark Mode - inherit from light unless overridden) */
-    --color-primary: var(--color-primary, #4A2E21);
-    --color-secondary: var(--color-secondary, #C8B38A);
-    --color-accent: var(--color-accent, #E8CBAF);
-    --color-success: var(--color-success, #10B981);
-    --color-warning: var(--color-warning, #F59E0B);
-    --color-danger: var(--color-danger, #EF4444);
-    --color-info: var(--color-info, #3B82F6);
-    --color-purple: var(--color-purple, #8B5CF6);
+    /* Force light mode colors */
+    --color-primary: #4A2E21;
+    --color-secondary: #C8B38A;
+    --color-accent: #E8CBAF;
+    --color-success: #10B981;
+    --color-warning: #F59E0B;
+    --color-danger: #EF4444;
+    --color-info: #3B82F6;
+    --color-purple: #8B5CF6;
   }
 
   /* Ensure compatibility with Tailwind v4 */
@@ -179,14 +160,14 @@
   .dark input[type="url"],
   .dark textarea,
   .dark select {
-    background-color: hsl(var(--input));
-    color: hsl(var(--foreground));
-    border-color: hsl(var(--border));
+    background-color: hsl(var(--input)) !important;
+    color: hsl(var(--foreground)) !important;
+    border-color: hsl(var(--border)) !important;
   }
 
   .dark input::placeholder,
   .dark textarea::placeholder {
-    color: hsl(var(--muted-foreground));
+    color: hsl(var(--muted-foreground)) !important;
     opacity: 0.8;
   }
 
@@ -202,6 +183,47 @@
 
   .dark .text-primary {
     color: hsl(var(--primary));
+  }
+
+  /* Enhanced input field support for all themes */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="url"],
+  textarea,
+  select {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    border: 1px solid hsl(var(--border));
+    transition: all 0.2s ease-in-out;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    outline: none;
+    border-color: hsl(var(--ring));
+    box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
+  }
+
+  /* Fix for form elements in admin areas */
+  [data-admin-theme-container] input,
+  [data-admin-theme-container] textarea,
+  [data-admin-theme-container] select {
+    background-color: hsl(var(--input));
+    color: hsl(var(--foreground));
+    border-color: hsl(var(--border));
+  }
+
+  [data-admin-theme-container].admin-dark input,
+  [data-admin-theme-container].admin-dark textarea,
+  [data-admin-theme-container].admin-dark select {
+    background-color: hsl(28 34% 15%) !important;
+    color: hsl(40 43% 88%) !important;
+    border-color: hsl(28 34% 25%) !important;
   }
 }
 
@@ -279,6 +301,49 @@
   }
   .text-theme-accent {
     color: var(--color-accent);
+  }
+
+  /* Safe gradient text utilities */
+  .text-gradient-primary {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.8));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-accent {
+    background: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--secondary)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Fallback for gradient text when not supported */
+  @supports not (-webkit-background-clip: text) {
+    .text-gradient-primary,
+    .text-gradient-accent {
+      background: none !important;
+      color: hsl(var(--foreground)) !important;
+      -webkit-text-fill-color: unset !important;
+    }
+  }
+
+  /* Force gradient text to show properly in all browsers */
+  .text-gradient-primary,
+  .text-gradient-accent {
+    /* Ensure proper contrast by providing fallback */
+    text-shadow: none;
+    display: inline-block;
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .text-gradient-primary,
+    .text-gradient-accent {
+      background: none !important;
+      color: hsl(var(--foreground)) !important;
+      -webkit-text-fill-color: unset !important;
+    }
   }
 }
 
@@ -686,6 +751,30 @@
   background-clip: text;
 }
 
+/* Enhanced gradient text with fallback for better browser support */
+.text-gradient-safe {
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  /* Fallback for browsers that don't support background-clip: text */
+  color: hsl(var(--foreground));
+}
+
+@supports not (-webkit-background-clip: text) {
+  .text-gradient-safe,
+  .text-gradient {
+    background: none;
+    color: hsl(var(--foreground));
+  }
+}
+
+/* Ensure gradient text has sufficient contrast */
+.bg-clip-text {
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
 .text-glow {
   text-shadow: 0 0 10px rgba(232, 203, 175, 0.5);
 }
@@ -1044,5 +1133,319 @@
       --background: 28 80% 98% !important;
       --foreground: 28 34% 21% !important;
     }
+
+    /* Ensure all elements respect light mode in main site */
+    :not([data-admin-theme-container]) * {
+      color-scheme: light !important;
+    }
+
+    /* Override any dark mode styles on main site */
+    :not([data-admin-theme-container]) .dark {
+      --background: 28 80% 98% !important;
+      --foreground: 28 34% 21% !important;
+    }
+
+    /* Force specific elements to maintain light theme */
+    :not([data-admin-theme-container]) input,
+    :not([data-admin-theme-container]) textarea,
+    :not([data-admin-theme-container]) select,
+    :not([data-admin-theme-container]) button {
+      background-color: hsl(28 80% 98%) !important;
+      color: hsl(28 34% 21%) !important;
+      border-color: hsl(40 43% 88%) !important;
+    }
+
+    /* Ensure proper text contrast */
+    :not([data-admin-theme-container]) h1,
+    :not([data-admin-theme-container]) h2,
+    :not([data-admin-theme-container]) h3,
+    :not([data-admin-theme-container]) h4,
+    :not([data-admin-theme-container]) h5,
+    :not([data-admin-theme-container]) h6,
+    :not([data-admin-theme-container]) p,
+    :not([data-admin-theme-container]) span,
+    :not([data-admin-theme-container]) div {
+      color: hsl(28 34% 21%) !important;
+    }
   }
- 
+
+/* Force Light Mode - Disable Dark Mode Completely */
+:root {
+  color-scheme: light !important;
+}
+
+/* Disable dark mode media query effects */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: light !important;
+    --background: 28 80% 98% !important;
+    --foreground: 28 34% 21% !important;
+  }
+}
+
+/* Override any dark class attempts */
+:not([data-admin-theme-container]) .dark,
+:not([data-admin-theme-container]) .dark *,
+:not([data-admin-theme-container]) [data-theme="dark"],
+:not([data-admin-theme-container]) [data-theme="dark"] * {
+  --background: 28 80% 98% !important;
+  --foreground: 28 34% 21% !important;
+  --card: 28 80% 98% !important;
+  --card-foreground: 28 34% 21% !important;
+  --popover: 28 80% 98% !important;
+  --popover-foreground: 28 34% 21% !important;
+  --primary: 28 34% 21% !important;
+  --primary-foreground: 40 43% 88% !important;
+  --secondary: 40 43% 88% !important;
+  --secondary-foreground: 28 34% 21% !important;
+  --muted: 40 43% 92% !important;
+  --muted-foreground: 28 34% 35% !important;
+  --accent: 39 37% 66% !important;
+  --accent-foreground: 28 34% 21% !important;
+  --border: 40 43% 88% !important;
+  --input: 40 43% 92% !important;
+  --ring: 39 37% 66% !important;
+  
+  background-color: hsl(28 80% 98%) !important;
+  color: hsl(28 34% 21%) !important;
+  color-scheme: light !important;
+}
+
+/* Force body and html to always use light colors */
+:not([data-admin-theme-container]) html,
+:not([data-admin-theme-container]) body {
+  background-color: hsl(28 80% 98%) !important;
+  color: hsl(28 34% 21%) !important;
+  color-scheme: light !important;
+}
+
+/* Override any components that might try to use dark colors */
+:not([data-admin-theme-container]) * {
+  color-scheme: light !important;
+}
+
+/* Force all text elements to use light theme colors */
+:not([data-admin-theme-container]) h1,
+:not([data-admin-theme-container]) h2,
+:not([data-admin-theme-container]) h3,
+:not([data-admin-theme-container]) h4,
+:not([data-admin-theme-container]) h5,
+:not([data-admin-theme-container]) h6,
+:not([data-admin-theme-container]) p,
+:not([data-admin-theme-container]) span,
+:not([data-admin-theme-container]) div,
+:not([data-admin-theme-container]) a,
+:not([data-admin-theme-container]) button,
+:not([data-admin-theme-container]) input,
+:not([data-admin-theme-container]) textarea,
+:not([data-admin-theme-container]) select {
+  color: hsl(28 34% 21%) !important;
+}
+
+/* Override button and input backgrounds */
+:not([data-admin-theme-container]) button,
+:not([data-admin-theme-container]) input,
+:not([data-admin-theme-container]) textarea,
+:not([data-admin-theme-container]) select {
+  background-color: hsl(28 80% 98%) !important;
+  border-color: hsl(40 43% 88%) !important;
+}
+
+/* Override card and container backgrounds */
+:not([data-admin-theme-container]) .bg-card,
+:not([data-admin-theme-container]) .bg-background,
+:not([data-admin-theme-container]) .bg-popover,
+:not([data-admin-theme-container]) [data-component="card"],
+:not([data-admin-theme-container]) [class*="card"],
+:not([data-admin-theme-container]) [class*="modal"],
+:not([data-admin-theme-container]) [class*="dialog"],
+:not([data-admin-theme-container]) [class*="dropdown"] {
+  background-color: hsl(28 80% 98%) !important;
+  color: hsl(28 34% 21%) !important;
+}
+
+/* Disable dark mode transitions */
+:not([data-admin-theme-container]) * {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter !important;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition-duration: 0s !important;
+}
+
+/* Force Admin Panel Light Mode - Override System Dark Mode */
+[data-admin-theme-container] {
+  color-scheme: light !important;
+  background-color: #f9fafb !important;
+  color: #111827 !important;
+}
+
+[data-admin-theme-container] * {
+  color-scheme: light !important;
+}
+
+/* Admin Light Mode Styles - Override any dark mode attempts */
+[data-admin-theme-container].admin-light,
+[data-admin-theme-container].admin-dark,
+[data-admin-theme-container],
+[data-admin-theme-container] .dark {
+  --background: 249 250 251 !important; /* gray-50 */
+  --foreground: 17 24 39 !important; /* gray-900 */
+  --card: 255 255 255 !important; /* white */
+  --card-foreground: 17 24 39 !important; /* gray-900 */
+  --popover: 255 255 255 !important; /* white */
+  --popover-foreground: 17 24 39 !important; /* gray-900 */
+  --primary: 59 130 246 !important; /* blue-500 */
+  --primary-foreground: 255 255 255 !important; /* white */
+  --secondary: 243 244 246 !important; /* gray-100 */
+  --secondary-foreground: 17 24 39 !important; /* gray-900 */
+  --muted: 243 244 246 !important; /* gray-100 */
+  --muted-foreground: 107 114 128 !important; /* gray-500 */
+  --accent: 243 244 246 !important; /* gray-100 */
+  --accent-foreground: 17 24 39 !important; /* gray-900 */
+  --destructive: 239 68 68 !important; /* red-500 */
+  --destructive-foreground: 255 255 255 !important; /* white */
+  --border: 229 231 235 !important; /* gray-200 */
+  --input: 255 255 255 !important; /* white */
+  --ring: 59 130 246 !important; /* blue-500 */
+  
+  background-color: #f9fafb !important;
+  color: #111827 !important;
+  color-scheme: light !important;
+}
+
+/* Force all admin elements to use light colors */
+[data-admin-theme-container] h1,
+[data-admin-theme-container] h2,
+[data-admin-theme-container] h3,
+[data-admin-theme-container] h4,
+[data-admin-theme-container] h5,
+[data-admin-theme-container] h6,
+[data-admin-theme-container] p,
+[data-admin-theme-container] span,
+[data-admin-theme-container] div,
+[data-admin-theme-container] a,
+[data-admin-theme-container] label,
+[data-admin-theme-container] td,
+[data-admin-theme-container] th,
+[data-admin-theme-container] li,
+[data-admin-theme-container] .text-foreground,
+[data-admin-theme-container] .text-gray-900,
+[data-admin-theme-container] .text-neutral-900,
+[data-admin-theme-container] .dark h1,
+[data-admin-theme-container] .dark h2,
+[data-admin-theme-container] .dark h3,
+[data-admin-theme-container] .dark h4,
+[data-admin-theme-container] .dark h5,
+[data-admin-theme-container] .dark h6,
+[data-admin-theme-container] .dark p,
+[data-admin-theme-container] .dark span,
+[data-admin-theme-container] .dark div,
+[data-admin-theme-container] .dark a,
+[data-admin-theme-container] .dark label {
+  color: #111827 !important;
+}
+
+/* Force admin backgrounds to be light */
+[data-admin-theme-container],
+[data-admin-theme-container] .bg-white,
+[data-admin-theme-container] .bg-gray-50,
+[data-admin-theme-container] .bg-background,
+[data-admin-theme-container] .bg-card,
+[data-admin-theme-container] .bg-popover,
+[data-admin-theme-container] .dark,
+[data-admin-theme-container] .dark .bg-neutral-800,
+[data-admin-theme-container] .dark .bg-neutral-900,
+[data-admin-theme-container] .bg-neutral-800,
+[data-admin-theme-container] .bg-neutral-900,
+[data-admin-theme-container] .dark .bg-background,
+[data-admin-theme-container] .dark .bg-card {
+  background-color: #ffffff !important;
+}
+
+/* Force admin sidebar and header backgrounds */
+[data-admin-theme-container] .bg-gray-50,
+[data-admin-theme-container] .dark .bg-neutral-900 {
+  background-color: #f9fafb !important;
+}
+
+/* Force admin input and form elements */
+[data-admin-theme-container] input,
+[data-admin-theme-container] textarea,
+[data-admin-theme-container] select,
+[data-admin-theme-container] .dark input,
+[data-admin-theme-container] .dark textarea,
+[data-admin-theme-container] .dark select {
+  background-color: #ffffff !important;
+  color: #111827 !important;
+  border-color: #d1d5db !important;
+}
+
+/* Force admin button styles */
+[data-admin-theme-container] button,
+[data-admin-theme-container] .dark button {
+  color: inherit !important;
+}
+
+/* Force admin borders */
+[data-admin-theme-container] .border,
+[data-admin-theme-container] .border-gray-200,
+[data-admin-theme-container] .border-b,
+[data-admin-theme-container] .border-r,
+[data-admin-theme-container] .border-t,
+[data-admin-theme-container] .border-l,
+[data-admin-theme-container] .dark .border,
+[data-admin-theme-container] .dark .border-neutral-700,
+[data-admin-theme-container] .dark .border-neutral-600 {
+  border-color: #e5e7eb !important;
+}
+
+/* Force admin muted text colors */
+[data-admin-theme-container] .text-gray-500,
+[data-admin-theme-container] .text-gray-600,
+[data-admin-theme-container] .text-muted-foreground,
+[data-admin-theme-container] .dark .text-gray-400,
+[data-admin-theme-container] .dark .text-neutral-400 {
+  color: #6b7280 !important;
+}
+
+/* Force admin hover states */
+[data-admin-theme-container] button:hover,
+[data-admin-theme-container] .admin-hover-item:hover {
+  background-color: #f3f4f6 !important;
+}
+
+/* Force admin card shadows and backgrounds */
+[data-admin-theme-container] .shadow,
+[data-admin-theme-container] .shadow-lg,
+[data-admin-theme-container] .shadow-md {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Override system dark mode for admin */
+@media (prefers-color-scheme: dark) {
+  [data-admin-theme-container] {
+    color-scheme: light !important;
+    background-color: #f9fafb !important;
+    color: #111827 !important;
+  }
+  
+  [data-admin-theme-container] * {
+    color-scheme: light !important;
+  }
+  
+  [data-admin-theme-container] .dark,
+  [data-admin-theme-container].dark {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+  }
+}
+
+/* Force all admin dropdowns and modals to light mode */
+[data-admin-theme-container] [data-radix-popper-content-wrapper],
+[data-admin-theme-container] [data-radix-select-content],
+[data-admin-theme-container] [data-radix-dialog-content],
+[data-admin-theme-container] .dropdown,
+[data-admin-theme-container] .modal {
+  background-color: #ffffff !important;
+  color: #111827 !important;
+  border-color: #e5e7eb !important;
+}

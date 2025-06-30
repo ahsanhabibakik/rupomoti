@@ -90,10 +90,10 @@ const TrackingTimeline = ({ order }: { order: Order }) => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'DELIVERED': return 'from-green-400 to-green-600';
-      case 'CANCELLED': return 'from-red-400 to-red-600';
+      case 'DELIVERED': return 'from-emerald-400 to-emerald-600';
+      case 'CANCELLED': return 'from-rose-400 to-rose-600';
       case 'IN_TRANSIT':
-      case 'SHIPPED': return 'from-blue-400 to-blue-600';
+      case 'SHIPPED': return 'from-warmOysterGold to-cocoaBrown';
       default: return 'from-amber-400 to-amber-600';
     }
   };
@@ -104,20 +104,20 @@ const TrackingTimeline = ({ order }: { order: Order }) => {
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 p-6"
+        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-warmOysterGold/10 to-cocoaBrown/5 p-6 border border-warmOysterGold/20 shadow-md"
       >
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full -translate-y-16 translate-x-16 blur-2xl" />
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-warmOysterGold/20 to-cocoaBrown/20 rounded-full -translate-y-16 translate-x-16 blur-2xl" />
         <div className="relative">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className={`p-3 rounded-2xl bg-gradient-to-br ${getStatusColor(order.status)} shadow-lg`}>
-                {getStatusIcon(order.status)}
+              <div className={`p-3 rounded-2xl bg-gradient-to-br ${getStatusColor(order.status || 'PENDING')} shadow-lg`}>
+                {getStatusIcon(order.status || 'PENDING')}
               </div>
               <div>
-                <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                  {order.status.replace('_', ' ')}
+                <h3 className="text-xl font-bold text-cocoaBrown">
+                  {order.status?.replace('_', ' ') || 'Unknown Status'}
                 </h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
+                <p className="text-sm text-muted-foreground">
                   Order #{order.orderNumber}
                 </p>
               </div>
@@ -258,9 +258,10 @@ export default function OrderTrackingPage() {
         throw new Error('Failed to fetch tracking info');
       }
       const data = await response.json();
-      setOrder(data);
-    } catch (error: any) {
-      setError(error.message || 'Failed to fetch tracking information.');
+      setOrder(data.order);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch tracking information.';
+      setError(errorMessage);
       setOrder(null);
     } finally {
       setLoading(false);
@@ -268,15 +269,15 @@ export default function OrderTrackingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-pearlWhite via-pearlWhite/90 to-pearlWhite/80 dark:from-cocoaBrown/90 dark:via-cocoaBrown/80 dark:to-cocoaBrown/70">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600">
-        <div className="absolute inset-0 bg-black/20" />
+      <section className="relative overflow-hidden bg-gradient-to-br from-warmOysterGold via-cocoaBrown to-cocoaBrown/90">
+        <div className="absolute inset-0 bg-black/10" />
         <div className="absolute top-0 left-0 w-full h-full">
-          <div className="absolute top-10 left-10 w-72 h-72 bg-white/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-10 right-10 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
+          <div className="absolute top-10 left-10 w-72 h-72 bg-champagneSheen/20 rounded-full blur-3xl" />
+          <div className="absolute bottom-10 right-10 w-96 h-96 bg-warmOysterGold/10 rounded-full blur-3xl" />
         </div>
-        <div className="relative container mx-auto px-4 py-24 lg:py-32">
+        <div className="relative container mx-auto px-4 pt-6 pb-20 lg:pb-28 lg:pt-10">
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -289,8 +290,17 @@ export default function OrderTrackingPage() {
             </div>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6">
               Track Your
-              <span className="block bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
-                Perfect Order
+              <span className="block">
+                <span className="bg-gradient-to-r from-champagneSheen to-warmOysterGold bg-clip-text text-transparent font-bold"
+                      style={{
+                        background: 'linear-gradient(to right,  #efa62d, #8e5e00)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        color: '#C8B38A' // Fallback color
+                      }}>
+                  Perfect Order
+                </span>
+              
               </span>
             </h1>
             <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto leading-relaxed">
@@ -301,7 +311,7 @@ export default function OrderTrackingPage() {
       </section>
 
       {/* Main Content */}
-      <section className="relative -mt-16 pb-20">
+      <section className="relative -mt-16 pb-20 z-10">
         <div className="container mx-auto px-4">
           <div className="grid gap-8 lg:grid-cols-2">
             {/* Tracking Form */}
@@ -311,37 +321,38 @@ export default function OrderTrackingPage() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="space-y-8"
             >
-              <Card className="border-0 shadow-2xl bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
+              <Card className="border border-warmOysterGold/20 shadow-lg bg-white/90 backdrop-blur-sm overflow-hidden">
+                <div className="absolute top-0 h-1 w-full bg-gradient-to-r from-warmOysterGold to-cocoaBrown"></div>
                 <CardHeader className="pb-6">
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl text-white">
+                    <div className="p-2 bg-gradient-to-br from-warmOysterGold to-cocoaBrown rounded-xl text-white shadow-md">
                       <Search className="w-5 h-5" />
                     </div>
-                    <CardTitle className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                    <CardTitle className="text-2xl font-bold font-display text-cocoaBrown">
                       Track Your Order
                     </CardTitle>
                   </div>
-                  <p className="text-slate-600 dark:text-slate-400">
-                    Enter your tracking number or order number to get real-time updates
+                  <p className="text-muted-foreground">
+                    Enter your order number to receive real-time updates on your jewelry
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="relative">
-                      <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-warmOysterGold/70" />
                       <Input
                         type="text"
-                        placeholder="Enter tracking number (e.g., RUP-12345)"
+                        placeholder="Enter order number (e.g., RUP-12345)"
                         value={trackingNumber}
                         onChange={(e) => setTrackingNumber(e.target.value)}
                         disabled={loading}
-                        className="pl-12 h-14 text-lg border-slate-300 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-slate-700 rounded-xl"
+                        className="pl-12 h-14 text-lg border-warmOysterGold/30 focus:border-warmOysterGold focus:ring-warmOysterGold/50 bg-white rounded-xl"
                       />
                     </div>
                     <Button 
                       type="submit" 
                       disabled={loading}
-                      className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                      className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-warmOysterGold to-cocoaBrown hover:opacity-90 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 text-white"
                     >
                       {loading ? (
                         <>
@@ -366,13 +377,14 @@ export default function OrderTrackingPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.4 }}
                 >
-                  <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
+                  <Card className="border border-warmOysterGold/20 shadow-lg bg-white/90 backdrop-blur-sm">
+                    <div className="absolute top-0 h-1 w-full bg-gradient-to-r from-warmOysterGold/50 to-cocoaBrown/50"></div>
                     <CardHeader>
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl text-white">
+                        <div className="p-2 bg-gradient-to-br from-warmOysterGold to-cocoaBrown rounded-xl text-white shadow-md">
                           <Clock className="w-5 h-5" />
                         </div>
-                        <CardTitle className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                        <CardTitle className="text-xl font-bold font-display text-cocoaBrown">
                           Your Recent Orders
                         </CardTitle>
                       </div>
@@ -386,22 +398,22 @@ export default function OrderTrackingPage() {
                               initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
                               transition={{ delay: index * 0.1 }}
-                              className="group p-4 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-slate-700 dark:hover:to-slate-600 transition-all duration-300 hover:shadow-lg"
+                              className="group p-4 rounded-xl border border-warmOysterGold/20 cursor-pointer hover:bg-gradient-to-r hover:from-warmOysterGold/5 hover:to-cocoaBrown/5 transition-all duration-300 hover:shadow-md"
                               onClick={() => {
                                 setTrackingNumber(order.orderNumber);
-                                handleSubmit(new Event('submit') as any);
+                                handleSubmit(new Event('submit') as unknown as React.FormEvent);
                               }}
                             >
                               <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-3">
-                                  <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg text-white group-hover:scale-110 transition-transform duration-300">
+                                  <div className="p-2 bg-gradient-to-br from-warmOysterGold to-cocoaBrown rounded-lg text-white group-hover:scale-110 transition-transform duration-300 shadow-sm">
                                     <Package className="w-4 h-4" />
                                   </div>
                                   <div>
-                                    <span className="font-semibold text-slate-900 dark:text-slate-100">
+                                    <span className="font-semibold text-cocoaBrown">
                                       #{order.orderNumber}
                                     </span>
-                                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                                    <p className="text-sm text-muted-foreground">
                                       {format(new Date(order.createdAt), 'MMM dd, yyyy')}
                                     </p>
                                   </div>
@@ -414,12 +426,13 @@ export default function OrderTrackingPage() {
                                       'secondary'
                                     } 
                                     className={`${
-                                      order.status === 'DELIVERED' ? 'bg-green-500 hover:bg-green-600 text-white' : ''
+                                      order.status === 'DELIVERED' ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : 
+                                      order.status === 'SHIPPED' || order.status === 'IN_TRANSIT' ? 'bg-warmOysterGold hover:bg-warmOysterGold/90 text-white' : ''
                                     }`}
                                   >
-                                    {order.status}
+                                    {order.status || 'Unknown'}
                                   </Badge>
-                                  <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
+                                  <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-cocoaBrown group-hover:translate-x-1 transition-all duration-300" />
                                 </div>
                               </div>
                             </motion.div>
@@ -443,13 +456,17 @@ export default function OrderTrackingPage() {
                 <motion.div 
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="absolute inset-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm flex flex-col items-center justify-center z-10 rounded-2xl"
+                  className="absolute inset-0 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center z-10 rounded-2xl"
                 >
-                  <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
-                  <p className="text-lg font-medium text-slate-700 dark:text-slate-300">
-                    Tracking your package...
+                  <div className="relative w-16 h-16 mb-6">
+                    <div className="absolute inset-0 rounded-full border-t-2 border-warmOysterGold animate-spin"></div>
+                    <div className="absolute inset-1 rounded-full border-t-2 border-cocoaBrown animate-spin animation-delay-150"></div>
+                    <div className="absolute inset-2 rounded-full border-t-2 border-warmOysterGold/70 animate-spin animation-delay-300"></div>
+                  </div>
+                  <p className="text-xl font-medium font-display text-cocoaBrown">
+                    Tracking your order...
                   </p>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
+                  <p className="text-sm text-muted-foreground mt-2">
                     Please wait while we fetch the latest updates
                   </p>
                 </motion.div>
@@ -461,23 +478,23 @@ export default function OrderTrackingPage() {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Card className="border-red-200 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 shadow-xl">
+                  <Card className="border border-roseGoldAccent/30 bg-gradient-to-br from-roseGoldAccent/10 to-roseGoldAccent/5 shadow-lg">
                     <CardContent className="p-8">
                       <div className="flex items-start gap-4">
-                        <div className="p-3 bg-red-500 rounded-2xl text-white">
+                        <div className="p-3 bg-gradient-to-br from-roseGoldAccent to-roseGoldAccent/80 rounded-2xl text-white shadow-md">
                           <AlertCircle className="h-6 w-6" />
                         </div>
                         <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-red-800 dark:text-red-200 mb-2">
+                          <h3 className="text-lg font-semibold text-cocoaBrown mb-2">
                             Order Not Found
                           </h3>
-                          <p className="text-red-700 dark:text-red-300 leading-relaxed">
+                          <p className="text-minkTaupe leading-relaxed">
                             {error}
                           </p>
-                          <div className="mt-4 p-4 bg-red-100 dark:bg-red-900/30 rounded-xl">
-                            <p className="text-sm text-red-800 dark:text-red-200">
+                          <div className="mt-4 p-4 bg-roseGoldAccent/10 rounded-xl border border-roseGoldAccent/20">
+                            <p className="text-sm text-minkTaupe">
                               <strong>Tips:</strong> Make sure you entered the correct tracking number. 
-                              It should look like "RUP-12345" or similar format.
+                              It should look like &quot;RUP-12345&quot; or similar format.
                             </p>
                           </div>
                         </div>
@@ -516,26 +533,26 @@ export default function OrderTrackingPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6 }}
-                  className="flex flex-col items-center justify-center text-center p-12 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 border border-slate-200 dark:border-slate-700"
+                  className="flex flex-col items-center justify-center text-center p-12 rounded-2xl bg-gradient-to-br from-pearlWhite to-champagneSheen/20 dark:from-cocoaBrown/80 dark:to-cocoaBrown/60 border border-warmOysterGold/20 dark:border-warmOysterGold/10"
                 >
                   <div className="relative mb-6">
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-600 rounded-full blur-xl opacity-20" />
-                    <div className="relative p-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl text-white">
-                      <Package className="w-12 h-12" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#efa62d] to-[#8e5e00] rounded-full blur-xl opacity-20" />
+                    <div className="relative p-6 bg-gradient-to-br from-[#efa62d] to-[#8e5e00] rounded-2xl text-white">
+                      <Package className="w-12 h-12 text-white" />
                     </div>
                   </div>
-                  <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-3">
+                  <h3 className="text-2xl font-bold text-primary dark:text-slate-100 mb-3">
                     Ready to Track Your Package
                   </h3>
                   <p className="text-lg text-slate-600 dark:text-slate-400 max-w-md leading-relaxed">
                     Enter your tracking number above to see real-time updates, delivery status, and estimated arrival time.
                   </p>
                   <div className="mt-8 grid grid-cols-2 gap-4 w-full max-w-md">
-                    <div className="text-center p-4 bg-white dark:bg-slate-700 rounded-xl shadow-sm">
+                    <div className="text-center p-4 bg-white  rounded-xl shadow-sm">
                       <Star className="w-6 h-6 text-yellow-500 mx-auto mb-2" />
                       <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Real-time Updates</p>
                     </div>
-                    <div className="text-center p-4 bg-white dark:bg-slate-700 rounded-xl shadow-sm">
+                    <div className="text-center p-4 bg-white rounded-xl shadow-sm">
                       <MapPin className="w-6 h-6 text-blue-500 mx-auto mb-2" />
                       <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Location Tracking</p>
                     </div>

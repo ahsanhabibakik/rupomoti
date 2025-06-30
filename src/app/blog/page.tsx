@@ -179,7 +179,7 @@ export default function BlogPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-r from-primary/10 via-primary/5 to-secondary/10 py-16 sm:py-24">
+      <div className="relative bg-gradient-to-r from-primary/10 via-primary/5 to-secondary/10 py-4 sm:py-8">
         <div className="absolute inset-0 bg-[url('/images/pearl-pattern.svg')] opacity-5"></div>
         <div className="relative container mx-auto px-4 sm:px-6">
           <div className="text-center max-w-4xl mx-auto">
@@ -187,8 +187,16 @@ export default function BlogPage() {
               <BookOpen className="w-4 h-4 mr-2" />
               Our Journal
             </Badge>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              Stories of Elegance
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 text-foreground">
+              <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
+                    style={{
+                      background: 'linear-gradient(to right, hsl(var(--primary)), hsl(var(--secondary)))',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      color: 'hsl(var(--primary))' // Fallback color
+                    }}>
+                Stories of Elegance
+              </span>
             </h1>
             <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
               Discover the timeless beauty of pearls through our curated collection of stories, 
