@@ -1,5 +1,50 @@
 @import "tailwindcss";
 
+/* Fix for text-white not working - ensure white text is properly defined */
+@layer utilities {
+  .text-white {
+    color: #ffffff !important;
+  }
+  
+  .text-white * {
+    color: inherit !important;
+  }
+  
+  /* Ensure badge text is always white when needed */
+  .badge-white-text {
+    color: #ffffff !important;
+  }
+  
+  .badge-white-text * {
+    color: #ffffff !important;
+  }
+  
+  /* Courier Badge Color Utilities */
+  .bg-pathao-light {
+    background-color: #fce8e6 !important;
+  }
+  
+  .text-pathao-dark {
+    color: #e63946 !important;
+  }
+  
+  .bg-redx {
+    background-color: #d90429 !important;
+  }
+  
+  .bg-carrybee {
+    background-color: #ffca3a !important;
+  }
+  
+  .text-carrybee-dark {
+    color: #c47d00 !important;
+  }
+  
+  .bg-steadfast-green {
+    background-color: #2a9d8f !important;
+  }
+}
+
 @layer base {
   :root {
     --background: 28 80% 98%; /* pearlWhite */
