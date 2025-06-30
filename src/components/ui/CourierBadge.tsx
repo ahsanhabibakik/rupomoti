@@ -9,11 +9,11 @@ import { Truck } from 'lucide-react';
 const courierBadgeVariants = cva('flex items-center gap-1.5', {
   variants: {
     courier: {
-      default: 'border-transparent bg-gray-500 text-gray-100 hover:bg-gray-500/80',
+      default: 'border-transparent bg-gray-500 badge-white-text hover:bg-gray-500/80',
       pathao: 'border-transparent bg-pathao-light text-pathao-dark',
-      redx: 'border-transparent bg-redx text-white',
+      redx: 'border-transparent bg-redx badge-white-text',
       carrybee: 'border-transparent bg-carrybee text-carrybee-dark',
-      steadfast: 'border-transparent bg-steadfast-green text-white',
+      steadfast: 'border-transparent bg-steadfast-green badge-white-text',
     },
   },
   defaultVariants: {
@@ -51,7 +51,14 @@ function CourierBadge({ className, courierName, trackingId, ...props }: CourierB
     <div className="flex flex-col items-start gap-1">
       <Badge className={cn(courierBadgeVariants({ courier: variant }), className)} {...props}>
         <Truck className="h-3.5 w-3.5" />
-        <span>{courierName}</span>
+        <span className={cn(
+          // Force white text for specific variants that need it
+          (variant === 'default' || variant === 'redx' || variant === 'steadfast') && "text-white badge-white-text",
+          // Keep dark text for light backgrounds
+          (variant === 'pathao' || variant === 'carrybee') && "font-medium"
+        )}>
+          {courierName}
+        </span>
       </Badge>
       {trackingId && (
         <span className="text-xs text-muted-foreground font-mono pl-1">{trackingId}</span>
