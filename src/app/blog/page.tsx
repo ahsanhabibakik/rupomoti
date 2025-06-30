@@ -179,7 +179,7 @@ export default function BlogPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-r from-primary/10 via-primary/5 to-secondary/10 py-16 sm:py-24">
+      <div className="relative bg-gradient-to-r from-primary/10 via-primary/5 to-secondary/10 py-4 sm:py-8">
         <div className="absolute inset-0 bg-[url('/images/pearl-pattern.svg')] opacity-5"></div>
         <div className="relative container mx-auto px-4 sm:px-6">
           <div className="text-center max-w-4xl mx-auto">
