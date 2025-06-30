@@ -2,8 +2,6 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
-import { useTheme } from '@/components/theme-provider'
-import { toast } from 'sonner'
 
 type AdminThemeContextType = {
   canChangeTheme: boolean
@@ -21,21 +19,19 @@ export function AdminThemeProvider({ children }: { children: React.ReactNode }) 
   const { data: session } = useSession()
   const [isVerified, setIsVerified] = useState(false)
   const [verificationExpiry, setVerificationExpiry] = useState<number | null>(null)
-  const [adminTheme, setAdminTheme] = useState<'light' | 'dark'>('light')
+  const [adminTheme, setAdminTheme] = useState<'light' | 'dark'>('light') // Always light mode
   const [customColors, setCustomColors] = useState<Record<string, string>>({})
 
   const isSuperAdmin = session?.user?.role === 'SUPER_ADMIN'
   const isDev = process.env.NODE_ENV === 'development'
-  const canChangeTheme = isSuperAdmin || isDev
+  const canChangeTheme = false // Disable theme changing
 
-  // Initialize admin theme and custom colors from localStorage
+  // Force light mode for admin panel
   useEffect(() => {
-    const savedTheme = localStorage.getItem('admin-theme-preference') as 'light' | 'dark'
     const savedColors = localStorage.getItem('admin-custom-colors')
     
-    if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark')) {
-      setAdminTheme(savedTheme)
-    }
+    // Always use light theme
+    setAdminTheme('light')
     
     if (savedColors) {
       try {
@@ -61,15 +57,18 @@ export function AdminThemeProvider({ children }: { children: React.ReactNode }) 
       applyCustomColors(defaultColors)
     }
     
-    // Apply the theme immediately
-    applyAdminTheme(savedTheme || 'light')
+    // Always apply light theme
+    applyAdminTheme()
   }, [])
 
-  const applyAdminTheme = (theme: 'light' | 'dark') => {
+  const applyAdminTheme = () => {
     const adminContainer = document.querySelector('[data-admin-theme-container]')
     if (adminContainer) {
-      adminContainer.classList.remove('admin-light', 'admin-dark')
-      adminContainer.classList.add(`admin-${theme}`)
+      // Always force light mode for admin panel
+      adminContainer.classList.remove('admin-light', 'admin-dark', 'dark')
+      adminContainer.classList.add('admin-light')
+      // Force light color scheme
+      adminContainer.setAttribute('style', 'color-scheme: light !important;')
     }
   }
 
@@ -118,29 +117,12 @@ export function AdminThemeProvider({ children }: { children: React.ReactNode }) 
     })
   }
 
-  const requestThemeChange = async (newTheme: 'light' | 'dark'): Promise<void> => {
-    if (!canChangeTheme) {
-      return
-    }
-
-    // Check if verification is needed and valid
-    if (!isDev && !isVerified) {
-      const verified = await verifyAccess()
-      if (!verified) return
-    }
-
-    // Update internal state
-    setAdminTheme(newTheme)
-
-    // Apply theme change only to admin areas via CSS class
-    applyAdminTheme(newTheme)
-    
-    // Store admin theme preference separately from main site
-    try {
-      localStorage.setItem('admin-theme-preference', newTheme)
-    } catch (error) {
-      console.error('Failed to save admin theme preference:', error)
-    }
+  const requestThemeChange = async (): Promise<void> => {
+    // Always force light mode - no theme changes allowed
+    setAdminTheme('light')
+    applyAdminTheme()
+    localStorage.setItem('admin-theme-preference', 'light')
+    return
   }
 
   const updateCustomColors = (colors: Record<string, string>) => {

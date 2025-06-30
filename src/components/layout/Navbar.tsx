@@ -72,9 +72,11 @@ function UserMenu() {
                      {session.user?.image ? (
                         <Image src={session.user.image} alt="User" width={24} height={24} className="rounded-full" />
                     ) : (
-                        <User className="h-5 w-5" />
+                        <>
+                            <User className="h-5 w-5" />
+                            <span className="hidden sm:inline text-sm font-medium">{session.user?.name}</span>
+                        </>
                     )}
-                    <span className="hidden sm:inline text-sm font-medium">{session.user?.name}</span>
                     {isAdmin && <Shield size={14} className="text-amber-500" />}
                 </Button>
             </DropdownMenuTrigger>
@@ -196,16 +198,23 @@ function MobileNav() {
                     {session ? (
                         <div className="flex items-center gap-3 p-3 bg-secondary rounded-lg">
                             {session.user?.image ? (
-                                <Image src={session.user.image} alt="User" width={32} height={32} className="rounded-full" />
+                                <>
+                                    <Image src={session.user.image} alt="User" width={32} height={32} className="rounded-full" />
+                                    <div className="flex-1">
+                                        <p className="text-xs text-muted-foreground">{session.user?.email}</p>
+                                    </div>
+                                </>
                             ) : (
-                                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                                    <User className="h-4 w-4 text-primary-foreground" />
-                                </div>
+                                <>
+                                    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                                        <User className="h-4 w-4 text-primary-foreground" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-sm font-medium">{session.user?.name}</p>
+                                        <p className="text-xs text-muted-foreground">{session.user?.email}</p>
+                                    </div>
+                                </>
                             )}
-                            <div className="flex-1">
-                                <p className="text-sm font-medium">{session.user?.name}</p>
-                                <p className="text-xs text-muted-foreground">{session.user?.email}</p>
-                            </div>
                         </div>
                     ) : (
                         <div className="flex gap-2">

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { useSession, signOut, signIn } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
@@ -23,19 +23,10 @@ import {
   FileText,
   Bell,
   Shield,
-  Moon,
-  Sun,
   Home,
-  ChevronRight,
   Search,
   User,
-  BarChart3,
-  CreditCard,
-  Gift,
-  MessageSquare,
-  Calendar,
   TrendingUp,
-  AlertCircle,
   Mail,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -43,9 +34,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
-import { useTheme } from '@/components/theme-provider'
 import { AdminThemeProvider } from '@/components/admin/AdminThemeProvider'
-import { AdminThemeToggle } from '@/components/admin/AdminThemeToggle'
 import { CustomColorManager } from '@/components/admin/CustomColorManager'
 
 const navigation = [
@@ -85,7 +74,7 @@ function Sidebar({ className, onClose }: { className?: string; onClose?: () => v
   return (
     <div className={cn("flex flex-col h-full", className)}>
       {/* Header with Logo and Back to Home */}
-      <div className="flex items-center justify-between h-16 px-4 border-b bg-white dark:bg-neutral-800">
+      <div className="flex items-center justify-between h-16 px-4 border-b bg-white">
         <Link href="/admin" className="flex items-center gap-3 group" onClick={onClose}>
           <Image 
             src="/images/branding/logo.png" 
@@ -101,10 +90,10 @@ function Sidebar({ className, onClose }: { className?: string; onClose?: () => v
         </Link>
         <Link 
           href="/" 
-          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors"
+          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
           onClick={onClose}
         >
-          <Home className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+          <Home className="w-5 h-5 text-gray-600" />
         </Link>
       </div>
 
@@ -114,7 +103,7 @@ function Sidebar({ className, onClose }: { className?: string; onClose?: () => v
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             placeholder="Search..."
-            className="pl-10 bg-gray-50 dark:bg-neutral-700 border-gray-200 dark:border-neutral-600"
+            className="pl-10 bg-gray-50 border-gray-200"
           />
         </div>
       </div>
@@ -131,7 +120,7 @@ function Sidebar({ className, onClose }: { className?: string; onClose?: () => v
                 'flex items-center justify-between px-4 py-3 text-sm rounded-lg transition-all duration-200 group',
                 isActive
                   ? 'bg-primary text-primary-foreground shadow-lg border border-primary/20'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700 hover:text-primary'
+                  : 'text-gray-700 hover:bg-gray-100 hover:text-primary'
               )}
               onClick={onClose}
             >
@@ -169,7 +158,7 @@ function Sidebar({ className, onClose }: { className?: string; onClose?: () => v
             <User className="w-4 h-4 text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">Admin User</p>
+            <p className="text-sm font-medium text-gray-900 truncate">Admin User</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">admin@rupomoti.com</p>
           </div>
         </div>
@@ -212,15 +201,21 @@ export default function AdminLayout({
   ]
 
   useEffect(() => {
+    // Fast redirect for unauthenticated users
     if (status === 'unauthenticated') {
-      router.push(`/signin?callbackUrl=${encodeURIComponent(pathname || '')}`)
+      const signinUrl = `/signin?callbackUrl=${encodeURIComponent(pathname || '/admin')}`
+      router.replace(signinUrl) // Use replace for faster navigation
     }
   }, [status, router, pathname])
 
+  // Optimize loading state - show immediately without delay
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-sm text-muted-foreground">Loading admin dashboard...</p>
+        </div>
       </div>
     )
   }
@@ -253,9 +248,9 @@ export default function AdminLayout({
 
   return (
     <AdminThemeProvider>
-      <div className="min-h-screen bg-gray-50 dark:bg-neutral-900 dark:text-white" data-admin-theme-container>
+      <div className="min-h-screen bg-gray-50 text-gray-900" data-admin-theme-container style={{colorScheme: 'light'}}>
       {/* Top Bar - Mobile */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white dark:bg-neutral-800 border-b border-gray-200 dark:border-neutral-700 px-4 py-3 flex items-center justify-between">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>
@@ -282,19 +277,18 @@ export default function AdminLayout({
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowNotifications((v) => !v)}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors relative"
+            className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative"
             aria-label="Show notifications"
           >
-            <Bell className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+            <Bell className="h-5 w-5 text-gray-600" />
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 font-bold">{notifications.length}</span>
           </button>
-          <AdminThemeToggle />
         </div>
       </div>
 
       {/* Notification Panel - Mobile */}
       {showNotifications && (
-        <div className="lg:hidden fixed top-16 left-4 right-4 z-30 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg shadow-lg p-4">
+        <div className="lg:hidden fixed top-16 left-4 right-4 z-30 bg-white border border-gray-200 rounded-lg shadow-lg p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-primary">Notifications</h3>
             <button 
@@ -306,7 +300,7 @@ export default function AdminLayout({
           </div>
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {notifications.map((n) => (
-              <div key={n.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-700 cursor-pointer">
+              <div key={n.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
                 <div className={cn(
                   "w-2 h-2 rounded-full mt-2",
                   n.type === 'order' ? "bg-blue-500" : 
@@ -328,14 +322,14 @@ export default function AdminLayout({
         <div className="relative">
           <button
             onClick={() => setShowNotifications((v) => !v)}
-            className="p-2 rounded-full bg-white/80 dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 shadow hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors"
+            className="p-2 rounded-full bg-white/80 border border-gray-200 shadow hover:bg-gray-100 transition-colors"
             aria-label="Show notifications"
           >
             <Bell className="h-5 w-5 text-primary" />
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 font-bold">{notifications.length}</span>
           </button>
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg shadow-lg p-4 z-40">
+            <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-40">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-semibold text-primary">Notifications</h3>
                 <button 
@@ -347,7 +341,7 @@ export default function AdminLayout({
               </div>
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {notifications.map((n) => (
-                  <div key={n.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-700 cursor-pointer">
+                  <div key={n.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
                     <div className={cn(
                       "w-2 h-2 rounded-full mt-2",
                       n.type === 'order' ? "bg-blue-500" : 
@@ -365,11 +359,10 @@ export default function AdminLayout({
           )}
         </div>
         <CustomColorManager />
-        <AdminThemeToggle />
       </div>
 
       {/* Desktop sidebar */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:w-64 lg:block lg:bg-white lg:border-r lg:border-gray-200 dark:lg:bg-neutral-800 dark:lg:border-neutral-700">
+      <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:w-64 lg:block lg:bg-white lg:border-r lg:border-gray-200">
         <Sidebar />
       </div>
 

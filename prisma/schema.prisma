@@ -126,6 +126,7 @@ model Product {
   wishlistItems   WishlistItem[]
   orderItems      OrderItem[]
   stockLogs       StockLog[]
+  returnRequests  ReturnRequest[]
   
   @@map("products")
 }
@@ -170,6 +171,8 @@ model Order {
   orderNote     String?
   appliedCoupon String?        // Coupon code applied
   trackingId    String?
+  trackingNumber String?       // Simple tracking number
+  shippingProvider String?     // 'fedex', 'ups', 'dhl', 'usps'
   steadfastInfo Json?          // Steadfast tracking information
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -178,6 +181,7 @@ model Order {
 
   items         OrderItem[]
   stockLogs     StockLog[]
+  returnRequests ReturnRequest[]
 
   // Courier integration fields
   recipientName      String?
@@ -393,6 +397,27 @@ model StockLog {
   createdAt     DateTime @default(now())
   
   @@map("stock_logs")
+}
+
+model ReturnRequest {
+  id               String      @id @default(auto()) @map("_id") @db.ObjectId
+  orderId          String      @db.ObjectId
+  order            Order       @relation(fields: [orderId], references: [id])
+  productId        String      @db.ObjectId
+  product          Product     @relation(fields: [productId], references: [id])
+  quantity         Int
+  reason           String
+  condition        String      // 'new', 'used', 'damaged'
+  customerNotes    String?
+  adminNotes       String?
+  status           String      @default("PENDING") // PENDING, APPROVED, REJECTED, COMPLETED
+  actualCondition  String?     // Condition when received back
+  requestDate      DateTime    @default(now())
+  approvedDate     DateTime?
+  completedDate    DateTime?
+  refundAmount     Float?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 }
 
 enum Role {

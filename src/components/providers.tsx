@@ -34,7 +34,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <PersistGate loading={null} persistor={persistor}>
         <SafeSessionProvider>
           <QueryClientProvider client={queryClient}>
-            <ThemeProvider defaultTheme="light" enableSystem={false} storageKey="main-site-theme">
+            <ThemeProvider 
+              defaultTheme="light" 
+              enableSystem={false} 
+              storageKey="main-site-theme"
+              attribute="class"
+              disableTransitionOnChange={true}
+            >
               {children}
               <Toaster
                 position="bottom-right"
