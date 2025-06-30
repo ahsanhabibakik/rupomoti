@@ -39,12 +39,12 @@ export function ThemeProvider({
   ...props
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window === 'undefined') return defaultTheme
-    
-    // Force light mode for main site
+    // Always force light mode for main site
     if (storageKey === 'main-site-theme') {
       return 'light'
     }
+    
+    if (typeof window === 'undefined') return defaultTheme
     
     try {
       const stored = localStorage.getItem(storageKey) as Theme

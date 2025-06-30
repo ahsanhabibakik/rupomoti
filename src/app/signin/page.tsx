@@ -47,14 +47,17 @@ export default function SignIn() {
     },
   })
 
-  // Redirect if already logged in
+  // Redirect if already logged in - optimized for faster admin redirects
   useEffect(() => {
     if (status === 'authenticated' && session?.user) {
       const role = session.user.role
+      // Use replace instead of push for faster navigation and immediate redirect
       if (role === 'SUPER_ADMIN' || role === 'ADMIN' || role === 'MANAGER') {
-        router.push(callbackUrl.includes('/admin') ? callbackUrl : '/admin')
+        const targetUrl = callbackUrl.includes('/admin') ? callbackUrl : '/admin'
+        router.replace(targetUrl)
       } else {
-        router.push(callbackUrl === '/' ? '/account' : callbackUrl)
+        const targetUrl = callbackUrl === '/' ? '/account' : callbackUrl
+        router.replace(targetUrl)
       }
     }
   }, [session, status, router, callbackUrl])
@@ -78,9 +81,21 @@ export default function SignIn() {
         return
       }
 
-      // Let the useEffect handle redirect based on user role
-      window.location.reload()
-    } catch (error) {
+      if (result?.ok) {
+        // Force immediate session update and redirect without page reload
+        const response = await fetch('/api/auth/session')
+        const sessionData = await response.json()
+        
+        if (sessionData?.user) {
+          const role = sessionData.user.role
+          if (role === 'SUPER_ADMIN' || role === 'ADMIN' || role === 'MANAGER') {
+            router.replace(callbackUrl.includes('/admin') ? callbackUrl : '/admin')
+          } else {
+            router.replace(callbackUrl === '/' ? '/account' : callbackUrl)
+          }
+        }
+      }
+    } catch {
       toast({
         variant: "destructive",
         title: "Error",
@@ -97,7 +112,7 @@ export default function SignIn() {
       await signIn('google', { 
         callbackUrl: callbackUrl === '/' ? '/account' : callbackUrl 
       })
-    } catch (error) {
+    } catch {
       toast({
         variant: "destructive",
         title: "Error",
@@ -108,13 +123,16 @@ export default function SignIn() {
     }
   }
 
-  // Show loading if already authenticated
+  // Show loading if already authenticated - optimized message
   if (status === 'authenticated') {
+    const isAdminPath = callbackUrl.includes('/admin')
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Redirecting...</p>
+          <p className="text-muted-foreground">
+            {isAdminPath ? 'Accessing admin dashboard...' : 'Redirecting...'}
+          </p>
         </div>
       </div>
     )

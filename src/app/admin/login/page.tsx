@@ -7,15 +7,16 @@ export default function AdminLoginRedirect() {
   const router = useRouter()
 
   useEffect(() => {
-    // Redirect to the new signin page
+    // Immediate redirect without delay - use replace for faster navigation
     router.replace('/signin?callbackUrl=/admin')
   }, [router])
 
+  // Minimal loading UI for fastest perceived performance
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-        <p className="text-muted-foreground">Redirecting to login...</p>
+      <div className="text-center space-y-3">
+        <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent mx-auto"></div>
+        <p className="text-sm text-muted-foreground">Redirecting to admin login...</p>
       </div>
     </div>
   )

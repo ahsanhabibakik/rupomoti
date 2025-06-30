@@ -4,6 +4,7 @@ import { Providers } from '@/components/providers'
 import './globals.css'
 import { Metadata } from 'next'
 import { Analytics } from '@vercel/analytics/react'
+import '@/utils/force-light-mode' // Force light mode utility
 
 const inter = Inter({
   subsets: ['latin'],
@@ -71,8 +72,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+    <html lang="en" className="light" data-theme="light" style={{colorScheme: 'light'}} suppressHydrationWarning>
+      <body className={`${inter.className} bg-background text-foreground`}>
         <Providers>
           <RootLayoutClient>
             {children}
