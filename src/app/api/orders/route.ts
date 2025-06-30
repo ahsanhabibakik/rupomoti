@@ -3,6 +3,7 @@ import { auth } from '@/app/auth'
 import { prisma } from '@/lib/prisma'
 import { generateUniqueOrderNumber } from '@/lib/server/order-number-generator'
 import { StockManager } from '@/lib/stock-manager'
+import { AuditLogger } from '@/lib/audit-logger'
 
 export async function GET() {
   try {
@@ -273,9 +274,32 @@ export async function POST(req: Request) {
         return createdOrder;
       });
 
+      // 5. Log order creation to audit log
+      if (userId) {
+        try {
+          await AuditLogger.log({
+            model: 'Order',
+            recordId: order.id,
+            userId: userId,
+            action: 'CREATE',
+            details: {
+              orderNumber: order.orderNumber,
+              customerName: order.customer.name,
+              customerPhone: order.customer.phone,
+              total: order.total,
+              createdBy: session?.user?.email || 'guest'
+            }
+          });
+        } catch (auditError) {
+          console.error('Failed to log order creation:', auditError);
+          // Don't fail the order creation if audit logging fails
+        }
+      }
+
       console.log('Order created successfully:', order.orderNumber);
 
-      return NextResponse.json({
+      // Return response with no-cache headers for real-time updates
+      const response = NextResponse.json({
         success: true,
         order: {
           id: order.id,
@@ -290,6 +314,15 @@ export async function POST(req: Request) {
           createdAt: order.createdAt
         }
       });
+
+      // Add aggressive no-cache headers to ensure admin dashboard gets fresh data
+      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+      response.headers.set('Pragma', 'no-cache');
+      response.headers.set('Expires', '0');
+      response.headers.set('Surrogate-Control', 'no-store');
+      response.headers.set('Vary', '*');
+
+      return response;
     } catch (error) {
       console.error('Order creation failed:', error);
     

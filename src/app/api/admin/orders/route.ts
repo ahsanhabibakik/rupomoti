@@ -2,11 +2,40 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/app/auth";
 import { prisma } from "@/lib/prisma";
 import { OrderStatus, Prisma } from "@prisma/client";
+import { AuditLogger } from "@/lib/audit-logger";
 
 export async function GET(req: Request) {
+  console.log('🚀 Admin Orders API - Starting request...');
+  
   const session = await auth();
-  if (!session?.user?.isAdmin && session?.user?.role !== 'ADMIN' && session?.user?.role !== 'MANAGER') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  
+  // Enhanced authentication check with detailed logging
+  console.log('🔐 Admin Orders API - Session check:', {
+    hasSession: !!session,
+    userId: session?.user?.id,
+    isAdmin: session?.user?.isAdmin,
+    role: session?.user?.role,
+    email: session?.user?.email,
+  });
+  
+  // Check authentication - simplified
+  if (!session?.user?.id) {
+    console.log('❌ No authenticated user');
+    return NextResponse.json({ error: 'Unauthorized - No session' }, { status: 401 });
+  }
+  
+  // Check admin access - allow any admin user or specific roles
+  const hasAdminAccess = session?.user?.isAdmin || 
+                        session?.user?.role === 'ADMIN' || 
+                        session?.user?.role === 'MANAGER' ||
+                        session?.user?.role === 'SUPER_ADMIN';
+  
+  if (!hasAdminAccess) {
+    console.log('❌ User does not have admin access:', {
+      isAdmin: session?.user?.isAdmin,
+      role: session?.user?.role
+    });
+    return NextResponse.json({ error: 'Unauthorized - Insufficient permissions' }, { status: 401 });
   }
 
   const { searchParams } = new URL(req.url);
@@ -18,81 +47,94 @@ export async function GET(req: Request) {
   const limit = parseInt(searchParams.get('limit') || '10', 10);
   const offset = (page - 1) * limit;
 
+  console.log('📊 Admin Orders API - Query parameters:', {
+    search, status, from, to, page, limit, offset
+  });
+
   try {
-    let where: any = {}; // Using 'any' temporarily to bypass type issues
+    // Simplified approach - start with basic query and add complexity gradually
+    console.log('🔄 Building query...');
+    
+    let where: Prisma.OrderWhereInput = {};
     
     // Handle different status filters
     if (status === 'trashed') {
       where.deletedAt = { not: null };
+      console.log('📋 Query: Getting trashed orders');
     } else if (status === 'fake') {
       where.deletedAt = null;
       where.isFakeOrder = true;
-    } else if (status === 'active') {
-      // Show non-deleted orders (temporarily not filtering by isFakeOrder due to MongoDB/Prisma boolean query issue)
-      // Since all existing orders have isFakeOrder: false, this is effectively the same
-      where.deletedAt = null;
-      // Note: We can add a manual filter after query if needed for new fake orders
+      console.log('📋 Query: Getting fake orders');
     } else {
-      // For 'all' status, just show non-deleted orders
+      // For all other statuses (active, all), just show non-deleted orders
       where.deletedAt = null;
+      console.log('📋 Query: Getting non-deleted orders');
     }
 
-    // Handle search
+    console.log('🔍 Admin Orders API - Basic where clause:', JSON.stringify(where, null, 2));
+
+    // Handle search - keep it simple for now
     if (search) {
+      console.log('🔍 Adding search filter:', search);
       const searchConditions = [
-        { orderNumber: { contains: search, mode: 'insensitive' } },
-        { customer: { name: { contains: search, mode: 'insensitive' } } },
-        { recipientName: { contains: search, mode: 'insensitive' } },
-        { recipientPhone: { contains: search, mode: 'insensitive' } },
+        { orderNumber: { contains: search, mode: 'insensitive' as const } },
+        { customer: { name: { contains: search, mode: 'insensitive' as const } } },
+        { recipientName: { contains: search, mode: 'insensitive' as const } },
+        { recipientPhone: { contains: search, mode: 'insensitive' as const } },
       ];
 
-      // Combine existing conditions with search
-      const existingConditions = { ...where };
       where = {
-        AND: [
-          existingConditions,
-          { OR: searchConditions }
-        ]
+        ...where,
+        OR: searchConditions
       };
     }
     
-    // Handle specific order status (not our custom statuses)
+    // Handle specific order status - keep it simple
     if (status && status !== 'all' && status !== 'trashed' && status !== 'active' && status !== 'fake') {
-      if (where.AND) {
-        where.AND.push({ status });
-      } else {
-        const existingConditions = { ...where };
-        where = {
-          AND: [
-            existingConditions,
-            { status }
-          ]
-        };
-      }
+      console.log('🏷️ Adding status filter:', status);
+      where.status = status as OrderStatus;
     }
 
-    // Handle date range
+    // Handle date range - keep it simple
     if (from && to) {
-      const dateCondition = {
-        createdAt: {
-          gte: new Date(from),
-          lte: new Date(to),
-        }
+      console.log('📅 Adding date range filter:', { from, to });
+      where.createdAt = {
+        gte: new Date(from),
+        lte: new Date(to),
       };
-
-      if (where.AND) {
-        where.AND.push(dateCondition);
-      } else {
-        const existingConditions = { ...where };
-        where = {
-          AND: [
-            existingConditions,
-            dateCondition
-          ]
-        };
-      }
     }
 
+    console.log('🔍 Admin Orders API - Final where clause:', JSON.stringify(where, null, 2));
+
+    // Direct test - get total count first to verify database connection
+    const totalOrdersInDb = await prisma.order.count();
+    console.log('📊 Total orders in database:', totalOrdersInDb);
+
+    // Check for very recent orders (last 10 minutes)
+    const recentOrdersCount = await prisma.order.count({
+      where: {
+        createdAt: {
+          gte: new Date(Date.now() - 10 * 60 * 1000) // 10 minutes ago
+        }
+      }
+    });
+    console.log('📊 Orders created in last 10 minutes:', recentOrdersCount);
+
+    // Direct test - get a few orders without filters to verify data exists
+    const testOrders = await prisma.order.findMany({
+      take: 3,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        orderNumber: true,
+        deletedAt: true,
+        isFakeOrder: true,
+        createdAt: true
+      }
+    });
+    console.log('🧪 Test orders (no filters):', testOrders);
+
+    console.log('🔄 Executing main query...');
     const orders = await prisma.order.findMany({
       where,
       include: {
@@ -113,30 +155,67 @@ export async function GET(req: Request) {
       take: limit,
     });
 
-    // Post-query filtering for active orders (workaround for boolean query issue)
+    console.log('📦 Admin Orders API - Orders fetched:', {
+      queryWhere: where,
+      count: orders.length,
+      firstOrderId: orders[0]?.id,
+      firstOrderNumber: orders[0]?.orderNumber,
+      firstOrderCreated: orders[0]?.createdAt,
+      orderIds: orders.map(o => o.id).slice(0, 5), // First 5 IDs
+    });
+
+    // Post-query filtering for active orders (workaround for MongoDB boolean issues)
     let filteredOrders = orders;
     if (status === 'active') {
-      filteredOrders = orders.filter(order => order.isFakeOrder !== true);
+      // Filter out fake orders after fetching
+      filteredOrders = orders.filter(order => !order.isFakeOrder);
+      console.log('📦 Admin Orders API - After fake filter:', {
+        originalCount: orders.length,
+        filteredCount: filteredOrders.length,
+      });
     }
 
-    // For count, we need to handle the filtering differently
+    // Get the total count - need to handle fake filtering manually
     let totalOrders;
     if (status === 'active') {
-      // Get all matching orders and filter them (less efficient but works)
-      const allMatchingOrders = await prisma.order.findMany({
-        where,
+      // Get all non-deleted orders and filter fake ones
+      const allOrders = await prisma.order.findMany({
+        where: { deletedAt: null },
         select: { id: true, isFakeOrder: true }
       });
-      totalOrders = allMatchingOrders.filter(order => order.isFakeOrder !== true).length;
+      totalOrders = allOrders.filter(order => !order.isFakeOrder).length;
     } else {
       totalOrders = await prisma.order.count({ where });
     }
+    
+    console.log('📊 Admin Orders API - Total count:', totalOrders);
 
-    return NextResponse.json({
+    const responseData = {
       orders: filteredOrders,
       totalOrders,
       totalPages: Math.ceil(totalOrders / limit),
+    };
+
+    console.log('📤 Sending response:', {
+      ordersCount: responseData.orders.length,
+      totalOrders: responseData.totalOrders,
+      totalPages: responseData.totalPages,
+      status,
+      page,
+      limit
     });
+
+    // Create response with no-cache headers for real-time updates
+    const response = NextResponse.json(responseData);
+    
+    // Add aggressive no-cache headers to ensure real-time data
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+    response.headers.set('Surrogate-Control', 'no-store');
+    response.headers.set('Vary', '*');
+    
+    return response;
   } catch (error) {
     console.error(error);
     return NextResponse.json(
@@ -260,6 +339,14 @@ export async function POST(request: Request) {
           where: { id: orderId },
           data: { status },
         });
+
+        // Log the status change
+        await AuditLogger.logOrderStatusChange(
+          orderId,
+          user.id,
+          order.status,
+          status
+        );
 
         return NextResponse.json({ message: 'Order status updated successfully' });
       }

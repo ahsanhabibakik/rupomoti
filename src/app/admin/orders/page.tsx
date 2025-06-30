@@ -28,6 +28,7 @@ import { DataTablePagination } from '@/components/ui/DataTablePagination';
 import { showToast } from '@/lib/toast';
 import { OrderFilters } from './_components/OrderFilters';
 import { getOrderDisplayNumber, getOrderAnalyticalInfo } from '@/lib/utils/order-number';
+import { AdminDebugPanel } from '@/components/admin/AdminDebugPanel';
 
 // Manually define the type to include the fields we need
 type OrderWithDetails = (Prisma.OrderGetPayload<{
@@ -42,6 +43,19 @@ type OrderWithDetails = (Prisma.OrderGetPayload<{
 }>) & {
   user: { isFlagged: boolean } | null;
   isFakeOrder?: boolean;
+  shippingAddress?: string;
+};
+
+type OrderItem = {
+  id: string;
+  quantity: number;
+  price: number;
+  product: {
+    id: string;
+    name: string;
+    price: number;
+    sku?: string;
+  };
 };
 
 function isNew(date: string | Date) {
@@ -77,8 +91,11 @@ function OrdersList({ status }: { status: 'active' | 'trashed' | 'fake' }) {
       });
       const response = await fetch(`/api/admin/orders?${query.toString()}`, {
         headers: {
-          'Cache-Control': 'no-cache',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
         },
+        cache: 'no-store', // Ensure fetch cache is disabled
       });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Network error' }));
@@ -86,17 +103,31 @@ function OrdersList({ status }: { status: 'active' | 'trashed' | 'fake' }) {
       }
       return response.json();
     },
-    placeholderData: (previousData: any) => previousData,
-    staleTime: 0, // Always consider data stale to ensure fresh data
+    staleTime: 0, // Always consider data stale - force fresh fetch every time
+    gcTime: 0, // Don't cache results at all
+    refetchOnMount: 'always', // Always refetch when component mounts
     refetchOnWindowFocus: true, // Refetch when window gains focus
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchOnReconnect: true, // Refetch when network reconnects
+    refetchInterval: 3000, // Refetch every 3 seconds for real-time updates
+    refetchIntervalInBackground: true, // Continue refetching even when tab is not active
+    retry: 3, // Retry failed requests
+    retryDelay: 1000, // Wait 1 second between retries
+    notifyOnChangeProps: 'all', // Notify on all changes
   });
 
   const { mutate: trashOrder, isPending: isTrashing } = useMutation({
     mutationFn: (orderId: string) => fetch(`/api/admin/orders/${orderId}`, { method: 'DELETE' }),
     onSuccess: async () => {
       showToast.success('Order moved to trash.');
+      // Immediately invalidate and refetch all order queries with aggressive cache busting
+      queryClient.setQueryData(['orders'], () => undefined); // Clear cache
       await queryClient.invalidateQueries({ queryKey: ['orders'] });
+      await queryClient.refetchQueries({ queryKey: ['orders'], type: 'active' });
+      // Force a fresh fetch for the current query
+      await queryClient.refetchQueries({ 
+        queryKey: ['orders', { status, search, from, to, page, limit }],
+        exact: true 
+      });
     },
     onError: () => showToast.error('Failed to move order to trash.'),
   });
@@ -109,7 +140,15 @@ function OrdersList({ status }: { status: 'active' | 'trashed' | 'fake' }) {
     }),
     onSuccess: async () => {
       showToast.success('Order restored successfully.');
+      // Immediately invalidate and refetch all order queries with aggressive cache busting
+      queryClient.setQueryData(['orders'], () => undefined); // Clear cache
       await queryClient.invalidateQueries({ queryKey: ['orders'] });
+      await queryClient.refetchQueries({ queryKey: ['orders'], type: 'active' });
+      // Force a fresh fetch for the current query
+      await queryClient.refetchQueries({ 
+        queryKey: ['orders', { status, search, from, to, page, limit }],
+        exact: true 
+      });
     },
     onError: () => showToast.error('Failed to restore order.'),
   });
@@ -121,9 +160,17 @@ function OrdersList({ status }: { status: 'active' | 'trashed' | 'fake' }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ markAsFake: isFake })
       }),
-    onSuccess: async (_: any, variables: { orderId: string; isFake: boolean }) => {
+    onSuccess: async (_, variables: { orderId: string; isFake: boolean }) => {
       showToast.success(variables.isFake ? 'Order marked as fake and user flagged.' : 'Order unmarked as fake.');
+      // Immediately invalidate and refetch all order queries with aggressive cache busting
+      queryClient.setQueryData(['orders'], () => undefined); // Clear cache
       await queryClient.invalidateQueries({ queryKey: ['orders'] });
+      await queryClient.refetchQueries({ queryKey: ['orders'], type: 'active' });
+      // Force a fresh fetch for the current query
+      await queryClient.refetchQueries({ 
+        queryKey: ['orders', { status, search, from, to, page, limit }],
+        exact: true 
+      });
     },
     onError: () => showToast.error('Failed to update order.'),
   });
@@ -216,7 +263,7 @@ function OrdersList({ status }: { status: 'active' | 'trashed' | 'fake' }) {
           <h3>Customer Information</h3>              <p><strong>Name:</strong> ${order.recipientName || order.customer.name}</p>
               <p><strong>Phone:</strong> ${order.recipientPhone || order.customer.phone}</p>
               <p><strong>Email:</strong> ${order.customer.email || 'N/A'}</p>
-              <p><strong>Address:</strong> ${(order as any).shippingAddress || order.customer.address || 'N/A'}</p>
+              <p><strong>Address:</strong> ${order.shippingAddress || order.customer.address || 'N/A'}</p>
         </div>
       `;
 
@@ -427,8 +474,24 @@ function OrdersList({ status }: { status: 'active' | 'trashed' | 'fake' }) {
   
   const { orders, totalOrders, totalPages } = data ?? { orders: [], totalOrders: 0, totalPages: 0 };
 
+  // Debug: Log the actual data being received
+  console.log('🔍 Frontend Debug - Orders data:', {
+    hasData: !!data,
+    dataKeys: data ? Object.keys(data) : [],
+    ordersLength: orders?.length,
+    totalOrders,
+    totalPages,
+    status,
+    isLoading,
+    error: error ? String(error) : null,
+    rawData: data
+  });
+
   return (
     <div className="space-y-4">
+       {/* Debug Panel - Remove in production */}
+       <AdminDebugPanel />
+       
        {/* Loading overlay for search/filter operations */}
        {isPlaceholderData && (
          <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center z-10">
@@ -542,7 +605,7 @@ function OrdersList({ status }: { status: 'active' | 'trashed' | 'fake' }) {
                                 </span>
                               )}
                               {order.isFakeOrder && (
-                                <Flag className="h-4 w-4 text-red-500" title="Fake Order" />
+                                <Flag className="h-4 w-4 text-red-500" />
                               )}
                               <div className="font-medium">{orderInfo.displayNumber}</div>
                             </>
@@ -779,7 +842,7 @@ function OrdersList({ status }: { status: 'active' | 'trashed' | 'fake' }) {
                                 </span>
                               )}
                               {order.isFakeOrder && (
-                                <Flag className="h-4 w-4 text-red-500" title="Fake Order" />
+                                <Flag className="h-4 w-4 text-red-500" />
                               )}
                               <span className="font-semibold text-lg">{orderInfo.compactNumber}</span>
                             </>
@@ -800,7 +863,7 @@ function OrdersList({ status }: { status: 'active' | 'trashed' | 'fake' }) {
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-2 flex-1">
                         {order.user?.isFlagged && (
-                          <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" title="This user has been flagged" />
+                          <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
                         )}
                         <div className="min-w-0 flex-1">
                           <div className="font-medium text-base truncate">{order.recipientName || order.customer.name}</div>
