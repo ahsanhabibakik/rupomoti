@@ -21,7 +21,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, compact = false, className }: ProductCardProps) {
-  const { id, name, price, salePrice, images, isNewArrival, isPopular, isFeatured, stock, rating } = product
+  const { id, name, price, salePrice, images, isNewArrival, isPopular, isFeatured, stock } = product
   const discount = price && salePrice ? Math.round(((price - salePrice) / price) * 100) : 0
   const dispatch = useAppDispatch()
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist()
@@ -42,7 +42,7 @@ export function ProductCard({ product, compact = false, className }: ProductCard
       id,
       name: name || 'Unnamed Product',
       price: discount > 0 ? discountedPrice : safePrice,
-      image: images[0] || '/placeholder.png',
+      image: images[0] || '/images/placeholder.jpg',
       quantity: 1,
       category: 'Uncategorized'
     }
@@ -93,7 +93,7 @@ export function ProductCard({ product, compact = false, className }: ProductCard
       )}>
         {/* Main Image */}
         <Image
-          src={images[0] || '/placeholder.png'}
+          src={images[0]}
           alt={name || 'Unnamed Product'}
           fill
           className={cn(
@@ -102,6 +102,12 @@ export function ProductCard({ product, compact = false, className }: ProductCard
           )}
           sizes={compact ? "(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw" : "(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 50vw"}
           onLoad={() => setIsImageLoading(false)}
+          onError={(e) => {
+            console.error('Product image failed to load:', images[0])
+            // Set fallback image on error
+            e.currentTarget.src = '/images/placeholder.jpg'
+            setIsImageLoading(false)
+          }}
         />
         
         {/* Hover Image */}
@@ -201,17 +207,7 @@ export function ProductCard({ product, compact = false, className }: ProductCard
             "h-4 sm:h-5",
             compact && "h-4"
           )}>
-            {rating && rating > 0 && (
-              <>
-                {renderStars(rating)}
-                <span className={cn(
-                  "text-gray-500 ml-1",
-                  // Responsive text size
-                  "text-[10px] sm:text-xs",
-                  compact && "text-[10px]"
-                )}>({rating.toFixed(1)})</span>
-              </>
-            )}
+            {/* Rating display removed - would need reviews data to calculate */}
           </div>
           {/* Price */}
           <div className="flex items-baseline gap-2 mb-1">
