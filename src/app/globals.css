@@ -47,126 +47,188 @@
 
 @layer base {
   :root {
-    --background: 28 80% 98%; /* pearlWhite */
-    --foreground: 28 34% 21%; /* cocoaBrown */
-
-    --card: 28 80% 98%;
-    --card-foreground: 28 34% 21%;
- 
-    --popover: 28 80% 98%;
-    --popover-foreground: 28 34% 21%;
- 
-    /* Brand Colors - Pearl Essence */
-    --brand: 39 37% 66%; /* warmOysterGold */
-    --brand-foreground: 28 34% 21%;
- 
-    /* Primary - Cocoa Brown */
-    --primary: 28 34% 21%;
-    --primary-foreground: 40 43% 88%; /* champagneSheen */
- 
-    /* Secondary - Champagne Sheen */
-    --secondary: 40 43% 88%;
-    --secondary-foreground: 28 34% 21%;
- 
-    /* Muted - Lighter version of Champagne Sheen */
-    --muted: 40 43% 92%;
-    --muted-foreground: 28 34% 35%;
- 
-    /* Accent - Warm Oyster Gold */
-    --accent: 39 37% 66%;
-    --accent-foreground: 28 34% 21%;
- 
-    /* Destructive - Based on Rose-Gold */
-    --destructive: 8 58% 71%;
-    --destructive-foreground: 28 80% 98%;
-
-    /* Success - A complementary soft green */
-    --success: 158 24% 40%;
-    --success-foreground: 28 80% 98%;
-
-    /* Info - Soft Mist Blue */
-    --info: 196 35% 86%;
-    --info-foreground: 28 34% 21%;
-
-    /* Warning - A stronger gold */
-    --warning: 39 50% 55%;
-    --warning-foreground: 28 34% 21%;
- 
-    --border: 40 43% 88%;
-    --input: 40 43% 92%;
-    --ring: 39 37% 66%;
- 
+    /* ===== MASTER COLOR THEME SYSTEM ===== */
+    /* 🎨 CHANGE THESE VALUES TO UPDATE THE ENTIRE WEBSITE THEME */
+    
+    /* --- PEARL ESSENCE BRAND COLORS --- */
+    /* Used in: Headers, Logo, Main Navigation, CTAs, Active States */
+    --pearl-primary: #FDF9F4;    /* Pearl White - Main backgrounds, cards */
+    --pearl-secondary: #F8F6F0;  /* Warm Pearl - Section backgrounds */
+    --pearl-tertiary: #F0EDE5;   /* Deep Pearl - Subtle divisions */
+    
+    /* Used in: Text hierarchy, Content areas, Form labels */
+    --gold-primary: #C8B38A;     /* Warm Oyster Gold - Primary gold accents */
+    --gold-secondary: #8C7760;   /* Mink Taupe - Body text, secondary content */
+    --gold-tertiary: #4A2E21;    /* Cocoa Brown - Headers, strong text */
+    --gold-dark: #2D1B13;        /* Deep Cocoa - Strong emphasis, borders */
+    
+    /* Used in: Accents, Highlights, Sale badges, Love/Heart features */
+    --rose-gold-light: #FDF5F3;  /* Light rose background */
+    --rose-gold-primary: #D7AFA4; /* Main rose-gold accent */
+    --rose-gold-secondary: #C89A8A; /* Secondary rose tones */
+    --rose-gold-dark: #A06B52;   /* Dark rose accents */
+    
+    /* Used in: Cool sections, Info panels, Calm backgrounds */
+    --mist-blue-light: #F7FAFB;  /* Very light blue backgrounds */
+    --mist-blue-primary: #D0E0E7; /* Primary mist blue */
+    --mist-blue-secondary: #B5CDD8; /* Secondary blue tones */
+    
+    /* --- FUNCTIONAL COLORS --- */
+    /* Used in: Success messages, Completed orders, In-stock indicators */
+    --success-primary: #10B981;
+    --success-secondary: #D1FAE5;
+    
+    /* Used in: Warning alerts, Pending orders, Low stock */
+    --warning-primary: #F59E0B;
+    --warning-secondary: #FEF3C7;
+    
+    /* Used in: Error messages, Out of stock, Failed payments */
+    --error-primary: #EF4444;
+    --error-secondary: #FEE2E2;
+    
+    /* Used in: Info messages, Help tooltips, General information */
+    --info-primary: #3B82F6;
+    --info-secondary: #DBEAFE;
+    
+    /* ===== COMPONENT-SPECIFIC MAPPINGS ===== */
+    /* 🏗️ These map the master colors to specific UI components */
+    
+    /* BACKGROUNDS - Used in: Page backgrounds, Cards, Modals */
+    --background: var(--pearl-primary);
+    --background-secondary: var(--pearl-secondary);
+    --background-muted: var(--pearl-tertiary);
+    
+    /* TEXT COLORS - Used in: All text elements */
+    --foreground: var(--gold-tertiary);        /* Main text */
+    --foreground-secondary: var(--gold-secondary); /* Secondary text */
+    --foreground-muted: var(--gold-secondary);   /* Muted text */
+    
+    /* CARDS - Used in: Product cards, Info cards, Content panels */
+    --card: var(--pearl-primary);
+    --card-foreground: var(--gold-tertiary);
+    
+    /* NAVIGATION - Used in: Header, Sidebar, Menu items */
+    --nav-background: var(--pearl-primary);
+    --nav-foreground: var(--gold-tertiary);
+    --nav-active: var(--gold-primary);
+    
+    /* BUTTONS - Used in: All button variants */
+    --btn-primary: var(--gold-tertiary);       /* Primary button background */
+    --btn-primary-foreground: var(--pearl-primary); /* Primary button text */
+    --btn-secondary: var(--pearl-primary);     /* Secondary button background */
+    --btn-secondary-foreground: var(--gold-tertiary); /* Secondary button text */
+    --btn-accent: var(--rose-gold-primary);    /* Accent/Special buttons */
+    --btn-accent-foreground: var(--pearl-primary);
+    
+    /* FORMS - Used in: Input fields, Labels, Form elements */
+    --input-background: var(--pearl-secondary);
+    --input-foreground: var(--gold-tertiary);
+    --input-border: var(--gold-primary);
+    --input-focus: var(--rose-gold-primary);
+    --label: var(--gold-secondary);
+    
+    /* BORDERS - Used in: Dividers, Card borders, Input borders */
+    --border-primary: var(--gold-primary);
+    --border-secondary: var(--pearl-tertiary);
+    --border-muted: var(--pearl-secondary);
+    
+    /* SHADOWS - Used in: Cards, Modals, Dropdowns */
+    --shadow-color: var(--gold-primary);
+    --shadow-light: var(--pearl-tertiary);
+    
+    /* JEWELRY SPECIFIC - Used in: Product displays, Categories */
+    --jewelry-gold: var(--gold-primary);       /* Gold jewelry products */
+    --jewelry-silver: #E5E7EB;                 /* Silver jewelry products */
+    --jewelry-rose-gold: var(--rose-gold-primary); /* Rose gold jewelry */
+    --jewelry-diamond: #F8FAFC;                /* Diamond/precious stones */
+    --jewelry-pearl: var(--pearl-primary);     /* Pearl products */
+    
+    /* ECOMMERCE SPECIFIC - Used in: Cart, Checkout, Orders */
+    --cart-count: var(--rose-gold-primary);    /* Cart item count badge */
+    --price-original: var(--gold-tertiary);    /* Regular prices */
+    --price-sale: var(--rose-gold-dark);       /* Sale prices */
+    --price-discount: var(--error-primary);    /* Discount labels */
+    --shipping-free: var(--success-primary);   /* Free shipping indicators */
+    
+    /* ADMIN AREAS - Used in: Admin panels, Dashboard */
+    --admin-primary: var(--gold-dark);
+    --admin-secondary: var(--mist-blue-primary);
+    --admin-accent: var(--rose-gold-primary);
+    
+    /* ===== SHADCN/UI COMPONENT MAPPINGS ===== */
+    /* These ensure shadcn/ui components use our theme */
+    --primary: var(--gold-tertiary);
+    --primary-foreground: var(--pearl-primary);
+    --secondary: var(--pearl-secondary);
+    --secondary-foreground: var(--gold-tertiary);
+    --muted: var(--pearl-tertiary);
+    --muted-foreground: var(--gold-secondary);
+    --accent: var(--gold-primary);
+    --accent-foreground: var(--gold-tertiary);
+    --destructive: var(--error-primary);
+    --destructive-foreground: var(--pearl-primary);
+    --popover: var(--pearl-primary);
+    --popover-foreground: var(--gold-tertiary);
+    --border: var(--border-secondary);
+    --input: var(--input-background);
+    --ring: var(--input-focus);
     --radius: 0.5rem;
 
-    /* QalbBox Brand Colors */
-    --brand-primary: #1F382D; /* Deep Heart Green */
-    --brand-secondary: #C62828; /* Heart Red */
-    --brand-accent: #FFC857; /* Warm Gold */
-
-    /* Customizable Theme Colors (can be overridden by SuperAdmin) */
-    --color-primary: #4A2E21;
-    --color-secondary: #C8B38A;
-    --color-accent: #E8CBAF;
-    --color-success: #10B981;
-    --color-warning: #F59E0B;
-    --color-danger: #EF4444;
-    --color-info: #3B82F6;
-    --color-purple: #8B5CF6;
-
-    /* Dynamic custom colors for theme customization */
-    --custom-bg-primary: var(--color-primary);
-    --custom-bg-secondary: var(--color-secondary);
-    --custom-bg-accent: var(--color-accent);
-    --custom-text-primary: #FFFFFF;
-    --custom-text-secondary: #000000;
-    --custom-border: var(--color-accent);
-
-    /* Brand gradient combinations */
-    --gradient-brand: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
-    --gradient-accent: linear-gradient(135deg, var(--color-accent), var(--color-secondary));
-    --gradient-custom: linear-gradient(135deg, var(--custom-bg-primary), var(--custom-bg-accent));
+    /* ===== HOVER & INTERACTIVE STATES ===== */
+    /* Used in: All interactive elements */
+    --hover-background: var(--pearl-tertiary);
+    --hover-foreground: var(--gold-dark);
+    --active-background: var(--gold-primary);
+    --active-foreground: var(--pearl-primary);
+    --focus-ring: var(--rose-gold-primary);
   }
- 
-  /* Dark mode styles disabled - light mode only */
-  .dark {
-    /* All dark mode styles redirected to light mode */
-    --background: 28 80% 98%; 
-    --foreground: 28 34% 21%; 
-    --card: 28 80% 98%;
-    --card-foreground: 28 34% 21%;
-    --popover: 28 80% 98%;
-    --popover-foreground: 28 34% 21%;
-    --brand: 39 37% 66%;
-    --brand-foreground: 28 34% 21%;
-    --primary: 28 34% 21%;
-    --primary-foreground: 40 43% 88%;
-    --secondary: 40 43% 88%;
-    --secondary-foreground: 28 34% 21%;
-    --muted: 40 43% 92%;
-    --muted-foreground: 28 34% 35%;
-    --accent: 39 37% 66%;
-    --accent-foreground: 28 34% 21%;
-    --destructive: 8 58% 71%;
-    --destructive-foreground: 28 80% 98%;
-    --success: 158 24% 40%;
-    --success-foreground: 28 80% 98%;
-    --info: 196 35% 86%;
-    --info-foreground: 28 34% 21%;
-    --warning: 39 50% 55%;
-    --warning-foreground: 28 34% 21%;
-    --border: 40 43% 88%;
-    --input: 40 43% 92%;
-    --ring: 39 37% 66%;
 
-    /* Force light mode colors */
-    --color-primary: #4A2E21;
-    --color-secondary: #C8B38A;
-    --color-accent: #E8CBAF;
-    --color-success: #10B981;
-    --color-warning: #F59E0B;
-    --color-danger: #EF4444;
-    --color-info: #3B82F6;
-    --color-purple: #8B5CF6;
+  /* ===== DARK MODE OVERRIDE ===== */
+  /* Currently disabled - all redirected to light mode for jewelry brand */
+  .dark {
+    --background: var(--pearl-primary);
+    --foreground: var(--gold-tertiary);
+    --card: var(--pearl-primary);
+    --card-foreground: var(--gold-tertiary);
+    --popover: var(--pearl-primary);
+    --popover-foreground: var(--gold-tertiary);
+    --primary: var(--gold-tertiary);
+    --primary-foreground: var(--pearl-primary);
+    --secondary: var(--pearl-secondary);
+    --secondary-foreground: var(--gold-tertiary);
+    --muted: var(--pearl-tertiary);
+    --muted-foreground: var(--gold-secondary);
+    --accent: var(--gold-primary);
+    --accent-foreground: var(--gold-tertiary);
+    --destructive: var(--error-primary);
+    --destructive-foreground: var(--pearl-primary);
+    --border: var(--border-secondary);
+    --input: var(--input-background);
+    --ring: var(--input-focus);
+  }
+
+  /* ===== DARK MODE OVERRIDE ===== */
+  /* Currently disabled - all redirected to light mode for jewelry brand */
+  .dark {
+    --background: var(--pearl-primary);
+    --foreground: var(--gold-tertiary);
+    --card: var(--pearl-primary);
+    --card-foreground: var(--gold-tertiary);
+    --popover: var(--pearl-primary);
+    --popover-foreground: var(--gold-tertiary);
+    --primary: var(--gold-tertiary);
+    --primary-foreground: var(--pearl-primary);
+    --secondary: var(--pearl-secondary);
+    --secondary-foreground: var(--gold-tertiary);
+    --muted: var(--pearl-tertiary);
+    --muted-foreground: var(--gold-secondary);
+    --accent: var(--gold-primary);
+    --accent-foreground: var(--gold-tertiary);
+    --destructive: var(--error-primary);
+    --destructive-foreground: var(--pearl-primary);
+    --border: var(--border-secondary);
+    --input: var(--input-background);
+    --ring: var(--input-focus);
   }
 
   /* Ensure compatibility with Tailwind v4 */
@@ -312,40 +374,211 @@
     background: var(--gradient-custom);
   }
 
-  /* Theme color utilities */
-  .bg-theme-primary {
-    background-color: var(--color-primary);
+  /* ===== COMPREHENSIVE THEME UTILITY CLASSES ===== */
+  /* 🚀 Use these classes instead of CSS variables for easier maintenance */
+  
+  /* --- BACKGROUND UTILITIES --- */
+  /* Page & Layout Backgrounds - Used in: Pages, containers, modals */
+  .bg-theme-primary { background-color: var(--background); }
+  .bg-theme-secondary { background-color: var(--background-secondary); }
+  .bg-theme-muted { background-color: var(--background-muted); }
+  
+  /* Card & Component Backgrounds - Used in: Cards, panels, content areas */
+  .bg-theme-card { background-color: var(--card); }
+  .bg-theme-nav { background-color: var(--nav-background); }
+  .bg-theme-input { background-color: var(--input-background); }
+  
+  /* Pearl System Backgrounds - Used in: Hero sections, featured areas */
+  .bg-theme-pearl-light { background-color: var(--pearl-primary); }
+  .bg-theme-pearl { background-color: var(--pearl-secondary); }
+  .bg-theme-pearl-deep { background-color: var(--pearl-tertiary); }
+  
+  /* Gold System Backgrounds - Used in: Accent panels, highlights */
+  .bg-theme-gold-light { background-color: var(--gold-primary); }
+  .bg-theme-gold { background-color: var(--gold-secondary); }
+  .bg-theme-gold-dark { background-color: var(--gold-tertiary); }
+  
+  /* Rose Gold Backgrounds - Used in: Special features, love/heart sections */
+  .bg-theme-rose-light { background-color: var(--rose-gold-light); }
+  .bg-theme-rose { background-color: var(--rose-gold-primary); }
+  .bg-theme-rose-deep { background-color: var(--rose-gold-dark); }
+  
+  /* Mist Blue Backgrounds - Used in: Info sections, cool areas */
+  .bg-theme-mist-light { background-color: var(--mist-blue-light); }
+  .bg-theme-mist { background-color: var(--mist-blue-primary); }
+  .bg-theme-mist-deep { background-color: var(--mist-blue-secondary); }
+  
+  /* Status Backgrounds - Used in: Alerts, notifications, status indicators */
+  .bg-theme-success { background-color: var(--success-primary); }
+  .bg-theme-success-light { background-color: var(--success-secondary); }
+  .bg-theme-warning { background-color: var(--warning-primary); }
+  .bg-theme-warning-light { background-color: var(--warning-secondary); }
+  .bg-theme-error { background-color: var(--error-primary); }
+  .bg-theme-error-light { background-color: var(--error-secondary); }
+  .bg-theme-info { background-color: var(--info-primary); }
+  .bg-theme-info-light { background-color: var(--info-secondary); }
+  
+  /* Jewelry Backgrounds - Used in: Product displays, categories */
+  .bg-theme-jewelry-gold { background-color: var(--jewelry-gold); }
+  .bg-theme-jewelry-silver { background-color: var(--jewelry-silver); }
+  .bg-theme-jewelry-rose { background-color: var(--jewelry-rose-gold); }
+  .bg-theme-jewelry-diamond { background-color: var(--jewelry-diamond); }
+  .bg-theme-jewelry-pearl { background-color: var(--jewelry-pearl); }
+  
+  /* Hover & Interactive Backgrounds - Used in: Interactive elements */
+  .bg-theme-hover { background-color: var(--hover-background); }
+  .bg-theme-active { background-color: var(--active-background); }
+  
+  /* --- TEXT UTILITIES --- */
+  /* Primary Text Colors - Used in: Headings, important text */
+  .text-theme-primary { color: var(--foreground); }
+  .text-theme-secondary { color: var(--foreground-secondary); }
+  .text-theme-muted { color: var(--foreground-muted); }
+  
+  /* Gold Text System - Used in: Headers, accents, highlights */
+  .text-theme-gold-light { color: var(--gold-primary); }
+  .text-theme-gold { color: var(--gold-secondary); }
+  .text-theme-gold-dark { color: var(--gold-tertiary); }
+  .text-theme-gold-deep { color: var(--gold-dark); }
+  
+  /* Rose Gold Text - Used in: Special highlights, love features */
+  .text-theme-rose-light { color: var(--rose-gold-light); }
+  .text-theme-rose { color: var(--rose-gold-primary); }
+  .text-theme-rose-deep { color: var(--rose-gold-dark); }
+  
+  /* Status Text Colors - Used in: Status messages, alerts */
+  .text-theme-success { color: var(--success-primary); }
+  .text-theme-warning { color: var(--warning-primary); }
+  .text-theme-error { color: var(--error-primary); }
+  .text-theme-info { color: var(--info-primary); }
+  
+  /* Jewelry Text Colors - Used in: Product descriptions, categories */
+  .text-theme-jewelry-gold { color: var(--jewelry-gold); }
+  .text-theme-jewelry-silver { color: var(--jewelry-silver); }
+  .text-theme-jewelry-rose { color: var(--jewelry-rose-gold); }
+  
+  /* Interactive Text Colors - Used in: Links, buttons, hover states */
+  .text-theme-hover { color: var(--hover-foreground); }
+  .text-theme-active { color: var(--active-foreground); }
+  
+  /* --- BORDER UTILITIES --- */
+  /* Standard Borders - Used in: Cards, inputs, dividers */
+  .border-theme-primary { border-color: var(--border-primary); }
+  .border-theme-secondary { border-color: var(--border-secondary); }
+  .border-theme-muted { border-color: var(--border-muted); }
+  
+  /* Gold Border System - Used in: Accent borders, highlights */
+  .border-theme-gold { border-color: var(--gold-primary); }
+  .border-theme-gold-dark { border-color: var(--gold-secondary); }
+  
+  /* Rose Gold Borders - Used in: Special sections, highlights */
+  .border-theme-rose { border-color: var(--rose-gold-primary); }
+  .border-theme-rose-deep { border-color: var(--rose-gold-dark); }
+  
+  /* Status Borders - Used in: Alert boxes, status indicators */
+  .border-theme-success { border-color: var(--success-primary); }
+  .border-theme-warning { border-color: var(--warning-primary); }
+  .border-theme-error { border-color: var(--error-primary); }
+  .border-theme-info { border-color: var(--info-primary); }
+  
+  /* Focus & Interactive Borders - Used in: Form elements, interactive components */
+  .border-theme-focus { border-color: var(--focus-ring); }
+  .border-theme-input { border-color: var(--input-border); }
+  .border-theme-input-focus { border-color: var(--input-focus); }
+  
+  /* --- BUTTON UTILITIES --- */
+  /* Primary Button Styles - Used in: Main CTAs, primary actions */
+  .btn-theme-primary {
+    background-color: var(--btn-primary);
+    color: var(--btn-primary-foreground);
+    border: 1px solid var(--btn-primary);
+    transition: all 0.2s ease-in-out;
   }
-  .bg-theme-secondary {
-    background-color: var(--color-secondary);
+  
+  .btn-theme-primary:hover {
+    background-color: var(--hover-background);
+    color: var(--hover-foreground);
+    border-color: var(--hover-background);
   }
-  .bg-theme-accent {
-    background-color: var(--color-accent);
+  
+  /* Secondary Button Styles - Used in: Secondary actions, cancel buttons */
+  .btn-theme-secondary {
+    background-color: var(--btn-secondary);
+    color: var(--btn-secondary-foreground);
+    border: 1px solid var(--border-primary);
+    transition: all 0.2s ease-in-out;
   }
-  .bg-theme-success {
-    background-color: var(--color-success);
+  
+  .btn-theme-secondary:hover {
+    background-color: var(--hover-background);
+    color: var(--hover-foreground);
+    border-color: var(--hover-background);
   }
-  .bg-theme-warning {
-    background-color: var(--color-warning);
+  
+  /* Accent Button Styles - Used in: Special features, highlights */
+  .btn-theme-accent {
+    background-color: var(--btn-accent);
+    color: var(--btn-accent-foreground);
+    border: 1px solid var(--btn-accent);
+    transition: all 0.2s ease-in-out;
   }
-  .bg-theme-danger {
-    background-color: var(--color-danger);
+  
+  .btn-theme-accent:hover {
+    background-color: var(--rose-gold-dark);
+    color: var(--pearl-primary);
+    border-color: var(--rose-gold-dark);
   }
-  .bg-theme-info {
-    background-color: var(--color-info);
+  
+  /* Status Button Styles - Used in: Success, warning, error actions */
+  .btn-theme-success {
+    background-color: var(--success-primary);
+    color: var(--pearl-primary);
+    border: 1px solid var(--success-primary);
+    transition: all 0.2s ease-in-out;
   }
-  .bg-theme-purple {
-    background-color: var(--color-purple);
+  
+  .btn-theme-warning {
+    background-color: var(--warning-primary);
+    color: var(--pearl-primary);
+    border: 1px solid var(--warning-primary);
+    transition: all 0.2s ease-in-out;
   }
-
-  .text-theme-primary {
-    color: var(--color-primary);
+  
+  .btn-theme-error {
+    background-color: var(--error-primary);
+    color: var(--pearl-primary);
+    border: 1px solid var(--error-primary);
+    transition: all 0.2s ease-in-out;
   }
-  .text-theme-secondary {
-    color: var(--color-secondary);
+  
+  /* --- ECOMMERCE UTILITIES --- */
+  /* Cart & Shopping - Used in: Cart components, shopping features */
+  .bg-theme-cart-badge { background-color: var(--cart-count); }
+  .text-theme-price-regular { color: var(--price-original); }
+  .text-theme-price-sale { color: var(--price-sale); }
+  .text-theme-price-discount { color: var(--price-discount); }
+  .text-theme-shipping-free { color: var(--shipping-free); }
+  
+  /* --- SHADOW UTILITIES --- */
+  /* Card & Component Shadows - Used in: Cards, modals, dropdowns */
+  .shadow-theme-light {
+    box-shadow: 0 1px 3px 0 rgb(from var(--shadow-light) r g b / 0.1),
+                0 1px 2px -1px rgb(from var(--shadow-light) r g b / 0.1);
   }
-  .text-theme-accent {
-    color: var(--color-accent);
+  
+  .shadow-theme-medium {
+    box-shadow: 0 4px 6px -1px rgb(from var(--shadow-color) r g b / 0.1),
+                0 2px 4px -2px rgb(from var(--shadow-color) r g b / 0.1);
+  }
+  
+  .shadow-theme-large {
+    box-shadow: 0 10px 15px -3px rgb(from var(--shadow-color) r g b / 0.1),
+                0 4px 6px -4px rgb(from var(--shadow-color) r g b / 0.1);
+  }
+  
+  /* Focus Ring - Used in: Form elements, interactive components */
+  .ring-theme-focus {
+    box-shadow: 0 0 0 2px rgb(from var(--focus-ring) r g b / 0.2);
   }
 
   /* Safe gradient text utilities */
@@ -1493,4 +1726,127 @@
   background-color: #ffffff !important;
   color: #111827 !important;
   border-color: #e5e7eb !important;
+}
+
+/* ===== UTILITY CLASSES FOR CENTRALIZED THEME ===== */
+/* 🎨 Use these classes instead of hard-coded Tailwind colors */
+/* 🔄 They automatically update when you change the CSS custom properties above */
+
+@layer utilities {
+  /* BACKGROUND UTILITIES */
+  /* Used in: Page layouts, cards, sections */
+  .bg-theme-primary { background-color: var(--background); }
+  .bg-theme-secondary { background-color: var(--background-secondary); }
+  .bg-theme-muted { background-color: var(--background-muted); }
+  .bg-theme-card { background-color: var(--card); }
+  
+  /* TEXT UTILITIES */
+  /* Used in: All text elements with proper hierarchy */
+  .text-theme-primary { color: var(--foreground); }
+  .text-theme-secondary { color: var(--foreground-secondary); }
+  .text-theme-muted { color: var(--foreground-muted); }
+  .text-theme-gold { color: var(--gold-primary); }
+  .text-theme-gold-dark { color: var(--gold-tertiary); }
+  
+  /* BUTTON UTILITIES */
+  /* Used in: All button variants */
+  .btn-theme-primary {
+    background-color: var(--btn-primary);
+    color: var(--btn-primary-foreground);
+  }
+  .btn-theme-secondary {
+    background-color: var(--btn-secondary);
+    color: var(--btn-secondary-foreground);
+  }
+  .btn-theme-accent {
+    background-color: var(--btn-accent);
+    color: var(--btn-accent-foreground);
+  }
+  
+  /* BORDER UTILITIES */
+  /* Used in: Dividers, outlines, separators */
+  .border-theme-primary { border-color: var(--border-primary); }
+  .border-theme-secondary { border-color: var(--border-secondary); }
+  .border-theme-muted { border-color: var(--border-muted); }
+  
+  /* INTERACTIVE STATE UTILITIES */
+  /* Used in: Hover, focus, active states */
+  .hover-theme:hover {
+    background-color: var(--hover-background);
+    color: var(--hover-foreground);
+  }
+  .active-theme {
+    background-color: var(--active-background);
+    color: var(--active-foreground);
+  }
+  .focus-theme:focus {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+  
+  /* JEWELRY SPECIFIC UTILITIES */
+  /* Used in: Product displays, category filters */
+  .jewelry-gold { color: var(--jewelry-gold); }
+  .jewelry-silver { color: var(--jewelry-silver); }
+  .jewelry-rose-gold { color: var(--jewelry-rose-gold); }
+  .jewelry-pearl { color: var(--jewelry-pearl); }
+  
+  /* STATUS UTILITIES */
+  /* Used in: Alerts, notifications, status indicators */
+  .status-success {
+    background-color: var(--success-secondary);
+    color: var(--success-primary);
+  }
+  .status-warning {
+    background-color: var(--warning-secondary);
+    color: var(--warning-primary);
+  }
+  .status-error {
+    background-color: var(--error-secondary);
+    color: var(--error-primary);
+  }
+  .status-info {
+    background-color: var(--info-secondary);
+    color: var(--info-primary);
+  }
+  
+  /* ECOMMERCE UTILITIES */
+  /* Used in: Shopping features, pricing */
+  .price-regular { color: var(--price-original); }
+  .price-sale { color: var(--price-sale); }
+  .price-discount { color: var(--price-discount); }
+  .cart-badge {
+    background-color: var(--cart-count);
+    color: var(--pearl-primary);
+  }
+  
+  /* ADMIN UTILITIES */
+  /* Used in: Admin panels, dashboard areas */
+  .admin-primary { color: var(--admin-primary); }
+  .admin-secondary { color: var(--admin-secondary); }
+  .admin-accent { color: var(--admin-accent); }
+  
+  /* GRADIENT UTILITIES */
+  /* Used in: Special backgrounds, hero sections */
+  .bg-theme-gradient-primary {
+    background: linear-gradient(135deg, var(--pearl-primary) 0%, var(--pearl-secondary) 50%, var(--pearl-tertiary) 100%);
+  }
+  .bg-theme-gradient-gold {
+    background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-secondary) 100%);
+  }
+  .bg-theme-gradient-rose {
+    background: linear-gradient(135deg, var(--rose-gold-light) 0%, var(--rose-gold-primary) 100%);
+  }
+  
+  /* SHADOW UTILITIES */
+  /* Used in: Cards, modals, elevated elements */
+  .shadow-theme-light {
+    box-shadow: 0 4px 20px 0 color-mix(in srgb, var(--shadow-light) 60%, transparent);
+  }
+  .shadow-theme-medium {
+    box-shadow: 0 8px 25px 0 color-mix(in srgb, var(--shadow-color) 20%, transparent);
+  }
+  .shadow-theme-heavy {
+    box-shadow: 0 12px 40px 0 color-mix(in srgb, var(--shadow-color) 30%, transparent);
+  }
 }
