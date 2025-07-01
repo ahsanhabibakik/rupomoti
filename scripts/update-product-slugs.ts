@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client'
-import { generateSlug, generateUniqueSlug } from '../src/lib/utils/slug'
+import { generateUniqueSlugFromDB, generateSlug, validateSlug } from '../src/lib/utils/slug'
 
 const prisma = new PrismaClient()
 
@@ -18,30 +18,47 @@ async function updateProductSlugs() {
     
     console.log(`Found ${products.length} products`)
     
-    // Get existing slugs
-    const existingSlugs = products
-      .filter(p => p.slug && p.slug !== '')
-      .map(p => p.slug!)
-    
-    console.log(`Found ${existingSlugs.length} existing slugs`)
-    
-    // Update products without slugs
+    let updatedCount = 0;
+    const processedSlugs = new Set<string>();
+
+    // Update products with missing, invalid, or duplicate slugs
     for (const product of products) {
-      if (!product.slug || product.slug === '') {
-        const baseSlug = generateSlug(product.name)
-        const uniqueSlug = generateUniqueSlug(baseSlug, existingSlugs)
+      let needsUpdate = false;
+      let reason = '';
+      
+      // Check if product has no slug
+      if (!product.slug || product.slug.trim() === '') {
+        needsUpdate = true;
+        reason = 'missing slug';
+      }
+      // Check if slug is invalid format
+      else if (!validateSlug(product.slug)) {
+        needsUpdate = true;
+        reason = 'invalid slug format';
+      }
+      // Check for duplicate slugs
+      else if (processedSlugs.has(product.slug)) {
+        needsUpdate = true;
+        reason = 'duplicate slug';
+      }
+      
+      if (needsUpdate) {
+        const newSlug = await generateUniqueSlugFromDB(product.name);
         
         await prisma.product.update({
           where: { id: product.id },
-          data: { slug: uniqueSlug }
-        })
+          data: { slug: newSlug }
+        });
         
-        existingSlugs.push(uniqueSlug)
-        console.log(`Updated product "${product.name}" with slug: ${uniqueSlug}`)
+        console.log(`Updated product "${product.name}" (${reason}): "${product.slug}" -> "${newSlug}"`);
+        updatedCount++;
+        processedSlugs.add(newSlug);
+      } else {
+        processedSlugs.add(product.slug);
       }
     }
     
-    console.log('Product slug update completed successfully!')
+    console.log(`Product slug update completed! Updated ${updatedCount} out of ${products.length} products.`);
   } catch (error) {
     console.error('Error updating product slugs:', error)
   } finally {

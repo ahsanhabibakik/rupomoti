@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -16,6 +18,7 @@ import SafeSuperAdminThemeManager from '@/components/admin/SafeSuperAdminThemeMa
 import { Settings, Palette, Shield } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
+// Admin settings page
 const settingSchema = z.object({
   key: z.string(),
   value: z.any(),
@@ -155,4 +158,4 @@ export default function SettingsPage() {
       </Form>
     </div>
   )
-} 
+}

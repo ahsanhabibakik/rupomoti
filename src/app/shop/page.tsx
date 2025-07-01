@@ -1,5 +1,8 @@
 "use client"
 
+// Client-side with dynamic data fetching (good for filtering/search)
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { ProductCard } from '@/components/products/ProductCard'

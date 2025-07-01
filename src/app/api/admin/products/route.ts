@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { verifyAdminAccess } from '@/lib/admin-auth';
 import { prisma } from '@/lib/prisma';
+import { generateUniqueSlugFromDB, validateSlug, isSlugAvailable } from '@/lib/utils/slug';
 
 export async function GET(request: Request) {
   try {
@@ -98,9 +99,46 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
+    const { name, slug: providedSlug, ...rest } = body;
+    
+    // Validate required fields
+    if (!name?.trim()) {
+      return NextResponse.json({ error: 'Product name is required' }, { status: 400 });
+    }
+    
+    let finalSlug: string;
+    
+    // If a slug is provided, validate and check if it's available
+    if (providedSlug?.trim()) {
+      const cleanSlug = providedSlug.trim();
+      
+      // Validate slug format
+      if (!validateSlug(cleanSlug)) {
+        return NextResponse.json({ 
+          error: 'Invalid slug format. Slug must contain only lowercase letters, numbers, and hyphens.' 
+        }, { status: 400 });
+      }
+      
+      // Check if slug is available
+      const isAvailable = await isSlugAvailable(cleanSlug);
+      if (!isAvailable) {
+        return NextResponse.json({ 
+          error: 'Slug is already taken. Please choose a different slug.' 
+        }, { status: 400 });
+      }
+      
+      finalSlug = cleanSlug;
+    } else {
+      // Generate unique slug from product name
+      finalSlug = await generateUniqueSlugFromDB(name);
+    }
     
     const product = await prisma.product.create({
-      data: { ...body },
+      data: { 
+        name: name.trim(),
+        slug: finalSlug,
+        ...rest 
+      },
     });
 
     return NextResponse.json({ product });
@@ -118,11 +156,80 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { id, ...data } = body;
+    const { id, name, slug: providedSlug, ...rest } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
+    }
+
+    // Get the existing product
+    const existingProduct = await prisma.product.findUnique({
+      where: { id },
+      select: { slug: true, name: true }
+    });
+
+    if (!existingProduct) {
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    }
+
+    let finalSlug = existingProduct.slug;
+    
+    // If name is being updated, we might need to update the slug
+    if (name && name.trim() !== existingProduct.name) {
+      if (providedSlug?.trim()) {
+        const cleanSlug = providedSlug.trim();
+        
+        // Validate slug format
+        if (!validateSlug(cleanSlug)) {
+          return NextResponse.json({ 
+            error: 'Invalid slug format. Slug must contain only lowercase letters, numbers, and hyphens.' 
+          }, { status: 400 });
+        }
+        
+        // Check if slug is available (excluding current product)
+        const isAvailable = await isSlugAvailable(cleanSlug, id);
+        if (!isAvailable) {
+          return NextResponse.json({ 
+            error: 'Slug is already taken. Please choose a different slug.' 
+          }, { status: 400 });
+        }
+        
+        finalSlug = cleanSlug;
+      } else {
+        // Generate new slug from updated name
+        finalSlug = await generateUniqueSlugFromDB(name.trim(), existingProduct.slug);
+      }
+    } else if (providedSlug?.trim() && providedSlug.trim() !== existingProduct.slug) {
+      // Slug is being updated without name change
+      const cleanSlug = providedSlug.trim();
+      
+      // Validate slug format
+      if (!validateSlug(cleanSlug)) {
+        return NextResponse.json({ 
+          error: 'Invalid slug format. Slug must contain only lowercase letters, numbers, and hyphens.' 
+        }, { status: 400 });
+      }
+      
+      // Check if slug is available (excluding current product)
+      const isAvailable = await isSlugAvailable(cleanSlug, id);
+      if (!isAvailable) {
+        return NextResponse.json({ 
+          error: 'Slug is already taken. Please choose a different slug.' 
+        }, { status: 400 });
+      }
+      
+      finalSlug = cleanSlug;
+    }
+
+    const updateData: any = { ...rest };
+    if (name) {
+      updateData.name = name.trim();
+    }
+    updateData.slug = finalSlug;
 
     const product = await prisma.product.update({
       where: { id },
-      data,
+      data: updateData,
     });
 
     return NextResponse.json({ product });

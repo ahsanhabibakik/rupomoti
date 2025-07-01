@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+export const dynamic = 'force-dynamic';
+
+import React, { useState, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import {
@@ -28,7 +30,6 @@ import { DataTablePagination } from '@/components/ui/DataTablePagination';
 import { showToast } from '@/lib/toast';
 import { OrderFilters } from './_components/OrderFilters';
 import { getOrderDisplayNumber, getOrderAnalyticalInfo } from '@/lib/utils/order-number';
-import { AdminDebugPanel } from '@/components/admin/AdminDebugPanel';
 
 // Manually define the type to include the fields we need
 type OrderWithDetails = (Prisma.OrderGetPayload<{
@@ -62,7 +63,7 @@ function isNew(date: string | Date) {
   return differenceInHours(new Date(), new Date(date)) < 24;
 }
 
-function OrdersList({ status }: { status: 'active' | 'trashed' | 'fake' }) {
+const OrdersList = React.memo(({ status }: { status: 'active' | 'trashed' | 'fake' }) => {
   const router = useRouter();
   const searchParams = useSearchParams() || new URLSearchParams();
   const queryClient = useQueryClient();
@@ -72,11 +73,18 @@ function OrdersList({ status }: { status: 'active' | 'trashed' | 'fake' }) {
   const [isSelectAll, setIsSelectAll] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
-  const search = searchParams.get('search');
-  const from = searchParams.get('from');
-  const to = searchParams.get('to');
-  const page = Number(searchParams.get('page') ?? 1);
-  const limit = Number(searchParams.get('limit') ?? 10);
+  // Memoize URL parameters to prevent unnecessary re-renders
+  const queryParams = useMemo(() => {
+    return {
+      search: searchParams.get('search'),
+      from: searchParams.get('from'),
+      to: searchParams.get('to'),
+      page: Number(searchParams.get('page') ?? 1),
+      limit: Number(searchParams.get('limit') ?? 10),
+    };
+  }, [searchParams]);
+
+  const { search, from, to, page, limit } = queryParams;
 
   const { data, error, isLoading, isPlaceholderData } = useQuery({
     queryKey: ['orders', { status, search, from, to, page, limit }],
@@ -93,9 +101,8 @@ function OrdersList({ status }: { status: 'active' | 'trashed' | 'fake' }) {
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
-          'Expires': '0',
         },
-        cache: 'no-store', // Ensure fetch cache is disabled
+        cache: 'no-store',
       });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Network error' }));
@@ -103,30 +110,25 @@ function OrdersList({ status }: { status: 'active' | 'trashed' | 'fake' }) {
       }
       return response.json();
     },
-    staleTime: 0, // Always consider data stale - force fresh fetch every time
-    gcTime: 0, // Don't cache results at all
-    refetchOnMount: 'always', // Always refetch when component mounts
-    refetchOnWindowFocus: true, // Refetch when window gains focus
-    refetchOnReconnect: true, // Refetch when network reconnects
-    refetchInterval: 3000, // Refetch every 3 seconds for real-time updates
-    refetchIntervalInBackground: true, // Continue refetching even when tab is not active
-    retry: 3, // Retry failed requests
-    retryDelay: 1000, // Wait 1 second between retries
-    notifyOnChangeProps: 'all', // Notify on all changes
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+    refetchOnMount: true,
+    refetchOnWindowFocus: false, // Reduce unnecessary refetches
+    refetchOnReconnect: true,
+    refetchInterval: 60000, // Refetch every minute instead of 3 seconds
+    refetchIntervalInBackground: false, // Don't refetch in background
+    retry: 2, // Reduce retry attempts
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   const { mutate: trashOrder, isPending: isTrashing } = useMutation({
     mutationFn: (orderId: string) => fetch(`/api/admin/orders/${orderId}`, { method: 'DELETE' }),
     onSuccess: async () => {
       showToast.success('Order moved to trash.');
-      // Immediately invalidate and refetch all order queries with aggressive cache busting
-      queryClient.setQueryData(['orders'], () => undefined); // Clear cache
-      await queryClient.invalidateQueries({ queryKey: ['orders'] });
-      await queryClient.refetchQueries({ queryKey: ['orders'], type: 'active' });
-      // Force a fresh fetch for the current query
-      await queryClient.refetchQueries({ 
-        queryKey: ['orders', { status, search, from, to, page, limit }],
-        exact: true 
+      // Invalidate only relevant queries
+      await queryClient.invalidateQueries({ 
+        queryKey: ['orders'], 
+        refetchType: 'active' 
       });
     },
     onError: () => showToast.error('Failed to move order to trash.'),
@@ -140,14 +142,10 @@ function OrdersList({ status }: { status: 'active' | 'trashed' | 'fake' }) {
     }),
     onSuccess: async () => {
       showToast.success('Order restored successfully.');
-      // Immediately invalidate and refetch all order queries with aggressive cache busting
-      queryClient.setQueryData(['orders'], () => undefined); // Clear cache
-      await queryClient.invalidateQueries({ queryKey: ['orders'] });
-      await queryClient.refetchQueries({ queryKey: ['orders'], type: 'active' });
-      // Force a fresh fetch for the current query
-      await queryClient.refetchQueries({ 
-        queryKey: ['orders', { status, search, from, to, page, limit }],
-        exact: true 
+      // Invalidate only relevant queries
+      await queryClient.invalidateQueries({ 
+        queryKey: ['orders'], 
+        refetchType: 'active' 
       });
     },
     onError: () => showToast.error('Failed to restore order.'),
@@ -162,76 +160,45 @@ function OrdersList({ status }: { status: 'active' | 'trashed' | 'fake' }) {
       }),
     onSuccess: async (_, variables: { orderId: string; isFake: boolean }) => {
       showToast.success(variables.isFake ? 'Order marked as fake and user flagged.' : 'Order unmarked as fake.');
-      // Immediately invalidate and refetch all order queries with aggressive cache busting
-      queryClient.setQueryData(['orders'], () => undefined); // Clear cache
-      await queryClient.invalidateQueries({ queryKey: ['orders'] });
-      await queryClient.refetchQueries({ queryKey: ['orders'], type: 'active' });
-      // Force a fresh fetch for the current query
-      await queryClient.refetchQueries({ 
-        queryKey: ['orders', { status, search, from, to, page, limit }],
-        exact: true 
+      // Invalidate only relevant queries
+      await queryClient.invalidateQueries({ 
+        queryKey: ['orders'], 
+        refetchType: 'active' 
       });
     },
     onError: () => showToast.error('Failed to update order.'),
   });
   
-  const handleTrashOrder = (orderId: string) => {
+  const handleTrashOrder = useCallback((orderId: string) => {
     if (window.confirm('Are you sure you want to move this order to the trash? This will also flag the user.')) {
       trashOrder(orderId);
     }
-  };
+  }, [trashOrder]);
 
-  const handleMarkAsFake = (orderId: string, currentStatus: boolean) => {
+  const handleMarkAsFake = useCallback((orderId: string, currentStatus: boolean) => {
     const action = currentStatus ? 'unmark' : 'mark';
     const message = `Are you sure you want to ${action} this order as fake?${!currentStatus ? ' This will also flag the user.' : ''}`;
     
     if (window.confirm(message)) {
       markAsFakeOrder({ orderId, isFake: !currentStatus });
     }
-  };
+  }, [markAsFakeOrder]);
   
-  const handlePageChange = (newPage: number) => {
+  const handlePageChange = useCallback((newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('page', newPage.toString());
     router.push(`/admin/orders?${params.toString()}`);
-  };
+  }, [router, searchParams]);
 
-  const handlePageSizeChange = (newSize: number) => {
+  const handlePageSizeChange = useCallback((newSize: number) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('limit', newSize.toString());
     params.set('page', '1');
     router.push(`/admin/orders?${params.toString()}`);
-  };
-
-  // Bulk selection functions
-  const handleSelectOrder = (orderId: string, checked: boolean) => {
-    const newSelected = new Set(selectedOrders);
-    if (checked) {
-      newSelected.add(orderId);
-    } else {
-      newSelected.delete(orderId);
-    }
-    setSelectedOrders(newSelected);
-    setIsSelectAll(newSelected.size === orders.length && orders.length > 0);
-  };
-
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedOrders(new Set(orders.map((order: OrderWithDetails) => order.id)));
-      setIsSelectAll(true);
-    } else {
-      setSelectedOrders(new Set());
-      setIsSelectAll(false);
-    }
-  };
-
-  const clearSelection = () => {
-    setSelectedOrders(new Set());
-    setIsSelectAll(false);
-  };
+  }, [router, searchParams]);
 
   // PDF generation functions
-  const generateOrderPDF = async (order: OrderWithDetails) => {
+  const generateOrderPDF = useCallback(async (order: OrderWithDetails) => {
     try {
       setIsGeneratingPDF(true);
       
@@ -343,155 +310,74 @@ function OrdersList({ status }: { status: 'active' | 'trashed' | 'fake' }) {
     } finally {
       setIsGeneratingPDF(false);
     }
-  };
+  }, []);
 
-  const generateBulkPDF = async () => {
-    if (selectedOrders.size === 0) {
-      showToast.error('Please select orders to export');
-      return;
-    }
-
-    try {
-      setIsGeneratingPDF(true);
-      const selectedOrdersList = orders.filter((order: OrderWithDetails) => 
-        selectedOrders.has(order.id)
-      );
-
-      const printWindow = window.open('', '_blank');
-      if (!printWindow) {
-        showToast.error('Please allow popups to generate PDF');
-        return;
-      }
-
-      const styles = `
-        <style>
-          body { font-family: Arial, sans-serif; padding: 20px; line-height: 1.4; font-size: 12px; }
-          .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
-          .order-card { border: 1px solid #ddd; margin-bottom: 15px; padding: 15px; page-break-inside: avoid; }
-          .order-header { background-color: #f5f5f5; padding: 10px; margin: -15px -15px 10px -15px; }
-          .order-details { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-          .section h4 { margin: 0 0 8px 0; color: #333; }
-          .items-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
-          .items-table th, .items-table td { border: 1px solid #ddd; padding: 5px; text-align: left; }
-          .items-table th { background-color: #f9f9f9; }
-          @media print { body { margin: 0; font-size: 10px; } .order-card { page-break-inside: avoid; } }
-        </style>
-      `;
-
-      const headerContent = `
-        <div class="header">
-          <h1>Bulk Orders Export</h1>
-          <p>Generated on: ${format(new Date(), "dd MMM yyyy, h:mm a")}</p>
-          <p>Total Orders: ${selectedOrdersList.length}</p>
-        </div>
-      `;
-
-      const ordersContent = selectedOrdersList.map((order: OrderWithDetails) => {
-        const orderInfo = getOrderAnalyticalInfo(order);
-        const itemsRows = order.items?.map((item: any) => `
-          <tr>
-            <td>${item.product.name}</td>
-            <td>${item.quantity}</td>
-            <td>৳${item.price.toLocaleString()}</td>
-            <td>৳${(item.price * item.quantity).toLocaleString()}</td>
-          </tr>
-        `).join('') || '';
-
-        return `
-          <div class="order-card">
-            <div class="order-header">
-              <h3>Order #${orderInfo.displayNumber} - ৳${order.total.toLocaleString()}</h3>
-              <p>Date: ${format(new Date(order.createdAt), "dd MMM yyyy, h:mm a")}</p>
-            </div>
-            
-            <div class="order-details">
-              <div class="section">
-                <h4>Customer Information</h4>
-                <p><strong>Name:</strong> ${order.recipientName || order.customer.name}</p>
-                <p><strong>Phone:</strong> ${order.recipientPhone || order.customer.phone}</p>
-                <p><strong>Address:</strong> ${(order as any).shippingAddress || order.customer.address || 'N/A'}</p>
-              </div>
-              
-              <div class="section">
-                <h4>Order Status</h4>
-                <p><strong>Status:</strong> ${order.status}</p>
-                <p><strong>Payment:</strong> ${order.paymentStatus}</p>
-                ${order.courierName ? `<p><strong>Courier:</strong> ${order.courierName}</p>` : ''}
-              </div>
-            </div>
-
-            <table class="items-table">
-              <thead>
-                <tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr>
-              </thead>
-              <tbody>
-                ${itemsRows}
-              </tbody>
-            </table>
-          </div>
-        `;
-      }).join('');
-
-      const htmlContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Bulk Orders Export</title>
-          ${styles}
-        </head>
-        <body>
-          ${headerContent}
-          ${ordersContent}
-        </body>
-        </html>
-      `;
-
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
-      
-      printWindow.onload = () => {
-        setTimeout(() => {
-          printWindow.print();
-          printWindow.close();
-        }, 500);
-      };
-
-      showToast.success(`PDF generated for ${selectedOrdersList.length} orders`);
-    } catch (error) {
-      console.error('Error generating bulk PDF:', error);
-      showToast.error('Failed to generate bulk PDF');
-    } finally {
-      setIsGeneratingPDF(false);
-    }
-  };
-  
   if (isLoading && !isPlaceholderData) return (
     <div className="p-4 md:p-6">
       <OrderTableSkeleton />
     </div>
   );
-  if (error) return <div className="text-red-500 text-center py-10">Failed to load orders.</div>;
+  if (error) return <div className="text-red-500 text-center py-10">Failed to load orders: {error instanceof Error ? error.message : String(error)}</div>;
   
-  const { orders, totalOrders, totalPages } = data ?? { orders: [], totalOrders: 0, totalPages: 0 };
+  // Safely extract and validate data
+  const { orders: rawOrders = [], totalOrders = 0, totalPages = 0 } = data ?? {};
+  
+  // Validate and sanitize orders data
+  const orders = rawOrders.filter((order: any) => {
+    if (!order || !order.id) {
+      console.warn('Invalid order found:', order);
+      return false;
+    }
+    return true;
+  }).map((order: any) => ({
+    ...order,
+    customer: order.customer || {
+      id: 'unknown',
+      name: 'Unknown Customer',
+      phone: 'N/A',
+      email: null,
+      address: null
+    },
+    user: order.user || { isFlagged: false },
+    items: order.items || [],
+    shippingAddress: order.shippingAddress || order.deliveryAddress || 'N/A'
+  }));
 
-  // Debug: Log the actual data being received
-  console.log('🔍 Frontend Debug - Orders data:', {
-    hasData: !!data,
-    dataKeys: data ? Object.keys(data) : [],
-    ordersLength: orders?.length,
-    totalOrders,
-    totalPages,
-    status,
-    isLoading,
-    error: error ? String(error) : null,
-    rawData: data
+  console.log('✅ Frontend - Validated orders:', {
+    totalReceived: rawOrders.length,
+    validCount: orders.length,
+    invalidCount: rawOrders.length - orders.length
   });
 
+  // Bulk selection functions (moved here after orders declaration)
+  const handleSelectOrder = useCallback((orderId: string, checked: boolean) => {
+    const newSelected = new Set(selectedOrders);
+    if (checked) {
+      newSelected.add(orderId);
+    } else {
+      newSelected.delete(orderId);
+    }
+    setSelectedOrders(newSelected);
+    setIsSelectAll(newSelected.size === orders.length && orders.length > 0);
+  }, [selectedOrders, orders.length]);
+
+  const handleSelectAll = useCallback((checked: boolean) => {
+    if (checked) {
+      setSelectedOrders(new Set(orders.map((order: OrderWithDetails) => order.id)));
+      setIsSelectAll(true);
+    } else {
+      setSelectedOrders(new Set());
+      setIsSelectAll(false);
+    }
+  }, [orders]);
+
+  const clearSelection = useCallback(() => {
+    setSelectedOrders(new Set());
+    setIsSelectAll(false);
+  }, []);
+  
   return (
     <div className="space-y-4">
-       {/* Debug Panel - Remove in production */}
-       <AdminDebugPanel />
-       
        {/* Loading overlay for search/filter operations */}
        {isPlaceholderData && (
          <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center z-10">
@@ -987,7 +873,9 @@ function OrdersList({ status }: { status: 'active' | 'trashed' | 'fake' }) {
       )}
     </div>
   );
-}
+});
+
+OrdersList.displayName = 'OrdersList';
 
 export default function OrdersPage() {
   const [activeTab, setActiveTab] = useState('active');
@@ -997,13 +885,15 @@ export default function OrdersPage() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await queryClient.invalidateQueries({ queryKey: ['orders'] });
-      await queryClient.refetchQueries({ queryKey: ['orders'] });
+      await queryClient.invalidateQueries({ 
+        queryKey: ['orders'], 
+        refetchType: 'active' 
+      });
       showToast.success('Orders refreshed successfully!');
     } catch (error) {
       showToast.error('Failed to refresh orders');
     } finally {
-      setTimeout(() => setIsRefreshing(false), 500); // Small delay for UX
+      setTimeout(() => setIsRefreshing(false), 500);
     }
   };
 

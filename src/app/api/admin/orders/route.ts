@@ -4,6 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { OrderStatus, Prisma } from "@prisma/client";
 import { AuditLogger } from "@/lib/audit-logger";
 
+// Force dynamic rendering to ensure fresh data
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(req: Request) {
   console.log('🚀 Admin Orders API - Starting request...');
   
@@ -55,7 +59,7 @@ export async function GET(req: Request) {
     // Simplified approach - start with basic query and add complexity gradually
     console.log('🔄 Building query...');
     
-    let where: Prisma.OrderWhereInput = {};
+    let where: any = {}; // Using any to avoid TypeScript issues with isFakeOrder
     
     // Handle different status filters
     if (status === 'trashed') {
@@ -65,10 +69,14 @@ export async function GET(req: Request) {
       where.deletedAt = null;
       where.isFakeOrder = true;
       console.log('📋 Query: Getting fake orders');
-    } else {
-      // For all other statuses (active, all), just show non-deleted orders
+    } else if (status === 'active') {
+      // For active status, show non-deleted orders (we'll filter fake ones post-query)
       where.deletedAt = null;
-      console.log('📋 Query: Getting non-deleted orders');
+      console.log('📋 Query: Getting active (non-fake) orders - will filter fake ones after query');
+    } else {
+      // For 'all' status, show all non-deleted orders (including fake)
+      where.deletedAt = null;
+      console.log('📋 Query: Getting all non-deleted orders');
     }
 
     console.log('🔍 Admin Orders API - Basic where clause:', JSON.stringify(where, null, 2));
@@ -161,16 +169,43 @@ export async function GET(req: Request) {
       firstOrderId: orders[0]?.id,
       firstOrderNumber: orders[0]?.orderNumber,
       firstOrderCreated: orders[0]?.createdAt,
+      firstOrderIsFake: orders[0]?.isFakeOrder,
       orderIds: orders.map(o => o.id).slice(0, 5), // First 5 IDs
+      sampleOrderStructure: orders[0] ? Object.keys(orders[0]) : [],
+    });
+
+    // Sanitize orders data to handle missing relationships
+    const sanitizedOrders = orders.map(order => ({
+      ...order,
+      customer: order.customer || {
+        id: 'unknown',
+        name: 'Unknown Customer',
+        phone: 'N/A',
+        email: null,
+        address: null,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      user: order.user || { isFlagged: false },
+      items: order.items || [],
+      // Ensure shippingAddress is available
+      shippingAddress: order.deliveryAddress || 'N/A'
+    }));
+
+    console.log('🧼 Sanitized orders:', {
+      originalCount: orders.length,
+      sanitizedCount: sanitizedOrders.length,
+      hasCustomerIssues: orders.filter(o => !o.customer).length,
+      hasItemsIssues: orders.filter(o => !o.items || o.items.length === 0).length,
     });
 
     // Post-query filtering for active orders (workaround for MongoDB boolean issues)
-    let filteredOrders = orders;
+    let filteredOrders = sanitizedOrders;
     if (status === 'active') {
       // Filter out fake orders after fetching
-      filteredOrders = orders.filter(order => !order.isFakeOrder);
+      filteredOrders = sanitizedOrders.filter(order => !order.isFakeOrder);
       console.log('📦 Admin Orders API - After fake filter:', {
-        originalCount: orders.length,
+        originalCount: sanitizedOrders.length,
         filteredCount: filteredOrders.length,
       });
     }
