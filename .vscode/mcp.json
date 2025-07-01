@@ -1,0 +1,7 @@
+{
+    "servers": {
+        "rupo": {
+            "url": "https://mongodb+srv://rupomotibusiness:pGhePonAlcVB3sf0@cluster0.p0tpuuo.mongodb.net/rupomoti?retryWrites=true&w=majority"
+        }
+    }
+}
