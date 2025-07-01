@@ -129,7 +129,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   const [deliveryZone, setDeliveryZone] = useState<DeliveryZoneKey>('INSIDE_DHAKA')
   const [paymentMethod, setPaymentMethod] = useState('CASH_ON_DELIVERY')
   const [addresses, setAddresses] = useState<SavedAddress[]>([])
-  const [selectedAddressId, setSelectedAddressId] = useState<string>('')
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('manual')
   const [showAddressDetails, setShowAddressDetails] = useState(false)
   const [availableUpazilas, setAvailableUpazilas] = useState<Array<{ value: string, label: string }>>([])
   const [formData, setFormData] = useState<FormData>({
@@ -185,7 +185,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   // Handle address selection
   const handleAddressSelect = (addressId: string) => {
     setSelectedAddressId(addressId)
-    if (addressId === '') {
+    if (addressId === 'manual') {
       // Manual address entry
       setFormData(prev => ({
         ...prev,
@@ -305,11 +305,11 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-md sm:max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto bg-white rounded-lg shadow-xl max-h-[95vh] overflow-hidden">
+      <DialogContent className="w-full max-w-md sm:max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto bg-gradient-to-br from-white via-slate-50 to-white rounded-xl shadow-2xl max-h-[95vh] overflow-hidden border border-slate-200">
         <DialogTitle className="sr-only">Checkout</DialogTitle>
         
         {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-6 border-b bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-lg">
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b bg-gradient-to-r from-emerald-600 via-emerald-700 to-emerald-600 text-white shadow-lg">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-white/10 rounded-lg">
               <Package className="h-6 w-6" />
@@ -329,15 +329,15 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
           </Button>
         </div>
 
-        <div className="flex flex-col h-full max-h-[calc(95vh-80px)] overflow-hidden bg-slate-50">
+        <div className="flex flex-col h-full max-h-[calc(95vh-80px)] overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-50">
           {/* Scrollable Content */}
           <div className="flex-1 overflow-y-auto">
             <form onSubmit={handleSubmit} className="p-4 sm:p-6">
               <div className="space-y-6">
                 
                 {/* Order Summary Card */}
-                <Card className="border-emerald-200 shadow-sm bg-gradient-to-br from-emerald-50 to-white">
-                  <CardHeader className="pb-3 bg-emerald-500 text-white rounded-t-lg">
+                <Card className="border-emerald-200 shadow-lg bg-gradient-to-br from-emerald-50 via-white to-emerald-50 hover:shadow-xl transition-shadow duration-300">
+                  <CardHeader className="pb-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-t-lg shadow-md">
                     <CardTitle className="text-lg flex items-center gap-2">
                       <Package className="h-5 w-5" />
                       Order Summary ({items.length} {items.length === 1 ? 'item' : 'items'})
@@ -349,7 +349,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                       {items.map((item) => (
                         <div
                           key={item.id}
-                          className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg"
+                          className="flex items-center space-x-3 p-3 bg-gradient-to-r from-white via-gray-50 to-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 border border-gray-100"
                         >
                           <div className="relative h-12 w-12 sm:h-16 sm:w-16 flex-shrink-0">
                             <Image
@@ -393,8 +393,8 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 </Card>
 
                 {/* Delivery Zone Selection */}
-                <Card className="border-blue-200 shadow-sm">
-                  <CardHeader className="pb-3 bg-blue-500 text-white rounded-t-lg">
+                <Card className="border-blue-200 shadow-lg hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-blue-50 via-white to-blue-50">
+                  <CardHeader className="pb-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-lg shadow-md">
                     <CardTitle className="text-lg flex items-center gap-2">
                       <MapPin className="h-5 w-5" />
                       Delivery Zone
@@ -453,8 +453,8 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 </Card>
 
                 {/* Payment Method Selection */}
-                <Card className="border-purple-200 shadow-sm">
-                  <CardHeader className="pb-3 bg-purple-500 text-white rounded-t-lg">
+                <Card className="border-purple-200 shadow-lg hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-purple-50 via-white to-purple-50">
+                  <CardHeader className="pb-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-t-lg shadow-md">
                     <CardTitle className="text-lg flex items-center gap-2">
                       <CreditCard className="h-5 w-5" />
                       Payment Method
@@ -510,8 +510,8 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 </Card>
 
                 {/* Address & Customer Information */}
-                <Card className="border-orange-200 shadow-sm">
-                  <CardHeader className="pb-3 bg-orange-500 text-white rounded-t-lg">
+                <Card className="border-orange-200 shadow-lg hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-orange-50 via-white to-orange-50">
+                  <CardHeader className="pb-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-t-lg shadow-md">
                     <CardTitle className="text-lg flex items-center gap-2">
                       <User className="h-5 w-5" />
                       Delivery Information
@@ -527,11 +527,11 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                           value={selectedAddressId}
                           onValueChange={handleAddressSelect}
                         >
-                          <SelectTrigger className="w-full">
+                          <SelectTrigger className="w-full transition-all duration-200 focus:ring-2 focus:ring-orange-200 focus:border-orange-500 bg-white hover:bg-gray-50">
                             <SelectValue placeholder="Select a saved address" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">
+                            <SelectItem value="manual">
                               <div className="flex items-center gap-2">
                                 <Plus className="h-4 w-4" />
                                 Enter address manually
@@ -561,7 +561,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                           placeholder="e.g. Jannatul Ferdous"
                           value={formData.name}
                           onChange={(e) => handleInputChange('name', e.target.value)}
-                          className={`mt-1 ${errors.name ? 'border-red-500' : ''}`}
+                          className={`mt-1 transition-all duration-200 focus:ring-2 focus:ring-orange-200 focus:border-orange-500 ${errors.name ? 'border-red-500 bg-red-50' : 'bg-white hover:bg-gray-50'}`}
                           required
                         />
                         {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
@@ -573,7 +573,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                           type="tel"
                           value={formData.phone}
                           onChange={(e) => handleInputChange('phone', e.target.value)}
-                          className={`mt-1 ${errors.phone ? 'border-red-500' : ''}`}
+                          className={`mt-1 transition-all duration-200 focus:ring-2 focus:ring-orange-200 focus:border-orange-500 ${errors.phone ? 'border-red-500 bg-red-50' : 'bg-white hover:bg-gray-50'}`}
                           placeholder="01XXXXXXXXX"
                           disabled={isSubmitting}
                         />
@@ -588,7 +588,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                         type="email"
                         value={formData.email}
                         onChange={(e) => handleInputChange('email', e.target.value)}
-                        className={`mt-1 ${errors.email ? 'border-red-500' : ''}`}
+                        className={`mt-1 transition-all duration-200 focus:ring-2 focus:ring-orange-200 focus:border-orange-500 ${errors.email ? 'border-red-500 bg-red-50' : 'bg-white hover:bg-gray-50'}`}
                         placeholder="Enter your email"
                         disabled={isSubmitting}
                       />
@@ -604,12 +604,12 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                             id="address"
                             value={formData.address}
                             onChange={(e) => handleInputChange('address', e.target.value)}
-                            className={`mt-1 ${errors.address ? 'border-red-500' : ''}`}
+                            className={`mt-1 transition-all duration-200 focus:ring-2 focus:ring-orange-200 focus:border-orange-500 ${errors.address ? 'border-red-500 bg-red-50' : 'bg-white hover:bg-gray-50'}`}
                             placeholder="Enter your complete delivery address"
                             rows={2}
                             disabled={isSubmitting}
                           />
-                          {!selectedAddressId && (
+                          {selectedAddressId === 'manual' && (
                             <Button
                               type="button"
                               variant="outline"
@@ -644,7 +644,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                               value={formData.district}
                               disabled={isSubmitting}
                             >
-                              <SelectTrigger className={`mt-1 w-full ${errors.district ? 'border-red-500' : ''}`}>
+                              <SelectTrigger className={`mt-1 w-full transition-all duration-200 focus:ring-2 focus:ring-orange-200 focus:border-orange-500 ${errors.district ? 'border-red-500 bg-red-50' : 'bg-white hover:bg-gray-50'}`}>
                                 <SelectValue placeholder="Select district" />
                               </SelectTrigger>
                               <SelectContent>
@@ -664,7 +664,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                               value={formData.upazila}
                               disabled={isSubmitting || !formData.district}
                             >
-                              <SelectTrigger className={`mt-1 w-full ${errors.upazila ? 'border-red-500' : ''}`}>
+                              <SelectTrigger className={`mt-1 w-full transition-all duration-200 focus:ring-2 focus:ring-orange-200 focus:border-orange-500 ${errors.upazila ? 'border-red-500 bg-red-50' : 'bg-white hover:bg-gray-50'}`}>
                                 <SelectValue placeholder="Select upazila" />
                               </SelectTrigger>
                               <SelectContent>
@@ -687,7 +687,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                         id="note"
                         value={formData.note}
                         onChange={(e) => handleInputChange('note', e.target.value)}
-                        className="mt-1"
+                        className="mt-1 transition-all duration-200 focus:ring-2 focus:ring-orange-200 focus:border-orange-500 bg-white hover:bg-gray-50"
                         placeholder="Any special instructions for delivery"
                         rows={2}
                         disabled={isSubmitting}
@@ -700,10 +700,10 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
           </div>
 
           {/* Fixed Bottom Section */}
-          <div className="border-t bg-white p-4 sm:p-6 shadow-lg">
+          <div className="border-t bg-gradient-to-r from-white via-gray-50 to-white p-4 sm:p-6 shadow-lg backdrop-blur-sm">
             <div className="space-y-3">
               {/* Total Summary */}
-              <div className="flex justify-between items-center p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+              <div className="flex justify-between items-center p-4 bg-gradient-to-r from-emerald-50 via-emerald-100 to-emerald-50 rounded-xl border border-emerald-200 shadow-sm">
                 <span className="text-lg font-semibold text-gray-800">Total Amount:</span>
                 <span className="text-xl font-bold text-emerald-700">{formatPrice(total)}</span>
               </div>
@@ -711,7 +711,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
               {/* Order Button */}
               <Button
                 onClick={handleSubmit}
-                className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white py-4 text-lg font-bold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:from-gray-400 disabled:to-gray-500"
+                className="w-full bg-gradient-to-r from-emerald-600 via-emerald-700 to-emerald-600 hover:from-emerald-700 hover:via-emerald-800 hover:to-emerald-700 text-white py-4 text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:from-gray-400 disabled:to-gray-500 disabled:transform-none"
                 disabled={isSubmitting || items.length === 0 || !isFormValid}
                 size="lg"
               >
