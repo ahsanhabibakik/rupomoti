@@ -15,41 +15,149 @@ const config = {
         white: "#ffffff",
         black: "#000000",
         
-        // --- Pearl Essence Theme Colors ---
-        // Pearl White (Base) - Primary page background, product cards, hero sections
-        pearlWhite: {
-          DEFAULT: "#FDF9F4", // Pearl White (Base)
-          // DEFAULT: "#FFFDFA", // Alternative: slightly lighter
+        // --- CENTRALIZED THEME SYSTEM ---
+        // 🎨 These colors now use CSS custom properties from globals.css
+        // 🔄 Change theme by editing globals.css :root variables only!
+        
+        // MASTER BRAND COLORS (maps to CSS custom properties)
+        'theme': {
+          // Pearl/Background system - Used in: Page backgrounds, cards, sections
+          'pearl-50': 'var(--pearl-primary)',       // #FDF9F4 - Main backgrounds
+          'pearl-100': 'var(--pearl-secondary)',    // #F8F6F0 - Card backgrounds  
+          'pearl-200': 'var(--pearl-tertiary)',     // #F0EDE5 - Subtle backgrounds
+          
+          // Gold/Text system - Used in: Typography, borders, accents
+          'gold-400': 'var(--gold-primary)',        // #C8B38A - Primary gold
+          'gold-600': 'var(--gold-secondary)',      // #8C7760 - Body text
+          'gold-700': 'var(--gold-tertiary)',       // #4A2E21 - Headers
+          'gold-800': 'var(--gold-dark)',           // #2D1B13 - Strong emphasis
+          
+          // Rose gold system - Used in: Accents, highlights, special features
+          'rose-50': 'var(--rose-gold-light)',      // #FDF5F3 - Light backgrounds
+          'rose-400': 'var(--rose-gold-primary)',   // #D7AFA4 - Main accent
+          'rose-500': 'var(--rose-gold-secondary)', // #C89A8A - Secondary accent
+          'rose-600': 'var(--rose-gold-dark)',      // #A06B52 - Dark accent
+          
+          // Mist blue system - Used in: Cool sections, info panels
+          'mist-50': 'var(--mist-blue-light)',      // #F7FAFB - Light blue
+          'mist-200': 'var(--mist-blue-primary)',   // #D0E0E7 - Primary blue
+          'mist-300': 'var(--mist-blue-secondary)', // #B5CDD8 - Secondary blue
         },
-        // Champagne Sheen (Light Accent) - Soft panels, info boxes, subtle gradients
-        champagneSheen: {
-          DEFAULT: "#E8DCC8", // Champagne Sheen (Light Accent)
-          // DEFAULT: "#F5E6D3", // Alternative: more pinkish
+        
+        // FUNCTIONAL COLORS (semantic colors for status, alerts, etc.)
+        'status': {
+          // Success colors - Used in: Success messages, completed orders
+          'success': 'var(--success-primary)',      // #10B981
+          'success-bg': 'var(--success-secondary)', // #D1FAE5
+          
+          // Warning colors - Used in: Warnings, pending states
+          'warning': 'var(--warning-primary)',      // #F59E0B
+          'warning-bg': 'var(--warning-secondary)', // #FEF3C7
+          
+          // Error colors - Used in: Errors, failed states
+          'error': 'var(--error-primary)',          // #EF4444
+          'error-bg': 'var(--error-secondary)',     // #FEE2E2
+          
+          // Info colors - Used in: Information, help tooltips
+          'info': 'var(--info-primary)',            // #3B82F6
+          'info-bg': 'var(--info-secondary)',       // #DBEAFE
         },
-        // Warm Oyster Gold - Headings, borders, icon strokes, button outlines
-        warmOysterGold: {
-          DEFAULT: "#C8B38A", // Warm Oyster Gold
-          // DEFAULT: "#E8CBAF", // Alternative: more gold
+        
+        // COMPONENT-SPECIFIC COLORS (for specific UI components)
+        'ui': {
+          // Backgrounds - Used in: Page layouts, overlays
+          'bg-primary': 'var(--background)',
+          'bg-secondary': 'var(--background-secondary)',
+          'bg-muted': 'var(--background-muted)',
+          
+          // Text colors - Used in: All text elements
+          'text-primary': 'var(--foreground)',
+          'text-secondary': 'var(--foreground-secondary)',
+          'text-muted': 'var(--foreground-muted)',
+          
+          // Borders - Used in: Dividers, outlines
+          'border-primary': 'var(--border-primary)',
+          'border-secondary': 'var(--border-secondary)',
+          'border-muted': 'var(--border-muted)',
+          
+          // Interactive states - Used in: Hover, focus, active
+          'hover-bg': 'var(--hover-background)',
+          'hover-text': 'var(--hover-foreground)',
+          'active-bg': 'var(--active-background)',
+          'active-text': 'var(--active-foreground)',
+          'focus-ring': 'var(--focus-ring)',
         },
-        // Mink Taupe (Text) - Primary body text
-        minkTaupe: {
-          DEFAULT: "#8C7760", // Mink Taupe (Text)
-          // DEFAULT: "#6C757D", // Alternative: more gray
+        
+        // JEWELRY-SPECIFIC COLORS (for product displays)
+        'jewelry': {
+          // Metal colors - Used in: Product cards, category filters
+          'gold': 'var(--jewelry-gold)',            // Gold jewelry
+          'silver': 'var(--jewelry-silver)',        // Silver jewelry
+          'rose-gold': 'var(--jewelry-rose-gold)',  // Rose gold jewelry
+          'diamond': 'var(--jewelry-diamond)',      // Diamond/precious stones
+          'pearl': 'var(--jewelry-pearl)',          // Pearl products
         },
-        // Cocoa Brown (Depth) - CTA text, nav links, hover states
-        cocoaBrown: {
-          DEFAULT: "#4A2E21", // Cocoa Brown (Depth)
-          // DEFAULT: "#2D1B13", // Alternative: deeper brown
+        
+        // ECOMMERCE-SPECIFIC COLORS (for shopping features)
+        'commerce': {
+          // Cart & Shopping - Used in: Cart, badges, counts
+          'cart-badge': 'var(--cart-count)',        // Cart item count
+          
+          // Pricing - Used in: Product prices, discounts
+          'price-regular': 'var(--price-original)',  // Regular prices
+          'price-sale': 'var(--price-sale)',        // Sale prices
+          'price-discount': 'var(--price-discount)', // Discount labels
+          
+          // Shipping - Used in: Shipping info, delivery
+          'shipping-free': 'var(--shipping-free)',   // Free shipping
         },
-        // Rose-Gold Accent - Sale badges, highlights
-        roseGoldAccent: {
-          DEFAULT: "#D7AFA4", // Rose-Gold Accent
-          // DEFAULT: "#F7CAC9", // Alternative: more pink
+        
+        // ADMIN COLORS (for admin/dashboard areas)
+        'admin': {
+          'primary': 'var(--admin-primary)',
+          'secondary': 'var(--admin-secondary)',
+          'accent': 'var(--admin-accent)',
         },
-        // Soft Mist Blue (Cool Lift) - Light background sections
-        softMistBlue: {
-          DEFAULT: "#D0E0E7", // Soft Mist Blue (Cool Lift)
-          // DEFAULT: "#E6F0F3", // Alternative: lighter blue
+        
+        // LEGACY PEARL ESSENCE COLORS (for backward compatibility)
+        // These maintain the old naming but now use CSS custom properties
+        'pearl-essence': {
+          50: 'var(--pearl-primary)',      // Main pearl white
+          100: 'var(--pearl-secondary)',   // Warm pearl
+          200: 'var(--pearl-tertiary)',    // Deep pearl
+          300: 'var(--pearl-tertiary)',    // Borders
+          400: 'var(--gold-primary)',      // Gold accents
+          500: 'var(--gold-primary)',      // Primary gold
+          600: 'var(--gold-secondary)',    // Secondary gold
+          700: 'var(--gold-tertiary)',     // Dark gold/brown
+          800: 'var(--gold-dark)',         // Deep brown
+          900: '#1A0F0A',                  // Rich espresso
+        },
+        
+        'rose-gold': {
+          50: 'var(--rose-gold-light)',
+          100: 'var(--rose-gold-light)',
+          200: 'var(--rose-gold-light)',
+          300: 'var(--rose-gold-primary)',
+          400: 'var(--rose-gold-primary)',
+          500: 'var(--rose-gold-secondary)',
+          600: 'var(--rose-gold-dark)',
+          700: 'var(--rose-gold-dark)',
+          800: '#7D5240',
+          900: '#5A3B2E',
+        },
+        
+        'mist-blue': {
+          50: 'var(--mist-blue-light)',
+          100: 'var(--mist-blue-light)',
+          200: 'var(--mist-blue-primary)',
+          300: 'var(--mist-blue-secondary)',
+          400: '#9ABAC9',
+          500: '#7FA7BA',
+          600: '#6494AB',
+          700: '#4F7B8C',
+          800: '#3A5B6D',
+          900: '#253C4E',
         },
         // Premium Jewelry Color Palette
         base: {
@@ -227,18 +335,53 @@ const config = {
       backgroundImage: {
         'pearl-pattern': "url('/images/pearl-pattern.svg')",
         'gem-pattern': "url('/images/gem-pattern.svg')",
-        'gradient-gold': 'linear-gradient(135deg, #E8CBAF 0%, #D4B483 100%)',
-        'gradient-pearl': 'linear-gradient(135deg, #FDF9F4 0%, #F5E7DD 100%)',
-        'gradient-primary': 'linear-gradient(135deg, #0D1E78 0%, #1A237E 100%)',
-        'gradient-accent': 'linear-gradient(135deg, #E8CBAF 0%, #F5E6D3 100%)',
-        'pearl-shimmer': 'linear-gradient(90deg, transparent, rgba(248, 246, 240, 0.4), transparent)',
+        
+        // DYNAMIC GRADIENTS (using CSS custom properties)
+        // 🎨 These automatically update when you change colors in globals.css
+        
+        // Primary brand gradients - Used in: Hero sections, main CTAs
+        'gradient-pearl-essence': 'linear-gradient(135deg, var(--pearl-primary) 0%, var(--pearl-secondary) 50%, var(--pearl-tertiary) 100%)',
+        'gradient-champagne': 'linear-gradient(135deg, var(--pearl-tertiary) 0%, var(--gold-primary) 100%)',
+        'gradient-rose-gold': 'linear-gradient(135deg, var(--rose-gold-light) 0%, var(--rose-gold-primary) 100%)',
+        'gradient-mist': 'linear-gradient(135deg, var(--mist-blue-primary) 0%, var(--mist-blue-secondary) 100%)',
+        
+        // Warm gradients - Used in: Cards, buttons, highlights
+        'gradient-warm-pearl': 'linear-gradient(135deg, var(--pearl-primary) 0%, var(--pearl-secondary) 50%, var(--pearl-tertiary) 100%)',
+        'gradient-gold-accent': 'linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-secondary) 100%)',
+        'gradient-button-primary': 'linear-gradient(135deg, var(--btn-primary) 0%, var(--gold-dark) 100%)',
+        'gradient-button-accent': 'linear-gradient(135deg, var(--btn-accent) 0%, var(--rose-gold-secondary) 100%)',
+        
+        // Legacy gradients (maintained for compatibility)
+        'gradient-gold': 'linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-secondary) 100%)',
+        'gradient-pearl': 'linear-gradient(135deg, var(--pearl-primary) 0%, var(--pearl-tertiary) 100%)',
+        'gradient-primary': 'linear-gradient(135deg, var(--gold-tertiary) 0%, var(--gold-dark) 100%)',
+        'gradient-accent': 'linear-gradient(135deg, var(--rose-gold-primary) 0%, var(--rose-gold-secondary) 100%)',
+        
+        // Utility gradients
+        'pearl-shimmer': 'linear-gradient(90deg, transparent, rgba(253, 249, 244, 0.4), transparent)',
       },
       boxShadow: {
+        // DYNAMIC SHADOWS (using CSS custom properties)
+        // 🎨 These automatically update when you change colors in globals.css
+        
+        // Brand shadows - Used in: Cards, modals, dropdowns
+        'pearl-essence': '0 4px 20px 0 rgba(253, 249, 244, 0.6)',
+        'champagne': '0 4px 20px 0 color-mix(in srgb, var(--gold-primary) 40%, transparent)',
+        'rose-gold': '0 4px 20px 0 color-mix(in srgb, var(--rose-gold-primary) 30%, transparent)',
+        'mist-blue': '0 4px 20px 0 color-mix(in srgb, var(--mist-blue-primary) 30%, transparent)',
+        'cocoa': '0 8px 32px 0 color-mix(in srgb, var(--gold-tertiary) 15%, transparent)',
+        
+        // Functional shadows - Used in: Interactive elements
+        'hover': '0 8px 25px 0 color-mix(in srgb, var(--shadow-color) 20%, transparent)',
+        'focus': '0 0 0 3px color-mix(in srgb, var(--focus-ring) 30%, transparent)',
+        'active': '0 2px 10px 0 color-mix(in srgb, var(--active-background) 40%, transparent)',
+        
+        // Legacy shadows (maintained for compatibility)
         'pearl': '0 4px 14px 0 rgba(253, 249, 244, 0.39)',
-        'gold': '0 4px 14px 0 rgba(232, 203, 175, 0.39)',
+        'gold': '0 4px 14px 0 color-mix(in srgb, var(--gold-primary) 39%, transparent)',
         'sapphire': '0 4px 14px 0 rgba(13, 30, 120, 0.39)',
-        'premium': '0 8px 32px 0 rgba(13, 30, 120, 0.15)',
-        'accent': '0 4px 20px 0 rgba(232, 203, 175, 0.3)',
+        'premium': '0 8px 32px 0 color-mix(in srgb, var(--gold-tertiary) 15%, transparent)',
+        'accent': '0 4px 20px 0 color-mix(in srgb, var(--rose-gold-primary) 30%, transparent)',
       },
     },
   },
