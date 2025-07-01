@@ -48,13 +48,17 @@ function FilterSection({
   setSelectedCategories,
   priceRange,
   setPriceRange,
-  categories
+  categories,
+  onClearFilters,
+  hasActiveFilters
 }: {
   selectedCategories: string[];
   setSelectedCategories: React.Dispatch<React.SetStateAction<string[]>>;
   priceRange: [number, number];
   setPriceRange: (value: [number, number]) => void;
   categories: Category[];
+  onClearFilters?: () => void;
+  hasActiveFilters?: boolean;
 }) {
   const handlePriceInputChange = useCallback((index: 0 | 1, value: string) => {
     const newRange = [...priceRange] as [number, number];
@@ -65,6 +69,22 @@ function FilterSection({
 
   return (
     <div className="space-y-8">
+      {/* Clear Filters Button */}
+      {onClearFilters && (
+        <div className="flex justify-between items-center border-b pb-2">
+          <span className="text-sm font-medium text-foreground">Active Filters</span>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={onClearFilters}
+            disabled={!hasActiveFilters}
+            className="text-xs"
+          >
+            Clear All
+          </Button>
+        </div>
+      )}
+      
       <div>
         <h3 className="font-semibold text-foreground mb-4">Categories</h3>
         <div className="max-h-64 overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
@@ -119,6 +139,7 @@ function FilterSection({
 
 async function getInitialProducts() {
   try {
+    // Always return empty for server-side, let client handle loading
     if (typeof window === 'undefined') {
       return { products: [], total: 0, hasMore: false };
     }
@@ -130,13 +151,17 @@ async function getInitialProducts() {
       }
     });
     
-    if (!res.ok) return { products: [], total: 0, hasMore: false };
+    if (!res.ok) {
+      console.error('Initial products fetch failed:', res.status, res.statusText);
+      return { products: [], total: 0, hasMore: false };
+    }
+    
     const data = await res.json();
     
     return {
       products: data.products || [],
-      total: data.total || 0,
-      hasMore: data.hasMore || false
+      total: data.pagination?.total || 0,
+      hasMore: data.pagination?.hasMore || false
     };
   } catch (error) {
     console.error('Failed to fetch initial products:', error);
@@ -255,7 +280,11 @@ export default function ShopPage() {
         }
       });
       
-      if (!res.ok) throw new Error('Failed to fetch products');
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Products fetch failed:', res.status, res.statusText, errorText);
+        throw new Error(`Failed to fetch products: ${res.status}`);
+      }
       const data = await res.json();
       const newProducts = data.products || [];
       
@@ -263,19 +292,19 @@ export default function ShopPage() {
         // For new searches, replace all products
         setProducts(newProducts);
         setPage(1);
-        setTotalProducts(data.total || 0);
+        setTotalProducts(data.pagination?.total || 0);
       } else {
         // For pagination, append new products
         setProducts(prev => {
           // Prevent duplicates by checking IDs
-          const existingIds = new Set(prev.map(p => p.id));
-          const uniqueNewProducts = newProducts.filter(p => !existingIds.has(p.id));
+          const existingIds = new Set(prev.map((p: Product) => p.id));
+          const uniqueNewProducts = newProducts.filter((p: Product) => !existingIds.has(p.id));
           return [...prev, ...uniqueNewProducts];
         });
         setPage(pageToFetch);
       }
       
-      setHasMore(data.hasMore || false);
+      setHasMore(data.pagination?.hasMore || false);
       
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
@@ -431,6 +460,8 @@ export default function ShopPage() {
               priceRange={priceRange}
               setPriceRange={setPriceRange}
               categories={categories}
+              onClearFilters={handleClearFilters}
+              hasActiveFilters={hasActiveFilters}
             />
           </div>
         </aside>
@@ -466,12 +497,27 @@ export default function ShopPage() {
                           </Button>
                         )}
                       </SheetHeader>
+                      
+                      {/* Mobile Search */}
+                      <div className="relative mb-6">
+                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          type="text"
+                          placeholder="Search products..."
+                          value={searchInput}
+                          onChange={e => setSearchInput(e.target.value)}
+                          className="pl-10 h-11"
+                        />
+                      </div>
+                      
                       <FilterSection
                         selectedCategories={selectedCategories}
                         setSelectedCategories={setSelectedCategories}
                         priceRange={priceRange}
                         setPriceRange={setPriceRange}
                         categories={categories}
+                        onClearFilters={handleClearFilters}
+                        hasActiveFilters={hasActiveFilters}
                       />
                     </div>
                   </ScrollArea>

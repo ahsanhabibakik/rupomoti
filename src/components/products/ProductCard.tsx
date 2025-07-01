@@ -22,16 +22,14 @@ interface ProductCardProps {
 
 export function ProductCard({ product, compact = false, className }: ProductCardProps) {
   const { id, name, price, salePrice, images, isNewArrival, isPopular, isFeatured, stock } = product
-  const discount = price && salePrice ? Math.round(((price - salePrice) / price) * 100) : 0
+  const discount = price && salePrice && salePrice < price ? Math.round(((price - salePrice) / price) * 100) : 0
   const dispatch = useAppDispatch()
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist()
   const [isImageLoading, setIsImageLoading] = useState(true)
   const [isHovered, setIsHovered] = useState(false)
 
   const safePrice = typeof price === 'number' && !isNaN(price) ? price : 0
-  const discountedPrice = discount > 0 && typeof price === 'number' && !isNaN(price)
-    ? price - (price * discount) / 100
-    : safePrice
+  const finalPrice = salePrice && salePrice < price ? salePrice : safePrice
 
   const isOutOfStock = typeof stock === 'number' ? stock <= 0 : false;
 
@@ -41,7 +39,7 @@ export function ProductCard({ product, compact = false, className }: ProductCard
     const cartItem = {
       id,
       name: name || 'Unnamed Product',
-      price: discount > 0 ? discountedPrice : safePrice,
+      price: finalPrice,
       image: images[0] || '/images/placeholder.jpg',
       quantity: 1,
       category: 'Uncategorized'
