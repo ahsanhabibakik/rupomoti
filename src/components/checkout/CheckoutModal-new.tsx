@@ -108,6 +108,7 @@ interface FormErrors {
   district?: string
   upazila?: string
   address?: string
+  note?: string
 }
 
 interface SavedAddress {
@@ -128,7 +129,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   const [deliveryZone, setDeliveryZone] = useState<DeliveryZoneKey>('INSIDE_DHAKA')
   const [paymentMethod, setPaymentMethod] = useState('CASH_ON_DELIVERY')
   const [addresses, setAddresses] = useState<SavedAddress[]>([])
-  const [selectedAddressId, setSelectedAddressId] = useState<string>('')
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('manual')
   const [showAddressDetails, setShowAddressDetails] = useState(false)
   const [availableUpazilas, setAvailableUpazilas] = useState<Array<{ value: string, label: string }>>([])
   const [formData, setFormData] = useState<FormData>({
@@ -184,7 +185,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   // Handle address selection
   const handleAddressSelect = (addressId: string) => {
     setSelectedAddressId(addressId)
-    if (addressId === '') {
+    if (addressId === 'manual') {
       // Manual address entry
       setFormData(prev => ({
         ...prev,
@@ -281,9 +282,10 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
         address: '',
         note: '',
       })
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating order:', error)
-      showToast.error(error.message || 'Failed to place order. Please try again.')
+      const errorMessage = error instanceof Error ? error.message : 'Failed to place order. Please try again.'
+      showToast.error(errorMessage)
     } finally {
       setIsSubmitting(false)
     }
@@ -303,43 +305,51 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-md sm:max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto bg-white rounded-lg shadow-xl max-h-[95vh] overflow-hidden">
+      <DialogContent className="w-full max-w-md sm:max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto bg-gradient-to-br from-white via-slate-50 to-white rounded-xl shadow-2xl max-h-[95vh] overflow-hidden border border-slate-200">
         <DialogTitle className="sr-only">Checkout</DialogTitle>
         
         {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-6 border-b bg-gradient-to-r from-pearl-500 to-pearl-600 text-white">
-          <h2 className="text-lg sm:text-xl font-semibold">Complete Your Order</h2>
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b bg-gradient-to-r from-emerald-600 via-emerald-700 to-emerald-600 text-white shadow-lg">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-white/10 rounded-lg">
+              <Package className="h-6 w-6" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold">Complete Your Order</h2>
+              <p className="text-emerald-100 text-sm">Review and confirm your purchase</p>
+            </div>
+          </div>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => onOpenChange(false)}
-            className="text-white hover:bg-white/10 h-8 w-8 sm:h-10 sm:w-10"
+            className="text-white hover:bg-white/10 h-10 w-10 rounded-full"
           >
-            <X className="h-4 w-4 sm:h-5 sm:w-5" />
+            <X className="h-5 w-5" />
           </Button>
         </div>
 
-        <div className="flex flex-col h-full max-h-[calc(95vh-80px)] overflow-hidden">
+        <div className="flex flex-col h-full max-h-[calc(95vh-80px)] overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-50">
           {/* Scrollable Content */}
           <div className="flex-1 overflow-y-auto">
             <form onSubmit={handleSubmit} className="p-4 sm:p-6">
               <div className="space-y-6">
                 
                 {/* Order Summary Card */}
-                <Card className="border-pearl-200">
-                  <CardHeader className="pb-3">
+                <Card className="border-emerald-200 shadow-lg bg-gradient-to-br from-emerald-50 via-white to-emerald-50 hover:shadow-xl transition-shadow duration-300">
+                  <CardHeader className="pb-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-t-lg shadow-md">
                     <CardTitle className="text-lg flex items-center gap-2">
-                      <Package className="h-5 w-5 text-pearl-600" />
-                      Order Summary ({items.length} items)
+                      <Package className="h-5 w-5" />
+                      Order Summary ({items.length} {items.length === 1 ? 'item' : 'items'})
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-4 pt-4">
                     {/* Items List */}
                     <div className="space-y-3 max-h-48 overflow-y-auto">
-                      {items.map((item: any) => (
+                      {items.map((item) => (
                         <div
                           key={item.id}
-                          className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg"
+                          className="flex items-center space-x-3 p-3 bg-gradient-to-r from-white via-gray-50 to-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 border border-gray-100"
                         >
                           <div className="relative h-12 w-12 sm:h-16 sm:w-16 flex-shrink-0">
                             <Image
@@ -383,17 +393,17 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 </Card>
 
                 {/* Delivery Zone Selection */}
-                <Card className="border-pearl-200">
-                  <CardHeader className="pb-3">
+                <Card className="border-blue-200 shadow-lg hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-blue-50 via-white to-blue-50">
+                  <CardHeader className="pb-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-lg shadow-md">
                     <CardTitle className="text-lg flex items-center gap-2">
-                      <MapPin className="h-5 w-5 text-pearl-600" />
+                      <MapPin className="h-5 w-5" />
                       Delivery Zone
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="pt-4">
                     <div className="grid grid-cols-1 gap-3">
                       {(Object.entries(DELIVERY_ZONES) as [DeliveryZoneKey, typeof DELIVERY_ZONES[DeliveryZoneKey]][]).map(([id, zone]) => (
-                        <div key={id}>
+                        <div key={id} className="relative">
                           <input
                             type="radio"
                             id={id}
@@ -405,17 +415,35 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                           />
                           <Label
                             htmlFor={id}
-                            className="flex items-center justify-between rounded-lg border-2 border-gray-200 bg-white p-4 hover:bg-gray-50 cursor-pointer peer-checked:border-pearl-600 peer-checked:bg-pearl-50 transition-colors"
+                            className={`flex items-center justify-between rounded-lg border-2 p-4 cursor-pointer transition-all duration-200 hover:shadow-md ${
+                              deliveryZone === id 
+                                ? 'border-blue-600 bg-blue-50 shadow-sm ring-2 ring-blue-200' 
+                                : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-gray-50'
+                            }`}
                           >
                             <div className="flex items-center space-x-3">
-                              <MapPin className="h-5 w-5 text-pearl-600" />
+                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                                deliveryZone === id ? 'border-blue-600 bg-blue-600' : 'border-gray-300'
+                              }`}>
+                                {deliveryZone === id && (
+                                  <div className="w-2 h-2 rounded-full bg-white"></div>
+                                )}
+                              </div>
+                              <MapPin className={`h-5 w-5 ${deliveryZone === id ? 'text-blue-600' : 'text-gray-400'}`} />
                               <div>
-                                <p className="font-medium">{zone.name}</p>
+                                <p className={`font-medium ${deliveryZone === id ? 'text-blue-800' : 'text-gray-800'}`}>
+                                  {zone.name}
+                                </p>
                                 <p className="text-sm text-gray-600">{zone.description}</p>
                               </div>
                             </div>
                             <div className="text-right">
-                              <p className="font-semibold text-pearl-600">৳{zone.fee}</p>
+                              <p className={`font-semibold ${deliveryZone === id ? 'text-blue-700' : 'text-gray-700'}`}>
+                                ৳{zone.fee}
+                              </p>
+                              {deliveryZone === id && (
+                                <p className="text-xs text-blue-600">✓ Selected</p>
+                              )}
                             </div>
                           </Label>
                         </div>
@@ -425,17 +453,17 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 </Card>
 
                 {/* Payment Method Selection */}
-                <Card className="border-pearl-200">
-                  <CardHeader className="pb-3">
+                <Card className="border-purple-200 shadow-lg hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-purple-50 via-white to-purple-50">
+                  <CardHeader className="pb-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-t-lg shadow-md">
                     <CardTitle className="text-lg flex items-center gap-2">
-                      <CreditCard className="h-5 w-5 text-pearl-600" />
+                      <CreditCard className="h-5 w-5" />
                       Payment Method
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="pt-4">
                     <div className="grid grid-cols-1 gap-3">
                       {PAYMENT_METHODS.map((method) => (
-                        <div key={method.id}>
+                        <div key={method.id} className="relative">
                           <input
                             type="radio"
                             id={method.id}
@@ -447,16 +475,32 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                           />
                           <Label
                             htmlFor={method.id}
-                            className="flex items-center space-x-3 rounded-lg border-2 border-gray-200 bg-white p-4 hover:bg-gray-50 cursor-pointer peer-checked:border-pearl-600 peer-checked:bg-pearl-50 transition-colors"
+                            className={`flex items-center space-x-3 rounded-lg border-2 p-4 cursor-pointer transition-all duration-200 hover:shadow-md ${
+                              paymentMethod === method.id 
+                                ? 'border-purple-600 bg-purple-50 shadow-sm ring-2 ring-purple-200' 
+                                : 'border-gray-200 bg-white hover:border-purple-300 hover:bg-gray-50'
+                            }`}
                           >
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                              paymentMethod === method.id ? 'border-purple-600 bg-purple-600' : 'border-gray-300'
+                            }`}>
+                              {paymentMethod === method.id && (
+                                <div className="w-2 h-2 rounded-full bg-white"></div>
+                              )}
+                            </div>
                             {method.id === 'CASH_ON_DELIVERY' ? (
-                              <Banknote className="h-5 w-5 text-pearl-600" />
+                              <Banknote className={`h-5 w-5 ${paymentMethod === method.id ? 'text-purple-600' : 'text-gray-400'}`} />
                             ) : (
-                              <CreditCard className="h-5 w-5 text-pearl-600" />
+                              <CreditCard className={`h-5 w-5 ${paymentMethod === method.id ? 'text-purple-600' : 'text-gray-400'}`} />
                             )}
-                            <div>
-                              <p className="font-medium">{method.name}</p>
+                            <div className="flex-1">
+                              <p className={`font-medium ${paymentMethod === method.id ? 'text-purple-800' : 'text-gray-800'}`}>
+                                {method.name}
+                              </p>
                               <p className="text-sm text-gray-600">{method.description}</p>
+                              {paymentMethod === method.id && (
+                                <p className="text-xs text-purple-600 mt-1">✓ Selected</p>
+                              )}
                             </div>
                           </Label>
                         </div>
@@ -466,14 +510,14 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 </Card>
 
                 {/* Address & Customer Information */}
-                <Card className="border-pearl-200">
-                  <CardHeader className="pb-3">
+                <Card className="border-orange-200 shadow-lg hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-orange-50 via-white to-orange-50">
+                  <CardHeader className="pb-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-t-lg shadow-md">
                     <CardTitle className="text-lg flex items-center gap-2">
-                      <User className="h-5 w-5 text-pearl-600" />
+                      <User className="h-5 w-5" />
                       Delivery Information
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-4 pt-4">
                     
                     {/* Saved Addresses Selection */}
                     {session?.user && addresses.length > 0 && (
@@ -483,11 +527,11 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                           value={selectedAddressId}
                           onValueChange={handleAddressSelect}
                         >
-                          <SelectTrigger className="w-full">
+                          <SelectTrigger className="w-full transition-all duration-200 focus:ring-2 focus:ring-orange-200 focus:border-orange-500 bg-white hover:bg-gray-50">
                             <SelectValue placeholder="Select a saved address" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">
+                            <SelectItem value="manual">
                               <div className="flex items-center gap-2">
                                 <Plus className="h-4 w-4" />
                                 Enter address manually
@@ -517,7 +561,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                           placeholder="e.g. Jannatul Ferdous"
                           value={formData.name}
                           onChange={(e) => handleInputChange('name', e.target.value)}
-                          className={`mt-1 ${errors.name ? 'border-red-500' : ''}`}
+                          className={`mt-1 transition-all duration-200 focus:ring-2 focus:ring-orange-200 focus:border-orange-500 ${errors.name ? 'border-red-500 bg-red-50' : 'bg-white hover:bg-gray-50'}`}
                           required
                         />
                         {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
@@ -529,7 +573,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                           type="tel"
                           value={formData.phone}
                           onChange={(e) => handleInputChange('phone', e.target.value)}
-                          className={`mt-1 ${errors.phone ? 'border-red-500' : ''}`}
+                          className={`mt-1 transition-all duration-200 focus:ring-2 focus:ring-orange-200 focus:border-orange-500 ${errors.phone ? 'border-red-500 bg-red-50' : 'bg-white hover:bg-gray-50'}`}
                           placeholder="01XXXXXXXXX"
                           disabled={isSubmitting}
                         />
@@ -544,7 +588,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                         type="email"
                         value={formData.email}
                         onChange={(e) => handleInputChange('email', e.target.value)}
-                        className={`mt-1 ${errors.email ? 'border-red-500' : ''}`}
+                        className={`mt-1 transition-all duration-200 focus:ring-2 focus:ring-orange-200 focus:border-orange-500 ${errors.email ? 'border-red-500 bg-red-50' : 'bg-white hover:bg-gray-50'}`}
                         placeholder="Enter your email"
                         disabled={isSubmitting}
                       />
@@ -560,12 +604,12 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                             id="address"
                             value={formData.address}
                             onChange={(e) => handleInputChange('address', e.target.value)}
-                            className={`mt-1 ${errors.address ? 'border-red-500' : ''}`}
+                            className={`mt-1 transition-all duration-200 focus:ring-2 focus:ring-orange-200 focus:border-orange-500 ${errors.address ? 'border-red-500 bg-red-50' : 'bg-white hover:bg-gray-50'}`}
                             placeholder="Enter your complete delivery address"
                             rows={2}
                             disabled={isSubmitting}
                           />
-                          {!selectedAddressId && (
+                          {selectedAddressId === 'manual' && (
                             <Button
                               type="button"
                               variant="outline"
@@ -600,7 +644,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                               value={formData.district}
                               disabled={isSubmitting}
                             >
-                              <SelectTrigger className={`mt-1 w-full ${errors.district ? 'border-red-500' : ''}`}>
+                              <SelectTrigger className={`mt-1 w-full transition-all duration-200 focus:ring-2 focus:ring-orange-200 focus:border-orange-500 ${errors.district ? 'border-red-500 bg-red-50' : 'bg-white hover:bg-gray-50'}`}>
                                 <SelectValue placeholder="Select district" />
                               </SelectTrigger>
                               <SelectContent>
@@ -620,7 +664,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                               value={formData.upazila}
                               disabled={isSubmitting || !formData.district}
                             >
-                              <SelectTrigger className={`mt-1 w-full ${errors.upazila ? 'border-red-500' : ''}`}>
+                              <SelectTrigger className={`mt-1 w-full transition-all duration-200 focus:ring-2 focus:ring-orange-200 focus:border-orange-500 ${errors.upazila ? 'border-red-500 bg-red-50' : 'bg-white hover:bg-gray-50'}`}>
                                 <SelectValue placeholder="Select upazila" />
                               </SelectTrigger>
                               <SelectContent>
@@ -643,7 +687,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                         id="note"
                         value={formData.note}
                         onChange={(e) => handleInputChange('note', e.target.value)}
-                        className="mt-1"
+                        className="mt-1 transition-all duration-200 focus:ring-2 focus:ring-orange-200 focus:border-orange-500 bg-white hover:bg-gray-50"
                         placeholder="Any special instructions for delivery"
                         rows={2}
                         disabled={isSubmitting}
@@ -656,24 +700,41 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
           </div>
 
           {/* Fixed Bottom Section */}
-          <div className="border-t bg-white p-4 sm:p-6">
-            <Button
-              onClick={handleSubmit}
-              className="w-full bg-pearl-600 hover:bg-pearl-700 text-white py-3 text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={isSubmitting || items.length === 0 || !isFormValid}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Placing Order...
-                </>
-              ) : (
-                `Confirm Order - ${formatPrice(total)}`
-              )}
-            </Button>
-            <p className="text-xs text-gray-500 text-center mt-2">
-              By placing this order, you agree to our terms of service and privacy policy.
-            </p>
+          <div className="border-t bg-gradient-to-r from-white via-gray-50 to-white p-4 sm:p-6 shadow-lg backdrop-blur-sm">
+            <div className="space-y-3">
+              {/* Total Summary */}
+              <div className="flex justify-between items-center p-4 bg-gradient-to-r from-emerald-50 via-emerald-100 to-emerald-50 rounded-xl border border-emerald-200 shadow-sm">
+                <span className="text-lg font-semibold text-gray-800">Total Amount:</span>
+                <span className="text-xl font-bold text-emerald-700">{formatPrice(total)}</span>
+              </div>
+              
+              {/* Order Button */}
+              <Button
+                onClick={handleSubmit}
+                className="w-full bg-gradient-to-r from-emerald-600 via-emerald-700 to-emerald-600 hover:from-emerald-700 hover:via-emerald-800 hover:to-emerald-700 text-white py-4 text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:from-gray-400 disabled:to-gray-500 disabled:transform-none"
+                disabled={isSubmitting || items.length === 0 || !isFormValid}
+                size="lg"
+              >
+                {isSubmitting ? (
+                  <div className="flex items-center justify-center">
+                    <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+                    <span className="font-semibold">Placing Your Order...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center">
+                    <Package className="mr-3 h-5 w-5" />
+                    <span className="font-bold">Confirm Order - {formatPrice(total)}</span>
+                  </div>
+                )}
+              </Button>
+              
+              {/* Terms */}
+              <p className="text-xs text-gray-500 text-center leading-relaxed">
+                By placing this order, you agree to our{' '}
+                <span className="text-emerald-600 underline cursor-pointer hover:text-emerald-700">terms of service</span> and{' '}
+                <span className="text-emerald-600 underline cursor-pointer hover:text-emerald-700">privacy policy</span>.
+              </p>
+            </div>
           </div>
         </div>
       </DialogContent>

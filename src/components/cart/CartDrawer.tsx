@@ -21,7 +21,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 
-const CheckoutModal = dynamic(() => import('../checkout/CheckoutModal').then(mod => mod.CheckoutModal), {
+const CheckoutModal = dynamic(() => import('../checkout/CheckoutModal-new').then(mod => mod.CheckoutModal), {
   ssr: false,
 })
 

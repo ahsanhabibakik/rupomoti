@@ -1,5 +1,8 @@
 'use client'
 
+// Client-side with dynamic data fetching (good for category filtering)
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect } from 'react'
 import { ProductCard } from '@/components/products/ProductCard'
 import { Button } from '@/components/ui/button'

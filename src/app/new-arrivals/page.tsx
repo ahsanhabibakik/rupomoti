@@ -1,3 +1,7 @@
+// ISR: Revalidate new arrivals every 6 hours
+export const revalidate = 21600
+export const dynamic = 'auto'
+
 import { ProductCard } from '@/components/products/ProductCard'
 import { Badge } from '@/components/ui/badge'
 import { PrismaClient } from '@prisma/client'

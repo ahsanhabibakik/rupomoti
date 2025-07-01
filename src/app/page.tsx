@@ -1,3 +1,7 @@
+// ISR: Revalidate homepage data every hour
+export const revalidate = 3600
+export const dynamic = 'auto'
+
 import { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'

@@ -1,3 +1,6 @@
+// Force dynamic rendering for product pages (real-time stock, pricing)
+export const dynamic = 'force-dynamic'
+
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getProduct } from '@/lib/actions/product-actions'
