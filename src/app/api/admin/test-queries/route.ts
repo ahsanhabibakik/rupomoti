@@ -58,25 +58,25 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // 2. Test with active filter (the problematic one)
+    // 2. Test with active filter (the corrected one)
     try {
       const activeOrders = await prisma.order.findMany({
         where: {
           deletedAt: null,
-          isFakeOrder: { not: true }
+          isFakeOrder: false // Explicitly match false for MongoDB
         },
         take: 5,
         orderBy: { createdAt: 'desc' }
       })
 
       testQueries.push({
-        name: 'Active Orders Query (with isFakeOrder filter)',
+        name: 'Active Orders Query (with isFakeOrder: false)',
         success: true,
         count: activeOrders.length
       })
     } catch (error) {
       testQueries.push({
-        name: 'Active Orders Query (with isFakeOrder filter)',
+        name: 'Active Orders Query (with isFakeOrder: false)',
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
       })

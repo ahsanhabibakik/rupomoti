@@ -1,180 +1,170 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { auth } from "@/app/auth";
 import { prisma } from "@/lib/prisma";
-import { OrderStatus, Prisma } from "@prisma/client";
+import { generateUniqueOrderNumber } from "@/lib/server/order-number-generator";
+import { StockManager } from "@/lib/stock-manager";
 import { AuditLogger } from "@/lib/audit-logger";
+import { OrderStatus, Prisma } from "@prisma/client";
 
 // Force dynamic rendering to ensure fresh data
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+// Type for order where clause
+type OrderWhereInput = Prisma.OrderWhereInput;
+
 export async function GET(req: Request) {
-  console.log('🚀 Admin Orders API - Starting request...');
+  console.log('🚀 Optimized Admin Orders API - Starting request...');
   
-  const session = await auth();
-  
-  // Enhanced authentication check with detailed logging
-  console.log('🔐 Admin Orders API - Session check:', {
-    hasSession: !!session,
-    userId: session?.user?.id,
-    isAdmin: session?.user?.isAdmin,
-    role: session?.user?.role,
-    email: session?.user?.email,
-  });
-  
-  // Check authentication - simplified
-  if (!session?.user?.id) {
-    console.log('❌ No authenticated user');
-    return NextResponse.json({ error: 'Unauthorized - No session' }, { status: 401 });
-  }
-  
-  // Check admin access - allow any admin user or specific roles
-  const hasAdminAccess = session?.user?.isAdmin || 
-                        session?.user?.role === 'ADMIN' || 
-                        session?.user?.role === 'MANAGER' ||
-                        session?.user?.role === 'SUPER_ADMIN';
-  
-  if (!hasAdminAccess) {
-    console.log('❌ User does not have admin access:', {
-      isAdmin: session?.user?.isAdmin,
-      role: session?.user?.role
-    });
-    return NextResponse.json({ error: 'Unauthorized - Insufficient permissions' }, { status: 401 });
-  }
-
-  const { searchParams } = new URL(req.url);
-  const search = searchParams.get('search') || '';
-  const status = searchParams.get('status'); // e.g., 'all', 'trashed', or specific order statuses
-  const from = searchParams.get('from');
-  const to = searchParams.get('to');
-  const page = parseInt(searchParams.get('page') || '1', 10);
-  const limit = parseInt(searchParams.get('limit') || '10', 10);
-  const offset = (page - 1) * limit;
-
-  console.log('📊 Admin Orders API - Query parameters:', {
-    search, status, from, to, page, limit, offset
-  });
-
   try {
-    // Simplified approach - start with basic query and add complexity gradually
-    console.log('🔄 Building query...');
+    const session = await auth();
     
-    let where: any = {}; // Using any to avoid TypeScript issues with isFakeOrder
+    // Check authentication
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     
-    // Handle different status filters
-    if (status === 'trashed') {
-      where.deletedAt = { not: null };
-      console.log('📋 Query: Getting trashed orders');
-    } else if (status === 'fake') {
-      where.deletedAt = null;
-      where.isFakeOrder = true;
-      console.log('📋 Query: Getting fake orders');
-    } else if (status === 'active') {
-      // For active status, show non-deleted orders (we'll filter fake ones post-query)
-      where.deletedAt = null;
-      console.log('📋 Query: Getting active (non-fake) orders - will filter fake ones after query');
-    } else {
-      // For 'all' status, show all non-deleted orders (including fake)
-      where.deletedAt = null;
-      console.log('📋 Query: Getting all non-deleted orders');
+    // Check admin access
+    const hasAdminAccess = session.user.isAdmin || 
+                          ['ADMIN', 'MANAGER', 'SUPER_ADMIN'].includes(session.user.role);
+    
+    if (!hasAdminAccess) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
-    console.log('🔍 Admin Orders API - Basic where clause:', JSON.stringify(where, null, 2));
+    const { searchParams } = new URL(req.url);
+    const search = searchParams.get('search')?.trim() || '';
+    const status = searchParams.get('status') || 'active'; // active, fake, trashed, all
+    const from = searchParams.get('from');
+    const to = searchParams.get('to');
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20', 10)));
+    const offset = (page - 1) * limit;
+    
+    console.log('📊 Query params:', { search, status, from, to, page, limit });
 
-    // Handle search - keep it simple for now
+    // Build simplified where clause for better performance
+    const where: OrderWhereInput = {};
+    
+    // Use simplified status filtering (MongoDB-compatible)
+    switch (status) {
+      case 'active':
+        // For MongoDB, use undefined instead of null for proper matching
+        where.deletedAt = undefined;
+        where.isFakeOrder = false;
+        break;
+      case 'fake':
+        where.deletedAt = undefined;
+        where.isFakeOrder = true;
+        break;
+      case 'trashed':
+        where.deletedAt = { not: null };
+        break;
+      case 'all':
+        // No additional filter - show all orders
+        break;
+      default:
+        // If it's an OrderStatus, filter by that
+        if (Object.values(OrderStatus).includes(status as OrderStatus)) {
+          where.status = status as OrderStatus;
+          where.deletedAt = undefined; // Only show non-deleted orders with specific status
+        } else {
+          where.deletedAt = undefined; // Default to non-deleted
+          where.isFakeOrder = false;
+        }
+    }
+    
+    // Add search conditions (simplified)
     if (search) {
-      console.log('🔍 Adding search filter:', search);
-      const searchConditions = [
-        { orderNumber: { contains: search, mode: 'insensitive' as const } },
-        { customer: { name: { contains: search, mode: 'insensitive' as const } } },
-        { recipientName: { contains: search, mode: 'insensitive' as const } },
-        { recipientPhone: { contains: search, mode: 'insensitive' as const } },
+      const searchNumber = search.replace(/\D/g, ''); // Extract numbers for phone search
+      where.OR = [
+        { orderNumber: { contains: search, mode: 'insensitive' } },
+        { recipientName: { contains: search, mode: 'insensitive' } },
+        ...(searchNumber ? [{ recipientPhone: { contains: searchNumber } }] : []),
+        { customer: { name: { contains: search, mode: 'insensitive' } } }
       ];
-
-      where = {
-        ...where,
-        OR: searchConditions
-      };
     }
     
-    // Handle specific order status - keep it simple
-    if (status && status !== 'all' && status !== 'trashed' && status !== 'active' && status !== 'fake') {
-      console.log('🏷️ Adding status filter:', status);
-      where.status = status as OrderStatus;
-    }
-
-    // Handle date range - keep it simple
+    // Add date range
     if (from && to) {
-      console.log('📅 Adding date range filter:', { from, to });
       where.createdAt = {
         gte: new Date(from),
-        lte: new Date(to),
+        lte: new Date(to)
       };
     }
+    
+    console.log('🔍 Final where clause:', JSON.stringify(where, null, 2));
 
-    console.log('🔍 Admin Orders API - Final where clause:', JSON.stringify(where, null, 2));
-
-    // Direct test - get total count first to verify database connection
-    const totalOrdersInDb = await prisma.order.count();
-    console.log('📊 Total orders in database:', totalOrdersInDb);
-
-    // Check for very recent orders (last 10 minutes)
-    const recentOrdersCount = await prisma.order.count({
-      where: {
-        createdAt: {
-          gte: new Date(Date.now() - 10 * 60 * 1000) // 10 minutes ago
-        }
-      }
-    });
-    console.log('📊 Orders created in last 10 minutes:', recentOrdersCount);
-
-    // Direct test - get a few orders without filters to verify data exists
-    const testOrders = await prisma.order.findMany({
-      take: 3,
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        orderNumber: true,
-        deletedAt: true,
-        isFakeOrder: true,
-        createdAt: true
-      }
-    });
-    console.log('🧪 Test orders (no filters):', testOrders);
-
-    console.log('🔄 Executing main query...');
-    const orders = await prisma.order.findMany({
-      where,
-      include: {
-        customer: true,
-        user: {
-          select: {
-            isFlagged: true
+    // Execute optimized parallel queries
+    const [orders, totalCount] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        select: {
+          id: true,
+          orderNumber: true,
+          status: true,
+          paymentStatus: true,
+          paymentMethod: true,
+          total: true,
+          deliveryAddress: true,
+          recipientName: true,
+          recipientPhone: true,
+          recipientEmail: true,
+          courierName: true,
+          courierTrackingCode: true,
+          isFakeOrder: true,
+          deletedAt: true,
+          createdAt: true,
+          updatedAt: true,
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              phone: true,
+              email: true,
+              address: true
+            }
+          },
+          user: {
+            select: {
+              isFlagged: true
+            }
+          },
+          items: {
+            select: {
+              id: true,
+              quantity: true,
+              price: true,
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  price: true,
+                  sku: true
+                }
+              }
+            },
+            take: 5 // Limit items for performance
           }
         },
-        items: {
-          include: {
-            product: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-      skip: offset,
-      take: limit,
-    });
+        orderBy: { createdAt: 'desc' },
+        skip: offset,
+        take: limit,
+      }),
+      prisma.order.count({ where })
+    ]);
 
-    console.log('📦 Admin Orders API - Orders fetched:', {
-      queryWhere: where,
+    console.log('📦 Orders fetched:', {
       count: orders.length,
-      firstOrderId: orders[0]?.id,
-      firstOrderNumber: orders[0]?.orderNumber,
-      firstOrderCreated: orders[0]?.createdAt,
-      firstOrderIsFake: orders[0]?.isFakeOrder,
-      orderIds: orders.map(o => o.id).slice(0, 5), // First 5 IDs
-      sampleOrderStructure: orders[0] ? Object.keys(orders[0]) : [],
+      totalCount,
+      firstOrder: orders[0] ? {
+        orderNumber: orders[0].orderNumber,
+        deletedAt: orders[0].deletedAt,
+        isFakeOrder: orders[0].isFakeOrder
+      } : null
     });
 
-    // Sanitize orders data to handle missing relationships
+    // Minimal data processing
     const sanitizedOrders = orders.map(order => ({
       ...order,
       customer: order.customer || {
@@ -182,221 +172,373 @@ export async function GET(req: Request) {
         name: 'Unknown Customer',
         phone: 'N/A',
         email: null,
-        address: null,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        address: null
       },
       user: order.user || { isFlagged: false },
       items: order.items || [],
-      // Ensure shippingAddress is available
       shippingAddress: order.deliveryAddress || 'N/A'
     }));
 
-    console.log('🧼 Sanitized orders:', {
-      originalCount: orders.length,
-      sanitizedCount: sanitizedOrders.length,
-      hasCustomerIssues: orders.filter(o => !o.customer).length,
-      hasItemsIssues: orders.filter(o => !o.items || o.items.length === 0).length,
-    });
-
-    // Post-query filtering for active orders (workaround for MongoDB boolean issues)
-    let filteredOrders = sanitizedOrders;
-    if (status === 'active') {
-      // Filter out fake orders after fetching
-      filteredOrders = sanitizedOrders.filter(order => !order.isFakeOrder);
-      console.log('📦 Admin Orders API - After fake filter:', {
-        originalCount: sanitizedOrders.length,
-        filteredCount: filteredOrders.length,
-      });
-    }
-
-    // Get the total count - need to handle fake filtering manually
-    let totalOrders;
-    if (status === 'active') {
-      // Get all non-deleted orders and filter fake ones
-      const allOrders = await prisma.order.findMany({
-        where: { deletedAt: null },
-        select: { id: true, isFakeOrder: true }
-      });
-      totalOrders = allOrders.filter(order => !order.isFakeOrder).length;
-    } else {
-      totalOrders = await prisma.order.count({ where });
-    }
-    
-    console.log('📊 Admin Orders API - Total count:', totalOrders);
-
     const responseData = {
-      orders: filteredOrders,
-      totalOrders,
-      totalPages: Math.ceil(totalOrders / limit),
+      orders: sanitizedOrders,
+      totalOrders: totalCount,
+      totalPages: Math.ceil(totalCount / limit),
+      currentPage: page,
+      limit
     };
 
-    console.log('📤 Sending response:', {
+    console.log('📤 Response:', {
       ordersCount: responseData.orders.length,
       totalOrders: responseData.totalOrders,
       totalPages: responseData.totalPages,
       status,
-      page,
-      limit
+      page
     });
 
-    // Create response with no-cache headers for real-time updates
+    // Create response with no-cache headers
     const response = NextResponse.json(responseData);
-    
-    // Add aggressive no-cache headers to ensure real-time data
-    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+    response.headers.set('Cache-Control', 'no-store, max-age=0');
     response.headers.set('Pragma', 'no-cache');
     response.headers.set('Expires', '0');
-    response.headers.set('Surrogate-Control', 'no-store');
-    response.headers.set('Vary', '*');
     
     return response;
+
   } catch (error) {
-    console.error(error);
+    console.error('❌ Admin Orders API Error:', error);
     return NextResponse.json(
-      { error: (error as Error).message || 'Failed to fetch orders' },
+      { error: 'Failed to fetch orders', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
 }
 
-export async function POST(request: Request) {
+// Optimized order update endpoint
+export async function PUT(req: Request) {
   try {
     const session = await auth();
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user is admin
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
-    if (!user?.isAdmin && user?.role !== 'MANAGER') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { id, status, isFakeOrder, restore } = await req.json();
+
+    if (!id) {
+      return NextResponse.json({ error: 'Order ID required' }, { status: 400 });
     }
 
-    const { orderId, action, status } = await request.json();
+    // Build update data
+    const updateData: Prisma.OrderUpdateInput = { 
+      updatedAt: new Date() 
+    };
+    
+    if (status !== undefined) {
+      updateData.status = status;
+    }
+    
+    if (isFakeOrder !== undefined) {
+      updateData.isFakeOrder = isFakeOrder;
+    }
+    
+    if (restore === true) {
+      // For MongoDB, set to undefined to properly "unset" the field
+      updateData.deletedAt = null;
+      updateData.isFakeOrder = false;
+    }
 
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
+    const updatedOrder = await prisma.order.update({
+      where: { id },
+      data: updateData,
       include: {
         customer: true,
         items: {
-          include: {
-            product: true,
-          },
-        },
-      },
+          include: { product: true }
+        }
+      }
     });
 
-    if (!order) {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
-    }
+    return NextResponse.json({ success: true, order: updatedOrder });
 
-    switch (action) {
-      case 'confirm_order': {
-        if (order.status !== 'PENDING') {
-          return NextResponse.json(
-            { error: 'Order cannot be confirmed' },
-            { status: 400 }
-          );
-        }
-
-        await prisma.order.update({
-          where: { id: orderId },
-          data: { status: 'CONFIRMED' },
-        });
-
-        return NextResponse.json({ message: 'Order confirmed successfully' });
-      }
-
-      case 'create_shipment': {
-        if (order.status !== 'CONFIRMED') {
-          return NextResponse.json(
-            { error: 'Order must be confirmed before creating shipment' },
-            { status: 400 }
-          );
-        }
-
-        if (order.courierConsignmentId) {
-          return NextResponse.json(
-            { error: 'Shipment already exists' },
-            { status: 400 }
-          );
-        }
-        
-        // This whole case is now handled by /api/admin/shipments
-        // I will remove it.
-        return NextResponse.json({error: "This action is deprecated. Use /api/admin/shipments"}, {status: 400});
-      }
-
-      case 'update_status': {
-        if (!status) {
-          return NextResponse.json(
-            { error: 'Status is required' },
-            { status: 400 }
-          );
-        }
-
-        const validStatuses = [
-          'PENDING',
-          'PROCESSING',
-          'CONFIRMED',
-          'SHIPPED',
-          'DELIVERED',
-          'CANCELLED',
-        ];
-
-        if (!validStatuses.includes(status)) {
-          return NextResponse.json(
-            { error: 'Invalid status' },
-            { status: 400 }
-          );
-        }
-
-        // If order is being marked as delivered, update Steadfast status
-        if (status === 'DELIVERED' && order.courierTrackingCode) {
-          // This might need to be updated to be generic for all couriers
-          // For now, I'll leave it as it might be part of another feature
-          try {
-            // TODO: Import and implement steadfast courier integration
-            // await steadfast.getDeliveryStatus(
-            //   order.courierTrackingCode,
-            //   'tracking'
-            // );
-            console.log('Order marked as delivered:', order.courierTrackingCode);
-          } catch (error) {
-            console.error('Error updating Steadfast status:', error);
-          }
-        }
-
-        await prisma.order.update({
-          where: { id: orderId },
-          data: { status },
-        });
-
-        // Log the status change
-        await AuditLogger.logOrderStatusChange(
-          orderId,
-          user.id,
-          order.status,
-          status
-        );
-
-        return NextResponse.json({ message: 'Order status updated successfully' });
-      }
-
-      default:
-        return NextResponse.json(
-          { error: 'Invalid action' },
-          { status: 400 }
-        );
-    }
   } catch (error) {
-    console.error(error);
+    console.error('❌ Order update error:', error);
     return NextResponse.json(
-      { error: (error as Error).message || 'Failed to process order action' },
+      { error: 'Failed to update order' },
       { status: 500 }
     );
+  }
+}
+
+// Optimized order deletion (soft delete)
+export async function DELETE(req: Request) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'Order ID required' }, { status: 400 });
+    }
+
+    await prisma.order.update({
+      where: { id },
+      data: {
+        deletedAt: new Date()
+      }
+    });
+
+    return NextResponse.json({ success: true });
+
+  } catch (error) {
+    console.error('❌ Order deletion error:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete order' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(req: Request) {
+  try {
+    const session = await auth();
+    const body = await req.json();
+    
+    console.log('Order API - Received data:', JSON.stringify(body, null, 2));
+    
+    const {
+      recipientName,
+      recipientPhone,
+      recipientEmail,
+      recipientCity,
+      recipientZone,
+      recipientArea,
+      deliveryAddress,
+      orderNote,
+      items,
+      subtotal,
+      deliveryFee,
+      total,
+      deliveryZone,
+      paymentMethod,
+      userId: payloadUserId
+    } = body;
+
+    // Use session userId if not provided
+    const userId = payloadUserId || session?.user?.id || undefined;
+
+    // Validate required fields
+    if (!recipientName) {
+      return NextResponse.json({ error: 'Missing required field: recipientName' }, { status: 400 });
+    }
+    if (!recipientPhone) {
+      return NextResponse.json({ error: 'Missing required field: recipientPhone' }, { status: 400 });
+    }
+    if (!deliveryAddress) {
+      return NextResponse.json({ error: 'Missing required field: deliveryAddress' }, { status: 400 });
+    }
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return NextResponse.json({ error: 'Missing or empty items array' }, { status: 400 });
+    }
+    if (!deliveryZone) {
+      return NextResponse.json({ error: 'Missing required field: deliveryZone' }, { status: 400 });
+    }
+    if (subtotal === undefined || subtotal === null) {
+      return NextResponse.json({ error: 'Missing required field: subtotal' }, { status: 400 });
+    }
+    if (deliveryFee === undefined || deliveryFee === null) {
+      return NextResponse.json({ error: 'Missing required field: deliveryFee' }, { status: 400 });
+    }
+    if (total === undefined || total === null) {
+      return NextResponse.json({ error: 'Missing required field: total' }, { status: 400 });
+    }
+    if (!paymentMethod) {
+      return NextResponse.json({ error: 'Missing required field: paymentMethod' }, { status: 400 });
+    }
+
+    try {
+      // Create or find customer by phone
+      let customerRecord = await prisma.customer.findUnique({
+        where: { phone: recipientPhone }
+      });
+
+      if (!customerRecord) {
+        customerRecord = await prisma.customer.create({
+          data: {
+            name: recipientName,
+            phone: recipientPhone,
+            email: recipientEmail || '',
+            address: deliveryAddress,
+            city: recipientCity || '',
+            zone: recipientZone || '',
+            userId: userId || undefined
+          }
+        });
+      } else {
+        // Update existing customer with latest info
+        customerRecord = await prisma.customer.update({
+          where: { id: customerRecord.id },
+          data: {
+            name: recipientName,
+            email: recipientEmail || '',
+            address: deliveryAddress,
+            city: recipientCity || '',
+            zone: recipientZone || '',
+            userId: userId || customerRecord.userId
+          }
+        });
+      }
+
+      // Use a transaction to ensure atomicity
+      const order = await prisma.$transaction(async (tx) => {
+        // 1. Check stock availability using StockManager
+        const stockCheck = await StockManager.checkStockAvailability(
+          items.map((item: { productId: string; quantity: number }) => ({
+            productId: item.productId,
+            quantity: item.quantity
+          }))
+        );
+
+        if (!stockCheck.allAvailable) {
+          const unavailableItems = stockCheck.checks
+            .filter(check => !check.available)
+            .map(check => `${check.productName || check.productId}: ${check.reason}`)
+            .join(', ');
+          throw new Error(`Stock not available: ${unavailableItems}`);
+        }
+        
+        // 2. Generate unique order number
+        const newOrderNumber = await generateUniqueOrderNumber();
+        
+        // 3. Create the order
+        const createdOrder = await tx.order.create({
+          data: {
+            orderNumber: newOrderNumber,
+            customerId: customerRecord.id,
+            userId: userId || undefined,
+            status: 'PENDING',
+            paymentStatus: 'PENDING',
+            paymentMethod: paymentMethod || 'CASH_ON_DELIVERY',
+            subtotal: subtotal || 0,
+            deliveryFee: deliveryFee || 0,
+            discount: 0,
+            total: total || 0,
+            deliveryZone,
+            deliveryAddress,
+            orderNote: orderNote || undefined,
+            recipientName,
+            recipientPhone,
+            recipientEmail: recipientEmail || '',
+            recipientCity: recipientCity || '',
+            recipientZone: recipientZone || '',
+            recipientArea: recipientArea || '',
+            isFakeOrder: false, // Explicitly set as false for new orders
+            items: {
+              create: items.map((item: { productId: string; quantity: number; price: number }) => ({
+                productId: item.productId,
+                quantity: item.quantity,
+                price: item.price,
+              })),
+            },
+          },
+          include: {
+            customer: true,
+            items: {
+              include: {
+                product: true
+              }
+            }
+          },
+        });
+
+        // 4. Reserve stock using StockManager
+        try {
+          await StockManager.reserveStockForOrder(
+            createdOrder.id,
+            items.map((item: { productId: string; quantity: number }) => ({
+              productId: item.productId,
+              quantity: item.quantity
+            }))
+          );
+        } catch (stockError) {
+          throw new Error(`Failed to reserve stock: ${stockError instanceof Error ? stockError.message : 'Unknown error'}`);
+        }
+
+        return createdOrder;
+      });
+
+      // 5. Log order creation to audit log
+      if (userId) {
+        try {
+          await AuditLogger.log({
+            model: 'Order',
+            recordId: order.id,
+            userId: userId,
+            action: 'CREATE',
+            details: {
+              orderNumber: order.orderNumber,
+              customerName: order.customer.name,
+              customerPhone: order.customer.phone,
+              total: order.total,
+              createdBy: session?.user?.email || 'guest'
+            }
+          });
+        } catch (auditError) {
+          console.error('Failed to log order creation:', auditError);
+          // Don't fail the order creation if audit logging fails
+        }
+      }
+
+      console.log('Order created successfully:', order.orderNumber);
+
+      // Return response with no-cache headers for real-time updates
+      const response = NextResponse.json({
+        success: true,
+        order: {
+          id: order.id,
+          orderNumber: order.orderNumber,
+          status: order.status,
+          total: order.total,
+          customer: {
+            name: order.customer.name,
+            phone: order.customer.phone,
+            email: order.customer.email
+          },
+          createdAt: order.createdAt
+        }
+      });
+
+      // Add aggressive no-cache headers to ensure admin dashboard gets fresh data
+      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+      response.headers.set('Pragma', 'no-cache');
+      response.headers.set('Expires', '0');
+      response.headers.set('Surrogate-Control', 'no-store');
+      response.headers.set('Vary', '*');
+
+      return response;
+    } catch (error) {
+      console.error('Order creation failed:', error);
+    
+      if (error instanceof Error && error.message.includes('Stock not available')) {
+        return NextResponse.json({ error: error.message }, { status: 409 }); // 409 Conflict
+      }
+    
+      return NextResponse.json({ error: 'An unexpected error occurred while processing your order.' }, { status: 500 });
+    }
+  } catch (error) {
+    console.error('Failed to create order:', error);
+    
+    // Provide more specific error messages
+    if (error instanceof Error && error.message) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    
+    // Check if it's a Prisma validation error
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
+      return NextResponse.json({ error: 'Duplicate order number. Please try again.' }, { status: 400 });
+    }
+    
+    return NextResponse.json({ error: 'Failed to create order. Please try again.' }, { status: 500 });
   }
 }
