@@ -1,5 +1,8 @@
 import 'server-only'
 
+// Force dynamic rendering for product pages (real-time stock, pricing)
+export const dynamic = 'force-dynamic'
+
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getProduct, getRelatedProducts } from '@/lib/actions/product-actions'

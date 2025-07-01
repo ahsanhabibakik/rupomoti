@@ -24,6 +24,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: createSafeAdapter(),
   secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-for-development',
   basePath: '/api/auth',
+  allowDangerousEmailAccountLinking: true, // Allow linking OAuth accounts to existing email accounts
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
@@ -115,6 +116,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
+    async signIn({ user, account, profile, email, credentials }) {
+      if (account?.provider === "google") {
+        try {
+          // Check if user exists with this email
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email! },
+          });
+
+          if (existingUser) {
+            // User exists, allow sign in but link the account
+            return true;
+          }
+          // New user, allow creation
+          return true;
+        } catch (error) {
+          console.error("Sign in error:", error);
+          return false;
+        }
+      }
+      return true;
+    },
     async session({ token, session }) {
       if (token && session.user) {
         session.user.id = token.id as string

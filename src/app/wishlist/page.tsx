@@ -1,3 +1,6 @@
+// Force dynamic rendering for wishlist (user-specific data)
+export const dynamic = 'force-dynamic'
+
 import React from 'react';
 
 export default function WishlistPage() {

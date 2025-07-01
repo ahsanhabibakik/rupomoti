@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect } from 'react'
 import { Bell, Check, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -11,6 +13,7 @@ import { Label } from '@/components/ui/label'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { showToast } from '@/lib/toast'
 
+// Admin notifications page
 interface Notification {
   id: string
   type: 'order' | 'inventory' | 'review' | 'user' | 'system'

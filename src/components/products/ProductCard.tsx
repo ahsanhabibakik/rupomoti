@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Heart, ShoppingCart, Sparkles, Eye, Star, ArrowRight } from 'lucide-react'
+import { Heart, ShoppingCart,   } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useAppDispatch } from '@/redux/hooks'
@@ -22,16 +22,14 @@ interface ProductCardProps {
 
 export function ProductCard({ product, compact = false, className }: ProductCardProps) {
   const { id, name, price, salePrice, images, isNewArrival, isPopular, isFeatured, stock } = product
-  const discount = price && salePrice ? Math.round(((price - salePrice) / price) * 100) : 0
+  const discount = price && salePrice && salePrice < price ? Math.round(((price - salePrice) / price) * 100) : 0
   const dispatch = useAppDispatch()
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist()
   const [isImageLoading, setIsImageLoading] = useState(true)
   const [isHovered, setIsHovered] = useState(false)
 
   const safePrice = typeof price === 'number' && !isNaN(price) ? price : 0
-  const discountedPrice = discount > 0 && typeof price === 'number' && !isNaN(price)
-    ? price - (price * discount) / 100
-    : safePrice
+  const finalPrice = salePrice && salePrice < price ? salePrice : safePrice
 
   const isOutOfStock = typeof stock === 'number' ? stock <= 0 : false;
 
@@ -41,7 +39,7 @@ export function ProductCard({ product, compact = false, className }: ProductCard
     const cartItem = {
       id,
       name: name || 'Unnamed Product',
-      price: discount > 0 ? discountedPrice : safePrice,
+      price: finalPrice,
       image: images[0] || '/images/placeholder.jpg',
       quantity: 1,
       category: 'Uncategorized'
@@ -61,17 +59,6 @@ export function ProductCard({ product, compact = false, className }: ProductCard
     }
   }
 
-  const renderStars = (rating: number = 0) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <Star
-        key={i}
-        className={cn(
-          "w-3 h-3",
-          i < Math.floor(rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-        )}
-      />
-    ))
-  }
 
   return (
     <div
@@ -141,32 +128,40 @@ export function ProductCard({ product, compact = false, className }: ProductCard
         )}>
           {isNewArrival && (
             <Badge className={cn(
-              "bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 shadow-lg",
+              "bg-gradient-to-r from-green-500 to-emerald-500 badge-white-text border-0 shadow-lg font-medium",
               // Responsive badge sizing
               "text-[10px] px-1 py-0 sm:text-xs sm:px-2 sm:py-1",
               compact && "text-[10px] px-1 py-0"
-            )}>New</Badge>
+            )}>
+              <span className="text-white">New</span>
+            </Badge>
           )}
           {isPopular && (
             <Badge className={cn(
-              "bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 shadow-lg",
+              "bg-gradient-to-r from-orange-500 to-red-500 badge-white-text border-0 shadow-lg font-medium",
               "text-[10px] px-1 py-0 sm:text-xs sm:px-2 sm:py-1",
               compact && "text-[10px] px-1 py-0"
-            )}>Popular</Badge>
+            )}>
+              <span className="text-white">Popular</span>
+            </Badge>
           )}
           {isFeatured && (
             <Badge className={cn(
-              "bg-gradient-to-r from-purple-500 to-indigo-500 text-white border-0 shadow-lg",
+              "bg-gradient-to-r from-purple-500 to-indigo-500 badge-white-text border-0 shadow-lg font-medium",
               "text-[10px] px-1 py-0 sm:text-xs sm:px-2 sm:py-1",
               compact && "text-[10px] px-1 py-0"
-            )}>Featured</Badge>
+            )}>
+              <span className="text-white">Featured</span>
+            </Badge>
           )}
           {discount > 0 && (
             <Badge className={cn(
-              "bg-gradient-to-r from-red-500 to-pink-500 text-white border-0 shadow-lg font-bold",
+              "bg-gradient-to-r from-red-500 to-pink-500 badge-white-text border-0 shadow-lg font-bold",
               "text-[10px] px-1 py-0 sm:text-xs sm:px-2 sm:py-1",
               compact && "text-[10px] px-1 py-0"
-            )}>-{discount}%</Badge>
+            )}>
+              <span className="text-white">-{discount}%</span>
+            </Badge>
           )}
         </div>
         {/* Out of Stock Overlay */}
@@ -262,7 +257,7 @@ export function ProductCard({ product, compact = false, className }: ProductCard
               onClick={handleAddToCart}
               disabled={isOutOfStock}
               className={cn(
-                "flex-1 bg-amber-900 hover:bg-amber-950 text-white rounded-lg font-medium shadow-lg hover:shadow-xl transition-all duration-300",
+                "flex-1 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all duration-300",
                 // Responsive button sizing
                 "h-7 text-[10px] px-2 sm:h-9 sm:text-xs sm:px-3",
                 compact && "h-7 text-[10px] px-2"

@@ -34,8 +34,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
-import { AdminThemeProvider } from '@/components/admin/AdminThemeProvider'
-import { CustomColorManager } from '@/components/admin/CustomColorManager'
+// Temporarily comment out problematic imports
+// import { AdminThemeProvider } from '@/components/admin/AdminThemeProvider'
+// import { CustomColorManager } from '@/components/admin/CustomColorManager'
 
 const navigation = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard, badge: null },
@@ -247,7 +248,9 @@ export default function AdminLayout({
   }
 
   return (
-    <AdminThemeProvider>
+    <>
+      {/* Temporarily commented out AdminThemeProvider */}
+      {/* <AdminThemeProvider> */}
       <div className="min-h-screen bg-gray-50 text-gray-900" data-admin-theme-container style={{colorScheme: 'light'}}>
       {/* Top Bar - Mobile */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
@@ -358,7 +361,7 @@ export default function AdminLayout({
             </div>
           )}
         </div>
-        <CustomColorManager />
+        {/* <CustomColorManager /> */}
       </div>
 
       {/* Desktop sidebar */}
@@ -377,6 +380,7 @@ export default function AdminLayout({
         </div>
       </div>
     </div>
-    </AdminThemeProvider>
+    {/* </AdminThemeProvider> */}
+    </>
   )
 }

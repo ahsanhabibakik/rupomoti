@@ -1,6 +1,9 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+// Client-side with dynamic data fetching (good for filtering/search)
+export const dynamic = 'force-dynamic'
+
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { ProductCard } from '@/components/products/ProductCard'
 import { Button } from '@/components/ui/button'
@@ -17,18 +20,10 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
-import { SlidersHorizontal, Search, X, Loader2, Frown } from 'lucide-react'
+import { SlidersHorizontal, Search, Loader2, Frown } from 'lucide-react'
 import { Category } from '@prisma/client'
 import { Product } from '@/types/product'
 import { getCategories } from '@/actions/getCategories'
-
-const categories = [
-  { id: 'necklaces', name: 'Necklaces' },
-  { id: 'earrings', name: 'Earrings' },
-  { id: 'rings', name: 'Rings' },
-  { id: 'bracelets', name: 'Bracelets' },
-  { id: 'anklets', name: 'Anklets' },
-]
 
 const sortOptions = [
   { id: 'newest', name: 'Newest First' },
@@ -37,32 +32,59 @@ const sortOptions = [
   { id: 'popular', name: 'Most Popular' },
 ]
 
-const PAGE_SIZE = 30; // Increased from 9 to 30 for better UX
+const PAGE_SIZE = 24; // Optimized size for better UX
+const PRELOAD_THRESHOLD = 800; // Load more content when user is 800px from bottom
+const DEBOUNCE_DELAY = 400; // Slightly increased for better performance
+
+interface FetchState {
+  loading: boolean;
+  loadingMore: boolean;
+  filterLoading: boolean;
+  initialLoading: boolean;
+}
 
 function FilterSection({
   selectedCategories,
   setSelectedCategories,
   priceRange,
   setPriceRange,
-  inSheet,
-  categories
+  categories,
+  onClearFilters,
+  hasActiveFilters
 }: {
   selectedCategories: string[];
   setSelectedCategories: React.Dispatch<React.SetStateAction<string[]>>;
   priceRange: [number, number];
   setPriceRange: (value: [number, number]) => void;
-  inSheet?: boolean;
   categories: Category[];
+  onClearFilters?: () => void;
+  hasActiveFilters?: boolean;
 }) {
-  const handlePriceInputChange = (index: 0 | 1, value: string) => {
+  const handlePriceInputChange = useCallback((index: 0 | 1, value: string) => {
     const newRange = [...priceRange] as [number, number];
     const numValue = parseInt(value.replace(/[^0-9]/g, ''), 10);
     newRange[index] = isNaN(numValue) ? (index === 0 ? 0 : 100000) : numValue;
     setPriceRange(newRange);
-  }
+  }, [priceRange, setPriceRange]);
 
   return (
     <div className="space-y-8">
+      {/* Clear Filters Button */}
+      {onClearFilters && (
+        <div className="flex justify-between items-center border-b pb-2">
+          <span className="text-sm font-medium text-foreground">Active Filters</span>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={onClearFilters}
+            disabled={!hasActiveFilters}
+            className="text-xs"
+          >
+            Clear All
+          </Button>
+        </div>
+      )}
+      
       <div>
         <h3 className="font-semibold text-foreground mb-4">Categories</h3>
         <div className="max-h-64 overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
@@ -117,18 +139,29 @@ function FilterSection({
 
 async function getInitialProducts() {
   try {
-    // Only run on client side
+    // Always return empty for server-side, let client handle loading
     if (typeof window === 'undefined') {
       return { products: [], total: 0, hasMore: false };
     }
     
-    const res = await fetch(`/api/products?limit=${PAGE_SIZE}&sort=newest&page=1`, { cache: 'no-store' });
-    if (!res.ok) return { products: [], total: 0, hasMore: false };
+    const res = await fetch(`/api/products?limit=${PAGE_SIZE}&sort=newest&page=1`, { 
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+    
+    if (!res.ok) {
+      console.error('Initial products fetch failed:', res.status, res.statusText);
+      return { products: [], total: 0, hasMore: false };
+    }
+    
     const data = await res.json();
+    
     return {
       products: data.products || [],
-      total: data.total || 0,
-      hasMore: data.hasMore || false
+      total: data.pagination?.total || 0,
+      hasMore: data.pagination?.hasMore || false
     };
   } catch (error) {
     console.error('Failed to fetch initial products:', error);
@@ -138,29 +171,55 @@ async function getInitialProducts() {
 
 export default function ShopPage() {
   const searchParams = useSearchParams()
-  const [initialData, setInitialData] = useState<{ products: Product[], total: number, hasMore: boolean }>({ products: [], total: 0, hasMore: false });
-  const [categories, setCategories] = useState<Category[]>([]);
   
+  // State management
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  
+  // Filter states
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 100000]);
   const [sortBy, setSortBy] = useState<string>('newest');
   const [searchInput, setSearchInput] = useState('');
   
-  const [products, setProducts] = useState<Product[]>([]);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [loading, setLoading] = useState(true);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [isFilterLoading, setIsFilterLoading] = useState(false);
+  // Loading states
+  const [fetchState, setFetchState] = useState<FetchState>({
+    loading: false,
+    loadingMore: false,
+    filterLoading: false,
+    initialLoading: true,
+  });
   
-  const debouncedSearchInput = useDebounce(searchInput, 300); // Reduced from 500ms
-  const debouncedPriceRange = useDebounce(priceRange, 300); // Reduced from 500ms
+  // Debounced values
+  const debouncedSearchInput = useDebounce(searchInput, DEBOUNCE_DELAY);
+  const debouncedPriceRange = useDebounce(priceRange, DEBOUNCE_DELAY);
   
-  const lastProductElementRef = useRef<HTMLDivElement>(null);
+  // Refs
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const previousFiltersRef = useRef<string>('');
+  
+  // Memoized filter string for comparison
+  const currentFilters = useMemo(() => {
+    return JSON.stringify({
+      search: debouncedSearchInput,
+      categories: selectedCategories.sort(),
+      priceRange: debouncedPriceRange,
+      sort: sortBy
+    });
+  }, [debouncedSearchInput, selectedCategories, debouncedPriceRange, sortBy]);
+  
+  // Check if filters have changed
+  const filtersChanged = currentFilters !== previousFiltersRef.current;
 
-  // Handle URL filter parameters
+  // Handle URL parameters
   useEffect(() => {
     const filterParam = searchParams?.get('filter')
+    const searchParam = searchParams?.get('search')
+    
     if (filterParam) {
       switch (filterParam) {
         case 'featured':
@@ -175,155 +234,192 @@ export default function ShopPage() {
           setSelectedCategories([])
           setSortBy('popular')
           break
-        default:
-          break
       }
     }
-  }, [searchParams])
-
-  // Handle URL search parameter
-  useEffect(() => {
-    const searchParam = searchParams?.get('search')
+    
     if (searchParam) {
       setSearchInput(searchParam)
     }
   }, [searchParams])
 
-  const fetchProducts = useCallback(async (isNewSearch: boolean) => {
-    if (!isNewSearch && !hasMore) return;
-    
-    // Prevent multiple simultaneous requests
-    if (loading && !isNewSearch) return;
-    
-    // Set appropriate loading state
-    if (isNewSearch) {
-      setIsFilterLoading(true);
-    } else {
-      setLoading(true);
+  // Optimized fetch function with abort controller
+  const fetchProducts = useCallback(async (isNewSearch: boolean = false, pageToFetch: number = 1) => {
+    // Cancel previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
+    
+    // Create new abort controller
+    abortControllerRef.current = new AbortController();
+    
+    // Prevent multiple simultaneous requests for pagination
+    if (!isNewSearch && (fetchState.loadingMore || !hasMore)) return;
+    
+    // Update loading states
+    setFetchState(prev => ({
+      ...prev,
+      loading: isNewSearch,
+      loadingMore: !isNewSearch,
+      filterLoading: isNewSearch && prev.initialLoading === false,
+    }));
 
-    const currentPage = isNewSearch ? 1 : page + 1;
     const params = new URLSearchParams();
     if (debouncedSearchInput) params.append('search', debouncedSearchInput);
     selectedCategories.forEach(cat => params.append('categories', cat));
     params.append('minPrice', debouncedPriceRange[0].toString());
     params.append('maxPrice', debouncedPriceRange[1].toString());
     params.append('sort', sortBy);
-    params.append('page', currentPage.toString());
+    params.append('page', pageToFetch.toString());
     params.append('limit', PAGE_SIZE.toString());
 
     try {
-      const res = await fetch(`/api/products?${params.toString()}`);
-      if (!res.ok) throw new Error('Failed to fetch products');
+      const res = await fetch(`/api/products?${params.toString()}`, {
+        signal: abortControllerRef.current.signal,
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Products fetch failed:', res.status, res.statusText, errorText);
+        throw new Error(`Failed to fetch products: ${res.status}`);
+      }
       const data = await res.json();
       const newProducts = data.products || [];
       
       if (isNewSearch) {
+        // For new searches, replace all products
         setProducts(newProducts);
         setPage(1);
+        setTotalProducts(data.pagination?.total || 0);
       } else {
-        setProducts(prev => [...prev, ...newProducts]);
-        setPage(currentPage);
+        // For pagination, append new products
+        setProducts(prev => {
+          // Prevent duplicates by checking IDs
+          const existingIds = new Set(prev.map((p: Product) => p.id));
+          const uniqueNewProducts = newProducts.filter((p: Product) => !existingIds.has(p.id));
+          return [...prev, ...uniqueNewProducts];
+        });
+        setPage(pageToFetch);
       }
       
-      setHasMore(data.hasMore || false);
+      setHasMore(data.pagination?.hasMore || false);
+      
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        return; // Request was cancelled, don't update state
+      }
       console.error("Failed to fetch products:", error);
       setHasMore(false);
     } finally {
-      setLoading(false);
-      setIsFilterLoading(false);
-      if (isInitialLoad) setIsInitialLoad(false);
+      setFetchState(prev => ({
+        ...prev,
+        loading: false,
+        loadingMore: false,
+        filterLoading: false,
+        initialLoading: false,
+      }));
     }
-  }, [debouncedSearchInput, selectedCategories, debouncedPriceRange, sortBy, hasMore, page, isInitialLoad, loading]);
+  }, [debouncedSearchInput, selectedCategories, debouncedPriceRange, sortBy, hasMore, fetchState.loadingMore]);
 
+  // Initial data loading
   useEffect(() => {
     async function loadInitialData() {
-      setLoading(true);
-      setIsInitialLoad(true);
+      setFetchState(prev => ({ ...prev, initialLoading: true }));
       
-      const [productsData, categoriesData] = await Promise.all([
-        getInitialProducts(),
-        getCategories({ level: 0, active: true })
-      ]);
-      
-      setInitialData(productsData);
-      setProducts(productsData.products);
-      setCategories(categoriesData);
-      setHasMore(productsData.hasMore);
-      setPage(1);
-      setIsInitialLoad(false);
-      setLoading(false);
+      try {
+        const [productsData, categoriesData] = await Promise.all([
+          getInitialProducts(),
+          getCategories({ level: 0, active: true })
+        ]);
+        
+        setProducts(productsData.products);
+        setCategories(categoriesData);
+        setHasMore(productsData.hasMore);
+        setTotalProducts(productsData.total);
+        setPage(1);
+      } catch (error) {
+        console.error('Failed to load initial data:', error);
+      } finally {
+        setFetchState(prev => ({ ...prev, initialLoading: false }));
+      }
     }
+    
     loadInitialData();
   }, []);
 
+  // Handle filter changes with debouncing
   useEffect(() => {
-    if (isInitialLoad) return;
+    if (fetchState.initialLoading) return;
+    
+    if (filtersChanged) {
+      previousFiltersRef.current = currentFilters;
+      
+      // Small delay to prevent rapid filter changes
+      const timeoutId = setTimeout(() => {
+        fetchProducts(true, 1);
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [currentFilters, fetchState.initialLoading, fetchProducts, filtersChanged]);
+
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    if (fetchState.initialLoading) return;
 
     const observer = new IntersectionObserver(
-      entries => {
-        if (entries[0].isIntersecting && !loading && hasMore && !isFilterLoading) {
-          fetchProducts(false);
+      (entries) => {
+        const target = entries[0];
+        if (target.isIntersecting && !fetchState.loadingMore && hasMore && !fetchState.filterLoading) {
+          fetchProducts(false, page + 1);
         }
       },
       { 
         threshold: 0.1,
-        rootMargin: '100px' // Reduced from 300px to prevent too early loading
+        rootMargin: `${PRELOAD_THRESHOLD}px`
       }
     );
 
-    const currentRef = lastProductElementRef.current;
-    if (currentRef) {
-      observer.observe(currentRef);
+    const currentSentinel = sentinelRef.current;
+    if (currentSentinel) {
+      observer.observe(currentSentinel);
     }
 
     return () => {
-      if (currentRef) {
-        observer.unobserve(currentRef);
+      if (currentSentinel) {
+        observer.unobserve(currentSentinel);
       }
     };
-  }, [loading, hasMore, isInitialLoad, isFilterLoading, fetchProducts]);
-  
+  }, [fetchProducts, page, hasMore, fetchState.loadingMore, fetchState.initialLoading, fetchState.filterLoading]);
+
+  // Cleanup abort controller on unmount
   useEffect(() => {
-    if (isInitialLoad) return;
-    
-    // Reset pagination when filters change
-    setPage(1);
-    // Don't clear products immediately to prevent flash
-    
-    const timeoutId = setTimeout(() => fetchProducts(true), 200); // Reduced from 300ms
-    return () => clearTimeout(timeoutId);
-  }, [debouncedSearchInput, selectedCategories, debouncedPriceRange, sortBy, isInitialLoad, fetchProducts]);
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
-
-  const handleClearFilters = () => {
+  const handleClearFilters = useCallback(() => {
     setSelectedCategories([]);
     setPriceRange([0, 100000]);
     setSearchInput('');
     setSortBy('newest');
-  };
+  }, []);
 
-  const hasActiveFilters = 
+  const hasActiveFilters = useMemo(() => 
     selectedCategories.length > 0 ||
     priceRange[0] > 0 ||
     priceRange[1] < 100000 ||
-    debouncedSearchInput.trim() !== '';
-  
-  const getTotalActiveFilters = () => {
-    let count = 0;
-    if (selectedCategories.length > 0) count += selectedCategories.length;
-    if (priceRange[0] > 0 || priceRange[1] < 100000) count += 1;
-    if (debouncedSearchInput.trim() !== '') count += 1;
-    return count;
-  };
-    
-  const showSkeletons = isInitialLoad || (isFilterLoading && products.length === 0);
-  const currentProducts = showSkeletons ? [] : products;
-  const showProductCount = !showSkeletons && !isInitialLoad;
+    debouncedSearchInput.trim() !== '',
+    [selectedCategories.length, priceRange, debouncedSearchInput]
+  );
 
-  // Show full page skeleton for initial load
-  if (isInitialLoad) {
+  // Show initial loading skeleton
+  if (fetchState.initialLoading) {
     return <ShopSkeleton />
   }
 
@@ -351,8 +447,12 @@ export default function ShopPage() {
               />
             </div>
             <div className="flex justify-between items-center border-b pb-2">
-                <h2 className="text-lg font-semibold">Filters</h2>
-                {hasActiveFilters && <Button variant="link" className="text-sm" onClick={handleClearFilters}>Clear all</Button>}
+              <h2 className="text-lg font-semibold">Filters</h2>
+              {hasActiveFilters && (
+                <Button variant="link" className="text-sm" onClick={handleClearFilters}>
+                  Clear all
+                </Button>
+              )}
             </div>
             <FilterSection
               selectedCategories={selectedCategories}
@@ -360,23 +460,25 @@ export default function ShopPage() {
               priceRange={priceRange}
               setPriceRange={setPriceRange}
               categories={categories}
+              onClearFilters={handleClearFilters}
+              hasActiveFilters={hasActiveFilters}
             />
           </div>
         </aside>
 
         <main className="flex-1">
-
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <p className="text-muted-foreground text-sm">
-              {showSkeletons ? (
-                'Loading products...'
-              ) : showProductCount ? (
-                `Showing ${currentProducts.length} ${hasActiveFilters ? 'filtered' : ''} products${initialData.total > 0 ? ` of ${initialData.total} total` : ''}`
+              {fetchState.filterLoading ? (
+                'Updating results...'
+              ) : products.length > 0 ? (
+                `Showing ${products.length} ${hasActiveFilters ? 'filtered' : ''} products${totalProducts > 0 ? ` of ${totalProducts} total` : ''}`
               ) : (
-                'Searching...'
+                'No products found'
               )}
-              {!loading && !hasMore && currentProducts.length > 0 && " (end of results)"}
+              {!fetchState.loadingMore && !hasMore && products.length > PAGE_SIZE && " • End of results"}
             </p>
+            
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <Sheet>
                 <SheetTrigger asChild>
@@ -389,20 +491,39 @@ export default function ShopPage() {
                     <div className="p-6">
                       <SheetHeader className="flex flex-row items-center justify-between mb-6">
                         <SheetTitle>Filters</SheetTitle>
-                        {hasActiveFilters && <Button variant="link" onClick={handleClearFilters}>Clear all</Button>}
+                        {hasActiveFilters && (
+                          <Button variant="link" onClick={handleClearFilters}>
+                            Clear all
+                          </Button>
+                        )}
                       </SheetHeader>
+                      
+                      {/* Mobile Search */}
+                      <div className="relative mb-6">
+                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          type="text"
+                          placeholder="Search products..."
+                          value={searchInput}
+                          onChange={e => setSearchInput(e.target.value)}
+                          className="pl-10 h-11"
+                        />
+                      </div>
+                      
                       <FilterSection
                         selectedCategories={selectedCategories}
                         setSelectedCategories={setSelectedCategories}
                         priceRange={priceRange}
                         setPriceRange={setPriceRange}
                         categories={categories}
-                        inSheet={true}
+                        onClearFilters={handleClearFilters}
+                        hasActiveFilters={hasActiveFilters}
                       />
                     </div>
                   </ScrollArea>
                 </SheetContent>
               </Sheet>
+              
               <select
                 id="sort-by"
                 value={sortBy}
@@ -416,48 +537,38 @@ export default function ShopPage() {
             </div>
           </div>
 
-          {/* Filter loading overlay - only shown during filter changes, not scroll loading */}
-          {isFilterLoading && products.length > 0 && (
+          {/* Filter loading overlay with smooth transition */}
+          {fetchState.filterLoading && (
             <div className="relative mb-6">
-              <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] flex items-center justify-center z-10 rounded-lg">
-                <div className="bg-background/90 backdrop-blur-sm rounded-lg px-6 py-4 shadow-lg border animate-in fade-in duration-200">
+              <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-10 rounded-lg">
+                <div className="bg-background/95 backdrop-blur-sm rounded-lg px-6 py-4 shadow-lg border animate-in fade-in duration-300">
                   <div className="flex items-center space-x-3">
                     <Loader2 className="h-5 w-5 animate-spin text-primary" />
                     <p className="text-sm font-medium">Applying filters...</p>
                   </div>
                 </div>
               </div>
-              {/* Placeholder content to maintain layout */}
-              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8 opacity-50">
-                {products.slice(0, 6).map((product) => (
-                  <ProductCard key={product.id} product={product} />
+              
+              {/* Maintain layout with placeholder grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8 opacity-30">
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <div key={index} className="min-h-[320px] bg-gray-100 rounded-lg animate-pulse" />
                 ))}
               </div>
             </div>
           )}
 
+          {/* Product Grid with stable layout */}
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8">
-            {showSkeletons ? (
-              // Show exactly 30 skeleton cards for initial load
-              Array.from({ length: PAGE_SIZE }).map((_, index) => (
-                <ProductCardSkeleton 
-                  key={`skeleton-${index}`} 
-                  className="transform transition-all duration-200" 
+            {products.length > 0 ? (
+              products.map((product, index) => (
+                <ProductCard 
+                  key={`${product.id}-${index}`} 
+                  product={product} 
+                  className="min-h-[320px] transform transition-all duration-200" 
                 />
               ))
-            ) : currentProducts.length > 0 ? (
-              currentProducts.map((product, index) => {
-                const isLastElement = index === currentProducts.length - 1;
-                
-                return isLastElement && hasMore ? (
-                  <div ref={lastProductElementRef} key={product.id}>
-                    <ProductCard product={product} />
-                  </div>
-                ) : (
-                  <ProductCard key={product.id} product={product} />
-                )
-              })
-            ) : (
+            ) : !fetchState.filterLoading && (
               <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
                 <Frown className="w-16 h-16 text-muted-foreground mb-4" />
                 <h3 className="text-2xl font-semibold mb-2">No Products Found</h3>
@@ -473,27 +584,37 @@ export default function ShopPage() {
             )}
           </div>
 
-          {/* Infinite scroll loading indicator - shows skeleton cards at the bottom */}
-          {loading && !showSkeletons && hasMore && !isFilterLoading && (
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8 mt-6">
-              {Array.from({ length: 6 }).map((_, index) => (
-                <ProductCardSkeleton 
-                  key={`loading-skeleton-${index}`} 
-                  className="animate-pulse" 
-                />
-              ))}
+          {/* Infinite scroll sentinel and loading indicator */}
+          {hasMore && (
+            <div ref={sentinelRef} className="mt-8">
+              {fetchState.loadingMore && (
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8">
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <ProductCardSkeleton 
+                      key={`loading-${index}`} 
+                      className="min-h-[320px] animate-pulse" 
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
-          {!loading && !hasMore && currentProducts.length > PAGE_SIZE && (
-            <div className="flex justify-center items-center py-8 mt-8 border-t">
-              <p className="text-sm text-muted-foreground">
-                You've reached the end of our collection
-              </p>
+          {/* End of results indicator */}
+          {!hasMore && products.length > PAGE_SIZE && (
+            <div className="flex justify-center items-center py-12 mt-8 border-t">
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground mb-2">
+                  You&apos;ve reached the end of our collection
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Showing all {products.length} products
+                </p>
+              </div>
             </div>
           )}
         </main>
       </div>
     </div>
   )
-} 
+}

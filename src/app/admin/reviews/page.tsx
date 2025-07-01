@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic';
+
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -180,4 +182,4 @@ export default function ReviewsPage() {
       />
     </div>
   )
-} 
+}

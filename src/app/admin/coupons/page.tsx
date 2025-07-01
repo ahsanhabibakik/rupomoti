@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Plus, SlidersHorizontal } from 'lucide-react'
@@ -217,4 +219,4 @@ export default function CouponsPage() {
       />
     </div>
   )
-} 
+}

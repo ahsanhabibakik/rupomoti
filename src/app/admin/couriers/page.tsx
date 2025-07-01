@@ -1,5 +1,7 @@
 "use client"
 
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -22,6 +24,7 @@ interface Modal {
   courier: string
 }
 
+// Admin couriers analytics page
 export default function CourierAnalyticsPage() {
   const [orders, setOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -202,4 +205,4 @@ export default function CourierAnalyticsPage() {
       )}
     </div>
   )
-} 
+}

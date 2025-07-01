@@ -178,6 +178,10 @@ model Order {
   updatedAt     DateTime       @updatedAt
   deletedAt     DateTime?      // For soft deletes
   isFakeOrder   Boolean        @default(false) // Track fake/suspicious orders
+  
+  // Optimized status fields for efficient querying
+  isActive      Boolean        @default(true) // Computed: !deletedAt && !isFakeOrder
+  orderType     OrderType      @default(NORMAL) // NORMAL, FAKE, TRASH for simplified queries
 
   items         OrderItem[]
   stockLogs     StockLog[]
@@ -195,6 +199,13 @@ model Order {
   courierTrackingCode  String?
   courierStatus        String?
   courierInfo          Json? // Raw response/info from courier
+  
+  // Add indexes for better query performance
+  @@index([isActive, createdAt(sort: Desc)]) // For active orders list
+  @@index([orderType, createdAt(sort: Desc)]) // For filtered order types
+  @@index([customerId, createdAt(sort: Desc)]) // For customer orders
+  @@index([recipientPhone]) // For phone search
+  @@index([status, createdAt(sort: Desc)]) // For status filtering
 }
 
 model CourierToken {
@@ -473,6 +484,12 @@ enum ProductStatus {
   INACTIVE
   ARCHIVED
   TRASHED
+}
+
+enum OrderType {
+  NORMAL
+  FAKE
+  TRASH
 }
 
 type PathaoZone {
