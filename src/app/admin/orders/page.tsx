@@ -1569,57 +1569,100 @@ export default function OrdersPage() {
   };
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold">Orders</h1>
-          {newOrderNotifications > 0 && (
-            <Badge variant="destructive" className="animate-pulse">
-              <Bell className="h-3 w-3 mr-1" />
-              {newOrderNotifications} new
-            </Badge>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <OrderFilters />
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={handleRefresh} 
-            disabled={isRefreshing}
-            className="shrink-0"
-            title="Refresh orders"
-          >
-            <RefreshCw className={"h-4 w-4 " + (isRefreshing ? 'animate-spin' : '')} />
-          </Button>
-          {/* Real-time status indicator */}
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="hidden sm:inline">Live</span>
+    <div className="p-4 md:p-6 space-y-6 bg-slate-50 min-h-screen">
+      {/* Header Section */}
+      <div className="bg-white rounded-lg shadow-sm border p-6">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-slate-100 rounded-lg">
+              <Package className="h-6 w-6 text-slate-700" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-800">Order Management</h1>
+              <p className="text-sm text-slate-600">Manage and track all your orders</p>
+            </div>
+            {newOrderNotifications > 0 && (
+              <Badge variant="destructive" className="animate-pulse">
+                <Bell className="h-3 w-3 mr-1" />
+                {newOrderNotifications} new
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <OrderFilters />
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleRefresh} 
+              disabled={isRefreshing}
+              className="shrink-0 hover:bg-slate-50"
+              title="Refresh orders"
+            >
+              <RefreshCw className={"h-4 w-4 mr-2 " + (isRefreshing ? 'animate-spin' : '')} />
+              Refresh
+            </Button>
+            {/* Real-time status indicator */}
+            <div className="flex items-center gap-2 px-3 py-1 bg-green-50 rounded-full border border-green-200">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-xs font-medium text-green-700">Live Updates</span>
+            </div>
           </div>
         </div>
       </div>
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="active" className="relative">
-              Active
-              {newOrderNotifications > 0 && activeTab === 'active' && (
-                <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping"></div>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="fake">Fake Orders</TabsTrigger>
-            <TabsTrigger value="trashed">Trashed</TabsTrigger>
-        </TabsList>
-        <TabsContent value="active">
-            <OrdersList status="active" />
-        </TabsContent>
-        <TabsContent value="fake">
-            <OrdersList status="fake" />
-        </TabsContent>
-        <TabsContent value="trashed">
-            <OrdersList status="trashed" />
-        </TabsContent>
-      </Tabs>
+      
+      {/* Orders Tabs Section */}
+      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <div className="border-b bg-slate-50 px-6 py-4">
+            <TabsList className="grid w-full max-w-md grid-cols-3 bg-white p-1 rounded-lg h-auto shadow-sm border">
+              <TabsTrigger 
+                value="active" 
+                className="relative data-[state=active]:bg-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-sm text-slate-600 hover:text-slate-800 transition-all duration-200 font-medium py-2.5 px-4 rounded-md"
+              >
+                <div className="flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  <span className="hidden sm:inline">Active</span>
+                  {newOrderNotifications > 0 && activeTab !== 'active' && (
+                    <Badge variant="destructive" className="h-5 w-5 p-0 text-xs flex items-center justify-center animate-pulse">
+                      {newOrderNotifications > 99 ? '99+' : newOrderNotifications}
+                    </Badge>
+                  )}
+                </div>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="fake"
+                className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm text-slate-600 hover:text-slate-800 transition-all duration-200 font-medium py-2.5 px-4 rounded-md"
+              >
+                <div className="flex items-center gap-2">
+                  <Flag className="h-4 w-4" />
+                  <span className="hidden sm:inline">Fake</span>
+                </div>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="trashed"
+                className="data-[state=active]:bg-red-500 data-[state=active]:text-white data-[state=active]:shadow-sm text-slate-600 hover:text-slate-800 transition-all duration-200 font-medium py-2.5 px-4 rounded-md"
+              >
+                <div className="flex items-center gap-2">
+                  <Trash2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Trashed</span>
+                </div>
+              </TabsTrigger>
+            </TabsList>
+          </div>
+          
+          <div className="p-6">
+            <TabsContent value="active" className="mt-0">
+                <OrdersList status="active" />
+            </TabsContent>
+            <TabsContent value="fake" className="mt-0">
+                <OrdersList status="fake" />
+            </TabsContent>
+            <TabsContent value="trashed" className="mt-0">
+                <OrdersList status="trashed" />
+            </TabsContent>
+          </div>
+        </Tabs>
+      </div>
     </div>
   );
 }
