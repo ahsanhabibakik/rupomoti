@@ -14,7 +14,7 @@ A modern e-commerce platform for pearl jewelry built with Next.js, TypeScript, a
 
 ## Tech Stack
 
-- Next.js 14
+- Next.js 15
 - TypeScript
 - Prisma (PostgreSQL)
 - NextAuth.js
@@ -103,3 +103,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Steadfast Courier](https://steadfast.com.bd/)
 - [Cloudinary](https://cloudinary.com/)
 - [Prisma](https://www.prisma.io/)
+
+  
