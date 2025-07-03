@@ -6,9 +6,16 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json())
 export interface Category {
   id: string
   name: string
+  slug: string
   description?: string
   image?: string
-  slug: string
+  parentId?: string
+  parent?: Category
+  children?: Category[]
+  isActive: boolean
+  sortOrder: number
+  metaTitle?: string
+  metaDescription?: string
   _count?: {
     products: number
   }
@@ -79,10 +86,12 @@ export function useCategories({ page = 1, pageSize = 10, search = '' } = {}) {
         method: 'DELETE',
       }).then(async (res) => {
         if (!res.ok) {
-          const error = await res.json()
-          throw new Error(error.message || 'Failed to delete category')
+          const error = await res.json().catch(() => ({ error: 'Failed to delete category' }))
+          throw new Error(error.error || 'Failed to delete category')
         }
+        const result = await res.json()
         mutate() // Refresh the categories list
+        return result
       }),
       {
         loading: 'Deleting category...',

@@ -18,6 +18,7 @@
     "studio": "npx prisma studio",
     "seed:products": "npx tsx scripts/seed-products.ts",
     "seed:dummy-products": "npx tsx scripts/seed-dummy-products.ts",
+    "seed:categories": "npx tsx prisma/seed-categories.ts",
     "seed:initial-data": "npx tsx scripts/seed-initial-data.ts",
     "assign-skus": "npx tsx scripts/assign-skus.ts",
     "update:admin": "npx tsx scripts/update-admin.ts",

@@ -4,7 +4,6 @@ export const dynamic = 'force-dynamic';
 
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
-import Image from 'next/image'
 import { ColumnDef } from '@tanstack/react-table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,6 +11,7 @@ import { DataTable } from '@/components/ui/data-table'
 import { useCategories, Category } from '@/hooks/useCategories'
 import { CategoryDialog } from '@/components/admin/CategoryDialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { OptimizedImage } from '@/components/ui/optimized-image'
 
 function CategoryActions({
   category,
@@ -81,20 +81,16 @@ export default function CategoriesPage() {
       accessorKey: 'image',
       header: 'Image',
       cell: ({ row }) => {
-        const imageUrl = row.original.image
-        return imageUrl ? (
-          <a href={imageUrl} target="_blank" rel="noopener noreferrer">
-            <Image
-              src={imageUrl}
+        return (
+          <div className="flex items-center">
+            <OptimizedImage
+              src={row.original.image}
               alt={row.original.name ?? ''}
+              categoryName={row.original.name ?? ''}
               width={40}
               height={40}
-              className="rounded object-cover"
+              className="rounded"
             />
-          </a>
-        ) : (
-          <div className="w-10 h-10 bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500">
-            No img
           </div>
         )
       },
