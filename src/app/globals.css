@@ -1102,8 +1102,8 @@
 
 /* Enhanced Backdrop Effects */
 .backdrop-premium {
-  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
 }
 
 /* Enhanced Gradients */
@@ -1356,8 +1356,8 @@
   }
 
   [data-sonner-toast] {
-    backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
   }
 
   /* Admin Theme Isolation - Keep consistent with brand colors */
