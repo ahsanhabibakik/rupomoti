@@ -25,6 +25,8 @@ import { showToast } from '@/lib/toast'
 import { Loader2 } from 'lucide-react'
 import { ImageUpload } from './ImageUpload'
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group'
+import { getDefaultCategoryImage, getCategoryImageWithFallback } from '@/utils/category-utils'
+import { OptimizedImage } from '../ui/optimized-image'
 
 interface Category {
   id: string
@@ -200,9 +202,15 @@ export function CategoryDialog({
       const url = '/api/categories'
       const method = isEditing ? 'PUT' : 'POST'
       
+      // Add default image if none provided
+      const finalFormData = {
+        ...formData,
+        image: formData.image || getDefaultCategoryImage(formData.name)
+      }
+      
       const payload = isEditing 
-        ? { id: category?.id, ...formData }
-        : formData
+        ? { id: category?.id, ...finalFormData }
+        : finalFormData
 
       const response = await fetch(url, {
         method,
@@ -224,9 +232,10 @@ export function CategoryDialog({
 
       onOpenChange(false)
       onSuccess?.()
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : `Failed to ${isEditing ? 'update' : 'create'} category`
       console.error(`Error ${isEditing ? 'updating' : 'creating'} category:`, error)
-      showToast.error(error.message || `Failed to ${isEditing ? 'update' : 'create'} category`)
+      showToast.error(errorMessage)
     } finally {
       setIsSubmitting(false)
     }
@@ -372,6 +381,27 @@ export function CategoryDialog({
                     maxFiles={1}
                   />
                 )}
+              </div>
+
+              {/* Image Preview */}
+              <div>
+                <Label className="text-sm font-medium">Preview</Label>
+                <div className="mt-2 p-4 border rounded-lg bg-gray-50">
+                  <div className="flex items-center space-x-4">
+                    <OptimizedImage
+                      src={formData.image}
+                      alt={formData.name || 'Category'}
+                      categoryName={formData.name}
+                      width={80}
+                      height={80}
+                      className="rounded-lg border"
+                    />
+                    <div>
+                      <p className="font-medium">{formData.name || 'Category Name'}</p>
+                      <p className="text-sm text-gray-500">{formData.description || 'No description'}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div>

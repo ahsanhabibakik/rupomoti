@@ -1,0 +1,13 @@
+<svg width="400" height="300" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="300" fill="#F8F9FA"/>
+  <rect x="170" y="100" width="60" height="40" rx="5" fill="#E2E8F0"/>
+  <rect x="175" y="105" width="50" height="30" rx="3" fill="#94A3B8"/>
+  <circle cx="185" cy="115" r="3" fill="#475569"/>
+  <circle cx="200" cy="115" r="3" fill="#475569"/>
+  <circle cx="215" cy="115" r="3" fill="#475569"/>
+  <circle cx="185" cy="125" r="3" fill="#475569"/>
+  <circle cx="200" cy="125" r="3" fill="#475569"/>
+  <circle cx="215" cy="125" r="3" fill="#475569"/>
+  <text x="200" y="200" text-anchor="middle" fill="#475569" font-family="Arial, sans-serif" font-size="16" font-weight="600">Bracelets</text>
+  <text x="200" y="220" text-anchor="middle" fill="#94A3B8" font-family="Arial, sans-serif" font-size="12">Elegant bracelet designs</text>
+</svg>

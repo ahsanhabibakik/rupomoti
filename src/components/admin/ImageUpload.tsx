@@ -21,10 +21,25 @@ export function ImageUpload({ value, onChange, maxFiles = 1 }: ImageUploadProps)
       return
     }
 
+    // Validate file sizes and types
+    const validFiles = acceptedFiles.filter(file => {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        showToast.error(`File ${file.name} is too large. Maximum size is 5MB.`)
+        return false
+      }
+      if (!file.type.startsWith('image/')) {
+        showToast.error(`File ${file.name} is not a valid image.`)
+        return false
+      }
+      return true
+    })
+
+    if (validFiles.length === 0) return
+
     setIsUploading(true)
 
     const uploadedUrls: string[] = []
-    for (const file of acceptedFiles) {
+    for (const file of validFiles) {
       try {
         const formData = new FormData()
         formData.append('file', file)
@@ -35,20 +50,22 @@ export function ImageUpload({ value, onChange, maxFiles = 1 }: ImageUploadProps)
         })
 
         if (!response.ok) {
-          throw new Error('Upload failed')
+          const errorData = await response.json().catch(() => ({}))
+          throw new Error(errorData.error || `Upload failed for ${file.name}`)
         }
 
         const data = await response.json()
         uploadedUrls.push(data.url)
       } catch (error) {
-        showToast.error('An error occurred during upload.')
-        console.error(error)
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+        showToast.error(`Upload failed: ${errorMessage}`)
+        console.error('Upload error:', error)
       }
     }
 
     if (uploadedUrls.length > 0) {
       onChange([...value, ...uploadedUrls])
-      showToast.success('Image(s) uploaded successfully.')
+      showToast.success(`${uploadedUrls.length} image(s) uploaded successfully.`)
     }
     
     setIsUploading(false)
