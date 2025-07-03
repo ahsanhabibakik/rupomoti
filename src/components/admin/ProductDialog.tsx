@@ -45,7 +45,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
   const [initialImages, setInitialImages] = useState<string[]>(product?.images || [])
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false)
   const [newCategoryId, setNewCategoryId] = useState<string | null>(null)
-  const { categories, isLoading: categoriesLoading, mutate: refreshCategories } = useCategories({ pageSize: 1000 })
+  const { categories, isLoading: categoriesLoading } = useCategories({ pageSize: 1000 })
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -69,7 +69,20 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
 
   useEffect(() => {
     if (product) {
-      form.reset(product)
+      // Ensure null values are converted to appropriate defaults
+      const sanitizedProduct = {
+        name: product.name || '',
+        description: product.description || '',
+        sku: product.sku || '',
+        categoryId: product.categoryId || '',
+        price: product.price || 0,
+        salePrice: product.salePrice || undefined,
+        stock: product.stock || 0,
+        isFeatured: product.isFeatured || false,
+        isNewArrival: product.isNewArrival || false,
+        isPopular: product.isPopular || false,
+      }
+      form.reset(sanitizedProduct)
       setImages(product.images || [])
       setInitialImages(product.images || [])
     } else {
@@ -165,7 +178,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
                 <FormItem>
                   <FormLabel>Name</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input {...field} value={field.value == null ? '' : field.value} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -179,7 +192,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea {...field} />
+                    <Textarea {...field} value={field.value == null ? '' : field.value} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -194,7 +207,11 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
                   <FormItem>
                     <FormLabel>Price</FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} />
+                      <Input 
+                        type="number" 
+                        {...field} 
+                        value={field.value == null ? '' : field.value} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -208,7 +225,11 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
                   <FormItem>
                     <FormLabel>Sale Price (Optional)</FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} />
+                      <Input 
+                        type="number" 
+                        {...field} 
+                        value={field.value == null ? '' : field.value} 
+                      />
                     </FormControl>
                     {discount > 0 && (
                       <FormMessage>{discount}% discount</FormMessage>
@@ -226,7 +247,11 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
                   <FormItem>
                     <FormLabel>Stock</FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} />
+                      <Input 
+                        type="number" 
+                        {...field} 
+                        value={field.value == null ? '' : field.value} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -241,7 +266,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
                     <FormLabel>SKU</FormLabel>
                     <div className="flex items-center gap-2">
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field} value={field.value == null ? '' : field.value} />
                       </FormControl>
                       <Button type="button" variant="outline" onClick={handleGenerateSku}>
                         <RefreshCw className="h-4 w-4" />
@@ -278,10 +303,6 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
             <CategoryDialog
               open={categoryDialogOpen}
               onOpenChange={setCategoryDialogOpen}
-              onCategoryCreated={(newCategory) => {
-                refreshCategories()
-                setNewCategoryId(newCategory.id)
-              }}
             />
 
             <div className="grid grid-cols-3 gap-4">
