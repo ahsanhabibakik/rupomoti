@@ -860,6 +860,7 @@
   text-align: center;
   padding: 1rem;
   background-color: rgba(255, 255, 255, 0.8);
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   border-radius: 0.75rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -927,7 +928,7 @@
 @layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;  /* Internet Explorer 10+ */
-    scrollbar-width: none;  /* Firefox */
+    /* scrollbar-width: none;  Firefox - removed for compatibility */
   }
   
   .scrollbar-hide::-webkit-scrollbar {
@@ -935,27 +936,51 @@
   }
   
   /* Custom thin scrollbar */
-  .scrollbar-thin {
-    scrollbar-width: thin;
-    scrollbar-color: #d1d5db #f3f4f6;
+  /* .scrollbar-thin { } removed: empty ruleset */
+  @supports (scrollbar-width: thin) {
+    .scrollbar-thin {
+      scrollbar-width: thin;
+    }
   }
-  
+  /* WebKit browsers (Chrome, Safari, Edge, Opera) */
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;
+    height: 6px;
   }
-  
   .scrollbar-thin::-webkit-scrollbar-track {
     background: #f3f4f6;
     border-radius: 3px;
   }
-  
   .scrollbar-thin::-webkit-scrollbar-thumb {
     background: #d1d5db;
     border-radius: 3px;
   }
-  
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background: #9ca3af;
+  }
+  /* For browsers that do not support 'scrollbar-color', ensure thin scrollbar via WebKit styles */
+  /* No additional styles needed, WebKit styles above will apply */
+
+  /* WebKit browsers (Chrome, Safari, Edge, Opera) */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    border-radius: 3px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 3px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+  }
+
+  /* For browsers that do not support scrollbar-width, ensure thin scrollbar via WebKit styles */
+  @supports not (scrollbar-width: thin) {
+    /* No additional styles needed, WebKit styles above will apply */
   }
   
   .scrollbar-thumb-gray-300::-webkit-scrollbar-thumb {
@@ -1134,6 +1159,7 @@
   width: 2rem;
   height: 2rem;
   background: rgba(255, 255, 255, 0.2);
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   border-radius: 50%;
   display: flex;
@@ -1219,6 +1245,7 @@
 /* Ensure modal backgrounds are not transparent */
 [data-radix-dialog-overlay] {
   background-color: rgba(0, 0, 0, 0.5) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
   backdrop-filter: blur(4px) !important;
 }
   
@@ -1242,10 +1269,15 @@
 
 /* Fix scrollbar styling */
 .scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+  -ms-overflow-style: none; /* IE and Edge */
+  /* scrollbar-width: none;    Firefox - removed for compatibility */
+}
+/* Hide scrollbar for Chrome, Safari, Opera, and other WebKit browsers */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
 
+/* Hide scrollbar for Chrome, Safari, Opera, and other WebKit browsers */
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
