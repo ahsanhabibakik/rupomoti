@@ -59,6 +59,7 @@ interface ProductDialogProps {
   product?: {
     id?: string
     name?: string
+    slug?: string
     description?: string
     price?: number
     salePrice?: number | null
@@ -69,7 +70,19 @@ interface ProductDialogProps {
     isNewArrival?: boolean
     isPopular?: boolean
     designType?: 'REGULAR' | 'LANDING_PAGE'
-    landingPageData?: any
+    landingPageData?: {
+      heroTitle?: string
+      heroSubtitle?: string
+      callToAction?: string
+      guarantee?: string
+      features?: string[]
+      benefits?: string[]
+      testimonials?: Array<{
+        name: string
+        comment: string
+        rating: number
+      }>
+    }
     images?: string[]
   }
 }
@@ -83,7 +96,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
-    defaultValues: product || {
+    defaultValues: {
       name: '',
       description: '',
       price: 0,
@@ -103,6 +116,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
     formState: { isDirty },
   } = form
 
+  // Reset form when product changes
   useEffect(() => {
     if (product) {
       // Ensure null values are converted to appropriate defaults
@@ -141,7 +155,8 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
       setImages([])
       setInitialImages([])
     }
-  }, [product, form])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product?.id, open]) // Only reset when product ID changes or dialog opens
 
   // Auto-generate SKU from name
   const productName = form.watch('name')
@@ -381,58 +396,85 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
                     <FormField
                       control={form.control}
                       name="landingPageData.heroTitle"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Hero Title (Optional)</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="Custom hero title for landing page" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                      render={({ field }) => (                      <FormItem>
+                        <FormLabel>Hero Title (Optional)</FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value || ''} placeholder="Custom hero title for landing page" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
                       )}
                     />
                     
                     <FormField
                       control={form.control}
                       name="landingPageData.heroSubtitle"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Hero Subtitle (Optional)</FormLabel>
-                          <FormControl>
-                            <Textarea {...field} placeholder="Compelling subtitle for the landing page" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                      render={({ field }) => (                      <FormItem>
+                        <FormLabel>Hero Subtitle (Optional)</FormLabel>
+                        <FormControl>
+                          <Textarea {...field} value={field.value || ''} placeholder="Compelling subtitle for the landing page" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
                       )}
                     />
                     
                     <FormField
                       control={form.control}
                       name="landingPageData.callToAction"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Call to Action Text (Optional)</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="e.g., 'Buy Now and Save 20%'" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                      render={({ field }) => (                      <FormItem>
+                        <FormLabel>Call to Action Text (Optional)</FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value || ''} placeholder="e.g., 'Buy Now and Save 20%'" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
                       )}
                     />
                     
                     <FormField
                       control={form.control}
                       name="landingPageData.guarantee"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Guarantee/Promise (Optional)</FormLabel>
-                          <FormControl>
-                            <Textarea {...field} placeholder="e.g., '30-day money-back guarantee'" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                      render={({ field }) => (                      <FormItem>
+                        <FormLabel>Guarantee/Promise (Optional)</FormLabel>
+                        <FormControl>
+                          <Textarea {...field} value={field.value || ''} placeholder="e.g., '30-day money-back guarantee'" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
                       )}
                     />
+                    
+                    {product?.id && (
+                      <div className="pt-4 border-t space-y-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => window.open(`/admin/products/${product.id}/landing-page-builder`, '_blank')}
+                          className="w-full"
+                        >
+                          <Info className="w-4 h-4 mr-2" />
+                          Open Advanced Landing Page Builder
+                        </Button>
+                        
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => window.open(`/product/${product.slug || 'preview'}`, '_blank')}
+                          className="w-full"
+                        >
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          Preview Product Page
+                        </Button>
+                        
+                        <p className="text-xs text-muted-foreground text-center">
+                          Use the builder for custom sections and drag & drop, or preview to see the final result
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

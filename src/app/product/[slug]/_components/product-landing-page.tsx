@@ -9,7 +9,6 @@ import {
   Shield, 
   Truck, 
   CheckCircle,
-  Users,
   Award,
   Heart,
   Share2,
@@ -21,7 +20,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Card } from '@/components/ui/card'
+import { ReviewSystem } from '@/components/reviews/review-system'
 import { type Prisma } from '@prisma/client'
 
 type ProductWithCategoryAndReviews = Prisma.ProductGetPayload<{
@@ -298,35 +297,7 @@ export function ProductLandingPage({ product }: ProductLandingPageProps) {
 
               {activeTab === 'reviews' && (
                 <div className="space-y-6">
-                  {product.reviews.length > 0 ? (
-                    product.reviews.map(review => (
-                      <Card key={review.id} className="p-6">
-                        <div className="flex items-start gap-4">
-                          <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                            <Users className="w-5 h-5 text-orange-600" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="font-semibold">{review.user.name}</span>
-                              <div className="flex">
-                                {[...Array(5)].map((_, i) => (
-                                  <Star 
-                                    key={i} 
-                                    className={`w-4 h-4 ${i < review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} 
-                                  />
-                                ))}
-                              </div>
-                            </div>
-                            <p className="text-gray-700">{review.comment}</p>
-                          </div>
-                        </div>
-                      </Card>
-                    ))
-                  ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      No reviews yet. Be the first to review this product!
-                    </div>
-                  )}
+                  <ReviewSystem productId={product.id} />
                 </div>
               )}
 

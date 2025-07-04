@@ -125,6 +125,12 @@ model Product {
   // Landing page specific fields
   landingPageData Json?    // Additional data for landing page design
   
+  // Landing page builder fields
+  useCustomLandingPage Boolean @default(false)
+  landingPageSections  Json?   // Array of sections for page builder
+  landingPageDraft     Json?   // Draft version of landing page
+  landingPagePublished Boolean @default(false)
+  
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   
@@ -251,16 +257,31 @@ model Address {
 }
 
 model Review {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  rating      Int
-  comment     String?
-  productId   String   @db.ObjectId
-  product     Product  @relation(fields: [productId], references: [id])
-  userId      String   @db.ObjectId
-  user        User     @relation(fields: [userId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
+  id            String      @id @default(auto()) @map("_id") @db.ObjectId
+  rating        Int         @db.Int // 1-5 stars
+  title         String?     // Review title
+  comment       String?     // Review body
+  productId     String      @db.ObjectId
+  product       Product     @relation(fields: [productId], references: [id])
+  
+  // Either userId OR anonymousToken will be set, not both
+  userId        String?     @db.ObjectId
+  user          User?       @relation(fields: [userId], references: [id])
+  anonymousToken String?    // For guest reviews
+  
+  // Moderation fields
+  status        ReviewStatus @default(PENDING)
+  moderatorId   String?     @db.ObjectId
+  moderatedAt   DateTime?
+  moderationNote String?    // Admin note for rejection reason
+  
+  // Timestamps
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  // Ensure one review per product per reviewer
+  @@unique([productId, userId])
+  @@unique([productId, anonymousToken])
   @@map("reviews")
 }
 
@@ -515,4 +536,10 @@ model PathaoLocation {
   zones     PathaoZone[]
 
   @@map("pathao_locations")
+}
+
+enum ReviewStatus {
+  PENDING    // Awaiting moderation
+  APPROVED   // Approved and visible
+  REJECTED   // Rejected and hidden
 }

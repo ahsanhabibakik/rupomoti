@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
-import { auth } from '@/app/auth';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/auth';
 import { z } from 'zod';
 import { nanoid } from 'nanoid';
 
@@ -26,7 +27,7 @@ export async function GET(request: Request) {
     const reviews = await prisma.review.findMany({
       where: {
         productId,
-        status: status as 'PENDING' | 'APPROVED' | 'REJECTED',
+        status: status as any,
       },
       include: {
         user: {
@@ -60,7 +61,7 @@ export async function GET(request: Request) {
 // Create or update a review
 export async function POST(request: Request) {
   try {
-    const session = await auth();
+    const session = await getServerSession(authOptions);
     const body = await request.json();
     const validatedData = reviewSchema.parse(body);
 
@@ -73,12 +74,12 @@ export async function POST(request: Request) {
     } else {
       // For anonymous users, get or create a persistent token
       const cookieStore = cookies();
-      anonymousToken = (await cookieStore).get('review_token')?.value;
+      anonymousToken = cookieStore.get('review_token')?.value;
       
       if (!anonymousToken) {
         anonymousToken = nanoid(32);
         // Set cookie to expire in 1 year
-        (await cookieStore).set('review_token', anonymousToken, {
+        cookieStore.set('review_token', anonymousToken, {
           maxAge: 365 * 24 * 60 * 60, // 1 year
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
@@ -172,7 +173,7 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
     }
 
-    const session = await auth();
+    const session = await getServerSession(authOptions);
     let userId: string | null = null;
     let anonymousToken: string | null = null;
 
@@ -180,7 +181,7 @@ export async function PUT(request: Request) {
       userId = session.user.id;
     } else {
       const cookieStore = cookies();
-      anonymousToken = (await cookieStore).get('review_token')?.value;
+      anonymousToken = cookieStore.get('review_token')?.value;
     }
 
     if (!userId && !anonymousToken) {
