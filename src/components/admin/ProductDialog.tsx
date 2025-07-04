@@ -15,9 +15,26 @@ import { useCategories } from '@/hooks/useCategories'
 import { showToast } from '@/lib/toast'
 import { Switch } from '@/components/ui/switch'
 import { generateSKU } from '@/lib/utils/sku'
-import { RefreshCw } from 'lucide-react'
+import { RefreshCw, Info } from 'lucide-react'
 import { CategoryCombobox } from './CategoryCombobox'
 import { CategoryDialog } from './CategoryDialog'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+
+const landingPageDataSchema = z.object({
+  heroTitle: z.string().optional(),
+  heroSubtitle: z.string().optional(),
+  features: z.array(z.string()).optional(),
+  benefits: z.array(z.string()).optional(),
+  testimonials: z.array(z.object({
+    name: z.string(),
+    comment: z.string(),
+    rating: z.number().min(1).max(5)
+  })).optional(),
+  additionalImages: z.array(z.string()).optional(),
+  callToAction: z.string().optional(),
+  guarantee: z.string().optional(),
+  specifications: z.record(z.string()).optional(),
+}).optional()
 
 const productSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -30,6 +47,8 @@ const productSchema = z.object({
   isFeatured: z.boolean().default(false),
   isNewArrival: z.boolean().default(false),
   isPopular: z.boolean().default(false),
+  designType: z.enum(['REGULAR', 'LANDING_PAGE']).default('REGULAR'),
+  landingPageData: landingPageDataSchema,
 })
 
 type ProductFormValues = z.infer<typeof productSchema>
@@ -37,7 +56,22 @@ type ProductFormValues = z.infer<typeof productSchema>
 interface ProductDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  product?: any // Replace with proper type
+  product?: {
+    id?: string
+    name?: string
+    description?: string
+    price?: number
+    salePrice?: number | null
+    stock?: number
+    sku?: string
+    categoryId?: string
+    isFeatured?: boolean
+    isNewArrival?: boolean
+    isPopular?: boolean
+    designType?: 'REGULAR' | 'LANDING_PAGE'
+    landingPageData?: any
+    images?: string[]
+  }
 }
 
 export function ProductDialog({ open, onOpenChange, product }: ProductDialogProps) {
@@ -60,6 +94,8 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
       isFeatured: false,
       isNewArrival: false,
       isPopular: false,
+      designType: 'REGULAR' as const,
+      landingPageData: undefined,
     },
   })
 
@@ -81,6 +117,8 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
         isFeatured: product.isFeatured || false,
         isNewArrival: product.isNewArrival || false,
         isPopular: product.isPopular || false,
+        designType: product.designType || 'REGULAR' as const,
+        landingPageData: product.landingPageData || undefined,
       }
       form.reset(sanitizedProduct)
       setImages(product.images || [])
@@ -97,6 +135,8 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
         isFeatured: false,
         isNewArrival: false,
         isPopular: false,
+        designType: 'REGULAR' as const,
+        landingPageData: undefined,
       })
       setImages([])
       setInitialImages([])
@@ -156,6 +196,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
       showToast.success(`Product ${product ? 'updated' : 'created'} successfully`)
       onOpenChange(false)
     } catch (error) {
+      console.error('Error submitting product:', error)
       showToast.error('Something went wrong')
     }
   }
@@ -304,6 +345,98 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
               open={categoryDialogOpen}
               onOpenChange={setCategoryDialogOpen}
             />
+
+            <FormField
+              control={form.control}
+              name="designType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Product Design Type</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select design type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="REGULAR">Regular Product Page</SelectItem>
+                      <SelectItem value="LANDING_PAGE">Landing Page Design</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {form.watch('designType') === 'LANDING_PAGE' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Info className="h-4 w-4" />
+                    Landing Page Settings
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="landingPageData.heroTitle"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Hero Title (Optional)</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Custom hero title for landing page" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="landingPageData.heroSubtitle"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Hero Subtitle (Optional)</FormLabel>
+                          <FormControl>
+                            <Textarea {...field} placeholder="Compelling subtitle for the landing page" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="landingPageData.callToAction"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Call to Action Text (Optional)</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="e.g., 'Buy Now and Save 20%'" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="landingPageData.guarantee"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Guarantee/Promise (Optional)</FormLabel>
+                          <FormControl>
+                            <Textarea {...field} placeholder="e.g., '30-day money-back guarantee'" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             <div className="grid grid-cols-3 gap-4">
               <FormField

@@ -1,6 +1,5 @@
 import 'server-only'
 import { prisma } from '@/lib/prisma'
-import { notFound } from 'next/navigation'
 
 export async function getProduct(slug: string) {
   const product = await prisma.product.findUnique({
@@ -8,9 +7,14 @@ export async function getProduct(slug: string) {
     include: {
       category: true,
       reviews: {
-        select: {
-          rating: true,
-        },
+        include: {
+          user: {
+            select: {
+              name: true,
+              image: true,
+            }
+          }
+        }
       },
     },
   })

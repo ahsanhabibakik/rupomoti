@@ -113,11 +113,17 @@ model Product {
   isPopular       Boolean  @default(false)
   status          ProductStatus @default(ACTIVE)
   
+  // Product page design type
+  designType      ProductDesignType @default(REGULAR)
+  
   // Additional product details
   weight          Float?   // in grams
   dimensions      String?  // e.g., "10cm x 5cm x 2cm"
   material        String?
   care            String?  // care instructions
+  
+  // Landing page specific fields
+  landingPageData Json?    // Additional data for landing page design
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -484,6 +490,11 @@ enum ProductStatus {
   INACTIVE
   ARCHIVED
   TRASHED
+}
+
+enum ProductDesignType {
+  REGULAR
+  LANDING_PAGE
 }
 
 enum OrderType {
