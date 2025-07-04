@@ -4,21 +4,23 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import Image from 'next/image'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ImageUpload } from '@/components/admin/ImageUpload'
 import { useCategories } from '@/hooks/useCategories'
 import { showToast } from '@/lib/toast'
 import { Switch } from '@/components/ui/switch'
 import { generateSKU } from '@/lib/utils/sku'
-import { RefreshCw, Info } from 'lucide-react'
+import { RefreshCw, Info, GripVertical, X, Star, Settings, ImageIcon } from 'lucide-react'
 import { CategoryCombobox } from './CategoryCombobox'
 import { CategoryDialog } from './CategoryDialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
 
 const landingPageDataSchema = z.object({
   heroTitle: z.string().optional(),
@@ -216,6 +218,34 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
     }
   }
 
+  // Handle image reordering
+  const handleImageReorder = (result: DropResult) => {
+    if (!result.destination) return
+
+    const items = Array.from(images)
+    const [reorderedItem] = items.splice(result.source.index, 1)
+    items.splice(result.destination.index, 0, reorderedItem)
+
+    setImages(items)
+    showToast.success('Image order updated')
+  }
+
+  // Set image as main (move to first position)
+  const setAsMainImage = (index: number) => {
+    const newImages = [...images]
+    const [mainImage] = newImages.splice(index, 1)
+    newImages.unshift(mainImage)
+    setImages(newImages)
+    showToast.success('Main image updated')
+  }
+
+  // Remove image
+  const removeImage = (index: number) => {
+    const newImages = images.filter((_, i) => i !== index)
+    setImages(newImages)
+    showToast.success('Image removed')
+  }
+
   const imagesChanged = JSON.stringify(images) !== JSON.stringify(initialImages)
 
   return (
@@ -227,6 +257,87 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Page Type Toggle - First thing users see */}
+            <Card className="border-2 border-orange-300 bg-gradient-to-r from-orange-50 to-amber-50 shadow-lg">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-orange-800 text-lg">
+                  <Settings className="h-6 w-6" />
+                  Choose Page Design Type
+                </CardTitle>
+                <p className="text-sm text-orange-700 mt-1">
+                  Select how your product page should look and function
+                </p>
+              </CardHeader>
+              <CardContent>
+                <FormField
+                  control={form.control}
+                  name="designType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div 
+                          className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                            field.value === 'REGULAR' 
+                              ? 'border-blue-500 bg-blue-50 shadow-md' 
+                              : 'border-gray-200 bg-white hover:border-gray-300'
+                          }`}
+                          onClick={() => field.onChange('REGULAR')}
+                        >
+                          <div className="text-center">
+                            <div className="w-8 h-8 mx-auto mb-2 rounded-full bg-blue-100 flex items-center justify-center">
+                              📄
+                            </div>
+                            <h3 className="font-semibold text-sm">Regular Page</h3>
+                            <p className="text-xs text-gray-600 mt-1">Standard product page layout</p>
+                          </div>
+                        </div>
+                        
+                        <div 
+                          className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                            field.value === 'LANDING_PAGE' 
+                              ? 'border-orange-500 bg-orange-50 shadow-md' 
+                              : 'border-gray-200 bg-white hover:border-gray-300'
+                          }`}
+                          onClick={() => field.onChange('LANDING_PAGE')}
+                        >
+                          <div className="text-center">
+                            <div className="w-8 h-8 mx-auto mb-2 rounded-full bg-orange-100 flex items-center justify-center">
+                              🎨
+                            </div>
+                            <h3 className="font-semibold text-sm">Landing Page</h3>
+                            <p className="text-xs text-gray-600 mt-1">Custom conversion-focused design</p>
+                          </div>
+                        </div>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                {/* Landing Page Builder Button */}
+                {form.watch('designType') === 'LANDING_PAGE' && product?.slug && (
+                  <div className="mt-4 p-3 bg-orange-100 rounded-lg border border-orange-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-semibold text-orange-800">Advanced Landing Page Builder</h4>
+                        <p className="text-sm text-orange-600">Create stunning landing pages with drag & drop</p>
+                      </div>
+                      <Button 
+                        type="button"
+                        onClick={() => {
+                          window.open(`/admin/products/${product.id}/landing-page-builder`, '_blank')
+                        }}
+                        className="bg-orange-600 hover:bg-orange-700 text-white"
+                      >
+                        <Settings className="w-4 h-4 mr-2" />
+                        Open Builder
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             <FormField
               control={form.control}
               name="name"
@@ -361,34 +472,12 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
               onOpenChange={setCategoryDialogOpen}
             />
 
-            <FormField
-              control={form.control}
-              name="designType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Product Design Type</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select design type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="REGULAR">Regular Product Page</SelectItem>
-                      <SelectItem value="LANDING_PAGE">Landing Page Design</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             {form.watch('designType') === 'LANDING_PAGE' && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Info className="h-4 w-4" />
-                    Landing Page Settings
+                    Quick Landing Page Settings
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -528,14 +617,161 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
               />
             </div>
 
-            <div className="space-y-2">
-              <FormLabel>Images</FormLabel>
-              <ImageUpload
-                value={images}
-                onChange={setImages}
-                maxFiles={5}
-              />
-            </div>
+            {/* Enhanced Image Management */}
+            <Card className="border-2 border-blue-200 bg-blue-50/30">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-blue-800">
+                  📸 Product Images
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                    {images.length}/5 photos
+                  </Badge>
+                </CardTitle>
+                <p className="text-sm text-blue-700 mt-1">
+                  Add up to 5 high-quality product photos. The first image will be your main product image.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Image Upload */}
+                <div className="border-2 border-dashed border-blue-300 rounded-lg p-4 bg-blue-50/50">
+                  <ImageUpload
+                    value={images}
+                    onChange={setImages}
+                    maxFiles={5}
+                  />
+                  <p className="text-xs text-blue-600 mt-2 text-center">
+                    💡 Tip: Use square images (1200x1200px) for best results
+                  </p>
+                </div>
+                
+                {/* Drag & Drop Image Reordering */}
+                {images.length > 1 && (
+                  <div className="mt-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <GripVertical className="w-4 h-4 text-gray-500" />
+                      <p className="text-sm font-medium text-gray-700">
+                        Drag to reorder • <span className="text-orange-600">First image = Main product image</span>
+                      </p>
+                    </div>
+                    <DragDropContext onDragEnd={handleImageReorder}>
+                      <Droppable droppableId="images" direction="horizontal">
+                        {(provided) => (
+                          <div 
+                            {...provided.droppableProps} 
+                            ref={provided.innerRef}
+                            className="flex gap-3 overflow-x-auto p-3 bg-gray-50 rounded-lg border"
+                          >
+                            {images.map((imageUrl, index) => (
+                              <Draggable key={imageUrl} draggableId={imageUrl} index={index}>
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    className={`relative group min-w-[120px] ${
+                                      snapshot.isDragging ? 'rotate-2 shadow-xl z-10' : ''
+                                    }`}
+                                  >
+                                    <div className="relative">
+                                      {/* Main Image Badge */}
+                                      {index === 0 && (
+                                        <Badge className="absolute -top-2 -left-2 z-20 bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg">
+                                          <Star className="w-3 h-3 mr-1" />
+                                          MAIN
+                                        </Badge>
+                                      )}
+                                      
+                                      {/* Image */}
+                                      <Image 
+                                        src={imageUrl} 
+                                        alt={`Product ${index + 1}`}
+                                        width={120}
+                                        height={120}
+                                        className={`w-[120px] h-[120px] object-cover rounded-lg border-2 ${
+                                          index === 0 
+                                            ? 'border-orange-500 shadow-lg' 
+                                            : 'border-gray-300'
+                                        }`}
+                                      />
+                                      
+                                      {/* Drag Handle */}
+                                      <div 
+                                        {...provided.dragHandleProps}
+                                        className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+                                      >
+                                        <GripVertical className="w-4 h-4 text-gray-600" />
+                                      </div>
+                                      
+                                      {/* Action Buttons */}
+                                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-all rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                        <div className="flex gap-1">
+                                          {index !== 0 && (
+                                            <Button
+                                              type="button"
+                                              size="sm"
+                                              variant="secondary"
+                                              onClick={() => setAsMainImage(index)}
+                                              className="h-8 px-2 bg-orange-500 text-white hover:bg-orange-600"
+                                              title="Set as main image"
+                                            >
+                                              <Star className="w-3 h-3" />
+                                            </Button>
+                                          )}
+                                          <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="destructive"
+                                            onClick={() => removeImage(index)}
+                                            className="h-8 px-2"
+                                            title="Remove image"
+                                          >
+                                            <X className="w-3 h-3" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Image Order */}
+                                    <div className="text-center mt-1">
+                                      <span className="text-xs text-gray-500">#{index + 1}</span>
+                                    </div>
+                                  </div>
+                                )}
+                              </Draggable>
+                            ))}
+                            {provided.placeholder}
+                          </div>
+                        )}
+                      </Droppable>
+                    </DragDropContext>
+                  </div>
+                )}
+                
+                {images.length > 0 && (
+                  <div className="text-sm text-gray-700 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <div className="flex items-start gap-2">
+                      <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium text-blue-800 mb-2">📸 Image Management Tips:</p>
+                        <ul className="space-y-1 text-blue-700">
+                          <li>• <strong>First image</strong> = Main product image (shown in listings)</li>
+                          <li>• <strong>Drag images</strong> to reorder them</li>
+                          <li>• <strong>Click the star</strong> to set any image as main</li>
+                          <li>• <strong>Best quality:</strong> 1200x1200px, clear, well-lit photos</li>
+                          <li>• <strong>Show different angles</strong> to help customers decide</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {images.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <ImageIcon className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                    <p className="text-sm">No images uploaded yet</p>
+                    <p className="text-xs mt-1">Add at least one image to save your product</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             <div className="flex justify-end gap-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

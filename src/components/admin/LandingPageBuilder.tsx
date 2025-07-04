@@ -541,30 +541,33 @@ export function LandingPageBuilder({
         
         <div className="flex items-center gap-2">
           {/* Device Preview Buttons */}
-          <div className="flex items-center gap-1 mr-4">
+          <div className="flex items-center gap-1 mr-4 p-1 bg-gray-100 rounded-lg">
             <Button
-              variant={previewMode === 'desktop' ? 'default' : 'outline'}
+              variant={previewMode === 'desktop' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setPreviewMode('desktop')}
-              className="px-2"
+              className={`px-3 ${previewMode === 'desktop' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}
             >
-              <Monitor className="w-4 h-4" />
+              <Monitor className="w-4 h-4 mr-1" />
+              Desktop
             </Button>
             <Button
-              variant={previewMode === 'tablet' ? 'default' : 'outline'}
+              variant={previewMode === 'tablet' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setPreviewMode('tablet')}
-              className="px-2"
+              className={`px-3 ${previewMode === 'tablet' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}
             >
-              <Tablet className="w-4 h-4" />
+              <Tablet className="w-4 h-4 mr-1" />
+              Tablet
             </Button>
             <Button
-              variant={previewMode === 'mobile' ? 'default' : 'outline'}
+              variant={previewMode === 'mobile' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setPreviewMode('mobile')}
-              className="px-2"
+              className={`px-3 ${previewMode === 'mobile' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}
             >
-              <Smartphone className="w-4 h-4" />
+              <Smartphone className="w-4 h-4 mr-1" />
+              Mobile
             </Button>
           </div>
 
@@ -621,7 +624,11 @@ export function LandingPageBuilder({
                     <CardTitle className="text-sm flex items-center gap-2">
                       <Sparkles className="w-4 h-4 text-orange-600" />
                       Essential Sections
+                      <Badge variant="outline" className="text-xs">Start Here</Badge>
                     </CardTitle>
+                    <p className="text-xs text-gray-600">
+                      🚀 Every great landing page starts with these core sections
+                    </p>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 gap-2">
@@ -638,7 +645,8 @@ export function LandingPageBuilder({
                             variant="outline"
                             size="sm"
                             onClick={() => addSection(key as keyof typeof SECTION_TEMPLATES)}
-                            className="flex flex-col items-center gap-1 h-auto py-3 hover:bg-orange-50 hover:border-orange-300"
+                            className="flex flex-col items-center gap-1 h-auto py-3 hover:bg-orange-50 hover:border-orange-300 transition-all"
+                            title={`Add ${template.title} - Essential for conversions`}
                           >
                             <Icon className="w-4 h-4 text-orange-600" />
                             <span className="text-xs font-medium">{template.title}</span>
@@ -1171,14 +1179,44 @@ export function LandingPageBuilder({
                     
                     <div>
                       <Label className="text-sm">Open Graph Image</Label>
-                      <Input
-                        value={data.seo.ogImage || ''}
-                        onChange={(e) => setData({
-                          ...data,
-                          seo: { ...data.seo, ogImage: e.target.value }
-                        })}
-                        placeholder="https://example.com/image.jpg"
-                      />
+                      <div className="space-y-2">
+                        <Input
+                          value={data.seo.ogImage || ''}
+                          onChange={(e) => setData({
+                            ...data,
+                            seo: { ...data.seo, ogImage: e.target.value }
+                          })}
+                          placeholder="https://example.com/image.jpg"
+                        />
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const input = document.createElement('input')
+                              input.type = 'file'
+                              input.accept = 'image/*'
+                              input.onchange = (e) => {
+                                const file = (e.target as HTMLInputElement).files?.[0]
+                                if (file) {
+                                  // Here you would upload the file to your server/CDN
+                                  // For now, just show a message
+                                  showToast.info('Image upload functionality needs to be implemented')
+                                }
+                              }
+                              input.click()
+                            }}
+                            className="text-xs"
+                          >
+                            <Upload className="w-3 h-3 mr-1" />
+                            Upload Image
+                          </Button>
+                          <p className="text-xs text-gray-500">
+                            Recommended: 1200x630px
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -1376,116 +1414,164 @@ export function LandingPageBuilder({
           </Tabs>
         </div>
 
-        {/* Main Content */}
-        <div className="flex-1 overflow-y-auto bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+        {/* Right: Preview Area */}
+        <div className="flex-1 flex flex-col">
           {selectedSection ? (
-            <div className="max-w-4xl mx-auto">
-              <SectionEditor
-                section={data.sections.find(s => s.id === selectedSection)!}
-                onUpdate={(updates) => updateSection(selectedSection, updates)}
-                onClose={() => setSelectedSection(null)}
-              />
+            <div className="flex-1 overflow-y-auto bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+              <div className="max-w-4xl mx-auto">
+                <SectionEditor
+                  section={data.sections.find(s => s.id === selectedSection)!}
+                  onUpdate={(updates) => updateSection(selectedSection, updates)}
+                  onClose={() => setSelectedSection(null)}
+                />
+              </div>
             </div>
           ) : (
-            <div className="max-w-4xl mx-auto">
-              {/* Welcome/Getting Started */}
-              <div className="text-center py-12">
-                <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
-                  <Layers className="w-16 h-16 text-orange-500 mx-auto mb-4" />
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                    Advanced Landing Page Builder
-                  </h3>
-                  <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-                    Create stunning, conversion-focused landing pages with drag-and-drop simplicity. 
-                    Add sections, customize themes, and optimize for mobile - all in one powerful tool.
-                  </p>
-                  
+            <div className="flex-1 overflow-y-auto bg-gradient-to-br from-gray-50 to-gray-100">
+              {/* Preview Area */}
+              <div className="h-full flex items-center justify-center p-6">
+                <div className={`bg-white rounded-lg shadow-lg transition-all duration-300 ${
+                  previewMode === 'desktop' ? 'w-full max-w-6xl' : 
+                  previewMode === 'tablet' ? 'w-full max-w-3xl' : 
+                  'w-full max-w-sm'
+                }`}>
                   {data.sections.length === 0 ? (
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-md mx-auto">
-                        <Button
-                          onClick={() => addSection('hero')}
-                          className="bg-orange-500 hover:bg-orange-600 text-white"
-                        >
-                          <Plus className="w-4 h-4 mr-2" />
-                          Add Hero Section
-                        </Button>
-                        <Button
-                          onClick={() => addSection('features')}
-                          variant="outline"
-                          className="border-orange-300 text-orange-600 hover:bg-orange-50"
-                        >
-                          <Star className="w-4 h-4 mr-2" />
-                          Add Features
-                        </Button>
+                    <div className="text-center py-12">
+                      <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
+                        <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                          <Layers className="w-10 h-10 text-white" />
+                        </div>
+                        <h3 className="text-3xl font-bold text-gray-900 mb-3">
+                          🎨 Landing Page Builder
+                        </h3>
+                        <p className="text-gray-600 mb-8 max-w-2xl mx-auto text-lg">
+                          Create stunning, conversion-focused landing pages with our beginner-friendly drag-and-drop builder. 
+                          No coding required!
+                        </p>
+                        
+                        <div className="space-y-6">
+                          <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl p-6 border border-orange-200">
+                            <h4 className="text-xl font-semibold text-orange-800 mb-3">
+                              🚀 Get Started in 3 Easy Steps
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
+                              <div className="bg-white p-4 rounded-lg border border-orange-200">
+                                <div className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mb-2">1</div>
+                                <h5 className="font-semibold text-gray-900 mb-1">Add Hero Section</h5>
+                                <p className="text-sm text-gray-600">Start with a compelling headline and description</p>
+                              </div>
+                              <div className="bg-white p-4 rounded-lg border border-orange-200">
+                                <div className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mb-2">2</div>
+                                <h5 className="font-semibold text-gray-900 mb-1">Add Features</h5>
+                                <p className="text-sm text-gray-600">Highlight your product&apos;s key benefits</p>
+                              </div>
+                              <div className="bg-white p-4 rounded-lg border border-orange-200">
+                                <div className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mb-2">3</div>
+                                <h5 className="font-semibold text-gray-900 mb-1">Add Call-to-Action</h5>
+                                <p className="text-sm text-gray-600">Guide visitors to buy your product</p>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-md mx-auto">
+                            <Button
+                              onClick={() => addSection('hero')}
+                              className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg text-lg px-6 py-3"
+                            >
+                              <Plus className="w-5 h-5 mr-2" />
+                              Start with Hero
+                            </Button>
+                            <Button
+                              onClick={() => addSection('features')}
+                              variant="outline"
+                              className="border-orange-300 text-orange-600 hover:bg-orange-50 text-lg px-6 py-3"
+                            >
+                              <Star className="w-5 h-5 mr-2" />
+                              Add Features
+                            </Button>
+                          </div>
+                          <p className="text-sm text-gray-500">
+                            💡 Or choose from 17+ section types in the sidebar
+                          </p>
+                        </div>
                       </div>
-                      <p className="text-sm text-gray-500">
-                        Or choose from 15+ section types in the sidebar
-                      </p>
+                      
+                      {/* Quick Tips */}
+                      <div className="bg-white rounded-xl shadow-sm p-6">
+                        <h4 className="text-lg font-semibold text-gray-900 mb-4">Quick Tips</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
+                          <div className="flex items-start gap-3">
+                            <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
+                            <div>
+                              <strong>Drag & Drop:</strong> Reorder sections by dragging them in the sidebar
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                            <div>
+                              <strong>YouTube Videos:</strong> Add video sections with YouTube URLs
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                            <div>
+                              <strong>Rich Text:</strong> Use the rich text editor for detailed descriptions
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                            <div>
+                              <strong>Templates:</strong> Apply pre-made templates from the Advanced tab
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      <p className="text-gray-600">
-                        Select a section from the sidebar to edit its content, or add new sections to build your page.
-                      </p>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-lg mx-auto">
-                        <Button
-                          onClick={() => handlePreview()}
-                          variant="outline"
-                          className="border-blue-300 text-blue-600 hover:bg-blue-50"
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          Preview
-                        </Button>
-                        <Button
-                          onClick={() => handleSave(true)}
-                          variant="outline"
-                          className="border-green-300 text-green-600 hover:bg-green-50"
-                        >
-                          <Save className="w-4 h-4 mr-2" />
-                          Save Draft
-                        </Button>
-                        <Button
-                          onClick={handlePublish}
-                          className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
-                        >
-                          <Sparkles className="w-4 h-4 mr-2" />
-                          Publish
-                        </Button>
+                    <div className="min-h-[600px] overflow-y-auto">
+                      <div className="p-4 border-b bg-gray-50">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-medium text-gray-900">
+                            Live Preview ({previewMode})
+                          </h3>
+                          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                            {data.sections.length} sections
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      {/* Preview Content */}
+                      <div className="p-4 space-y-4">
+                        {data.sections.map((section) => (
+                          <div 
+                            key={section.id}
+                            className={`border rounded-lg p-4 ${
+                              section.visible ? 'bg-white' : 'bg-gray-50 opacity-50'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-medium text-gray-900">{section.title}</h4>
+                              <Badge variant={section.visible ? 'default' : 'secondary'}>
+                                {section.visible ? 'Visible' : 'Hidden'}
+                              </Badge>
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              {section.type} section
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="mt-2"
+                              onClick={() => setSelectedSection(section.id)}
+                            >
+                              <Settings className="w-3 h-3 mr-1" />
+                              Edit
+                            </Button>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
-                </div>
-                
-                {/* Quick Tips */}
-                <div className="bg-white rounded-xl shadow-sm p-6">
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Quick Tips</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
-                    <div className="flex items-start gap-3">
-                      <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <div>
-                        <strong>Drag & Drop:</strong> Reorder sections by dragging them in the sidebar
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <div>
-                        <strong>YouTube Videos:</strong> Add video sections with YouTube URLs
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <div>
-                        <strong>Rich Text:</strong> Use the rich text editor for detailed descriptions
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <div>
-                        <strong>Templates:</strong> Apply pre-made templates from the Advanced tab
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
