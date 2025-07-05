@@ -369,16 +369,54 @@ export function LandingPageBuilder({
   const [activeTab, setActiveTab] = useState('sections')
   const [selectedSection, setSelectedSection] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [previewMode, setPreviewMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop')
   const [showPreview, setShowPreview] = useState(false)
-  const [draggedSection, setDraggedSection] = useState<string | null>(null)
+
+  // Load existing landing page data
+  useEffect(() => {
+    const loadData = async () => {
+      if (productId && !initialData) {
+        setLoading(true)
+        try {
+          const response = await fetch(`/api/admin/products/${productId}/landing-page/draft`)
+          const result = await response.json()
+          
+          if (result.success && result.data) {
+            setData(result.data)
+          }
+        } catch (error) {
+          console.error('Error loading landing page data:', error)
+        } finally {
+          setLoading(false)
+        }
+      }
+    }
+    
+    loadData()
+  }, [productId, initialData])
+
+  const loadLandingPageData = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch(`/api/admin/products/${productId}/landing-page/draft`)
+      const result = await response.json()
+      
+      if (result.success && result.data) {
+        setData(result.data)
+      }
+    } catch (error) {
+      console.error('Error loading landing page data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleDragStart = (start: { draggableId: string }) => {
-    setDraggedSection(start.draggableId)
+    // Handle drag start
   }
 
   const handleDragEnd = (result: DropResult) => {
-    setDraggedSection(null)
     if (!result.destination) return
 
     const newSections = Array.from(data.sections)
@@ -459,21 +497,32 @@ export function LandingPageBuilder({
   const handleSave = async (asDraft = true) => {
     setSaving(true)
     try {
-      if (onSave) {
-        await onSave(data)
-      }
-      
       if (productId) {
         const endpoint = asDraft ? 'draft' : 'publish'
-        await fetch(`/api/admin/products/${productId}/landing-page/${endpoint}`, {
+        const response = await fetch(`/api/admin/products/${productId}/landing-page/${endpoint}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)
         })
+
+        const result = await response.json()
+        
+        if (result.success) {
+          showToast.success(asDraft ? 'Draft saved successfully' : 'Landing page published successfully')
+          if (onSave) {
+            await onSave(data)
+          }
+        } else {
+          showToast.error(result.error || 'Failed to save')
+        }
+      } else {
+        if (onSave) {
+          await onSave(data)
+        }
+        showToast.success(asDraft ? 'Draft saved' : 'Landing page published')
       }
-      
-      showToast.success(asDraft ? 'Draft saved' : 'Landing page published')
-    } catch {
+    } catch (error) {
+      console.error('Save error:', error)
       showToast.error('Failed to save')
     } finally {
       setSaving(false)

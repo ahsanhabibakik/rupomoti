@@ -21,6 +21,23 @@ import { CategoryDialog } from './CategoryDialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
+import { Plus, Trash2 } from 'lucide-react'
+
+interface ProductVariant {
+  id?: string
+  size?: string
+  color?: string
+  weight?: string
+  material?: string
+  price?: number | null
+  stock: number
+  sku?: string
+  image?: string
+  isDefault: boolean
+  isActive: boolean
+}
 
 const landingPageDataSchema = z.object({
   heroTitle: z.string().optional(),
@@ -94,6 +111,8 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
   const [initialImages, setInitialImages] = useState<string[]>(product?.images || [])
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false)
   const [newCategoryId, setNewCategoryId] = useState<string | null>(null)
+  const [variants, setVariants] = useState<ProductVariant[]>([])
+  const [showVariants, setShowVariants] = useState(false)
   const { categories, isLoading: categoriesLoading } = useCategories({ pageSize: 1000 })
 
   const form = useForm<ProductFormValues>({
@@ -139,6 +158,11 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
       form.reset(sanitizedProduct)
       setImages(product.images || [])
       setInitialImages(product.images || [])
+      
+      // Load variants if product has them
+      if (product.id) {
+        loadVariants(product.id)
+      }
     } else {
       form.reset({
         name: '',
@@ -156,6 +180,8 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
       })
       setImages([])
       setInitialImages([])
+      setVariants([])
+      setShowVariants(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product?.id, open]) // Only reset when product ID changes or dialog opens
@@ -197,7 +223,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
 
       const method = product ? 'PUT' : 'POST'
       const url = '/api/admin/products'
-      const body = product ? { ...data, images, id: product.id } : { ...data, images }
+      const body = product ? { ...data, images, variants, id: product.id } : { ...data, images, variants }
 
       const response = await fetch(url, {
         method,
@@ -247,6 +273,53 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
   }
 
   const imagesChanged = JSON.stringify(images) !== JSON.stringify(initialImages)
+
+  // Variant management functions
+  const addVariant = () => {
+    setVariants(prev => [...prev, {
+      size: '',
+      color: '',
+      weight: '',
+      material: '',
+      price: null,
+      stock: 0,
+      sku: '',
+      image: '',
+      isDefault: prev.length === 0,
+      isActive: true
+    }])
+  }
+
+  const updateVariant = (index: number, field: keyof ProductVariant, value: string | number | boolean | null) => {
+    setVariants(prev => prev.map((variant, i) => 
+      i === index ? { ...variant, [field]: value } : variant
+    ))
+  }
+
+  const removeVariant = (index: number) => {
+    setVariants(prev => {
+      const updated = prev.filter((_, i) => i !== index)
+      // If we removed the default variant, make the first one default
+      if (prev[index].isDefault && updated.length > 0) {
+        updated[0].isDefault = true
+      }
+      return updated
+    })
+  }
+
+  // Load variants for existing product
+  const loadVariants = async (productId: string) => {
+    try {
+      const response = await fetch(`/api/admin/products/${productId}/variants`)
+      if (response.ok) {
+        const data = await response.json()
+        setVariants(data.variants || [])
+        setShowVariants(data.variants?.length > 0)
+      }
+    } catch (error) {
+      console.error('Error loading variants:', error)
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -327,7 +400,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
                         onClick={() => {
                           window.open(`/admin/products/${product.id}/landing-page-builder`, '_blank')
                         }}
-                        className="bg-orange-600 hover:bg-orange-700 text-white"
+                        className="bg-orange-600 hover:bg-orange-700 "
                       >
                         <Settings className="w-4 h-4 mr-2" />
                         Open Builder
@@ -773,6 +846,160 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
               </CardContent>
             </Card>
 
+            {/* Product Variants Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="w-5 h-5" />
+                  🎯 Product Variants
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">Enable Product Variants</p>
+                      <p className="text-xs text-gray-500">Add different sizes, colors, weights, or materials</p>
+                    </div>
+                    <Switch 
+                      checked={showVariants}
+                      onCheckedChange={setShowVariants}
+                    />
+                  </div>
+
+                  {showVariants && (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium">Manage Variants</h4>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addVariant()}
+                        >
+                          <Plus className="w-4 h-4 mr-1" />
+                          Add Variant
+                        </Button>
+                      </div>
+
+                      {variants.map((variant, index) => (
+                        <Card key={index} className="p-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor={`variant-${index}-size`}>Size</Label>
+                              <Input
+                                id={`variant-${index}-size`}
+                                placeholder="e.g., Small, Medium, Large"
+                                value={variant.size || ''}
+                                onChange={(e) => updateVariant(index, 'size', e.target.value)}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`variant-${index}-color`}>Color</Label>
+                              <Input
+                                id={`variant-${index}-color`}
+                                placeholder="e.g., Gold, Silver, Rose Gold"
+                                value={variant.color || ''}
+                                onChange={(e) => updateVariant(index, 'color', e.target.value)}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`variant-${index}-weight`}>Weight</Label>
+                              <Input
+                                id={`variant-${index}-weight`}
+                                placeholder="e.g., 2g, 3g, 5g"
+                                value={variant.weight || ''}
+                                onChange={(e) => updateVariant(index, 'weight', e.target.value)}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`variant-${index}-material`}>Material</Label>
+                              <Input
+                                id={`variant-${index}-material`}
+                                placeholder="e.g., 14K Gold, Sterling Silver"
+                                value={variant.material || ''}
+                                onChange={(e) => updateVariant(index, 'material', e.target.value)}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`variant-${index}-price`}>Price Override</Label>
+                              <Input
+                                id={`variant-${index}-price`}
+                                type="number"
+                                placeholder="Leave empty to use product price"
+                                value={variant.price || ''}
+                                onChange={(e) => updateVariant(index, 'price', e.target.value ? parseFloat(e.target.value) : null)}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`variant-${index}-stock`}>Stock</Label>
+                              <Input
+                                id={`variant-${index}-stock`}
+                                type="number"
+                                placeholder="0"
+                                value={variant.stock}
+                                onChange={(e) => updateVariant(index, 'stock', parseInt(e.target.value) || 0)}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`variant-${index}-sku`}>SKU</Label>
+                              <Input
+                                id={`variant-${index}-sku`}
+                                placeholder="Variant SKU"
+                                value={variant.sku || ''}
+                                onChange={(e) => updateVariant(index, 'sku', e.target.value)}
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-between mt-4">
+                            <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-2">
+                                <Switch
+                                  checked={variant.isDefault}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setVariants(prev => prev.map((v, i) => ({ ...v, isDefault: i === index })))
+                                    } else {
+                                      updateVariant(index, 'isDefault', false)
+                                    }
+                                  }}
+                                />
+                                <Label>Default</Label>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Switch
+                                  checked={variant.isActive}
+                                  onCheckedChange={(checked) => updateVariant(index, 'isActive', checked)}
+                                />
+                                <Label>Active</Label>
+                              </div>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => removeVariant(index)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </Card>
+                      ))}
+
+                      {variants.length === 0 && (
+                        <div className="text-center py-8 text-gray-500">
+                          <Settings className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                          <p className="text-sm">No variants added yet</p>
+                          <p className="text-xs mt-1">Add variants to offer different options to customers</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
             <div className="flex justify-end gap-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
@@ -786,4 +1013,4 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
       </DialogContent>
     </Dialog>
   )
-} 
+}

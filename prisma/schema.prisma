@@ -139,8 +139,36 @@ model Product {
   orderItems      OrderItem[]
   stockLogs       StockLog[]
   returnRequests  ReturnRequest[]
+  variants        ProductVariant[]
   
   @@map("products")
+}
+
+model ProductVariant {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  productId String   @db.ObjectId
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  // Variant attributes
+  size      String?  // e.g., "Small", "Medium", "Large", "6mm", "8mm"
+  color     String?  // e.g., "Gold", "Silver", "Rose Gold", "White", "Black"
+  weight    String?  // e.g., "2g", "3g", "5g" - as string for flexibility
+  material  String?  // e.g., "14K Gold", "Sterling Silver", "Stainless Steel"
+  
+  // Pricing and inventory
+  price     Float?   // Override product price if different
+  stock     Int      @default(0)
+  sku       String?  // Variant-specific SKU
+  
+  // Additional variant fields
+  image     String?  // Variant-specific image
+  isDefault Boolean  @default(false) // Is this the default variant
+  isActive  Boolean  @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("product_variants")
 }
 
 model Customer {
