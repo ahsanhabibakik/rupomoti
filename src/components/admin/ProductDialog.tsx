@@ -24,6 +24,7 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Plus, Trash2 } from 'lucide-react'
+import { LandingPageQuickSetup } from './LandingPageQuickSetup'
 
 interface ProductVariant {
   id?: string
@@ -379,6 +380,17 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
                             </div>
                             <h3 className="font-semibold text-sm">Landing Page</h3>
                             <p className="text-xs text-gray-600 mt-1">Custom conversion-focused design</p>
+                            <div className="mt-2 space-y-1">
+                              <div className="text-xs text-green-600 flex items-center gap-1">
+                                ✓ Higher conversions
+                              </div>
+                              <div className="text-xs text-green-600 flex items-center gap-1">
+                                ✓ Rich product information
+                              </div>
+                              <div className="text-xs text-green-600 flex items-center gap-1">
+                                ✓ Featured prominently
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -387,25 +399,43 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
                   )}
                 />
                 
-                {/* Landing Page Builder Button */}
-                {form.watch('designType') === 'LANDING_PAGE' && product?.slug && (
-                  <div className="mt-4 p-3 bg-orange-100 rounded-lg border border-orange-200">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-semibold text-orange-800">Advanced Landing Page Builder</h4>
-                        <p className="text-sm text-orange-600">Create stunning landing pages with drag & drop</p>
+                {/* Landing Page Quick Setup */}
+                {form.watch('designType') === 'LANDING_PAGE' && (
+                  <div className="mt-4">
+                    <LandingPageQuickSetup
+                      productName={form.watch('name') || 'Product'}
+                      initialData={form.watch('landingPageData')}
+                      onSave={async (data) => {
+                        form.setValue('landingPageData', data)
+                        showToast.success('Landing page data updated!')
+                      }}
+                      onPreview={(data) => {
+                        form.setValue('landingPageData', data)
+                        showToast.info('Preview updated!')
+                      }}
+                    />
+                    
+                    {/* Advanced Builder */}
+                    {product?.slug && (
+                      <div className="mt-4 p-3 bg-orange-100 rounded-lg border border-orange-200">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-semibold text-orange-800">Advanced Landing Page Builder</h4>
+                            <p className="text-sm text-orange-600">Create stunning landing pages with drag & drop</p>
+                          </div>
+                          <Button 
+                            type="button"
+                            onClick={() => {
+                              window.open(`/admin/products/${product.id}/landing-page-builder`, '_blank')
+                            }}
+                            className="bg-orange-600 hover:bg-orange-700"
+                          >
+                            <Settings className="w-4 h-4 mr-2" />
+                            Open Builder
+                          </Button>
+                        </div>
                       </div>
-                      <Button 
-                        type="button"
-                        onClick={() => {
-                          window.open(`/admin/products/${product.id}/landing-page-builder`, '_blank')
-                        }}
-                        className="bg-orange-600 hover:bg-orange-700 "
-                      >
-                        <Settings className="w-4 h-4 mr-2" />
-                        Open Builder
-                      </Button>
-                    </div>
+                    )}
                   </div>
                 )}
               </CardContent>
