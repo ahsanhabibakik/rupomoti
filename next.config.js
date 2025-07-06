@@ -7,17 +7,17 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Move outputFileTracingExcludes to root level as per Next.js 15
+  outputFileTracingExcludes: {
+    '*': [
+      'node_modules/@swc/core-linux-x64-gnu',
+      'node_modules/@swc/core-linux-x64-musl',
+      'node_modules/@esbuild/linux-x64',
+    ],
+  },
   // Optimize build and runtime performance
   experimental: {
     optimizePackageImports: ['@prisma/client'],
-    // Disable file tracing to avoid Windows symlink issues
-    outputFileTracingExcludes: {
-      '*': [
-        'node_modules/@swc/core-linux-x64-gnu',
-        'node_modules/@swc/core-linux-x64-musl',
-        'node_modules/@esbuild/linux-x64',
-      ],
-    },
   },
   // Add webpack optimization for Prisma
   webpack: (config, { isServer }) => {

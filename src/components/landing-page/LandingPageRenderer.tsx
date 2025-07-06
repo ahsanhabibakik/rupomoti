@@ -98,7 +98,7 @@ export function LandingPageRenderer({
       onOrderNow: handleOrderNow,
       onAddToCart: handleAddToCart,
       onScrollToSection: scrollToSection,
-      globalSettings: data.globalSettings
+      globalSettings: data.globalSettings || {}
     }
 
     switch (section.type) {
