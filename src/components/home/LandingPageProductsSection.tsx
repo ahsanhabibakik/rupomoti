@@ -92,19 +92,19 @@ export function LandingPageProductsSection({
           {/* Special Landing Page Indicator */}
           <motion.div 
             variants={itemVariants}
-            className="flex items-center justify-center gap-6 mt-6 text-sm text-gray-600"
+            className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 mt-6 text-sm text-gray-600"
           >
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              Enhanced Product Pages
+              <span className="text-xs sm:text-sm">Enhanced Product Pages</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-              Rich Product Information
+              <span className="text-xs sm:text-sm">Rich Product Information</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-              Customer Reviews
+              <span className="text-xs sm:text-sm">Customer Reviews</span>
             </div>
           </motion.div>
         </motion.div>
@@ -115,7 +115,7 @@ export function LandingPageProductsSection({
           whileInView="visible"
           viewport={{ once: true }}
           variants={containerVariants}
-          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-8"
+          className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6 mb-8"
         >
           {products.map((product, index) => (
             <motion.div 
@@ -173,12 +173,13 @@ export function LandingPageProductsSection({
             <Button 
               asChild 
               size="lg" 
-              className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+              className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-6 sm:px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 w-full sm:w-auto"
             >
-              <Link href="/shop?filter=landing-page" className="flex items-center gap-2">
-                <Crown className="w-5 h-5" />
-                Explore All Premium Products
-                <ArrowRight className="w-5 h-5" />
+              <Link href="/shop?filter=landing-page" className="flex items-center justify-center gap-2 text-sm sm:text-base">
+                <Crown className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="hidden sm:inline">Explore All Premium Products</span>
+                <span className="sm:hidden">View All Premium</span>
+                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
               </Link>
             </Button>
           </motion.div>

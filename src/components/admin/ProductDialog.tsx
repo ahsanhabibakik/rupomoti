@@ -24,6 +24,7 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Plus, Trash2 } from 'lucide-react'
+import { LandingPageQuickSetup } from './LandingPageQuickSetup'
 
 interface ProductVariant {
   id?: string
@@ -400,102 +401,23 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
                 
                 {/* Landing Page Quick Setup */}
                 {form.watch('designType') === 'LANDING_PAGE' && (
-                  <div className="mt-4 space-y-4">
-                    {/* Quick Setup Card */}
-                    <div className="p-4 bg-white rounded-lg border border-orange-200">
-                      <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-orange-500" />
-                        Quick Landing Page Setup
-                      </h4>
-                      <div className="grid grid-cols-2 gap-3">
-                        <FormField
-                          control={form.control}
-                          name="landingPageData.heroTitle"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-sm">Hero Title</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  {...field} 
-                                  placeholder="e.g., Elegant Beauty Awaits"
-                                  className="text-sm"
-                                />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="landingPageData.heroSubtitle"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-sm">Hero Subtitle</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  {...field} 
-                                  placeholder="e.g., Premium jewelry collection"
-                                  className="text-sm"
-                                />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="landingPageData.callToAction"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-sm">Call to Action</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  {...field} 
-                                  placeholder="e.g., Shop Now & Get Free Shipping"
-                                  className="text-sm"
-                                />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="landingPageData.guarantee"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-sm">Guarantee</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  {...field} 
-                                  placeholder="e.g., 30-Day Money Back Guarantee"
-                                  className="text-sm"
-                                />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      
-                      {/* Auto-populate button */}
-                      <Button 
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="mt-3 text-xs"
-                        onClick={() => {
-                          const productName = form.getValues('name') || 'Premium Product'
-                          form.setValue('landingPageData.heroTitle', `${productName} - Exceptional Quality`)
-                          form.setValue('landingPageData.heroSubtitle', `Discover the perfect ${productName.toLowerCase()} for your collection`)
-                          form.setValue('landingPageData.callToAction', 'Order Now - Limited Stock Available!')
-                          form.setValue('landingPageData.guarantee', '30-Day Money Back Guarantee + Free Shipping')
-                        }}
-                      >
-                        <Sparkles className="w-3 h-3 mr-1" />
-                        Auto-populate with suggestions
-                      </Button>
-                    </div>
+                  <div className="mt-4">
+                    <LandingPageQuickSetup
+                      productName={form.watch('name') || 'Product'}
+                      initialData={form.watch('landingPageData')}
+                      onSave={async (data) => {
+                        form.setValue('landingPageData', data)
+                        showToast.success('Landing page data updated!')
+                      }}
+                      onPreview={(data) => {
+                        form.setValue('landingPageData', data)
+                        showToast.info('Preview updated!')
+                      }}
+                    />
                     
                     {/* Advanced Builder */}
                     {product?.slug && (
-                      <div className="p-3 bg-orange-100 rounded-lg border border-orange-200">
+                      <div className="mt-4 p-3 bg-orange-100 rounded-lg border border-orange-200">
                         <div className="flex items-center justify-between">
                           <div>
                             <h4 className="font-semibold text-orange-800">Advanced Landing Page Builder</h4>
