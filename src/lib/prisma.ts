@@ -16,7 +16,7 @@ const createPrismaClient = () => {
   }
   
   return new PrismaClient({
-    log: ['query'],
+    log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
   })
 }
 
@@ -48,13 +48,20 @@ export async function checkDatabaseConnection() {
 
 // Only check connection in development and on server-side (not Edge Runtime)
 if (process.env.NODE_ENV === 'development' && typeof window === 'undefined' && process.env.NEXT_RUNTIME !== 'edge') {
-  checkDatabaseConnection()
-    .then((isConnected) => {
-      if (!isConnected) {
-        console.error('❌ Initial database connection check failed')
-      }
-    })
-    .catch((error) => {
-      console.error('❌ Unexpected error during database connection check:', error)
-    })
+  // Reduce connection check frequency to avoid spam
+  let connectionChecked = false;
+  if (!connectionChecked) {
+    checkDatabaseConnection()
+      .then((isConnected) => {
+        if (isConnected) {
+          connectionChecked = true;
+          console.log('✅ Initial database connection verified');
+        } else {
+          console.error('❌ Initial database connection check failed');
+        }
+      })
+      .catch((error) => {
+        console.error('❌ Unexpected error during database connection check:', error);
+      });
+  }
 } 

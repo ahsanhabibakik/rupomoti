@@ -961,25 +961,6 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
                                 onChange={(e) => updateVariant(index, 'price', e.target.value ? parseFloat(e.target.value) : null)}
                               />
                             </div>
-                            <div className="space-y-2">
-                              <Label htmlFor={`variant-${index}-stock`}>Stock</Label>
-                              <Input
-                                id={`variant-${index}-stock`}
-                                type="number"
-                                placeholder="0"
-                                value={variant.stock}
-                                onChange={(e) => updateVariant(index, 'stock', parseInt(e.target.value) || 0)}
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor={`variant-${index}-sku`}>SKU</Label>
-                              <Input
-                                id={`variant-${index}-sku`}
-                                placeholder="Variant SKU"
-                                value={variant.sku || ''}
-                                onChange={(e) => updateVariant(index, 'sku', e.target.value)}
-                              />
-                            </div>
                           </div>
                           
                           <div className="flex items-center justify-between mt-4">
