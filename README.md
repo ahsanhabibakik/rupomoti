@@ -18,7 +18,7 @@ A modern e-commerce platform for pearl jewelry built with Next.js, TypeScript, a
 - TypeScript
 - Prisma (PostgreSQL)
 - NextAuth.js
-- Tailwind CSS
+- Tailwind CSS 4
 - Framer Motion
 
 ## Prerequisites
