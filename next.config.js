@@ -26,8 +26,9 @@ const nextConfig = {
     }
     return config;
   },
-  // Add output configuration
-  output: 'standalone',
+  // Completely disable standalone output which causes symlink permission issues on Windows
+  // For production deployment, this should be re-enabled on the deployment server
+  // output: 'standalone',
   images: {
     remotePatterns: [
       {

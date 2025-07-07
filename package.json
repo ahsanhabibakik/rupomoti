@@ -24,7 +24,9 @@
     "assign-skus": "npx tsx scripts/assign-skus.ts",
     "update:admin": "npx tsx scripts/update-admin.ts",
     "update:product-images": "npx tsx scripts/update-product-images.ts",
-    "update:product-slugs": "npx tsx scripts/update-product-slugs.ts"
+    "update:product-slugs": "npx tsx scripts/update-product-slugs.ts",
+    "pre-commit": "bash scripts/pre-commit-check.sh",
+    "ci": "pnpm g && pnpm lint && pnpm build"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",
@@ -86,6 +88,7 @@
   "devDependencies": {
     "@prisma/client": "^6.11.1",
     "@types/bcryptjs": "^2.4.6",
+    "@types/jspdf": "^2.0.0",
     "@types/lodash": "^4.17.19",
     "@types/node": "^20",
     "@types/nodemailer": "^6.4.17",

@@ -96,6 +96,27 @@ rupomoti/
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## Continuous Integration / Continuous Deployment
+
+This project uses GitHub Actions for CI/CD:
+
+### CI Workflow
+- Runs on pushes and pull requests to main, master, and develop branches
+- Checks out code, sets up Node.js and pnpm
+- Installs dependencies
+- Generates Prisma client
+- Runs linting
+- Builds the application
+
+### Deployment Workflow
+- Runs after successful CI on main/master branch
+- Deploys to Vercel automatically
+
+To set up deployment, add these secrets to your GitHub repository:
+- `VERCEL_TOKEN`: Your Vercel API token
+- `VERCEL_ORG_ID`: Your Vercel organization ID
+- `VERCEL_PROJECT_ID`: Your Vercel project ID
+
 ## Acknowledgments
 
 - [Next.js](https://nextjs.org/)

@@ -98,6 +98,8 @@ export default function CategoriesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [showFilters, setShowFilters] = useState(false);
+  const [showCategoryDialog, setShowCategoryDialog] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -210,7 +212,7 @@ export default function CategoriesPage() {
     setShowBulkDialog(false);
   }, [selectedCategories, bulkUpdateMutation, bulkDeleteMutation]);
 
-  const handleFilterChange = useCallback((key: keyof CategoryFilters, value: string | Date | null) => {
+  const handleFilterChange = useCallback((key: keyof CategoryFilters, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value }));
     setCurrentPage(1);
   }, []);
@@ -356,13 +358,13 @@ export default function CategoriesPage() {
   }, [categoriesData]);
 
   const handleEditCategory = useCallback((category: Category) => {
-    // This would open the CategoryDialog - implementation depends on your dialog setup
-    console.log('Edit category:', category);
+    setEditingCategory(category);
+    setShowCategoryDialog(true);
   }, []);
 
   const handleAddCategory = useCallback(() => {
-    // This would open the CategoryDialog for adding - implementation depends on your dialog setup
-    console.log('Add new category');
+    setEditingCategory(null);
+    setShowCategoryDialog(true);
   }, []);
 
   if (isLoading) {

@@ -448,11 +448,6 @@ export default function ShopPage() {
             </div>
             <div className="flex justify-between items-center border-b pb-2">
               <h2 className="text-lg font-semibold">Filters</h2>
-              {hasActiveFilters && (
-                <Button variant="link" className="text-sm" onClick={handleClearFilters}>
-                  Clear all
-                </Button>
-              )}
             </div>
             <FilterSection
               selectedCategories={selectedCategories}
@@ -491,11 +486,6 @@ export default function ShopPage() {
                     <div className="p-6">
                       <SheetHeader className="flex flex-row items-center justify-between mb-6">
                         <SheetTitle>Filters</SheetTitle>
-                        {hasActiveFilters && (
-                          <Button variant="link" onClick={handleClearFilters}>
-                            Clear all
-                          </Button>
-                        )}
                       </SheetHeader>
                       
                       {/* Mobile Search */}
