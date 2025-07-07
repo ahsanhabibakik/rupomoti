@@ -321,95 +321,96 @@ export default function ProductsPage() {
     setPagination(p => ({ ...p, page: newPage }));
   };
 
-  const FilterControls = () => (
-    <div className="space-y-4 p-1">
+  const FilterControls = () => {
+    return (
+      <div className="space-y-4 p-1">
         <div className="space-y-2">
-            <label className="text-sm font-medium">Category</label>
-            <Select value={filters.categoryId} onValueChange={(v) => handleFilterChange('categoryId', v)}>
-                <SelectTrigger><SelectValue placeholder="Filter by Category" /></SelectTrigger>
-                <SelectContent>
-                <SelectItem value="all-categories">All Categories</SelectItem>
-                {categories?.map(category => (
-                    <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
-                ))}
-                </SelectContent>
-            </Select>
+          <label className="text-sm font-medium">Category</label>
+          <Select value={filters.categoryId} onValueChange={(v) => handleFilterChange('categoryId', v)}>
+            <SelectTrigger><SelectValue placeholder="Filter by Category" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all-categories">All Categories</SelectItem>
+              {categories?.map(category => (
+                <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-2">
-            <label className="text-sm font-medium">Stock Status</label>
-            <Select value={filters.stockStatus} onValueChange={(v) => handleFilterChange('stockStatus', v)}>
-                <SelectTrigger><SelectValue placeholder="Stock Status" /></SelectTrigger>
-                <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="in-stock">In Stock</SelectItem>
-                <SelectItem value="out-of-stock">Out of Stock</SelectItem>
-                <SelectItem value="low-stock">Low Stock (&lt;10)</SelectItem>
-                </SelectContent>
-            </Select>
-      </div>
-
-        <div className="space-y-2">
-            <div className="flex justify-between items-center">
-                <label className="text-sm font-medium">Price Range</label>
-                <span className="text-sm text-muted-foreground">
-                ৳{priceRangeValue[0]} - ৳{priceRangeValue[1]}
-                </span>
-            </div>
-            <Slider
-                value={priceRangeValue}
-                onValueChange={setPriceRangeValue}
-                onValueCommit={(value) => handleFilterChange('priceRange', value)}
-                max={INITIAL_PRICE_RANGE[1]}
-                step={100}
-                className="w-full"
-            />
-        </div>
-        <div className="space-y-2">
-            <label className="text-sm font-medium">Page Design Type</label>
-            <Select value={filters.designType} onValueChange={(v) => handleFilterChange('designType', v)}>
-                <SelectTrigger><SelectValue placeholder="Design Type" /></SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="all-design-types">All Types</SelectItem>
-                    <SelectItem value="LANDING_PAGE">Landing Page (Premium)</SelectItem>
-                    <SelectItem value="REGULAR">Regular Page</SelectItem>
-                </SelectContent>
-            </Select>
+          <label className="text-sm font-medium">Stock Status</label>
+          <Select value={filters.stockStatus} onValueChange={(v) => handleFilterChange('stockStatus', v)}>
+            <SelectTrigger><SelectValue placeholder="Stock Status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="in-stock">In Stock</SelectItem>
+              <SelectItem value="out-of-stock">Out of Stock</SelectItem>
+              <SelectItem value="low-stock">Low Stock (&lt;10)</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="space-y-2">
-            <label className="text-sm font-medium">Status Flags</label>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-          <Select value={filters.isFeatured} onValueChange={(v) => handleFilterChange('isFeatured', v)}>
-                    <SelectTrigger><SelectValue placeholder="Featured" /></SelectTrigger>
+          <div className="flex justify-between items-center">
+            <label className="text-sm font-medium">Price Range</label>
+            <span className="text-sm text-muted-foreground">
+              ৳{priceRangeValue[0]} - ৳{priceRangeValue[1]}
+            </span>
+          </div>
+          <Slider
+            value={priceRangeValue}
+            onValueChange={setPriceRangeValue}
+            onValueCommit={(value) => handleFilterChange('priceRange', value)}
+            max={INITIAL_PRICE_RANGE[1]}
+            step={100}
+            className="w-full" />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Page Design Type</label>
+          <Select value={filters.designType} onValueChange={(v) => handleFilterChange('designType', v)}>
+            <SelectTrigger><SelectValue placeholder="Design Type" /></SelectTrigger>
             <SelectContent>
-                      <SelectItem value="all-featured">Any</SelectItem>
-              <SelectItem value="true">Featured</SelectItem>
-              <SelectItem value="false">Not Featured</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={filters.isNewArrival} onValueChange={(v) => handleFilterChange('isNewArrival', v)}>
-                    <SelectTrigger><SelectValue placeholder="New Arrival" /></SelectTrigger>
-            <SelectContent>
-                      <SelectItem value="all-new-arrival">Any</SelectItem>
-              <SelectItem value="true">New Arrival</SelectItem>
-              <SelectItem value="false">Not New Arrival</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={filters.isPopular} onValueChange={(v) => handleFilterChange('isPopular', v)}>
-                    <SelectTrigger><SelectValue placeholder="Popular" /></SelectTrigger>
-            <SelectContent>
-                      <SelectItem value="all-popular">Any</SelectItem>
-              <SelectItem value="true">Popular</SelectItem>
-              <SelectItem value="false">Not Popular</SelectItem>
+              <SelectItem value="all-design-types">All Types</SelectItem>
+              {/* <SelectItem value="LANDING_PAGE">Landing Page (Premium)</SelectItem> */}
+              <SelectItem value="REGULAR">Regular Page</SelectItem>
             </SelectContent>
           </Select>
         </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Status Flags</label>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <Select value={filters.isFeatured} onValueChange={(v) => handleFilterChange('isFeatured', v)}>
+              <SelectTrigger><SelectValue placeholder="Featured" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all-featured">Any</SelectItem>
+                <SelectItem value="true">Featured</SelectItem>
+                <SelectItem value="false">Not Featured</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filters.isNewArrival} onValueChange={(v) => handleFilterChange('isNewArrival', v)}>
+              <SelectTrigger><SelectValue placeholder="New Arrival" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all-new-arrival">Any</SelectItem>
+                <SelectItem value="true">New Arrival</SelectItem>
+                <SelectItem value="false">Not New Arrival</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filters.isPopular} onValueChange={(v) => handleFilterChange('isPopular', v)}>
+              <SelectTrigger><SelectValue placeholder="Popular" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all-popular">Any</SelectItem>
+                <SelectItem value="true">Popular</SelectItem>
+                <SelectItem value="false">Not Popular</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <div className="flex justify-end pt-2">
-            <Button variant="ghost" onClick={clearFilters}>Clear All Filters</Button>
+          <Button variant="ghost" onClick={clearFilters}>Clear All Filters</Button>
         </div>
       </div>
-  );
+    );
+  };
 
   const productRows = useMemo(() => products.map((product) => (
             <TableRow key={product.id}>

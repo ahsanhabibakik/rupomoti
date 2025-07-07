@@ -21,10 +21,10 @@ import { CategoryDialog } from './CategoryDialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select' // TODO: Landing Page system - disabled for now
 import { Label } from '@/components/ui/label'
 import { Plus, Trash2 } from 'lucide-react'
-import { LandingPageQuickSetup } from './LandingPageQuickSetup'
+// import { LandingPageQuickSetup } from './LandingPageQuickSetup' // TODO: Landing Page system - disabled for now, can be re-enabled in future
 
 interface ProductVariant {
   id?: string
@@ -40,6 +40,8 @@ interface ProductVariant {
   isActive: boolean
 }
 
+// TODO: Landing Page system - disabled for now, can be re-enabled in future
+/*
 const landingPageDataSchema = z.object({
   heroTitle: z.string().optional(),
   heroSubtitle: z.string().optional(),
@@ -55,6 +57,7 @@ const landingPageDataSchema = z.object({
   guarantee: z.string().optional(),
   specifications: z.record(z.string()).optional(),
 }).optional()
+*/
 
 const productSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -67,8 +70,9 @@ const productSchema = z.object({
   isFeatured: z.boolean().default(false),
   isNewArrival: z.boolean().default(false),
   isPopular: z.boolean().default(false),
-  designType: z.enum(['REGULAR', 'LANDING_PAGE']).default('REGULAR'),
-  landingPageData: landingPageDataSchema,
+  // TODO: Landing Page system - disabled for now, can be re-enabled in future
+  // designType: z.enum(['REGULAR', 'LANDING_PAGE']).default('REGULAR'),
+  // landingPageData: landingPageDataSchema,
 })
 
 type ProductFormValues = z.infer<typeof productSchema>
@@ -89,20 +93,21 @@ interface ProductDialogProps {
     isFeatured?: boolean
     isNewArrival?: boolean
     isPopular?: boolean
-    designType?: 'REGULAR' | 'LANDING_PAGE'
-    landingPageData?: {
-      heroTitle?: string
-      heroSubtitle?: string
-      callToAction?: string
-      guarantee?: string
-      features?: string[]
-      benefits?: string[]
-      testimonials?: Array<{
-        name: string
-        comment: string
-        rating: number
-      }>
-    }
+    // TODO: Landing Page system - disabled for now, can be re-enabled in future
+    // designType?: 'REGULAR' | 'LANDING_PAGE'
+    // landingPageData?: {
+    //   heroTitle?: string
+    //   heroSubtitle?: string
+    //   callToAction?: string
+    //   guarantee?: string
+    //   features?: string[]
+    //   benefits?: string[]
+    //   testimonials?: Array<{
+    //     name: string
+    //     comment: string
+    //     rating: number
+    //   }>
+    // }
     images?: string[]
   }
 }
@@ -129,8 +134,9 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
       isFeatured: false,
       isNewArrival: false,
       isPopular: false,
-      designType: 'REGULAR' as const,
-      landingPageData: undefined,
+      // TODO: Landing Page system - disabled for now, can be re-enabled in future
+      // designType: 'REGULAR' as const,
+      // landingPageData: undefined,
     },
   })
 
@@ -153,8 +159,9 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
         isFeatured: product.isFeatured || false,
         isNewArrival: product.isNewArrival || false,
         isPopular: product.isPopular || false,
-        designType: product.designType || 'REGULAR' as const,
-        landingPageData: product.landingPageData || undefined,
+        // TODO: Landing Page system - disabled for now, can be re-enabled in future
+        // designType: product.designType || 'REGULAR' as const,
+        // landingPageData: product.landingPageData || undefined,
       }
       form.reset(sanitizedProduct)
       setImages(product.images || [])
@@ -176,8 +183,9 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
         isFeatured: false,
         isNewArrival: false,
         isPopular: false,
-        designType: 'REGULAR' as const,
-        landingPageData: undefined,
+        // TODO: Landing Page system - disabled for now, can be re-enabled in future
+        // designType: 'REGULAR' as const,
+        // landingPageData: undefined,
       })
       setImages([])
       setInitialImages([])
@@ -331,7 +339,8 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Page Type Toggle - First thing users see */}
+            {/* TODO: Landing Page System - commented out for now, can be re-enabled in future */}
+            {/* 
             <Card className="border-2 border-orange-300 bg-gradient-to-r from-orange-50 to-amber-50 shadow-lg">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-orange-800 text-lg">
@@ -343,103 +352,10 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
                 </p>
               </CardHeader>
               <CardContent>
-                <FormField
-                  control={form.control}
-                  name="designType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div 
-                          className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                            field.value === 'REGULAR' 
-                              ? 'border-blue-500 bg-blue-50 shadow-md' 
-                              : 'border-gray-200 bg-white hover:border-gray-300'
-                          }`}
-                          onClick={() => field.onChange('REGULAR')}
-                        >
-                          <div className="text-center">
-                            <div className="w-8 h-8 mx-auto mb-2 rounded-full bg-blue-100 flex items-center justify-center">
-                              📄
-                            </div>
-                            <h3 className="font-semibold text-sm">Regular Page</h3>
-                            <p className="text-xs text-gray-600 mt-1">Standard product page layout</p>
-                          </div>
-                        </div>
-                        
-                        <div 
-                          className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                            field.value === 'LANDING_PAGE' 
-                              ? 'border-orange-500 bg-orange-50 shadow-md' 
-                              : 'border-gray-200 bg-white hover:border-gray-300'
-                          }`}
-                          onClick={() => field.onChange('LANDING_PAGE')}
-                        >
-                          <div className="text-center">
-                            <div className="w-8 h-8 mx-auto mb-2 rounded-full bg-orange-100 flex items-center justify-center">
-                              🎨
-                            </div>
-                            <h3 className="font-semibold text-sm">Landing Page</h3>
-                            <p className="text-xs text-gray-600 mt-1">Custom conversion-focused design</p>
-                            <div className="mt-2 space-y-1">
-                              <div className="text-xs text-green-600 flex items-center gap-1">
-                                ✓ Higher conversions
-                              </div>
-                              <div className="text-xs text-green-600 flex items-center gap-1">
-                                ✓ Rich product information
-                              </div>
-                              <div className="text-xs text-green-600 flex items-center gap-1">
-                                ✓ Featured prominently
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                {/* Landing Page Quick Setup */}
-                {form.watch('designType') === 'LANDING_PAGE' && (
-                  <div className="mt-4">
-                    <LandingPageQuickSetup
-                      productName={form.watch('name') || 'Product'}
-                      initialData={form.watch('landingPageData')}
-                      onSave={async (data) => {
-                        form.setValue('landingPageData', data)
-                        showToast.success('Landing page data updated!')
-                      }}
-                      onPreview={(data) => {
-                        form.setValue('landingPageData', data)
-                        showToast.info('Preview updated!')
-                      }}
-                    />
-                    
-                    {/* Advanced Builder */}
-                    {product?.slug && (
-                      <div className="mt-4 p-3 bg-orange-100 rounded-lg border border-orange-200">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h4 className="font-semibold text-orange-800">Advanced Landing Page Builder</h4>
-                            <p className="text-sm text-orange-600">Create stunning landing pages with drag & drop</p>
-                          </div>
-                          <Button 
-                            type="button"
-                            onClick={() => {
-                              window.open(`/admin/products/${product.id}/landing-page-builder`, '_blank')
-                            }}
-                            className="bg-orange-600 hover:bg-orange-700"
-                          >
-                            <Settings className="w-4 h-4 mr-2" />
-                            Open Builder
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
+                Landing Page selection and setup would go here
               </CardContent>
             </Card>
+            */}
 
             <FormField
               control={form.control}
@@ -575,6 +491,8 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
               onOpenChange={setCategoryDialogOpen}
             />
 
+            {/* TODO: Landing Page System - commented out for now, can be re-enabled in future */}
+            {/*
             {form.watch('designType') === 'LANDING_PAGE' && (
               <Card>
                 <CardHeader>
@@ -584,93 +502,11 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="landingPageData.heroTitle"
-                      render={({ field }) => (                      <FormItem>
-                        <FormLabel>Hero Title (Optional)</FormLabel>
-                        <FormControl>
-                          <Input {...field} value={field.value || ''} placeholder="Custom hero title for landing page" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="landingPageData.heroSubtitle"
-                      render={({ field }) => (                      <FormItem>
-                        <FormLabel>Hero Subtitle (Optional)</FormLabel>
-                        <FormControl>
-                          <Textarea {...field} value={field.value || ''} placeholder="Compelling subtitle for the landing page" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="landingPageData.callToAction"
-                      render={({ field }) => (                      <FormItem>
-                        <FormLabel>Call to Action Text (Optional)</FormLabel>
-                        <FormControl>
-                          <Input {...field} value={field.value || ''} placeholder="e.g., 'Buy Now and Save 20%'" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="landingPageData.guarantee"
-                      render={({ field }) => (                      <FormItem>
-                        <FormLabel>Guarantee/Promise (Optional)</FormLabel>
-                        <FormControl>
-                          <Textarea {...field} value={field.value || ''} placeholder="e.g., '30-day money-back guarantee'" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                      )}
-                    />
-                    
-                    {product?.id && (
-                      <div className="pt-4 border-t space-y-3">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => window.open(`/admin/products/${product.id}/landing-page-builder`, '_blank')}
-                          className="w-full"
-                        >
-                          <Info className="w-4 h-4 mr-2" />
-                          Open Advanced Landing Page Builder
-                        </Button>
-                        
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          onClick={() => window.open(`/product/${product.slug || 'preview'}`, '_blank')}
-                          className="w-full"
-                        >
-                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                          Preview Product Page
-                        </Button>
-                        
-                        <p className="text-xs text-muted-foreground text-center">
-                          Use the builder for custom sections and drag & drop, or preview to see the final result
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                  Landing page settings would go here
                 </CardContent>
               </Card>
             )}
+            */}
 
             <div className="grid grid-cols-3 gap-4">
               <FormField

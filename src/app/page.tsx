@@ -50,7 +50,7 @@ export default async function HomePage() {
       </AnimatedSection>
 
       {/* Premium Landing Page Products Section */}
-      {landingPageProducts.length > 0 && (
+      {/* {landingPageProducts.length > 0 && (
         <AnimatedSection>
           <LandingPageProductsSection 
             products={landingPageProducts}
@@ -59,7 +59,7 @@ export default async function HomePage() {
             className="bg-gradient-to-br from-orange-50 via-white to-amber-50"
           />
         </AnimatedSection>
-      )}
+      )} */}
 
       {/* Featured Collections Section */}
       <AnimatedSection>
