@@ -145,6 +145,7 @@ export default function ProductsPage() {
     isFeatured: '',
     isNewArrival: '',
     isPopular: '',
+    designType: 'all-design-types',
   });
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -176,6 +177,8 @@ export default function ProductsPage() {
             } else if (key === 'isNewArrival' && value !== 'all-new-arrival') {
                 searchParams.set(key, String(value));
             } else if (key === 'isPopular' && value !== 'all-popular') {
+                searchParams.set(key, String(value));
+            } else if (key === 'designType' && value !== 'all-design-types') {
                 searchParams.set(key, String(value));
             } else if (key === 'search' && value) {
                 searchParams.set(key, String(value));
@@ -231,6 +234,7 @@ export default function ProductsPage() {
       isFeatured: '',
       isNewArrival: '',
       isPopular: '',
+      designType: 'all-design-types',
     });
   };
 
@@ -243,6 +247,7 @@ export default function ProductsPage() {
       if (key === 'isFeatured' && value && value !== 'all-featured') return true;
       if (key === 'isNewArrival' && value && value !== 'all-new-arrival') return true;
       if (key === 'isPopular' && value && value !== 'all-popular') return true;
+      if (key === 'designType' && value !== 'all-design-types') return true;
       return false;
     }).length;
   }, [filters]);
@@ -360,6 +365,18 @@ export default function ProductsPage() {
             />
         </div>
         <div className="space-y-2">
+            <label className="text-sm font-medium">Page Design Type</label>
+            <Select value={filters.designType} onValueChange={(v) => handleFilterChange('designType', v)}>
+                <SelectTrigger><SelectValue placeholder="Design Type" /></SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all-design-types">All Types</SelectItem>
+                    <SelectItem value="LANDING_PAGE">Landing Page (Premium)</SelectItem>
+                    <SelectItem value="REGULAR">Regular Page</SelectItem>
+                </SelectContent>
+            </Select>
+        </div>
+
+        <div className="space-y-2">
             <label className="text-sm font-medium">Status Flags</label>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           <Select value={filters.isFeatured} onValueChange={(v) => handleFilterChange('isFeatured', v)}>
@@ -411,6 +428,11 @@ export default function ProductsPage() {
               <TableCell>{product.stock}</TableCell>
               <TableCell>
                 <div className="flex flex-wrap gap-1">
+                  {product.designType === 'LANDING_PAGE' && (
+                    <Badge className="bg-gradient-to-r from-orange-500 to-amber-500 text-white border-0">
+                      Premium
+                    </Badge>
+                  )}
                   {product.isFeatured && <Badge variant="outline">Featured</Badge>}
                   {product.isNewArrival && <Badge variant="outline" className="border-blue-500 text-blue-500">New</Badge>}
                   {product.isPopular && <Badge variant="outline" className="border-green-500 text-green-500">Popular</Badge>}

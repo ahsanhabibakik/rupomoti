@@ -7,6 +7,27 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Move outputFileTracingExcludes to root level as per Next.js 15
+  outputFileTracingExcludes: {
+    '*': [
+      'node_modules/@swc/core-linux-x64-gnu',
+      'node_modules/@swc/core-linux-x64-musl',
+      'node_modules/@esbuild/linux-x64',
+    ],
+  },
+  // Optimize build and runtime performance
+  experimental: {
+    optimizePackageImports: ['@prisma/client'],
+  },
+  // Add webpack optimization for Prisma
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals.push('@prisma/client');
+    }
+    return config;
+  },
+  // Add output configuration
+  output: 'standalone',
   images: {
     remotePatterns: [
       {
@@ -58,48 +79,14 @@ const nextConfig = {
     ],
     unoptimized: process.env.NODE_ENV === 'development',
   },
-  experimental: {
-    optimizePackageImports: ['lucide-react'],
-  },
   serverExternalPackages: ['bcrypt', 'mongodb', 'mongoose', '@auth/prisma-adapter'],
   compress: true,
   generateEtags: true,
   distDir: '.next',
   cleanDistDir: true,
-  webpack: (config, { isServer }) => {
-    // Optimize chunk loading
-    config.optimization = {
-      ...config.optimization,
-      splitChunks: {
-        chunks: 'all',
-        minSize: 20000,
-        maxSize: 244000,
-        minChunks: 1,
-        maxAsyncRequests: 30,
-        maxInitialRequests: 30,
-        cacheGroups: {
-          defaultVendors: {
-            test: /[\\/]node_modules[\\/]/,
-            priority: -10,
-            reuseExistingChunk: true,
-          },
-          default: {
-            minChunks: 2,
-            priority: -20,
-            reuseExistingChunk: true,
-          },
-        },
-      },
-    }
-    return config
-  },
-  // Add pageExtensions to explicitly define valid page extensions
-  pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
-  // Disable source maps in production to reduce complexity
-  productionBrowserSourceMaps: false,
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
 }
 
-module.exports = nextConfig 
+module.exports = nextConfig

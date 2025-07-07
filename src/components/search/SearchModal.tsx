@@ -254,7 +254,7 @@ export default function SearchModal({ isOpen, onClose }: { isOpen: boolean; onCl
                     {filteredProducts.slice(0, 8).map((product) => (
                       <Link
                         key={product.id}
-                        href={`/product/${product.id}`}
+                        href={`/product/${product.slug || product.id}`}
                         onClick={onClose}
                         className="group bg-white rounded-lg border border-gray-200 hover:border-orange-300 overflow-hidden transition-all duration-300 hover:shadow-lg transform hover:scale-105"
                       >

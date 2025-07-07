@@ -131,6 +131,15 @@ model Product {
   landingPageDraft     Json?   // Draft version of landing page
   landingPagePublished Boolean @default(false)
   
+  // Enhanced landing page fields
+  landingPageGlobalSettings Json?  // Global theme and layout settings
+  landingPageSeo           Json?  // SEO settings for landing page
+  
+  // SEO fields
+  metaTitle       String?
+  metaDescription String?
+  metaKeywords    String?
+  
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   

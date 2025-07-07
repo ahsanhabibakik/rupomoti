@@ -23,8 +23,8 @@ import { Badge } from '@/components/ui/badge'
 import { ReviewSystem } from '@/components/reviews/review-system'
 import { type Prisma } from '@prisma/client'
 
-// Import the interfaces from the builder
-import { LandingPageData, LandingPageSection } from '@/components/admin/LandingPageBuilder'
+// Import the interfaces from the types
+import { LandingPageData, LandingPageSection } from '@/types/landing-page'
 
 type ProductWithCategoryAndReviews = Prisma.ProductGetPayload<{
   include: {
@@ -448,17 +448,17 @@ function CustomLandingPage({
         return (
           <section key={section.id} className={`relative min-h-screen flex items-center ${spacingClass} ${animationClass}`}>
             {/* Background */}
-            {section.content.backgroundImage && (
+            {section.data?.backgroundImage && (
               <div className="absolute inset-0 z-0">
                 <Image
-                  src={section.content.backgroundImage as string}
+                  src={section.data.backgroundImage as string}
                   alt="Hero Background"
                   fill
                   className="object-cover"
                 />
                 <div 
                   className="absolute inset-0 bg-black"
-                  style={{ opacity: (section.content.overlayOpacity as number) || 0.5 }}
+                  style={{ opacity: (section.data.overlay?.opacity as number) || 0.5 }}
                 />
               </div>
             )}
@@ -470,10 +470,10 @@ function CustomLandingPage({
                 transition={{ duration: 0.8 }}
               >
                 <h1 className="text-4xl md:text-6xl font-bold mb-6">
-                  {section.content.headline as string || product.name}
+                  {section.data?.title || product.name}
                 </h1>
                 <p className="text-xl md:text-2xl mb-8 text-gray-200">
-                  {section.content.subheadline as string || product.description}
+                  {section.data?.subtitle || product.description}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                   <div className="text-3xl font-bold">
@@ -484,7 +484,7 @@ function CustomLandingPage({
                     className="bg-orange-600 hover:bg-orange-700"
                   >
                     <ShoppingCart className="w-5 h-5 mr-2" />
-                    {section.content.ctaText as string || 'Add to Cart'}
+                    {section.data?.primaryButton?.text || 'Add to Cart'}
                   </Button>
                 </div>
               </motion.div>
@@ -492,19 +492,19 @@ function CustomLandingPage({
           </section>
         )
 
-      case 'features':
+      case 'benefit-icons':
         return (
           <section key={section.id} className={`${spacingClass} ${animationClass}`}>
             <div className="container mx-auto px-4">
               <h2 className="text-3xl font-bold text-center mb-12">{section.title}</h2>
               <div className="grid md:grid-cols-3 gap-8">
-                {(section.content.features as Array<{icon: string, title: string, description: string}>)?.map((feature, index) => (
+                {(section.data?.benefits || []).map((benefit: any, index: number) => (
                   <div key={index} className="text-center">
                     <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
                       <Star className="w-8 h-8 text-orange-600" />
                     </div>
-                    <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                    <p className="text-gray-600">{feature.description}</p>
+                    <h3 className="text-xl font-semibold mb-2">{benefit.title}</h3>
+                    <p className="text-gray-600">{benefit.description}</p>
                   </div>
                 ))}
               </div>
@@ -512,7 +512,7 @@ function CustomLandingPage({
           </section>
         )
 
-      case 'gallery':
+      case 'product-spotlight':
         return (
           <section key={section.id} className={`${spacingClass} ${animationClass}`}>
             <div className="container mx-auto px-4">
@@ -534,7 +534,7 @@ function CustomLandingPage({
           </section>
         )
 
-      case 'trust-badges':
+      case 'benefit-icons':
         return (
           <section key={section.id} className={`${spacingClass} ${animationClass} bg-gray-50`}>
             <div className="container mx-auto px-4">
@@ -583,14 +583,14 @@ function CustomLandingPage({
                     <p className="text-gray-600 mb-4">&ldquo;{review.comment}&rdquo;</p>
                     <div className="flex items-center">
                       <Image
-                        src={review.user.image || '/images/default-avatar.png'}
-                        alt={review.user.name || 'User'}
+                        src={review.user?.image || '/images/default-avatar.png'}
+                        alt={review.user?.name || 'User'}
                         width={40}
                         height={40}
                         className="rounded-full"
                       />
                       <div className="ml-3">
-                        <p className="font-semibold">{review.user.name}</p>
+                        <p className="font-semibold">{review.user?.name}</p>
                         <p className="text-sm text-gray-500">Verified Purchase</p>
                       </div>
                     </div>
@@ -601,13 +601,13 @@ function CustomLandingPage({
           </section>
         )
 
-      case 'cta':
+      case 'category-banner':
         return (
           <section key={section.id} className={`${spacingClass} ${animationClass} bg-gradient-to-r from-orange-500 to-red-500 text-white`}>
             <div className="container mx-auto px-4 text-center">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">{section.title}</h2>
               <p className="text-xl mb-8 text-orange-100">
-                {section.content.description as string || 'Don\'t miss out on this exclusive offer'}
+                {section.data?.description || 'Don\'t miss out on this exclusive offer'}
               </p>
               
               {/* Product Selection */}
@@ -666,25 +666,25 @@ function CustomLandingPage({
                 className="bg-white text-orange-600 hover:bg-orange-50 font-semibold"
               >
                 <ShoppingCart className="w-5 h-5 mr-2" />
-                {section.content.ctaText as string || 'Add to Cart'}
+                {section.data?.buttonText || 'Add to Cart'}
               </Button>
             </div>
           </section>
         )
 
-      case 'text':
-      case 'rich-text':
+      case 'story-video':
+      case 'faq':
         return (
           <section key={section.id} className={`${spacingClass} ${animationClass}`}>
             <div className="container mx-auto px-4">
               <div className="max-w-4xl mx-auto">
                 <h2 className="text-3xl font-bold mb-8">{section.title}</h2>
                 <div className="prose prose-lg max-w-none">
-                  {section.content.html ? (
-                    <div dangerouslySetInnerHTML={{ __html: section.content.html as string }} />
+                  {section.data?.html ? (
+                    <div dangerouslySetInnerHTML={{ __html: section.data.html as string }} />
                   ) : (
                     <p className="text-gray-600 leading-relaxed">
-                      {section.content.text as string || section.content.description as string}
+                      {section.data?.text || section.data?.description || 'Content not available'}
                     </p>
                   )}
                 </div>
@@ -703,9 +703,9 @@ function CustomLandingPage({
       {/* Apply theme styles */}
       <style jsx global>{`
         :root {
-          --primary-color: ${landingPageData.theme.primaryColor};
-          --secondary-color: ${landingPageData.theme.secondaryColor};
-          --accent-color: ${landingPageData.theme.accentColor};
+          --primary-color: ${landingPageData.globalSettings?.theme?.primaryColor || '#10B981'};
+          --secondary-color: ${landingPageData.globalSettings?.theme?.secondaryColor || '#F59E0B'};
+          --accent-color: ${landingPageData.globalSettings?.theme?.accentColor || '#EF4444'};
         }
       `}</style>
       

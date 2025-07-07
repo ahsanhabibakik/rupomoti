@@ -20,6 +20,7 @@ import GridProductSection from '@/components/home/GridProductSection'
 import RegularProductSection from '@/components/home/RegularProductSection'
 import SeasonalOffersBanner from '@/components/home/SeasonalOffersBanner'
 import ModernBlogSection from '@/components/home/ModernBlogSection'
+import { LandingPageProductsSection } from '@/components/home/LandingPageProductsSection'
 import { getCategories } from '@/actions/getCategories'
 
 export const metadata: Metadata = {
@@ -28,7 +29,7 @@ export const metadata: Metadata = {
 }
 
 export default async function HomePage() {
-  const { popularProducts, newArrivals, featuredProducts, regularProducts } = await getHomePageData()
+  const { popularProducts, newArrivals, featuredProducts, regularProducts, landingPageProducts } = await getHomePageData()
   const categories = await getCategories({ active: true, level: 0 })
 
   return (
@@ -47,6 +48,18 @@ export default async function HomePage() {
           <CategorySection categories={categories} />
         </div>
       </AnimatedSection>
+
+      {/* Premium Landing Page Products Section */}
+      {landingPageProducts.length > 0 && (
+        <AnimatedSection>
+          <LandingPageProductsSection 
+            products={landingPageProducts}
+            title="Premium Collection"
+            subtitle="Discover our specially curated products with enhanced shopping experience"
+            className="bg-gradient-to-br from-orange-50 via-white to-amber-50"
+          />
+        </AnimatedSection>
+      )}
 
       {/* Featured Collections Section */}
       <AnimatedSection>

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { auth } from "@/app/auth";
 import { prisma } from "@/lib/prisma";
 import { AuditLogger } from "@/lib/audit-logger";
@@ -48,12 +49,12 @@ export async function GET(req: Request) {
     // Use simplified status filtering (MongoDB-compatible)
     switch (status) {
       case 'active':
-        // For MongoDB, use undefined instead of null for proper matching
-        where.deletedAt = undefined;
+        // For MongoDB, use null explicitly for proper matching
+        where.deletedAt = null;
         where.isFakeOrder = false;
         break;
       case 'fake':
-        where.deletedAt = undefined;
+        where.deletedAt = null;
         where.isFakeOrder = true;
         break;
       case 'trashed':
@@ -66,9 +67,9 @@ export async function GET(req: Request) {
         // If it's an OrderStatus, filter by that
         if (Object.values(OrderStatus).includes(status as OrderStatus)) {
           where.status = status as OrderStatus;
-          where.deletedAt = undefined; // Only show non-deleted orders with specific status
+          where.deletedAt = null; // Only show non-deleted orders with specific status
         } else {
-          where.deletedAt = undefined; // Default to non-deleted
+          where.deletedAt = null; // Default to non-deleted
           where.isFakeOrder = false;
         }
     }
@@ -94,7 +95,7 @@ export async function GET(req: Request) {
     
     console.log('🔍 Final where clause:', JSON.stringify(where, null, 2));
 
-    // Execute optimized parallel queries
+    // Execute optimized parallel queries with reduced complexity
     const [orders, totalCount] = await Promise.all([
       prisma.order.findMany({
         where,
@@ -120,15 +121,15 @@ export async function GET(req: Request) {
               id: true,
               name: true,
               phone: true,
-              email: true,
-              address: true
+              email: true
             }
           },
-          user: {
-            select: {
-              isFlagged: true
-            }
-          },
+          // Remove user relation to reduce query complexity
+          // user: {
+          //   select: {
+          //     isFlagged: true
+          //   }
+          // },
           items: {
             select: {
               id: true,
@@ -143,7 +144,7 @@ export async function GET(req: Request) {
                 }
               }
             },
-            take: 5 // Limit items for performance
+            take: 3 // Reduced from 5 to 3 for better performance
           }
         },
         orderBy: { createdAt: 'desc' },
@@ -170,10 +171,9 @@ export async function GET(req: Request) {
         id: 'unknown',
         name: 'Unknown Customer',
         phone: 'N/A',
-        email: null,
-        address: null
+        email: null
       },
-      user: order.user || { isFlagged: false },
+      user: { isFlagged: false }, // Default since we removed user relation
       items: order.items || [],
       shippingAddress: order.deliveryAddress || 'N/A'
     }));
