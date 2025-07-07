@@ -22,12 +22,13 @@ export async function getHomePageData() {
     stock: { gt: 0 }
   }
 
-  // Enhanced query to prioritize landing page products
-  const [featuredProducts, popularProducts, newArrivals, regularProducts, landingPageProducts] = await Promise.all([
+  // Enhanced query to remove landing page products completely
+  const [featuredProducts, popularProducts, newArrivals, regularProducts] = await Promise.all([
     prisma.product.findMany({
       where: { 
         ...baseWhere,
-        isFeatured: true 
+        isFeatured: true,
+        designType: 'REGULAR'  // Only regular products, exclude landing page
       },
       take: 12,
       orderBy: [
@@ -39,7 +40,8 @@ export async function getHomePageData() {
     prisma.product.findMany({
       where: { 
         ...baseWhere,
-        isPopular: true 
+        isPopular: true,
+        designType: 'REGULAR'  // Only regular products, exclude landing page
       },
       take: 12,
       orderBy: [
@@ -51,7 +53,8 @@ export async function getHomePageData() {
     prisma.product.findMany({
       where: { 
         ...baseWhere,
-        isNewArrival: true 
+        isNewArrival: true,
+        designType: 'REGULAR'  // Only regular products, exclude landing page
       },
       take: 12,
       orderBy: [
@@ -66,7 +69,8 @@ export async function getHomePageData() {
         ...baseWhere,
         isFeatured: false,
         isPopular: false,
-        isNewArrival: false
+        isNewArrival: false,
+        designType: 'REGULAR'  // Only regular products, exclude landing page
       },
       take: 12,
       orderBy: [
