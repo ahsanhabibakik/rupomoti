@@ -28,6 +28,7 @@ import {
   User,
   TrendingUp,
   Mail,
+  Flag,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -43,6 +44,7 @@ const navigation = [
   { name: 'Products', href: '/admin/products', icon: Package, badge: '12' },
   { name: 'Categories', href: '/admin/categories', icon: FolderTree, badge: null },
   { name: 'Orders', href: '/admin/orders', icon: ListOrdered, badge: '5' },
+  { name: 'Fake Orders', href: '/admin/fake-orders', icon: Flag, badge: null },
   { name: 'Customers', href: '/admin/customers', icon: Users, badge: '24' },
   { name: 'User Management', href: '/admin/users', icon: Shield, badge: null },
   { name: 'Media', href: '/admin/media', icon: ImageIcon, badge: null },

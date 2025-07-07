@@ -12,13 +12,44 @@ const reviewSchema = z.object({
   comment: z.string().min(1).max(1000).optional(),
 });
 
-// Get reviews for a product
+// Get reviews for a product or user's reviews
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const productId = searchParams.get('productId');
+    const mine = searchParams.get('mine'); // Get user's own reviews
     const status = searchParams.get('status') || 'APPROVED';
 
+    // If requesting user's own reviews
+    if (mine === '1') {
+      const session = await auth();
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+
+      const reviews = await prisma.review.findMany({
+        where: {
+          userId: session.user.id,
+        },
+        include: {
+          product: {
+            select: {
+              id: true,
+              name: true,
+              price: true,
+              images: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      return NextResponse.json(reviews);
+    }
+
+    // Original logic for product reviews
     if (!productId) {
       return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
     }

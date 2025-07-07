@@ -27,12 +27,10 @@ export async function getHomePageData() {
     prisma.product.findMany({
       where: { 
         ...baseWhere,
-        isFeatured: true,
-        designType: 'REGULAR'  // Only regular products, exclude landing page
+        isFeatured: true
       },
       take: 12,
       orderBy: [
-        { designType: 'desc' }, // Prioritize LANDING_PAGE over REGULAR
         { createdAt: 'desc' }
       ],
       include: { category: true },
@@ -40,12 +38,10 @@ export async function getHomePageData() {
     prisma.product.findMany({
       where: { 
         ...baseWhere,
-        isPopular: true,
-        designType: 'REGULAR'  // Only regular products, exclude landing page
+        isPopular: true
       },
       take: 12,
       orderBy: [
-        { designType: 'desc' }, // Prioritize LANDING_PAGE over REGULAR
         { createdAt: 'desc' }
       ],
       include: { category: true },
@@ -53,12 +49,10 @@ export async function getHomePageData() {
     prisma.product.findMany({
       where: { 
         ...baseWhere,
-        isNewArrival: true,
-        designType: 'REGULAR'  // Only regular products, exclude landing page
+        isNewArrival: true
       },
       take: 12,
       orderBy: [
-        { designType: 'desc' }, // Prioritize LANDING_PAGE over REGULAR
         { createdAt: 'desc' }
       ],
       include: { category: true },
@@ -69,28 +63,10 @@ export async function getHomePageData() {
         ...baseWhere,
         isFeatured: false,
         isPopular: false,
-        isNewArrival: false,
-        designType: 'REGULAR'  // Only regular products, exclude landing page
+        isNewArrival: false
       },
       take: 12,
       orderBy: [
-        { designType: 'desc' }, // Prioritize LANDING_PAGE over REGULAR
-        { createdAt: 'desc' }
-      ],
-      include: { category: true },
-    }),
-    // NEW: Get products specifically designed as landing pages
-    prisma.product.findMany({
-      where: { 
-        ...baseWhere,
-        designType: 'LANDING_PAGE',
-        landingPagePublished: true
-      },
-      take: 10, // Get 10 landing page products as requested
-      orderBy: [
-        { isFeatured: 'desc' },
-        { isPopular: 'desc' },
-        { isNewArrival: 'desc' },
         { createdAt: 'desc' }
       ],
       include: { category: true },
@@ -98,7 +74,7 @@ export async function getHomePageData() {
   ])
 
   // Smart product count logic
-  const getOptimalProductCount = (products: any[]) => {
+  const getOptimalProductCount = (products: Product[]) => {
     const count = products.length
     if (count >= 8) return 8
     if (count >= 4) return 4
@@ -111,13 +87,11 @@ export async function getHomePageData() {
     popularProducts: popularProducts.slice(0, getOptimalProductCount(popularProducts)) as Product[],
     newArrivals: newArrivals.slice(0, getOptimalProductCount(newArrivals)) as Product[],
     regularProducts: regularProducts.slice(0, getOptimalProductCount(regularProducts)) as Product[],
-    landingPageProducts: landingPageProducts as Product[], // Show all landing page products
     counts: {
       featured: featuredProducts.length,
       popular: popularProducts.length,
       newArrivals: newArrivals.length,
       regular: regularProducts.length,
-      landingPage: landingPageProducts.length,
     }
   }
 }

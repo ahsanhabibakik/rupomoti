@@ -305,7 +305,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-md sm:max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto bg-gradient-to-br from-white via-slate-50 to-white rounded-xl shadow-2xl max-h-[95vh] overflow-hidden border border-slate-200">
+      <DialogContent className="w-full max-w-md sm:max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto bg-white rounded-xl shadow-2xl max-h-[95vh] overflow-hidden border border-slate-200">
         <DialogTitle className="sr-only">Checkout</DialogTitle>
         
         {/* Header */}
@@ -329,15 +329,15 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
           </Button>
         </div>
 
-        <div className="flex flex-col h-full max-h-[calc(95vh-80px)] overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-50">
+        <div className="flex flex-col h-full max-h-[calc(95vh-80px)] overflow-hidden bg-white">
           {/* Scrollable Content */}
           <div className="flex-1 overflow-y-auto">
             <form onSubmit={handleSubmit} className="p-4 sm:p-6">
               <div className="space-y-6">
                 
                 {/* Order Summary Card */}
-                <Card className="border-emerald-200 shadow-lg bg-gradient-to-br from-emerald-50 via-white to-emerald-50 hover:shadow-xl transition-shadow duration-300">
-                  <CardHeader className="pb-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-t-lg shadow-md">
+                <Card className="border-emerald-200 shadow-sm bg-white hover:shadow-md transition-shadow duration-300">
+                  <CardHeader className="pb-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-t-lg">
                     <CardTitle className="text-lg flex items-center gap-2">
                       <Package className="h-5 w-5" />
                       Order Summary ({items.length} {items.length === 1 ? 'item' : 'items'})
@@ -349,7 +349,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                       {items.map((item) => (
                         <div
                           key={item.id}
-                          className="flex items-center space-x-3 p-3 bg-gradient-to-r from-white via-gray-50 to-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 border border-gray-100"
+                          className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200 border border-gray-100"
                         >
                           <div className="relative h-12 w-12 sm:h-16 sm:w-16 flex-shrink-0">
                             <Image
@@ -360,14 +360,14 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                             />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h4 className="text-sm font-medium line-clamp-2">
+                            <h4 className="text-sm font-medium line-clamp-2 text-gray-900">
                               {item.name}
                             </h4>
                             <p className="text-sm text-gray-600">
                               {formatPrice(item.price)} × {item.quantity}
                             </p>
                           </div>
-                          <div className="text-sm font-medium text-pearl-600">
+                          <div className="text-sm font-medium text-emerald-600">
                             {formatPrice(item.price * item.quantity)}
                           </div>
                         </div>
@@ -375,26 +375,26 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                     </div>
 
                     {/* Price Breakdown */}
-                    <div className="border-t pt-4 space-y-2">
+                    <div className="border-t pt-4 space-y-2 bg-gray-50 rounded-lg p-4">
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Subtotal</span>
-                        <span>{formatPrice(subtotal)}</span>
+                        <span className="font-medium">{formatPrice(subtotal)}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Delivery Fee</span>
-                        <span>{formatPrice(deliveryFee)}</span>
+                        <span className="font-medium">{formatPrice(deliveryFee)}</span>
                       </div>
                       <div className="border-t pt-2 flex justify-between font-semibold text-lg">
                         <span>Total</span>
-                        <span className="text-pearl-600">{formatPrice(total)}</span>
+                        <span className="text-emerald-600">{formatPrice(total)}</span>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
                 {/* Delivery Zone Selection */}
-                <Card className="border-blue-200 shadow-lg hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-blue-50 via-white to-blue-50">
-                  <CardHeader className="pb-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-lg shadow-md">
+                <Card className="border-blue-200 shadow-sm hover:shadow-md transition-shadow duration-300 bg-white">
+                  <CardHeader className="pb-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-lg">
                     <CardTitle className="text-lg flex items-center gap-2">
                       <MapPin className="h-5 w-5" />
                       Delivery Zone

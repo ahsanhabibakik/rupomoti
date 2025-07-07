@@ -49,12 +49,12 @@ export async function GET(req: Request) {
     // Use simplified status filtering (MongoDB-compatible)
     switch (status) {
       case 'active':
-        // For MongoDB, use null explicitly for proper matching
-        where.deletedAt = null;
+        // For MongoDB, use undefined instead of null
+        where.deletedAt = undefined;
         where.isFakeOrder = false;
         break;
       case 'fake':
-        where.deletedAt = null;
+        where.deletedAt = undefined;
         where.isFakeOrder = true;
         break;
       case 'trashed':
@@ -67,9 +67,9 @@ export async function GET(req: Request) {
         // If it's an OrderStatus, filter by that
         if (Object.values(OrderStatus).includes(status as OrderStatus)) {
           where.status = status as OrderStatus;
-          where.deletedAt = null; // Only show non-deleted orders with specific status
+          where.deletedAt = undefined; // Only show non-deleted orders with specific status
         } else {
-          where.deletedAt = null; // Default to non-deleted
+          where.deletedAt = undefined; // Default to non-deleted
           where.isFakeOrder = false;
         }
     }
