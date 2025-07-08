@@ -189,7 +189,7 @@ export default function FakeOrdersPage() {
       order.customer.email,
       order.status,
       `$${order.total.toFixed(2)}`,
-      order.items.toString(),
+      `${Array.isArray(order.items) ? order.items.length : 0} items`,
       format(new Date(order.createdAt), 'MMM dd, yyyy'),
     ]);
 
@@ -215,7 +215,7 @@ export default function FakeOrdersPage() {
       'Customer Phone': order.customer.phone || 'N/A',
       'Status': order.status,
       'Total': order.total.toFixed(2),
-      'Items': order.items,
+      'Items': Array.isArray(order.items) ? order.items.length : 0,
       'Created At': format(new Date(order.createdAt), 'PPP'),
     }));
 
@@ -553,7 +553,9 @@ export default function FakeOrdersPage() {
                       <span className="font-medium">${order.total.toFixed(2)}</span>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm text-gray-600">{order.items} items</span>
+                      <span className="text-sm text-gray-600">
+                        {Array.isArray(order.items) ? order.items.length : 0} items
+                      </span>
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import Link from 'next/link';
 import {
   Table,
   TableBody,
@@ -83,6 +84,142 @@ interface CategoryFilters {
   sortOrder: 'asc' | 'desc';
 }
 
+// Define Dialog component for editing/adding categories
+function CategoryDialog({
+  isOpen,
+  onClose,
+  category,
+  onSave,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  category: Category | null;
+  onSave: (category: Partial<Category>) => void;
+}) {
+  const [formData, setFormData] = useState({
+    name: category?.name || '',
+    description: category?.description || '',
+    image: category?.image || '',
+    isActive: category?.isActive !== undefined ? category.isActive : true,
+    sortOrder: category?.sortOrder || 0
+  });
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    // Reset form when category changes
+    if (category) {
+      setFormData({
+        name: category.name || '',
+        description: category.description || '',
+        image: category.image || '',
+        isActive: category.isActive !== undefined ? category.isActive : true,
+        sortOrder: category.sortOrder || 0
+      });
+    }
+  }, [category]);
+
+  const handleChange = (field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      await onSave({
+        id: category?.id,
+        ...formData
+      });
+    } catch (error) {
+      console.error('Error saving category:', error);
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <AlertDialog open={isOpen} onOpenChange={onClose}>
+      <AlertDialogContent className="max-w-md">
+        <AlertDialogHeader>
+          <AlertDialogTitle>{category ? 'Edit Category' : 'Add Category'}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {category ? 'Update the category details below.' : 'Fill in the details to create a new category.'}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        
+        <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <label htmlFor="name" className="text-sm font-medium">Name</label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => handleChange('name', e.target.value)}
+              placeholder="Category name"
+            />
+          </div>
+          
+          <div className="grid gap-2">
+            <label htmlFor="description" className="text-sm font-medium">Description</label>
+            <Input
+              id="description"
+              value={formData.description}
+              onChange={(e) => handleChange('description', e.target.value)}
+              placeholder="Category description"
+            />
+          </div>
+          
+          <div className="grid gap-2">
+            <label htmlFor="image" className="text-sm font-medium">Image URL</label>
+            <Input
+              id="image"
+              value={formData.image}
+              onChange={(e) => handleChange('image', e.target.value)}
+              placeholder="Image URL"
+            />
+          </div>
+          
+          <div className="grid gap-2">
+            <label htmlFor="sortOrder" className="text-sm font-medium">Sort Order</label>
+            <Input
+              id="sortOrder"
+              type="number"
+              value={formData.sortOrder.toString()}
+              onChange={(e) => handleChange('sortOrder', parseInt(e.target.value) || 0)}
+              placeholder="Sort order"
+            />
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="isActive"
+              checked={formData.isActive}
+              onCheckedChange={(checked) => handleChange('isActive', checked === true)}
+            />
+            <label htmlFor="isActive" className="text-sm font-medium">Active</label>
+          </div>
+        </div>
+        
+        <AlertDialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} disabled={isSubmitting || !formData.name.trim()}>
+            {isSubmitting ? (
+              <><RefreshCw className="h-4 w-4 animate-spin mr-2" /> Saving</>
+            ) : (
+              <>Save</>
+            )}
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
 export default function CategoriesPage() {
   const [filters, setFilters] = useState<CategoryFilters>({
     search: '',
@@ -98,6 +235,9 @@ export default function CategoriesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [showFilters, setShowFilters] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -154,7 +294,7 @@ export default function CategoriesPage() {
   const bulkDeleteMutation = useMutation({
     mutationFn: async (categoryIds: string[]) => {
       const response = await fetch('/api/admin/categories/bulk-delete', {
-        method: 'DELETE',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ categoryIds })
       });
@@ -182,7 +322,7 @@ export default function CategoriesPage() {
       setSelectedCategories(new Set());
     } else {
       const allIds = new Set(categoriesData?.categories?.map((category: Category) => category.id) || []);
-      setSelectedCategories(allIds);
+      setSelectedCategories(allIds as Set<string>);
     }
   }, [selectedCategories.size, categoriesData?.categories]);
 
@@ -254,7 +394,7 @@ export default function CategoriesPage() {
     ]);
 
     const csvContent = [headers, ...csvData]
-      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .map(row => row.map((cell: any) => `"${cell}"`).join(','))
       .join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -356,13 +496,14 @@ export default function CategoriesPage() {
   }, [categoriesData]);
 
   const handleEditCategory = useCallback((category: Category) => {
-    // This would open the CategoryDialog - implementation depends on your dialog setup
-    console.log('Edit category:', category);
+    // Set form data for editing
+    setEditingCategory(category);
+    setIsEditDialogOpen(true);
   }, []);
 
   const handleAddCategory = useCallback(() => {
-    // This would open the CategoryDialog for adding - implementation depends on your dialog setup
-    console.log('Add new category');
+    setEditingCategory(null);
+    setIsEditDialogOpen(true);
   }, []);
 
   if (isLoading) {
@@ -501,7 +642,7 @@ export default function CategoriesPage() {
                     <Calendar
                       mode="single"
                       selected={filters.dateFrom || undefined}
-                      onSelect={(date) => handleFilterChange('dateFrom', date)}
+                      onSelect={(date) => handleFilterChange('dateFrom', date || null)}
                     />
                   </PopoverContent>
                 </Popover>
@@ -526,7 +667,7 @@ export default function CategoriesPage() {
                     <Calendar
                       mode="single"
                       selected={filters.dateTo || undefined}
-                      onSelect={(date) => handleFilterChange('dateTo', date)}
+                      onSelect={(date) => handleFilterChange('dateTo', date || null)}
                     />
                   </PopoverContent>
                 </Popover>
@@ -641,7 +782,11 @@ export default function CategoriesPage() {
                         )}
                         <div>
                           <div className="font-medium">{category.name}</div>
-                          <div className="text-sm text-muted-foreground">/{category.slug}</div>
+                          <div className="text-sm text-muted-foreground">
+                            <Link href={`/shop/${category.slug}`} target="_blank" className="hover:underline text-blue-600 flex items-center gap-1">
+                              <span className="truncate max-w-[140px]">/{category.slug}</span>
+                            </Link>
+                          </div>
                           {category.description && (
                             <div className="text-xs text-muted-foreground mt-1 max-w-xs truncate">
                               {category.description}
@@ -652,7 +797,7 @@ export default function CategoriesPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <span className="font-medium">{category._count.products}</span>
+                        <span className="font-medium">{category._count?.products || 0}</span>
                         <span className="text-sm text-muted-foreground">products</span>
                       </div>
                     </TableCell>
@@ -744,10 +889,10 @@ export default function CategoriesPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <DataTablePagination
-          currentPage={currentPage}
+          page={currentPage}
           totalPages={totalPages}
           pageSize={pageSize}
-          totalCount={totalCount}
+          totalRecords={totalCount}
           onPageChange={setCurrentPage}
           onPageSizeChange={setPageSize}
         />
@@ -783,7 +928,66 @@ export default function CategoriesPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Category Dialog would go here - using existing CategoryDialog component */}
+      {/* Category Edit Dialog */}
+      <CategoryDialog 
+        isOpen={isEditDialogOpen}
+        onClose={() => setIsEditDialogOpen(false)}
+        category={editingCategory}
+        onSave={async (updatedCategory) => {
+          try {
+            const method = updatedCategory.id ? 'PUT' : 'POST';
+            const url = '/api/admin/categories';
+            
+            const response = await fetch(url, {
+              method,
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(updatedCategory)
+            });
+            
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.error || 'Failed to save category');
+            }
+            
+            setIsEditDialogOpen(false);
+            setEditingCategory(null);
+            queryClient.invalidateQueries({ queryKey: ['categories'] });
+            showToast.success(updatedCategory.id ? 'Category updated successfully' : 'Category created successfully');
+          } catch (error) {
+            console.error('Failed to save category:', error);
+            showToast.error(error instanceof Error ? error.message : 'Failed to save category');
+          }
+        }}
+      />
+
+      {/* Category Delete Confirmation */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Category</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this category? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                if (editingCategory) {
+                  bulkDeleteMutation.mutate([editingCategory.id]);
+                  setIsDeleteDialogOpen(false);
+                  setEditingCategory(null);
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

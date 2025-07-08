@@ -35,6 +35,14 @@ export default async function middleware(req: NextRequest) {
   const isAdmin = token.isAdmin as boolean
   const hasAdminAccess = isAdmin || ['ADMIN', 'SUPER_ADMIN', 'MANAGER'].includes(userRole)
   
+  if (nextUrl.pathname.startsWith('/admin/media')) {
+    if (!isAdmin && !['ADMIN', 'SUPER_ADMIN'].includes(userRole)) {
+      const loginUrl = new URL('/signin', nextUrl.origin)
+      loginUrl.searchParams.set('callbackUrl', nextUrl.pathname)
+      return NextResponse.redirect(loginUrl)
+    }
+  }
+
   if (!hasAdminAccess) {
     const loginUrl = new URL('/signin', nextUrl.origin)
     loginUrl.searchParams.set('callbackUrl', nextUrl.pathname)
@@ -52,4 +60,4 @@ export const config = {
     // But also include the main /admin route
     '/admin'
   ]
-} 
+}

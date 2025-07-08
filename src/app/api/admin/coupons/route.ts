@@ -8,10 +8,18 @@ const querySchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(10),
   search: z.string().optional(),
-  type: z.enum(['PERCENTAGE', 'FIXED']).optional(),
-  status: z.enum(['active', 'inactive', 'expired', 'all']).default('all'),
-  sortBy: z.enum(['createdAt', 'code', 'discountValue', 'expiresAt']).default('createdAt'),
-  sortOrder: z.enum(['asc', 'desc']).default('desc'),
+  type: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.enum(["PERCENTAGE", "FIXED_AMOUNT", "FREE_SHIPPING"]).optional()
+  ),
+  status: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.enum(["active", "inactive", "expired", "all"]).default("all")
+  ),
+  sortBy: z
+    .enum(["createdAt", "code", "value", "validUntil"])
+    .default("createdAt"),
+  sortOrder: z.enum(["asc", "desc"]).default("desc"),
 });
 
 // GET /api/admin/coupons - Get all coupons with filtering and pagination
@@ -19,7 +27,7 @@ export async function GET(request: Request) {
   try {
     const session = await auth();
 
-    if (!session || !['SUPER_ADMIN', 'ADMIN'].includes(session.user?.role as string)) {
+    if (!session || !["SUPER_ADMIN", "ADMIN"].includes(session.user?.role as string)) {
       return NextResponse.json(
         { message: "Unauthorized" },
         { status: 401 }
@@ -27,15 +35,24 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const query = querySchema.parse(Object.fromEntries(searchParams));
+    const queryResult = querySchema.safeParse(Object.fromEntries(searchParams));
+
+    if (!queryResult.success) {
+      return NextResponse.json(
+        { message: "Invalid query parameters", errors: queryResult.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const query = queryResult.data;
 
     const where: Record<string, unknown> = {};
 
     // Apply search filter
     if (query.search) {
       where.OR = [
-        { code: { contains: query.search, mode: 'insensitive' } },
-        { description: { contains: query.search, mode: 'insensitive' } },
+        { code: { contains: query.search, mode: "insensitive" } },
+        { description: { contains: query.search, mode: "insensitive" } },
       ];
     }
 
@@ -45,21 +62,21 @@ export async function GET(request: Request) {
     }
 
     // Apply status filter
-    if (query.status !== 'all') {
+    if (query.status !== "all") {
       const now = new Date();
-      if (query.status === 'active') {
+      if (query.status === "active") {
         where.isActive = true;
-        where.expiresAt = { gt: now };
-      } else if (query.status === 'inactive') {
+        where.validUntil = { gt: now };
+      } else if (query.status === "inactive") {
         where.isActive = false;
-      } else if (query.status === 'expired') {
-        where.expiresAt = { lt: now };
+      } else if (query.status === "expired") {
+        where.validUntil = { lt: now };
       }
     }
 
     const skip = (query.page - 1) * query.limit;
 
-    const [coupons, totalCount] = await Promise.all([
+    const [coupons, totalCount] = await prisma.$transaction([
       prisma.coupon.findMany({
         where,
         orderBy: {
@@ -68,9 +85,18 @@ export async function GET(request: Request) {
         skip,
         take: query.limit,
         include: {
-          _count: {
+          createdBy: {
             select: {
-              orders: true,
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          updatedBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
             },
           },
         },
@@ -93,6 +119,12 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error("Error fetching coupons:", error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { message: "Invalid query parameters", errors: error.issues },
+        { status: 400 }
+      );
+    }
     return NextResponse.json(
       { message: "Failed to fetch coupons" },
       { status: 500 }
@@ -104,8 +136,9 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const session = await auth();
+    const userId = session?.user?.id;
 
-    if (!session || !['SUPER_ADMIN', 'ADMIN'].includes(session.user?.role as string)) {
+    if (!userId || !["SUPER_ADMIN", "ADMIN"].includes(session.user?.role as string)) {
       return NextResponse.json(
         { message: "Unauthorized" },
         { status: 401 }
@@ -116,16 +149,19 @@ export async function POST(request: Request) {
     const {
       code,
       type,
-      discountValue,
+      value,
       description,
-      minimumOrderValue,
-      maxUses,
-      expiresAt,
+      minimumAmount,
+      maximumDiscount,
+      usageLimit,
+      validFrom,
+      validUntil,
       isActive = true,
+      applicableZones,
     } = body;
 
     // Validation
-    if (!code || !type || !discountValue) {
+    if (!code || !type || value === undefined) {
       return NextResponse.json(
         { message: "Missing required fields" },
         { status: 400 }
@@ -149,17 +185,49 @@ export async function POST(request: Request) {
       data: {
         code,
         type,
-        discountValue: parseFloat(discountValue),
+        value: parseFloat(value),
         description,
-        minimumOrderValue: minimumOrderValue ? parseFloat(minimumOrderValue) : null,
-        maxUses: maxUses ? parseInt(maxUses) : null,
-        expiresAt: expiresAt ? new Date(expiresAt) : null,
+        minimumAmount: minimumAmount ? parseFloat(minimumAmount) : null,
+        maximumDiscount: maximumDiscount ? parseFloat(maximumDiscount) : null,
+        usageLimit: usageLimit ? parseInt(usageLimit) : null,
+        validFrom: validFrom ? new Date(validFrom) : new Date(),
+        validUntil: validUntil ? new Date(validUntil) : undefined,
         isActive,
+        applicableZones: applicableZones || [],
+        createdById: userId,
+        updatedById: userId,
       },
       include: {
-        _count: {
+        createdBy: {
           select: {
-            orders: true,
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        updatedBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    // Create audit log
+    await prisma.auditLog.create({
+      data: {
+        model: "Coupon",
+        recordId: coupon.id,
+        userId,
+        action: "CREATE",
+        details: {
+          coupon,
+          user: {
+            id: session.user?.id,
+            name: session.user?.name,
+            email: session.user?.email,
           },
         },
       },
@@ -179,8 +247,9 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const session = await auth();
+    const userId = session?.user?.id;
 
-    if (!session || !['SUPER_ADMIN', 'ADMIN'].includes(session.user?.role as string)) {
+    if (!userId || !["SUPER_ADMIN", "ADMIN"].includes(session.user?.role as string)) {
       return NextResponse.json(
         { message: "Unauthorized" },
         { status: 401 }
@@ -209,20 +278,80 @@ export async function PATCH(request: Request) {
       );
     }
 
+    // Process update data
+    const processedData: any = {};
+    
+    if (updateData.value !== undefined) {
+      processedData.value = parseFloat(updateData.value);
+    }
+    
+    if (updateData.minimumAmount !== undefined) {
+      processedData.minimumAmount = updateData.minimumAmount ? parseFloat(updateData.minimumAmount) : null;
+    }
+    
+    if (updateData.maximumDiscount !== undefined) {
+      processedData.maximumDiscount = updateData.maximumDiscount ? parseFloat(updateData.maximumDiscount) : null;
+    }
+    
+    if (updateData.usageLimit !== undefined) {
+      processedData.usageLimit = updateData.usageLimit ? parseInt(updateData.usageLimit) : null;
+    }
+    
+    if (updateData.validFrom !== undefined) {
+      processedData.validFrom = updateData.validFrom ? new Date(updateData.validFrom) : new Date();
+    }
+    
+    if (updateData.validUntil !== undefined) {
+      processedData.validUntil = updateData.validUntil ? new Date(updateData.validUntil) : undefined;
+    }
+    
+    // Add other fields directly
+    if (updateData.type) processedData.type = updateData.type;
+    if (updateData.code) processedData.code = updateData.code;
+    if (updateData.description !== undefined) processedData.description = updateData.description;
+    if (updateData.isActive !== undefined) processedData.isActive = updateData.isActive;
+    if (updateData.applicableZones !== undefined) processedData.applicableZones = updateData.applicableZones;
+
+    // Add audit field
+    processedData.updatedById = userId;
+
     // Update coupon
     const updatedCoupon = await prisma.coupon.update({
       where: { id: couponId },
-      data: {
-        ...updateData,
-        discountValue: updateData.discountValue ? parseFloat(updateData.discountValue) : undefined,
-        minimumOrderValue: updateData.minimumOrderValue ? parseFloat(updateData.minimumOrderValue) : undefined,
-        maxUses: updateData.maxUses ? parseInt(updateData.maxUses) : undefined,
-        expiresAt: updateData.expiresAt ? new Date(updateData.expiresAt) : undefined,
-      },
+      data: processedData,
       include: {
-        _count: {
+        createdBy: {
           select: {
-            orders: true,
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        updatedBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    // Create audit log
+    await prisma.auditLog.create({
+      data: {
+        model: "Coupon",
+        recordId: couponId,
+        userId,
+        action: "UPDATE",
+        oldValue: JSON.stringify(existingCoupon),
+        newValue: JSON.stringify(updatedCoupon),
+        details: {
+          changes: processedData,
+          user: {
+            id: session.user?.id,
+            name: session.user?.name,
+            email: session.user?.email,
           },
         },
       },
@@ -242,8 +371,9 @@ export async function PATCH(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const session = await auth();
+    const userId = session?.user?.id;
 
-    if (!session || !['SUPER_ADMIN', 'ADMIN'].includes(session.user?.role as string)) {
+    if (!userId || !["SUPER_ADMIN", "ADMIN"].includes(session.user?.role as string)) {
       return NextResponse.json(
         { message: "Unauthorized" },
         { status: 401 }
@@ -251,7 +381,7 @@ export async function DELETE(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const couponId = searchParams.get('couponId');
+    const couponId = searchParams.get("couponId");
 
     if (!couponId) {
       return NextResponse.json(
@@ -260,16 +390,9 @@ export async function DELETE(request: Request) {
       );
     }
 
-    // Check if coupon exists and is not used in any orders
+    // Check if coupon exists
     const coupon = await prisma.coupon.findUnique({
       where: { id: couponId },
-      include: {
-        _count: {
-          select: {
-            orders: true,
-          },
-        },
-      },
     });
 
     if (!coupon) {
@@ -279,7 +402,18 @@ export async function DELETE(request: Request) {
       );
     }
 
-    if (coupon._count.orders > 0) {
+    // Check if coupon is used in any orders
+    const ordersWithCoupon = await prisma.order.findMany({
+      where: { 
+        OR: [
+          { appliedCoupon: coupon.code },
+          { couponId: couponId }
+        ]
+      },
+      take: 1,
+    });
+
+    if (ordersWithCoupon.length > 0) {
       return NextResponse.json(
         { message: "Cannot delete coupon that has been used in orders" },
         { status: 400 }
@@ -289,6 +423,25 @@ export async function DELETE(request: Request) {
     // Delete coupon
     await prisma.coupon.delete({
       where: { id: couponId },
+    });
+
+    // Create audit log
+    await prisma.auditLog.create({
+      data: {
+        model: "Coupon",
+        recordId: couponId,
+        userId,
+        action: "DELETE",
+        oldValue: JSON.stringify(coupon),
+        details: {
+          deletedCoupon: coupon,
+          user: {
+            id: session.user?.id,
+            name: session.user?.name,
+            email: session.user?.email,
+          },
+        },
+      },
     });
 
     return NextResponse.json({ message: "Coupon deleted successfully" });

@@ -70,10 +70,11 @@ import {
   Send,
   ExternalLink
 } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, addDays } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { showToast } from "@/lib/toast";
 import { DataTablePagination } from "@/components/ui/DataTablePagination";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { useSession } from "next-auth/react";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
@@ -113,6 +114,7 @@ interface Customer {
 interface CustomersResponse {
   customers: Customer[];
   total: number;
+  totalCount: number;
   page: number;
   totalPages: number;
 }
@@ -519,63 +521,106 @@ export default function CustomersPage() {
   }, [customersData]);
 
   const handlePrint = useCallback(() => {
-    if (!customersData?.customers) return;
+    if (!customersData?.customers) {
+      showToast.error("No data to print");
+      return;
+    }
 
-    const printContent = `
-      <html>
-        <head>
-          <title>Customer Report</title>
-          <style>
-            body { font-family: Arial, sans-serif; font-size: 12px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f2f2f2; }
-            .header { text-align: center; margin-bottom: 20px; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>Customer Report</h1>
-            <p>Generated on: ${format(new Date(), 'PPP')}</p>
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Total Orders</th>
-                <th>Total Spent</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${customersData.customers.map(customer => `
+    try {
+      // Create a detailed and properly sanitized print content
+      const printContent = `
+        <!DOCTYPE html>
+        <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Customer Report</title>
+            <style>
+              @media print {
+                @page { size: portrait; margin: 0.5in; }
+                body { font-family: 'Arial', sans-serif; color: #333; line-height: 1.5; }
+                h1, h2 { color: #1a365d; }
+                table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 12px; }
+                th { background-color: #f3f4f6; padding: 8px; text-align: left; border-bottom: 2px solid #ddd; }
+                td { padding: 8px; border-bottom: 1px solid #ddd; }
+                .header { padding-bottom: 20px; border-bottom: 1px solid #ddd; margin-bottom: 20px; }
+                .footer { margin-top: 20px; font-size: 11px; color: #666; text-align: center; }
+                .text-success { color: #047857; }
+                .text-warning { color: #d97706; }
+                .monospace { font-family: monospace; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>Customer Report</h1>
+              <p>Generated on: ${format(new Date(), 'PPP pp')}</p>
+              <p>Total Customers: ${customersData.totalCount}</p>
+            </div>
+            <table>
+              <thead>
                 <tr>
-                  <td>${customer.name}</td>
-                  <td>${customer.email}</td>
-                  <td>${customer.phone || 'N/A'}</td>
-                  <td>${customer.totalOrders}</td>
-                  <td>৳${customer.totalSpent.toFixed(2)}</td>
-                  <td>${customer.isVerified ? 'Verified' : 'Unverified'}</td>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Orders</th>
+                  <th>Total Spent</th>
+                  <th>Status</th>
+                  <th>Created</th>
                 </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </body>
-      </html>
-    `;
+              </thead>
+              <tbody>
+                ${customersData.customers.map(customer => `
+                  <tr>
+                    <td>${customer.name || 'N/A'}</td>
+                    <td class="monospace">${customer.email || 'N/A'}</td>
+                    <td>${customer.phone || 'N/A'}</td>
+                    <td>${customer.totalOrders || 0}</td>
+                    <td>৳${(customer.totalSpent || 0).toFixed(2)}</td>
+                    <td class="${customer.isVerified ? 'text-success' : 'text-warning'}">${customer.isVerified ? 'Verified' : 'Unverified'}</td>
+                    <td>${format(new Date(customer.createdAt), 'PPP')}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            <div class="footer">
+              <p>Rupomoti Admin - Confidential Customer Report</p>
+              <p>This report contains sensitive customer information and is for internal use only.</p>
+            </div>
+          </body>
+        </html>
+      `;
 
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
+      // Use a separate window for printing with error handling
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        showToast.error("Popup blocked! Please allow popups to print.");
+        return;
+      }
+      
+      printWindow.document.open();
       printWindow.document.write(printContent);
       printWindow.document.close();
-      printWindow.focus();
-      printWindow.print();
-      printWindow.close();
+      
+      // Wait for resources to load before printing
+      printWindow.onload = function() {
+        try {
+          printWindow.focus();
+          setTimeout(() => {
+            printWindow.print();
+            // Don't close the window immediately, let the user close it
+          }, 250);
+        } catch (err) {
+          console.error("Print error:", err);
+          showToast.error("Error during printing");
+        }
+      };
+      
+      showToast.success('Print dialog opened');
+    } catch (error) {
+      console.error("Print preparation error:", error);
+      showToast.error("Failed to prepare printing");
     }
-    
-    showToast.success('Print dialog opened');
   }, [customersData]);
 
   // Computed values
@@ -893,35 +938,42 @@ export default function CustomersPage() {
           </Select>
 
           {/* Date Range Filter */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="w-full md:w-auto">
-                <CalendarIcon className="h-4 w-4 mr-2" />
-                {dateRange?.from ? (
-                  dateRange?.to ? (
-                    <>
-                      {format(dateRange.from, "LLL dd, y")} -{" "}
-                      {format(dateRange.to, "LLL dd, y")}
-                    </>
-                  ) : (
-                    format(dateRange.from, "LLL dd, y")
-                  )
-                ) : (
-                  <span>Pick a date range</span>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                initialFocus
-                mode="range"
-                defaultMonth={dateRange?.from}
-                selected={dateRange}
-                onSelect={handleDateRangeChange}
-                numberOfMonths={2}
-              />
-            </PopoverContent>
-          </Popover>
+          <DateRangePicker
+            dateRange={dateRange}
+            onChange={handleDateRangeChange}
+            placeholder="Filter by date"
+            calendarDaysToShow={2}
+            presets={[
+              {
+                label: 'Today',
+                dateRange: {
+                  from: new Date(),
+                  to: new Date(),
+                },
+              },
+              {
+                label: 'Last 7 days',
+                dateRange: {
+                  from: addDays(new Date(), -6),
+                  to: new Date(),
+                },
+              },
+              {
+                label: 'Last 30 days',
+                dateRange: {
+                  from: addDays(new Date(), -29),
+                  to: new Date(),
+                },
+              },
+              {
+                label: 'This month',
+                dateRange: {
+                  from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+                  to: new Date(),
+                },
+              },
+            ]}
+          />
 
           {/* Clear Filters */}
           {(searchTerm || statusFilter !== 'all' || dateRange) && (

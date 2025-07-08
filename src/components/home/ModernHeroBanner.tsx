@@ -66,11 +66,15 @@ export function ModernHeroBanner() {
           className="absolute inset-0"
         >
           <Image
-            src={banners[currentBanner].image}
-            alt={banners[currentBanner].title}
+            src={banners[currentBanner].image || "/images/placeholder.png"}
+            alt={banners[currentBanner].title || "Banner image"}
             fill
             className="object-cover"
             priority
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = "/images/placeholder.png";
+            }}
           />
           <div className="absolute inset-0 bg-black/40" />
         </motion.div>

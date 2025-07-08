@@ -298,8 +298,12 @@ const ProductSpotlightSection: React.FC<SectionProps> = ({ data, onAddToCart, gl
               >
                 <div className="relative">
                   <img
-                    src={product.image}
-                    alt={product.name}
+                    src={product.image || "/images/placeholder.png"}
+                    alt={product.name || "Product"}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = "/images/placeholder.png";
+                    }}
                     className="w-full h-64 object-cover"
                   />
                   {product.discount && (
@@ -386,8 +390,12 @@ const StoryVideoSection: React.FC<SectionProps> = ({ data, globalSettings }) => 
             >
               <div className="relative rounded-xl overflow-hidden shadow-2xl">
                 <img
-                  src={data.videoThumbnail || '/images/placeholder.jpg'}
+                  src={data.videoThumbnail || '/images/placeholder.png'}
                   alt="Video thumbnail"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = "/images/placeholder.png";
+                  }}
                   className="w-full h-80 object-cover"
                 />
                 
@@ -521,8 +529,12 @@ const TestimonialsSection: React.FC<SectionProps> = ({ data, globalSettings }) =
               
               <div className="flex items-center justify-center">
                 <img
-                  src={data.testimonials[activeTestimonial].image}
-                  alt={data.testimonials[activeTestimonial].name}
+                  src={data.testimonials[activeTestimonial].image || "/images/placeholder.png"}
+                  alt={data.testimonials[activeTestimonial].name || "Customer"}
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = "/images/placeholder.png";
+                  }}
                   className="w-16 h-16 rounded-full object-cover mr-4"
                 />
                 <div>
@@ -575,8 +587,12 @@ const CategoryBannerSection: React.FC<SectionProps> = ({ data, globalSettings })
               >
                 <div className="relative h-80">
                   <img
-                    src={category.image}
-                    alt={category.name}
+                    src={category.image || "/images/placeholder.png"}
+                    alt={category.name || "Category"}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = "/images/placeholder.png";
+                    }}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                   <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors"></div>

@@ -38,6 +38,9 @@ import { addToCart } from '@/redux/slices/cartSlice'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { EmailNotificationsCard } from '@/components/account/EmailNotificationsCard'
+import { PasswordChangeCard } from '@/components/account/PasswordChangeCard'
+import { TwoFactorAuthCard } from '@/components/account/TwoFactorAuthCard'
 
 const tabs = [
   { id: 'profile', label: 'Profile', icon: User, category: 'primary' },
@@ -942,106 +945,13 @@ export default function AccountPage() {
 
                 {/* Settings Tab */}
                 {activeTab === 'settings' && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-pearl-essence-700 mb-6">Account Settings</h3>
+                  <div className="space-y-8">
+                    <h3 className="text-2xl font-bold text-pearl-essence-900">Account Settings</h3>
                     
-                    <div className="space-y-6">
-                      {/* Notification Settings */}
-                      <div className="bg-white p-6 rounded-lg shadow border border-pearl-essence-200">
-                        <h4 className="font-medium text-pearl-essence-900 mb-4">Notifications</h4>
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm font-medium text-pearl-essence-900">Email Notifications</p>
-                              <p className="text-sm text-pearl-essence-600">Receive updates about your orders</p>
-                            </div>
-                            <Button variant="outline" size="sm">
-                              <Settings className="w-4 h-4 mr-2" />
-                              Configure
-                            </Button>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm font-medium text-pearl-essence-900">SMS Updates</p>
-                              <p className="text-sm text-pearl-essence-600">Get SMS alerts for order status</p>
-                            </div>
-                            <Button variant="outline" size="sm">
-                              <Settings className="w-4 h-4 mr-2" />
-                              Configure
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
+                    <EmailNotificationsCard />
+                    <PasswordChangeCard />
+                    {/* <TwoFactorAuthCard /> */}
 
-                      {/* Privacy Settings */}
-                      <div className="bg-white p-6 rounded-lg shadow border border-pearl-essence-200">
-                        <h4 className="font-medium text-pearl-essence-900 mb-4">Privacy & Security</h4>
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm font-medium text-pearl-essence-900">Password</p>
-                              <p className="text-sm text-pearl-essence-600">Change your account password</p>
-                            </div>
-                            <Button variant="outline" size="sm">
-                              <Shield className="w-4 h-4 mr-2" />
-                              Update
-                            </Button>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm font-medium text-pearl-essence-900">Two-Factor Authentication</p>
-                              <p className="text-sm text-pearl-essence-600">Add extra security to your account</p>
-                            </div>
-                            <Button variant="outline" size="sm">
-                              <Shield className="w-4 h-4 mr-2" />
-                              Setup
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Preferences */}
-                      <div className="bg-white p-6 rounded-lg shadow border border-pearl-essence-200">
-                        <h4 className="font-medium text-pearl-essence-900 mb-4">Preferences</h4>
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm font-medium text-pearl-essence-900">Language</p>
-                              <p className="text-sm text-pearl-essence-600">Choose your preferred language</p>
-                            </div>
-                            <Button variant="outline" size="sm">
-                              English
-                            </Button>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm font-medium text-pearl-essence-900">Currency</p>
-                              <p className="text-sm text-pearl-essence-600">Select your preferred currency</p>
-                            </div>
-                            <Button variant="outline" size="sm">
-                              BDT
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Danger Zone */}
-                      <div className="bg-white p-6 rounded-lg shadow border border-red-200">
-                        <h4 className="font-medium text-red-900 mb-4">Danger Zone</h4>
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm font-medium text-red-900">Delete Account</p>
-                              <p className="text-sm text-red-600">Permanently delete your account and all data</p>
-                            </div>
-                            <Button variant="destructive" size="sm">
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Delete
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 )}
               </div>

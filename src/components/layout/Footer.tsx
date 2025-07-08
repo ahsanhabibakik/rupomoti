@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { Logo } from './Logo'
 import {
   Sparkles,
   Phone,
@@ -159,15 +160,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand Section */}
           <div className="space-y-4">
-            <Link href="/" className="flex items-center">
-              <Image
-                src="/images/branding/logo.png"
-                alt="Rupomoti Logo"
-                width={80}
-                height={40}
-                className="w-auto h-10"
-              />
-            </Link>
+            <Logo variant="small" />
             <p className="text-pearl-white max-w-md">
               Crafting timeless pieces of pearl elegance. Your trusted destination for fine pearl jewelry that tells your unique story.
             </p>

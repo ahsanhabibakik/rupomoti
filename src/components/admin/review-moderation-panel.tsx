@@ -146,7 +146,7 @@ export function ReviewModerationPanel() {
   const moderateReviewMutation = useMutation({
     mutationFn: async ({ reviewId, action, note }: { reviewId: string; action: 'approve' | 'reject'; note?: string }) => {
       const response = await fetch('/api/admin/reviews', {
-        method: 'PUT',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           reviewId,
@@ -792,7 +792,8 @@ export function ReviewModerationPanel() {
                               <DropdownMenuItem
                                 onClick={() => moderateReviewMutation.mutate({ 
                                   reviewId: review.id, 
-                                  action: 'approve' 
+                                  action: 'approve',
+                                  note: moderationNote
                                 })}
                                 className="text-green-600"
                               >
@@ -802,7 +803,8 @@ export function ReviewModerationPanel() {
                               <DropdownMenuItem
                                 onClick={() => moderateReviewMutation.mutate({ 
                                   reviewId: review.id, 
-                                  action: 'reject' 
+                                  action: 'reject',
+                                  note: moderationNote
                                 })}
                                 className="text-red-600"
                               >
@@ -837,10 +839,10 @@ export function ReviewModerationPanel() {
       {/* Pagination */}
       {totalPages > 1 && (
         <DataTablePagination
-          currentPage={currentPage}
+          page={currentPage}
           totalPages={totalPages}
           pageSize={pageSize}
-          totalCount={totalCount}
+          totalRecords={totalCount}
           onPageChange={setCurrentPage}
           onPageSizeChange={setPageSize}
         />

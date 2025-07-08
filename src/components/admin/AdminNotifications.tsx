@@ -144,9 +144,20 @@ export default function AdminNotifications() {
     // Navigate based on notification type
     const { metadata } = notification;
     if (metadata?.orderId) {
-      window.open(`/admin/orders?search=${metadata.orderNumber}`, '_blank');
+      // Optimize URL creation with proper encoding
+      const router = window.location.origin;
+      const orderQuery = encodeURIComponent(metadata.orderNumber || '');
+      const url = `${router}/admin/orders?search=${orderQuery}&page=1`;
+      
+      // Use router.push for internal navigation or window.open for external
+      if (window.location.pathname.startsWith('/admin')) {
+        window.location.href = url; // Same tab navigation for better UX
+      } else {
+        window.open(url, '_blank');
+      }
     } else if (metadata?.productId) {
-      window.open(`/admin/products?search=${metadata.productId}`, '_blank');
+      const productId = encodeURIComponent(metadata.productId || '');
+      window.open(`/admin/products?search=${productId}`, '_blank');
     } else if (metadata?.reviewId) {
       window.open(`/admin/reviews`, '_blank');
     }

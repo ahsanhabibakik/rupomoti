@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { DataTablePagination } from '@/components/ui/DataTablePagination';
 import {
   Plus,
   Search,
@@ -51,21 +52,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { cn } from '@/lib/utils';
 
 interface Coupon {
@@ -84,16 +75,6 @@ interface Coupon {
   updatedAt: string;
   description?: string;
   applicableZones: string[];
-  createdBy?: {
-    id: string;
-    name: string;
-    email: string;
-  } | null;
-  updatedBy?: {
-    id: string;
-    name: string;
-    email: string;
-  } | null;
 }
 
 interface CouponFilters {
@@ -158,32 +139,6 @@ export default function CouponsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCoupon, setSelectedCoupon] = useState<Coupon | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [editForm, setEditForm] = useState({
-    code: '',
-    type: 'PERCENTAGE',
-    value: '',
-    description: '',
-    minimumAmount: '',
-    maximumDiscount: '',
-    usageLimit: '',
-    validFrom: '',
-    validUntil: '',
-    isActive: true,
-  });
-  const [addForm, setAddForm] = useState({
-    code: '',
-    type: 'PERCENTAGE',
-    value: '',
-    description: '',
-    minimumAmount: '',
-    maximumDiscount: '',
-    usageLimit: '',
-    validFrom: '',
-    validUntil: '',
-    isActive: true,
-  });
 
   const queryClient = useQueryClient();
 
@@ -263,70 +218,6 @@ export default function CouponsPage() {
     }
   });
 
-  // Update coupon mutation
-  const updateCouponMutation = useMutation({
-    mutationFn: async (couponData: any) => {
-      const response = await fetch('/api/admin/coupons', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(couponData)
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to update coupon');
-      }
-      
-      return response.json();
-    },
-    onSuccess: () => {
-      showToast.success('Coupon updated successfully');
-      setShowEditDialog(false);
-      queryClient.invalidateQueries({ queryKey: ['coupons'] });
-    },
-    onError: (error) => {
-      showToast.error(error instanceof Error ? error.message : 'Failed to update coupon');
-    }
-  });
-
-  // Create coupon mutation
-  const createCouponMutation = useMutation({
-    mutationFn: async (couponData: any) => {
-      const response = await fetch('/api/admin/coupons', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(couponData)
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to create coupon');
-      }
-      
-      return response.json();
-    },
-    onSuccess: () => {
-      showToast.success('Coupon created successfully');
-      setShowAddDialog(false);
-      setAddForm({
-        code: '',
-        type: 'PERCENTAGE',
-        value: '',
-        description: '',
-        minimumAmount: '',
-        maximumDiscount: '',
-        usageLimit: '',
-        validFrom: '',
-        validUntil: '',
-        isActive: true,
-      });
-      queryClient.invalidateQueries({ queryKey: ['coupons'] });
-    },
-    onError: (error) => {
-      showToast.error(error instanceof Error ? error.message : 'Failed to create coupon');
-    }
-  });
-
   // Event handlers
   const handleSelectAll = useCallback(() => {
     if (selectedCoupons.size === couponsData?.coupons?.length) {
@@ -383,60 +274,6 @@ export default function CouponsPage() {
     showToast.success('Coupon code copied to clipboard');
   }, []);
 
-  const handleEditCoupon = useCallback((coupon: Coupon) => {
-    setSelectedCoupon(coupon);
-    setEditForm({
-      code: coupon.code,
-      type: coupon.type,
-      value: coupon.value.toString(),
-      description: coupon.description || '',
-      minimumAmount: coupon.minimumAmount?.toString() || '',
-      maximumDiscount: coupon.maximumDiscount?.toString() || '',
-      usageLimit: coupon.usageLimit?.toString() || '',
-      validFrom: coupon.validFrom ? format(new Date(coupon.validFrom), 'yyyy-MM-dd\'T\'HH:mm') : '',
-      validUntil: coupon.validUntil ? format(new Date(coupon.validUntil), 'yyyy-MM-dd\'T\'HH:mm') : '',
-      isActive: coupon.isActive,
-    });
-    setShowEditDialog(true);
-  }, []);
-
-  const handleUpdateCoupon = useCallback(() => {
-    if (!selectedCoupon) return;
-    
-    const updateData = {
-      couponId: selectedCoupon.id,
-      code: editForm.code,
-      type: editForm.type,
-      value: parseFloat(editForm.value),
-      description: editForm.description || null,
-      minimumAmount: editForm.minimumAmount ? parseFloat(editForm.minimumAmount) : null,
-      maximumDiscount: editForm.maximumDiscount ? parseFloat(editForm.maximumDiscount) : null,
-      usageLimit: editForm.usageLimit ? parseInt(editForm.usageLimit) : null,
-      validFrom: editForm.validFrom ? new Date(editForm.validFrom).toISOString() : null,
-      validUntil: editForm.validUntil ? new Date(editForm.validUntil).toISOString() : null,
-      isActive: editForm.isActive,
-    };
-    
-    updateCouponMutation.mutate(updateData);
-  }, [selectedCoupon, editForm, updateCouponMutation]);
-
-  const handleCreateCoupon = useCallback(() => {
-    const createData = {
-      code: addForm.code,
-      type: addForm.type,
-      value: parseFloat(addForm.value),
-      description: addForm.description || null,
-      minimumAmount: addForm.minimumAmount ? parseFloat(addForm.minimumAmount) : null,
-      maximumDiscount: addForm.maximumDiscount ? parseFloat(addForm.maximumDiscount) : null,
-      usageLimit: addForm.usageLimit ? parseInt(addForm.usageLimit) : null,
-      validFrom: addForm.validFrom ? new Date(addForm.validFrom).toISOString() : null,
-      validUntil: addForm.validUntil ? new Date(addForm.validUntil).toISOString() : null,
-      isActive: addForm.isActive,
-    };
-    
-    createCouponMutation.mutate(createData);
-  }, [addForm, createCouponMutation]);
-
   const coupons = couponsData?.coupons || [];
   const pagination = couponsData?.pagination;
 
@@ -475,7 +312,7 @@ export default function CouponsPage() {
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
-          <Button onClick={() => setShowAddDialog(true)}>
+          <Button>
             <Plus className="h-4 w-4 mr-2" />
             Add Coupon
           </Button>
@@ -686,9 +523,6 @@ export default function CouponsPage() {
                   <TableHead>Status</TableHead>
                   <TableHead>Valid Until</TableHead>
                   <TableHead>Created</TableHead>
-                  <TableHead>Created By</TableHead>
-                  <TableHead>Updated</TableHead>
-                  <TableHead>Updated By</TableHead>
                   <TableHead className="w-12"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -795,30 +629,6 @@ export default function CouponsPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm">
-                        {coupon.createdBy?.name || 'Unknown'}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {coupon.createdBy?.email || 'N/A'}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        {format(new Date(coupon.updatedAt), 'MMM dd, yyyy')}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {format(new Date(coupon.updatedAt), 'HH:mm')}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        {coupon.updatedBy?.name || 'Unknown'}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {coupon.updatedBy?.email || 'N/A'}
-                      </div>
-                    </TableCell>
-                    <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm">
@@ -830,7 +640,7 @@ export default function CouponsPage() {
                             <Copy className="h-4 w-4 mr-2" />
                             Copy Code
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditCoupon(coupon)}>
+                          <DropdownMenuItem>
                             <Edit className="h-4 w-4 mr-2" />
                             Edit Coupon
                           </DropdownMenuItem>
@@ -875,36 +685,21 @@ export default function CouponsPage() {
 
       {/* Pagination */}
       {pagination && (
-        <Card>
-          <CardContent className="py-4">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, pagination.totalCount)} of {pagination.totalCount} results
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  disabled={!pagination.hasPrev}
-                >
-                  Previous
-                </Button>
-                <span className="text-sm">
-                  Page {currentPage} of {pagination.totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1))}
-                  disabled={!pagination.hasNext}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <DataTablePagination
+          table={{
+            getState: () => ({ pagination: { pageIndex: currentPage - 1, pageSize } }),
+            getPageCount: () => pagination.totalPages,
+            getCanPreviousPage: () => pagination.hasPrev,
+            getCanNextPage: () => pagination.hasNext,
+            previousPage: () => setCurrentPage(prev => Math.max(1, prev - 1)),
+            nextPage: () => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1)),
+            setPageSize: (size: number) => {
+              setPageSize(size);
+              setCurrentPage(1);
+            },
+            getRowCount: () => pagination.totalCount,
+          } as any}
+        />
       )}
 
       {/* Delete Confirmation Dialog */}
@@ -957,310 +752,6 @@ export default function CouponsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Edit Coupon Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Edit Coupon</DialogTitle>
-            <DialogDescription>
-              Update the coupon details below.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="code" className="text-right">
-                Code
-              </Label>
-              <Input
-                id="code"
-                value={editForm.code}
-                onChange={(e) => setEditForm(prev => ({ ...prev, code: e.target.value }))}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="type" className="text-right">
-                Type
-              </Label>
-              <Select
-                value={editForm.type}
-                onValueChange={(value) => setEditForm(prev => ({ ...prev, type: value }))}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="PERCENTAGE">Percentage</SelectItem>
-                  <SelectItem value="FIXED_AMOUNT">Fixed Amount</SelectItem>
-                  <SelectItem value="FREE_SHIPPING">Free Shipping</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="value" className="text-right">
-                Value
-              </Label>
-              <Input
-                id="value"
-                type="number"
-                value={editForm.value}
-                onChange={(e) => setEditForm(prev => ({ ...prev, value: e.target.value }))}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">
-                Description
-              </Label>
-              <Textarea
-                id="description"
-                value={editForm.description}
-                onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="minimumAmount" className="text-right">
-                Min Amount
-              </Label>
-              <Input
-                id="minimumAmount"
-                type="number"
-                value={editForm.minimumAmount}
-                onChange={(e) => setEditForm(prev => ({ ...prev, minimumAmount: e.target.value }))}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="maximumDiscount" className="text-right">
-                Max Discount
-              </Label>
-              <Input
-                id="maximumDiscount"
-                type="number"
-                value={editForm.maximumDiscount}
-                onChange={(e) => setEditForm(prev => ({ ...prev, maximumDiscount: e.target.value }))}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="usageLimit" className="text-right">
-                Usage Limit
-              </Label>
-              <Input
-                id="usageLimit"
-                type="number"
-                value={editForm.usageLimit}
-                onChange={(e) => setEditForm(prev => ({ ...prev, usageLimit: e.target.value }))}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="validFrom" className="text-right">
-                Valid From
-              </Label>
-              <Input
-                id="validFrom"
-                type="datetime-local"
-                value={editForm.validFrom}
-                onChange={(e) => setEditForm(prev => ({ ...prev, validFrom: e.target.value }))}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="validUntil" className="text-right">
-                Valid Until
-              </Label>
-              <Input
-                id="validUntil"
-                type="datetime-local"
-                value={editForm.validUntil}
-                onChange={(e) => setEditForm(prev => ({ ...prev, validUntil: e.target.value }))}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="isActive" className="text-right">
-                Active
-              </Label>
-              <div className="col-span-3">
-                <Checkbox
-                  id="isActive"
-                  checked={editForm.isActive}
-                  onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, isActive: !!checked }))}
-                />
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEditDialog(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleUpdateCoupon}
-              disabled={updateCouponMutation.isPending}
-            >
-              {updateCouponMutation.isPending ? 'Updating...' : 'Update Coupon'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Add Coupon Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Add New Coupon</DialogTitle>
-            <DialogDescription>
-              Create a new coupon with the details below.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="add-code" className="text-right">
-                Code
-              </Label>
-              <Input
-                id="add-code"
-                value={addForm.code}
-                onChange={(e) => setAddForm(prev => ({ ...prev, code: e.target.value }))}
-                className="col-span-3"
-                placeholder="Enter coupon code"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="add-type" className="text-right">
-                Type
-              </Label>
-              <Select
-                value={addForm.type}
-                onValueChange={(value) => setAddForm(prev => ({ ...prev, type: value }))}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="PERCENTAGE">Percentage</SelectItem>
-                  <SelectItem value="FIXED_AMOUNT">Fixed Amount</SelectItem>
-                  <SelectItem value="FREE_SHIPPING">Free Shipping</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="add-value" className="text-right">
-                Value
-              </Label>
-              <Input
-                id="add-value"
-                type="number"
-                value={addForm.value}
-                onChange={(e) => setAddForm(prev => ({ ...prev, value: e.target.value }))}
-                className="col-span-3"
-                placeholder="Enter discount value"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="add-description" className="text-right">
-                Description
-              </Label>
-              <Textarea
-                id="add-description"
-                value={addForm.description}
-                onChange={(e) => setAddForm(prev => ({ ...prev, description: e.target.value }))}
-                className="col-span-3"
-                placeholder="Optional description"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="add-minimumAmount" className="text-right">
-                Min Amount
-              </Label>
-              <Input
-                id="add-minimumAmount"
-                type="number"
-                value={addForm.minimumAmount}
-                onChange={(e) => setAddForm(prev => ({ ...prev, minimumAmount: e.target.value }))}
-                className="col-span-3"
-                placeholder="Minimum order amount"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="add-maximumDiscount" className="text-right">
-                Max Discount
-              </Label>
-              <Input
-                id="add-maximumDiscount"
-                type="number"
-                value={addForm.maximumDiscount}
-                onChange={(e) => setAddForm(prev => ({ ...prev, maximumDiscount: e.target.value }))}
-                className="col-span-3"
-                placeholder="Maximum discount amount"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="add-usageLimit" className="text-right">
-                Usage Limit
-              </Label>
-              <Input
-                id="add-usageLimit"
-                type="number"
-                value={addForm.usageLimit}
-                onChange={(e) => setAddForm(prev => ({ ...prev, usageLimit: e.target.value }))}
-                className="col-span-3"
-                placeholder="Maximum usage count"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="add-validFrom" className="text-right">
-                Valid From
-              </Label>
-              <Input
-                id="add-validFrom"
-                type="datetime-local"
-                value={addForm.validFrom}
-                onChange={(e) => setAddForm(prev => ({ ...prev, validFrom: e.target.value }))}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="add-validUntil" className="text-right">
-                Valid Until
-              </Label>
-              <Input
-                id="add-validUntil"
-                type="datetime-local"
-                value={addForm.validUntil}
-                onChange={(e) => setAddForm(prev => ({ ...prev, validUntil: e.target.value }))}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="add-isActive" className="text-right">
-                Active
-              </Label>
-              <div className="col-span-3">
-                <Checkbox
-                  id="add-isActive"
-                  checked={addForm.isActive}
-                  onCheckedChange={(checked) => setAddForm(prev => ({ ...prev, isActive: !!checked }))}
-                />
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddDialog(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleCreateCoupon}
-              disabled={createCouponMutation.isPending}
-            >
-              {createCouponMutation.isPending ? 'Creating...' : 'Create Coupon'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

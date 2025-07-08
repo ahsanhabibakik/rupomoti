@@ -35,17 +35,51 @@ const updateUserSchema = z.object({
 });
 
 // Helper function to check if user can manage roles
-function canManageRole(currentUserRole: string, targetRole: string): boolean {
-  if (currentUserRole === 'SUPER_ADMIN') return true;
-  if (currentUserRole === 'ADMIN' && targetRole !== 'SUPER_ADMIN') return true;
+function canManageRole(currentUserRole: string, targetRole: string, currentUserId: string, targetUserId: string): boolean {
+  // Super admins can manage all roles except other super admins (unless it's themselves)
+  if (currentUserRole === 'SUPER_ADMIN') {
+    // Super admin can't demote other super admins, but can modify their own profile
+    if (targetRole === 'SUPER_ADMIN' && currentUserId !== targetUserId) {
+      return false;
+    }
+    return true;
+  }
+  
+  // Admins can only manage USER and other ADMIN roles, not SUPER_ADMIN or MANAGER
+  if (currentUserRole === 'ADMIN') {
+    return targetRole === 'USER' || targetRole === 'ADMIN';
+  }
+  
+  // Managers can only view, not manage roles
   return false;
 }
 
 // Helper function to check if user can perform action
-function canPerformAction(currentUserRole: string, targetUserId: string, currentUserId: string): boolean {
-  if (currentUserRole === 'SUPER_ADMIN') return true;
-  if (currentUserRole === 'ADMIN' && targetUserId !== currentUserId) return true;
+function canPerformAction(currentUserRole: string, targetUserId: string, currentUserId: string, targetUserRole: string): boolean {
+  // Super admins can manage all users except other super admins
+  if (currentUserRole === 'SUPER_ADMIN') {
+    // Can't modify other super admins
+    if (targetUserRole === 'SUPER_ADMIN' && currentUserId !== targetUserId) {
+      return false;
+    }
+    return true;
+  }
+  
+  // Admins can manage users and other admins but not super admins or managers
+  if (currentUserRole === 'ADMIN') {
+    if (targetUserRole === 'SUPER_ADMIN' || targetUserRole === 'MANAGER') {
+      return false;
+    }
+    return targetUserId !== currentUserId; // Can't modify themselves
+  }
+  
+  // Managers can only view, not modify
   return false;
+}
+
+// Helper function to check read permissions
+function canReadUsers(userRole: string): boolean {
+  return ['SUPER_ADMIN', 'ADMIN', 'MANAGER'].includes(userRole);
 }
 
 // GET /api/admin/users - Get all users with filtering and pagination
@@ -84,11 +118,6 @@ export async function GET(request: Request) {
       where.isFlagged = false;
     } else if (query.status === 'flagged') {
       where.isFlagged = true;
-    }
-
-    // For non-super admins, hide super admin users
-    if (session.user.role !== 'SUPER_ADMIN') {
-      where.role = { not: 'SUPER_ADMIN' };
     }
 
     const skip = (query.page - 1) * query.limit;
@@ -267,6 +296,28 @@ export async function PATCH(request: Request) {
     if (targetUser.role === 'SUPER_ADMIN' && session.user.role !== 'SUPER_ADMIN') {
       return NextResponse.json(
         { message: "Cannot modify Super Admin users" },
+        { status: 403 }
+      );
+    }
+
+    // Prevent non-Super Admins from making anyone else a Super Admin
+    if (validatedData.role === 'SUPER_ADMIN' && session.user.role !== 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { message: "Only Super Admins can assign the Super Admin role" },
+        { status: 403 }
+      );
+    }
+
+    // Prevent a Super Admin from changing another Super Admin's role
+    if (
+      session.user.role === 'SUPER_ADMIN' &&
+      targetUser.role === 'SUPER_ADMIN' &&
+      targetUser.id !== session.user.id && // Can change their own role
+      validatedData.role &&
+      validatedData.role !== 'SUPER_ADMIN'
+    ) {
+      return NextResponse.json(
+        { message: "A Super Admin cannot change another Super Admin's role." },
         { status: 403 }
       );
     }

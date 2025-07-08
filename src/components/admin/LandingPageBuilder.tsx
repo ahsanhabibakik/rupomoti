@@ -792,8 +792,8 @@ export function LandingPageBuilder({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="BDT">BDT (৳)</SelectItem>
-                      <SelectItem value="USD">USD ($)</SelectItem>
+                      <SelectItem value="BDT">৳ BDT</SelectItem>
+                      <SelectItem value="USD">$ USD</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

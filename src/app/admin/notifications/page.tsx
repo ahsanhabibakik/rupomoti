@@ -33,7 +33,8 @@ export default function NotificationsPage() {
       const response = await fetch('/api/admin/notifications')
       if (!response.ok) throw new Error('Failed to fetch notifications')
       const data = await response.json()
-      return data.notifications || []
+      // Ensure we always return an array
+      return Array.isArray(data.notifications) ? data.notifications : []
     },
     refetchInterval: 30000, // Refetch every 30 seconds
   })
@@ -58,6 +59,7 @@ export default function NotificationsPage() {
   })
 
   const handleMarkAllRead = () => {
+    if (!Array.isArray(notifications)) return;
     const unreadIds = notifications.filter((n: Notification) => !n.isRead).map((n: Notification) => n.id)
     if (unreadIds.length > 0) {
       markAsRead(unreadIds)
@@ -105,7 +107,7 @@ export default function NotificationsPage() {
         <Button 
           variant="outline" 
           onClick={handleMarkAllRead}
-          disabled={notifications.every((n: Notification) => n.isRead)}
+          disabled={!Array.isArray(notifications) || notifications.every((n: Notification) => n.isRead)}
         >
           <Check className="w-4 h-4 mr-2" />
           Mark All Read
@@ -113,7 +115,7 @@ export default function NotificationsPage() {
       </div>
 
       <div className="grid gap-4">
-        {notifications.length === 0 ? (
+        {!Array.isArray(notifications) || notifications.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <Bell className="w-12 h-12 text-muted-foreground mb-4" />

@@ -39,7 +39,7 @@ const termsSections = [
   {
     title: '4. Pricing and Payment',
     content: [
-      'All prices are in Bangladeshi Taka (BDT) unless otherwise stated. Prices are subject to change without notice.',
+      'All prices are in Bangladeshi Taka (৳ BDT) unless otherwise stated. Prices are subject to change without notice.',
       'We reserve the right to refuse any order you place with us. We may, in our sole discretion, limit or cancel quantities purchased per person, per household, or per order.',
       'Payment is due at the time of order. We accept various payment methods as indicated during checkout. All payments must be made in full before the order is processed.',
     ],

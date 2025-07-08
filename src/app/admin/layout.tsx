@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, Suspense } from 'react'
+import { ConnectionStatus } from '@/components/ConnectionStatus'
 import { useRouter, usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
@@ -66,14 +67,16 @@ const navigation = [
 ]
 
 const quickStats = [
-  { name: 'Total Sales', value: '$12,345', change: '+12%', icon: TrendingUp },
+  { name: 'Total Sales', value: '৳12,345', change: '+12%', icon: TrendingUp },
   { name: 'Orders', value: '156', change: '+8%', icon: ShoppingCart },
   { name: 'Customers', value: '2,847', change: '+15%', icon: Users },
   { name: 'Products', value: '89', change: '+3%', icon: Package },
 ]
 
 function Sidebar({ className, onClose }: { className?: string; onClose?: () => void }) {
-  const pathname = usePathname()
+  const pathname = usePathname();
+  const { data: session } = useSession();
+  const userRole = session?.user?.role;
 
   return (
     <div className={cn("flex flex-col h-full", className)}>
@@ -252,9 +255,8 @@ export default function AdminLayout({
 
   return (
     <>
-      {/* Temporarily commented out AdminThemeProvider */}
-      {/* <AdminThemeProvider> */}
-      <div className="min-h-screen bg-gray-50 text-gray-900" data-admin-theme-container style={{colorScheme: 'light'}}>
+      {/* Admin panel container */}
+      <div className="min-h-screen bg-gray-50 text-gray-900" data-admin-container>
       {/* Top Bar - Mobile */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -344,7 +346,6 @@ export default function AdminLayout({
         </div>
       </div>
     </div>
-    {/* </AdminThemeProvider> */}
     </>
   )
 }
