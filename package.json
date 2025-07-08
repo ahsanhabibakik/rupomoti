@@ -3,9 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbo",
+    "dev": "next dev",
+    "dev:turbo": "next dev --turbo",
     "x": "pnpm i && pnpm g && pnpm dev ",
-    "dev:turbo": "next dev --turbopack",
+    "dev:turbopack": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
