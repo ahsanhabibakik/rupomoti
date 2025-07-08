@@ -4,7 +4,7 @@
  */
 
 async function testProductionEndpoints() {
-  const baseUrl = 'https://rupamuti.com'
+  const baseUrl = 'https://rupomoti.com'
   
   console.log('🧪 Testing Production Endpoints...\n')
   
@@ -46,7 +46,7 @@ async function testProductionEndpoints() {
   console.log('🏁 Test Complete!')
   console.log('\n📝 If any tests failed:')
   console.log('1. Check environment variables in your hosting platform')
-  console.log('2. Ensure NEXTAUTH_URL=https://rupamuti.com')
+  console.log('2. Ensure NEXTAUTH_URL=https://rupomoti.com')
   console.log('3. Verify Google OAuth redirect URIs include your domain')
   console.log('4. Check database connection from hosting platform')
 }

@@ -1,0 +1,188 @@
+import { NextResponse } from 'next/server'
+import { MongoClient } from 'mongodb'
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
+async function getMongoClient() {
+  const client = new MongoClient(process.env.DATABASE_URL!, {
+    maxPoolSize: 10,
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+  })
+  await client.connect()
+  return client
+}
+
+export async function GET(request: Request) {
+  let client: MongoClient | null = null
+  
+  try {
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const pageSize = parseInt(searchParams.get('pageSize') || '10', 10);
+    const search = searchParams.get('search') || '';
+
+    client = await getMongoClient()
+    const db = client.db()
+    const categoriesCollection = db.collection('Category')
+
+    // Build query filter
+    const filter: Record<string, unknown> = {}
+    if (search) {
+      filter.name = { $regex: search, $options: 'i' }
+    }
+
+    // Get total count
+    const totalCategories = await categoriesCollection.countDocuments(filter)
+
+    // Get categories with pagination
+    const categories = await categoriesCollection
+      .find(filter)
+      .sort({ name: 1 })
+      .skip((page - 1) * pageSize)
+      .limit(pageSize)
+      .toArray()
+
+    // Get product counts for each category
+    const categoriesWithCounts = await Promise.all(
+      categories.map(async (category) => {
+        const productCount = await db.collection('Product').countDocuments({
+          categoryId: category._id.toString()
+        })
+        
+        return {
+          id: category._id.toString(),
+          name: category.name,
+          description: category.description || null,
+          image: category.image || null,
+          slug: category.slug,
+          isActive: category.isActive || true,
+          sortOrder: category.sortOrder || 0,
+          seoTitle: category.seoTitle || null,
+          seoDescription: category.seoDescription || null,
+          seoKeywords: category.seoKeywords || null,
+          createdAt: category.createdAt,
+          updatedAt: category.updatedAt,
+          _count: {
+            products: productCount
+          }
+        }
+      })
+    )
+
+    const totalPages = Math.ceil(totalCategories / pageSize)
+
+    await client.close()
+
+    return NextResponse.json({
+      success: true,
+      data: categoriesWithCounts,
+      pagination: {
+        page,
+        pageSize,
+        totalCategories,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+      },
+    })
+
+  } catch (error) {
+    console.error('Categories API Error:', error)
+    
+    if (client) {
+      try {
+        await client.close()
+      } catch (closeError) {
+        console.error('Error closing MongoDB connection:', closeError)
+      }
+    }
+
+    return NextResponse.json(
+      { 
+        error: 'Failed to fetch categories',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    )
+  }
+}
+
+export async function POST(request: Request) {
+  let client: MongoClient | null = null
+  
+  try {
+    const body = await request.json()
+    const { name, description, image, slug, isActive = true, sortOrder = 0, seoTitle, seoDescription, seoKeywords } = body
+
+    if (!name || !slug) {
+      return NextResponse.json(
+        { error: 'Name and slug are required' },
+        { status: 400 }
+      )
+    }
+
+    client = await getMongoClient()
+    const db = client.db()
+    const categoriesCollection = db.collection('Category')
+
+    // Check if slug already exists
+    const existingCategory = await categoriesCollection.findOne({ slug })
+    if (existingCategory) {
+      return NextResponse.json(
+        { error: 'A category with this slug already exists' },
+        { status: 400 }
+      )
+    }
+
+    const now = new Date()
+    const newCategory = {
+      name,
+      description: description || null,
+      image: image || null,
+      slug,
+      isActive,
+      sortOrder,
+      seoTitle: seoTitle || null,
+      seoDescription: seoDescription || null,
+      seoKeywords: seoKeywords || null,
+      createdAt: now,
+      updatedAt: now
+    }
+
+    const result = await categoriesCollection.insertOne(newCategory)
+    
+    const createdCategory = {
+      id: result.insertedId.toString(),
+      ...newCategory,
+      _count: { products: 0 }
+    }
+
+    await client.close()
+
+    return NextResponse.json({
+      success: true,
+      data: createdCategory
+    }, { status: 201 })
+
+  } catch (error) {
+    console.error('Create Category Error:', error)
+    
+    if (client) {
+      try {
+        await client.close()
+      } catch (closeError) {
+        console.error('Error closing MongoDB connection:', closeError)
+      }
+    }
+
+    return NextResponse.json(
+      { 
+        error: 'Failed to create category',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    )
+  }
+}

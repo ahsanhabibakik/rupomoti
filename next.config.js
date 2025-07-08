@@ -15,6 +15,14 @@ const nextConfig = {
       'node_modules/@esbuild/linux-x64',
     ],
   },
+  // Include Prisma binaries for serverless deployment
+  outputFileTracingIncludes: {
+    '/api/**/*': [
+      './node_modules/.prisma/client/**/*',
+      './node_modules/@prisma/client/**/*',
+      './prisma/**/*'
+    ],
+  },
   // Optimize build and runtime performance
   experimental: {
     optimizePackageImports: ['@prisma/client'],
@@ -80,6 +88,15 @@ const nextConfig = {
   cleanDistDir: true,
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
+  },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      // Ensure Prisma binaries are included in the server bundle
+      config.externals.push({
+        '@prisma/client': '@prisma/client',
+      })
+    }
+    return config
   },
 }
 
