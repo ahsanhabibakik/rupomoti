@@ -40,14 +40,39 @@ const fetchLogoData = async (): Promise<LogoData | null> => {
   logoFetchPromise = new Promise<LogoData | null>(async (resolve) => {
     try {
       const response = await fetch('/api/public/media/logo', { 
-        next: { revalidate: CACHE_TTL / 1000 }
+        next: { revalidate: CACHE_TTL / 1000 },
+        cache: 'no-cache', // Ensure fresh data
+        headers: {
+          'Pragma': 'no-cache',
+          'Cache-Control': 'no-cache'
+        }
       });
       
       if (response.ok) {
         const data = await response.json();
-        cachedLogoData = data;
-        lastFetchTime = now;
-        resolve(data);
+        
+        // Validate the URL before caching
+        if (data && data.url) {
+          // Check if it's a local path that should be using Cloudinary
+          if (data.url.startsWith('/uploads/') && !data.url.includes('res.cloudinary.com')) {
+            // Extract folder and filename
+            const pathParts = data.url.split('/').filter(Boolean);
+            const folder = pathParts.length > 1 ? pathParts[pathParts.length - 2] : '';
+            const filename = pathParts[pathParts.length - 1];
+            const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dotinshdj';
+            
+            // Update URL to use Cloudinary directly
+            data.url = `https://res.cloudinary.com/${cloudName}/image/upload/${folder ? folder + '/' : ''}${filename}`;
+            console.log('Client-side conversion of logo URL:', data.url);
+          }
+          
+          cachedLogoData = data;
+          lastFetchTime = now;
+          resolve(data);
+        } else {
+          console.warn('Logo data from API is invalid:', data);
+          resolve(null);
+        }
       } else {
         console.warn('Failed to fetch logo data:', response.status);
         resolve(null);
@@ -158,12 +183,27 @@ export function Logo({ variant = "default", className = "", priority = false }: 
 
   // Get the logo URL (either from API or default)
   const rawLogoUrl = logoData?.url || defaultLogo;
-  
-  // Optimize Cloudinary URL if applicable
-  const logoUrl = isCloudinaryUrl(rawLogoUrl) 
-    ? optimizeCloudinaryUrl(rawLogoUrl, width * 2, height * 2, { quality: 'auto', format: 'auto' })
-    : rawLogoUrl;
+
+  // Convert local upload path to Cloudinary URL if needed
+  let assetUrl = rawLogoUrl;
+  if (!isCloudinaryUrl(rawLogoUrl) && rawLogoUrl.startsWith('/uploads/')) {
+    // Extract folder and filename from the path
+    const pathParts = rawLogoUrl.split('/').filter(Boolean);
+    const folder = pathParts.length > 1 ? pathParts[pathParts.length - 2] : '';
+    const filename = pathParts[pathParts.length - 1];
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dotinshdj';
     
+    // Construct proper Cloudinary URL including the folder
+    assetUrl = `https://res.cloudinary.com/${cloudName}/image/upload/${folder ? folder + '/' : ''}${filename}`;
+    
+    console.log('Converted local path to Cloudinary URL:', rawLogoUrl, '->', assetUrl);
+  }
+
+  // Optimize Cloudinary URL if applicable
+  const logoUrl = isCloudinaryUrl(assetUrl)
+    ? optimizeCloudinaryUrl(assetUrl, width * 2, height * 2, { quality: 'auto', format: 'auto' })
+    : assetUrl;
+
   const logoAlt = logoData?.alt || "Rupomoti";
 
   return (
@@ -187,13 +227,17 @@ export function Logo({ variant = "default", className = "", priority = false }: 
           onLoad={() => setImgLoaded(true)}
           onError={(e) => {
             // If the loaded logo fails, try fallbacks in sequence
+            console.warn('Logo failed to load:', (e.target as HTMLImageElement).src);
             const target = e.target as HTMLImageElement;
             
             if (target.src.includes(logoUrl) && logoUrl !== defaultLogo) {
+              console.log('Trying default logo:', defaultLogo);
               target.src = defaultLogo;
             } else if (target.src.includes(defaultLogo)) {
+              console.log('Trying fallback logo:', fallbackLogo);
               target.src = fallbackLogo;
             } else {
+              console.warn('All logo attempts failed, showing text fallback');
               setHasError(true);
             }
           }}

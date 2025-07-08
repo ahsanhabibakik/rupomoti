@@ -14,7 +14,6 @@
     "seed:super-admins": "npx tsx scripts/seed-super-admins.ts",
     "verify:super-admins": "npx tsx scripts/verify-super-admins.ts",
     "seed:media": "npx tsx scripts/seed-media.ts",
-    "postinstall": "npx tsx scripts/seed-media.ts",
     "g": "npx prisma generate",
     "p": "npx prisma db push",
     "studio": "npx prisma studio",

@@ -5,7 +5,7 @@ import { ConnectionStatus } from '@/components/ConnectionStatus'
 import { useRouter, usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
-import Image from 'next/image'
+import { Logo } from '@/components/layout/Logo'
 import {
   LayoutDashboard,
   Package,
@@ -83,13 +83,7 @@ function Sidebar({ className, onClose }: { className?: string; onClose?: () => v
       {/* Header with Logo and Back to Home */}
       <div className="flex items-center justify-between h-16 px-4 border-b bg-white">
         <Link href="/admin" className="flex items-center gap-3 group" onClick={onClose}>
-          <Image 
-            src="/images/branding/logo.png" 
-            alt="Rupomoti" 
-            width={32} 
-            height={32} 
-            className="rounded-lg"
-          />
+          <Logo variant="small" className="rounded-lg" />
           <div className="flex flex-col">
             <span className="text-lg font-bold text-primary group-hover:underline">Rupomoti</span>
             <span className="text-xs text-gray-500">Admin Panel</span>
@@ -271,13 +265,7 @@ export default function AdminLayout({
             </SheetContent>
           </Sheet>
           <Link href="/" className="flex items-center gap-2">
-            <Image 
-              src="/images/branding/logo.png" 
-              alt="Rupomoti" 
-              width={28} 
-              height={28} 
-              className="rounded-lg"
-            />
+            <Logo variant="small" className="rounded-lg" />
             <span className="font-bold text-primary">Admin</span>
           </Link>
         </div>

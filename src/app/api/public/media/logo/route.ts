@@ -64,10 +64,11 @@ export async function GET() {
       }
     });
 
-    // 2. If no logo is found or the URL is invalid, use the default logo
-    if (!logo || !logo.url || !validatePublicAssetExists(logo.url)) {
+    // 2. If no logo is found or the URL doesn't pass validation checks
+    if (!logo || !logo.url) {
       // Check if default logo exists before returning it
       if (validatePublicAssetExists(DEFAULT_LOGO.url)) {
+        console.log('No DB logo found, using default logo:', DEFAULT_LOGO.url);
         // Return with cache headers
         return NextResponse.json(DEFAULT_LOGO, {
           headers: {
@@ -75,6 +76,7 @@ export async function GET() {
           }
         });
       } else {
+        console.log('No DB logo and default logo missing, using fallback');
         // If default logo doesn't exist either, return a fallback
         return NextResponse.json({
           ...DEFAULT_LOGO,
@@ -85,6 +87,19 @@ export async function GET() {
           }
         });
       }
+    }
+    
+    // Special handling for local upload paths that need to be served from Cloudinary
+    if (logo.url.startsWith('/uploads/') && !logo.url.includes('res.cloudinary.com')) {
+      console.log('Converting local upload path to Cloudinary URL:', logo.url);
+      // Extract folder and filename
+      const pathParts = logo.url.split('/').filter(Boolean);
+      const folder = pathParts.length > 1 ? pathParts[pathParts.length - 2] : '';
+      const filename = pathParts[pathParts.length - 1];
+      const cloudName = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dotinshdj';
+      
+      // Update the URL to use Cloudinary
+      logo.url = `https://res.cloudinary.com/${cloudName}/image/upload/${folder ? folder + '/' : ''}${filename}`;
     }
 
     // 3. Return the logo from the database with proper formatting
