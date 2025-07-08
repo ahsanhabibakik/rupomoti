@@ -23,6 +23,13 @@ model User {
   role           Role      @default(USER)
   isAdmin        Boolean   @default(false)
   isFlagged      Boolean   @default(false)
+  
+  // Two-Factor Authentication fields
+  twoFactorEnabled     Boolean?  @default(false)
+  twoFactorMethod      String?   // 'email' for now
+  twoFactorSecret      String?   // Secret key for 2FA
+  twoFactorCode        String?   // Temporary verification code
+  twoFactorCodeExpires DateTime? // Expiration time for verification code
 
   accounts       Account[]
   sessions       Session[]
@@ -36,6 +43,8 @@ model User {
   auditLogs      AuditLog[]
   stockLogs      StockLog[]
   notifications  Notification[]
+  createdCoupons Coupon[] @relation("CreatedCoupons")
+  updatedCoupons Coupon[] @relation("UpdatedCoupons")
 }
 
 model Account {
@@ -220,6 +229,8 @@ model Order {
   deliveryAddress String
   orderNote     String?
   appliedCoupon String?        // Coupon code applied
+  couponId      String?        @db.ObjectId
+  coupon        Coupon?        @relation(fields: [couponId], references: [id])
   trackingId    String?
   trackingNumber String?       // Simple tracking number
   shippingProvider String?     // 'fedex', 'ups', 'dhl', 'usps'
@@ -335,21 +346,28 @@ model WishlistItem {
 }
 
 model Coupon {
-  id            String    @id @default(auto()) @map("_id") @db.ObjectId
-  code          String    @unique
-  type          CouponType
-  value         Float     // Percentage or fixed amount (0 for FREE_SHIPPING)
-  minimumAmount Float?
+  id              String       @id @default(auto()) @map("_id") @db.ObjectId
+  code            String       @unique
+  type            CouponType
+  value           Float // Percentage or fixed amount (0 for FREE_SHIPPING)
+  minimumAmount   Float?
   maximumDiscount Float?
-  usageLimit    Int?
-  usedCount     Int       @default(0)
-  isActive      Boolean   @default(true)
-  validFrom     DateTime
-  validUntil    DateTime
-  description   String?   // Description for the coupon
+  usageLimit      Int?
+  usedCount       Int          @default(0)
+  isActive        Boolean      @default(true)
+  validFrom       DateTime
+  validUntil      DateTime?
+  description     String? // Description for the coupon
   applicableZones DeliveryZone[] // For zone-specific coupons
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  orders          Order[]
+
+  createdById     String?      @db.ObjectId
+  createdBy       User?        @relation("CreatedCoupons", fields: [createdById], references: [id])
+  updatedById     String?      @db.ObjectId
+  updatedBy       User?        @relation("UpdatedCoupons", fields: [updatedById], references: [id])
 
   @@map("coupons")
 }

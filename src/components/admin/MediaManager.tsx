@@ -25,6 +25,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
 import Image from 'next/image'
 import { Switch } from '@/components/ui/switch'
+import { ImageUpload } from '@/components/admin/ImageUpload'
 
 interface Media {
   id: string
@@ -45,19 +46,25 @@ const SECTIONS = [
     name: 'hero-slider',
     title: 'Hero Slider',
     description: 'Main banner images for the homepage',
-    guidelines: 'Desktop: 1920x800px (3:1 ratio). Mobile: 800x1000px (4:5 ratio). Max 10 images.'
+    guidelines: 'Desktop: 1920x800px (3:1 ratio). Mobile: 800x1000px (4:5 ratio). Max 10 images.',
+    maxItems: 10,
+    canDelete: true,
   },
   {
     name: 'logo',
     title: 'Logo',
     description: 'Website logo and branding',
-    guidelines: '300x100px, PNG with transparent background'
+    guidelines: '300x100px, PNG/SVG with transparent background. Only one logo can be active at a time.',
+    maxItems: 1,
+    canDelete: false,
   },
   {
     name: 'banner',
     title: 'Banners',
     description: 'Promotional banners and ads',
-    guidelines: '1200x400px, JPG/PNG, max 1MB'
+    guidelines: '1200x400px, JPG/PNG, max 1MB',
+    maxItems: 20,
+    canDelete: true,
   }
 ]
 
@@ -142,46 +149,106 @@ export function MediaManager() {
   const handleUpload = async () => {
     const validItems = uploadItems.filter(item => item.desktopFile && item.name);
     if (validItems.length === 0) {
-      toast.error('Please add at least one valid banner with a desktop image and name.');
+      toast.error('Please add at least one valid item with an image and name.');
       return;
     }
 
-    toast.info(`Uploading ${validItems.length} banner(s)...`);
-
-    const uploadPromises = validItems.map(item => {
-      const formData = new FormData();
-      formData.append('file', item.desktopFile!);
-      if (item.mobileFile && selectedSection === 'hero-slider') {
-        formData.append('mobileFile', item.mobileFile);
+    // Handle logo section special case
+    if (selectedSection === 'logo') {
+      const existingLogo = media.find(item => item.section === 'logo');
+      if (existingLogo) {
+        toast.error('A logo already exists. Please update the existing logo instead of creating a new one.');
+        return;
       }
-      formData.append('name', item.name);
-      formData.append('alt', item.alt);
-      formData.append('section', selectedSection);
-      formData.append('type', 'image');
       
-      return fetch('/api/admin/media', {
-        method: 'POST',
-        body: formData
-      });
+      if (validItems.length > 1) {
+        toast.error('You can only upload one logo. Please remove additional items.');
+        return;
+      }
+    }
+
+    toast.info(`Uploading ${validItems.length} item(s)...`);
+
+    const uploadPromises = validItems.map(async (item) => {
+      try {
+        // First upload files to Cloudinary via our upload API
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', item.desktopFile!);
+        uploadFormData.append('section', selectedSection);
+        
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: uploadFormData
+        });
+        
+        if (!uploadResponse.ok) {
+          const errorData = await uploadResponse.json().catch(() => ({}));
+          throw new Error(errorData.error || 'Upload to Cloudinary failed');
+        }
+        
+        const uploadData = await uploadResponse.json();
+        
+        // Handle mobile file for hero-slider
+        let mobileCloudinaryUrl = null;
+        if (item.mobileFile && selectedSection === 'hero-slider') {
+          const mobileUploadFormData = new FormData();
+          mobileUploadFormData.append('file', item.mobileFile);
+          mobileUploadFormData.append('section', `${selectedSection}/mobile`);
+          
+          const mobileUploadResponse = await fetch('/api/upload', {
+            method: 'POST',
+            body: mobileUploadFormData
+          });
+          
+          if (mobileUploadResponse.ok) {
+            const mobileUploadData = await mobileUploadResponse.json();
+            mobileCloudinaryUrl = mobileUploadData.url;
+          }
+        }
+        
+        // Now save to database with Cloudinary URLs
+        const formData = new FormData();
+        formData.append('cloudinaryUrl', uploadData.url);
+        formData.append('isFromCloudinary', 'true');
+        if (mobileCloudinaryUrl) {
+          formData.append('mobileCloudinaryUrl', mobileCloudinaryUrl);
+        }
+        formData.append('name', item.name);
+        formData.append('alt', item.alt);
+        formData.append('section', selectedSection);
+        formData.append('type', 'cloudinary');
+        
+        return fetch('/api/admin/media', {
+          method: 'POST',
+          body: formData
+        });
+      } catch (error) {
+        console.error('Error preparing upload:', error);
+        throw error;
+      }
     });
 
     try {
       const results = await Promise.allSettled(uploadPromises);
       let successfulUploads = 0;
-      results.forEach(result => {
+      let failedUploads = 0;
+      
+      for (const result of results) {
         if (result.status === 'fulfilled' && result.value.ok) {
           successfulUploads++;
+        } else {
+          failedUploads++;
         }
-      });
+      }
       
       if (successfulUploads > 0) {
-        toast.success(`${successfulUploads} banner(s) uploaded successfully!`);
+        toast.success(`${successfulUploads} ${selectedSection === 'logo' ? 'logo' : 'item(s)'} uploaded successfully!`);
         setIsUploadOpen(false);
         fetchMedia();
       }
 
-      if (successfulUploads < validItems.length) {
-        toast.error(`${validItems.length - successfulUploads} upload(s) failed.`);
+      if (failedUploads > 0) {
+        toast.error(`${failedUploads} upload(s) failed. Please try again.`);
       }
     } catch (error) {
       console.error('Error uploading:', error);

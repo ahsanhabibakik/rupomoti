@@ -6,9 +6,9 @@ import { Upload, X, Loader2 } from 'lucide-react'
 import Image from 'next/image'
 import { toast } from 'sonner'
 
-// Define Cloudinary upload preset and cloud name
-const CLOUDINARY_UPLOAD_PRESET = 'rupomoti_media';
-const CLOUDINARY_CLOUD_NAME = 'rupomoti';
+// Use environment variables for Cloudinary settings
+const CLOUDINARY_UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'rupomoti_uploads';
+const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dotinshdj';
 
 interface ImageUploadProps {
   value: string[]
@@ -28,46 +28,66 @@ export function ImageUpload({
   const [isUploading, setIsUploading] = useState(false)
   const [progress, setProgress] = useState<Record<string, number>>({})
 
-  // Function to upload file to Cloudinary
-  const uploadToCloudinary = useCallback(async (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
+  // Function to upload file through our server API
+  const uploadToServer = useCallback(async (file: File): Promise<string> => {
+    // Create unique identifier for this upload to track progress
+    const uploadId = `${file.name}-${Date.now()}`;
+    
+    try {
+      // Special handling for SVG files to ensure they don't get saved locally
+      const isSvg = file.type === 'image/svg+xml' || file.name.endsWith('.svg');
+      
+      // Use FormData to prepare the upload
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-      formData.append('folder', `rupomoti/${section}`);
+      formData.append('section', section || 'general');
       
-      // Create unique identifier for this upload to track progress
-      const uploadId = `${file.name}-${Date.now()}`;
+      if (isSvg) {
+        // Mark this as an SVG file so the server knows to handle it properly
+        formData.append('isSvg', 'true');
+      }
       
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`);
+      // Set initial progress
+      setProgress(prev => ({
+        ...prev,
+        [uploadId]: 10 // Start with 10% to show activity
+      }));
       
-      // Track upload progress
-      xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable) {
-          const percentComplete = Math.round((event.loaded / event.total) * 100);
-          setProgress(prev => ({
-            ...prev,
-            [uploadId]: percentComplete
-          }));
-        }
-      };
+      // Use fetch with our API endpoint
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+        // Note: We can't track upload progress with fetch API as easily as with XHR
+      });
       
-      xhr.onload = () => {
-        if (xhr.status === 200) {
-          const response = JSON.parse(xhr.responseText);
-          resolve(response.secure_url);
-        } else {
-          reject(new Error('Upload failed'));
-        }
-      };
+      // Update progress to 90% after server receives it
+      setProgress(prev => ({
+        ...prev,
+        [uploadId]: 90
+      }));
       
-      xhr.onerror = () => {
-        reject(new Error('Network error during upload'));
-      };
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Upload failed with status ${response.status}`);
+      }
       
-      xhr.send(formData);
-    });
+      const data = await response.json();
+      
+      // Set progress to 100% on completion
+      setProgress(prev => ({
+        ...prev,
+        [uploadId]: 100
+      }));
+      
+      if (data.url) {
+        return data.url;
+      } else {
+        throw new Error('Invalid response from server');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      throw error;
+    }
   }, [section]);
 
   const onDrop = async (acceptedFiles: File[]) => {
@@ -96,7 +116,7 @@ export function ImageUpload({
 
     try {
       // Use Promise.all to upload files in parallel
-      const uploadPromises = validFiles.map(file => uploadToCloudinary(file));
+      const uploadPromises = validFiles.map(file => uploadToServer(file));
       const uploadedUrls = await Promise.all(uploadPromises);
       
       if (uploadedUrls.length > 0) {

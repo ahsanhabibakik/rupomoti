@@ -42,6 +42,21 @@ export async function GET(req: NextRequest) {
 
 // Helper to upload a file to local storage
 const uploadFile = async (file: File, section: string) => {
+  // Check if this is an SVG from Cloudinary - if so, don't save it locally
+  if ((file.type === 'image/svg+xml' || file.name.endsWith('.svg')) && file.name.includes('cloudinary')) {
+    const timestamp = Date.now();
+    const filename = `cloudinary_svg_${timestamp}.svg`;
+    
+    // Don't actually save the file, just return the cloudinary URL if available
+    // This is a placeholder - in production, extract the actual Cloudinary URL
+    return {
+      url: file.name.startsWith('cloudinary:') 
+        ? file.name.substring(11) // Extract URL if prefixed with cloudinary:
+        : `/placeholder.svg`, // Fallback if no URL is provided
+      filename
+    };
+  }
+
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
 
@@ -105,30 +120,74 @@ export async function POST(req: NextRequest) {
     let mobileUrl: string | null = null;
     let desktopFilename: string | null = null;
     let mobileFilename: string | null = null;
+    let isCloudinary = false;
 
     if (cloudinaryUrl) {
       // Use the provided Cloudinary URL
       desktopUrl = cloudinaryUrl;
+      isCloudinary = true;
+      
       // For Cloudinary URLs, extract the public ID as filename
-      const urlParts = cloudinaryUrl.split('/');
-      desktopFilename = urlParts[urlParts.length - 1];
+      try {
+        // Extract filename from URL
+        const matches = cloudinaryUrl.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\.\w+)?$/);
+        desktopFilename = matches ? matches[1] : `cloudinary-${Date.now()}`;
+      } catch (error) {
+        console.warn('Error extracting filename from Cloudinary URL:', error);
+        desktopFilename = `cloudinary-${Date.now()}`;
+      }
     } else if (desktopFile) {
-      // Upload the file to local storage
-      const upload = await uploadFile(desktopFile, section);
-      desktopUrl = upload.url;
-      desktopFilename = upload.filename;
+      try {
+        // Check if it's a real file or a placeholder for Cloudinary URL
+        if (desktopFile.name.startsWith('cloudinary-url') && desktopFile.size === 0) {
+          // This is a placeholder file, but we don't have a cloudinaryUrl
+          return NextResponse.json({ error: 'Invalid Cloudinary URL' }, { status: 400 });
+        }
+        
+        // Don't save SVG files locally if they come from Cloudinary
+        if (desktopFile.name.endsWith('.svg') && desktopFile.type === 'image/svg+xml' && (formData.get('isFromCloudinary') === 'true')) {
+          // Extract the URL from the file object if possible or use a placeholder
+          desktopUrl = `/placeholder.svg`; // This should be replaced with proper SVG handling
+          desktopFilename = `cloudinary-svg-${Date.now()}`;
+          isCloudinary = true;
+        } else {
+          // Upload the file to local storage
+          const upload = await uploadFile(desktopFile, section);
+          desktopUrl = upload.url;
+          desktopFilename = upload.filename;
+        }
+      } catch (error) {
+        console.error('Error uploading file:', error);
+        return NextResponse.json({ error: 'File upload failed' }, { status: 500 });
+      }
     } else {
       return NextResponse.json({ error: 'No image provided' }, { status: 400 });
     }
 
     if (mobileCloudinaryUrl) {
       mobileUrl = mobileCloudinaryUrl;
-      const urlParts = mobileCloudinaryUrl.split('/');
-      mobileFilename = urlParts[urlParts.length - 1];
+      try {
+        // Extract filename from URL
+        const matches = mobileCloudinaryUrl.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\.\w+)?$/);
+        mobileFilename = matches ? matches[1] : `mobile-cloudinary-${Date.now()}`;
+      } catch (error) {
+        mobileFilename = `mobile-cloudinary-${Date.now()}`;
+      }
     } else if (mobileFile) {
-      const upload = await uploadFile(mobileFile, section);
-      mobileUrl = upload.url;
-      mobileFilename = upload.filename;
+      try {
+        // Check if it's a real file or a placeholder for Cloudinary URL
+        if (mobileFile.name.startsWith('cloudinary-url') && mobileFile.size === 0) {
+          // This is a placeholder file, but we don't have a mobileCloudinaryUrl
+          // Skip mobile file in this case rather than failing
+        } else {
+          const upload = await uploadFile(mobileFile, `${section}/mobile`);
+          mobileUrl = upload.url;
+          mobileFilename = upload.filename;
+        }
+      } catch (error) {
+        console.error('Error uploading mobile file:', error);
+        // Continue without mobile image if it fails
+      }
     }
 
     // Get the highest position for the section
@@ -138,12 +197,19 @@ export async function POST(req: NextRequest) {
       select: { position: true }
     });
 
+    // Determine whether the upload is from Cloudinary
+    const isFromCloudinary = cloudinaryUrl || formData.get('isFromCloudinary') === 'true';
+    
+    // Determine if we're dealing with an SVG file
+    const isSvg = (desktopFile && (desktopFile.type === 'image/svg+xml' || desktopFile.name.endsWith('.svg'))) || 
+                  (cloudinaryUrl && cloudinaryUrl.toLowerCase().includes('.svg'));
+
     const newMedia = await prisma.media.create({
       data: {
         name,
         url: desktopUrl,
         alt,
-        type: cloudinaryUrl ? 'cloudinary' : (desktopFile?.type || 'image'),
+        type: isFromCloudinary ? 'cloudinary' : (isSvg ? 'svg' : (desktopFile?.type || 'image')),
         section,
         position: (maxPosition?.position || 0) + 1,
         isActive: true,
@@ -151,7 +217,8 @@ export async function POST(req: NextRequest) {
           mobileUrl,
           filename: desktopFilename,
           mobileFilename,
-          isCloudinary: !!cloudinaryUrl,
+          isCloudinary: isFromCloudinary,
+          isSvg,
           isMobileCloudinary: !!mobileCloudinaryUrl,
           originalFilename: desktopFile?.name,
           originalMobileFilename: mobileFile?.name,
@@ -234,7 +301,7 @@ export async function PUT(req: NextRequest) {
         
         // Update metadata
         updateData.metadata = {
-          ...(currentMedia.metadata || {}),
+          ...(typeof currentMedia.metadata === 'object' && currentMedia.metadata !== null ? currentMedia.metadata : {}),
           filename,
           isCloudinary: true,
           updatedAt: new Date().toISOString()
@@ -245,7 +312,7 @@ export async function PUT(req: NextRequest) {
         
         // Update metadata
         updateData.metadata = {
-          ...(currentMedia.metadata || {}),
+          ...(typeof currentMedia.metadata === 'object' && currentMedia.metadata !== null ? currentMedia.metadata : {}),
           filename: upload.filename,
           originalFilename: file.name,
           updatedAt: new Date().toISOString()

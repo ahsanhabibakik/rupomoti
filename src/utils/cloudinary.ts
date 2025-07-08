@@ -24,6 +24,11 @@ export function optimizeCloudinaryUrl(
   if (!url || !url.includes('res.cloudinary.com')) {
     return url;
   }
+  
+  // If it's an SVG file, don't apply transformations to maintain vector quality
+  if (url.toLowerCase().endsWith('.svg')) {
+    return url;
+  }
 
   try {
     // Extract base URL and file path

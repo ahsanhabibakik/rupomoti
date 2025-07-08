@@ -26,23 +26,63 @@ export async function POST(request: NextRequest) {
     if (file.size > 5 * 1024 * 1024) {
       return NextResponse.json({ error: 'File size must be less than 5MB' }, { status: 400 });
     }
+    
+    // Special handling for SVG files
+    const isSvg = file.type === 'image/svg+xml' || formData.get('isSvg') === 'true';
 
     // Convert file to buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
+    // Get section parameter or use default
+    const section = formData.get('section') as string || 'general';
+    
+    // Setup transformation options based on section
+    let options: Record<string, any> = {
+      resource_type: 'auto',
+      folder: `rupomoti/${section}`,
+    };
+    
+    // Special handling for SVG files - minimal transformations
+    if (isSvg) {
+      // For SVGs, don't apply transformations that could break the vector format
+      options = {
+        ...options,
+        resource_type: 'image', // SVGs should be uploaded as images
+        format: 'svg', // Preserve the SVG format
+      };
+    } else {
+      // Standard image transformations for non-SVG files
+      options = {
+        ...options,
+        quality: 'auto:good',
+        fetch_format: 'auto',
+      };
+      
+      // Apply section-specific dimensions for non-SVG files
+      if (section === 'logo') {
+        options.width = 300;
+        options.height = 100;
+        options.crop = 'limit';
+      } else if (section === 'hero-slider' || section.startsWith('hero-slider/')) {
+        options.width = 1920;
+        options.height = 800;
+        options.crop = 'limit';
+      } else if (section === 'banner') {
+        options.width = 1200;
+        options.height = 400;
+        options.crop = 'limit';
+      } else {
+        options.width = 800;
+        options.height = 600;
+        options.crop = 'limit';
+      }
+    }
+    
     // Upload to cloudinary with optimization
     const result = await new Promise((resolve, reject) => {
       cloudinary.uploader.upload_stream(
-        {
-          resource_type: 'auto',
-          folder: 'rupomoti/categories',
-          transformation: [
-            { quality: 'auto:good' },
-            { fetch_format: 'auto' },
-            { width: 800, height: 600, crop: 'limit' }
-          ],
-        },
+        options,
         (error, result) => {
           if (error) {
             console.error('Cloudinary upload error:', error);
