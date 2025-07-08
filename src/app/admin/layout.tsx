@@ -35,6 +35,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
+import AdminNotifications from '@/components/admin/AdminNotifications'
 // Temporarily comment out problematic imports
 // import { AdminThemeProvider } from '@/components/admin/AdminThemeProvider'
 // import { CustomColorManager } from '@/components/admin/CustomColorManager'
@@ -324,46 +325,7 @@ export default function AdminLayout({
 
       {/* Desktop Top Bar */}
       <div className="hidden lg:flex fixed top-0 right-0 z-30 p-4 gap-2">
-        <div className="relative">
-          <button
-            onClick={() => setShowNotifications((v) => !v)}
-            className="p-2 rounded-full bg-white/80 border border-gray-200 shadow hover:bg-gray-100 transition-colors"
-            aria-label="Show notifications"
-          >
-            <Bell className="h-5 w-5 text-primary" />
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 font-bold">{notifications.length}</span>
-          </button>
-          {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-40">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-primary">Notifications</h3>
-                <button 
-                  onClick={() => setShowNotifications(false)}
-                  className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {notifications.map((n) => (
-                  <div key={n.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
-                    <div className={cn(
-                      "w-2 h-2 rounded-full mt-2",
-                      n.type === 'order' ? "bg-blue-500" : 
-                      n.type === 'alert' ? "bg-red-500" : 
-                      n.type === 'review' ? "bg-green-500" : "bg-gray-500"
-                    )} />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{n.text}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{n.time}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-        {/* <CustomColorManager /> */}
+        <AdminNotifications />
       </div>
 
       {/* Desktop sidebar */}

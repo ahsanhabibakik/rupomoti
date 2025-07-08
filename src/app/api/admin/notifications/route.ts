@@ -20,14 +20,49 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit;
 
     // Since we don't have a notifications table yet, let's create dynamic notifications
-    // from recent orders and low stock products
+    // from recent orders, pending orders, and low stock products
     
-    // Get recent orders for notifications
+    // Get recent orders (last 24 hours)
     const recentOrders = await prisma.order.findMany({
       where: {
         createdAt: {
-          gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24 hours
+          gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
         },
+        isActive: true,
+      },
+      include: {
+        customer: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: 5,
+    });
+
+    // Get pending orders (older than 2 hours, still pending)
+    const pendingOrders = await prisma.order.findMany({
+      where: {
+        status: 'PENDING',
+        createdAt: {
+          lte: new Date(Date.now() - 2 * 60 * 60 * 1000), // Older than 2 hours
+        },
+        isActive: true,
+      },
+      include: {
+        customer: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: 5,
+    });
+
+    // Get very recent pending orders (need attention)
+    const urgentPendingOrders = await prisma.order.findMany({
+      where: {
+        status: 'PENDING',
+        paymentStatus: 'PENDING',
+        isActive: true,
       },
       include: {
         customer: true,
@@ -42,9 +77,31 @@ export async function GET(request: NextRequest) {
     const lowStockProducts = await prisma.product.findMany({
       where: {
         stock: {
-          lte: 5, // Consider low stock when 5 or fewer items
+          lte: 5,
         },
         status: 'ACTIVE',
+      },
+      orderBy: {
+        stock: 'asc',
+      },
+      take: 5,
+    });
+
+    // Get recent reviews pending moderation
+    const pendingReviews = await prisma.review.findMany({
+      where: {
+        status: 'PENDING',
+      },
+      include: {
+        product: {
+          select: { id: true, name: true },
+        },
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
       },
       take: 5,
     });
@@ -52,23 +109,70 @@ export async function GET(request: NextRequest) {
     // Create notifications array
     const notifications: any[] = [];
 
-    // Add order notifications
+    // Add recent order notifications
     recentOrders.forEach(order => {
       if (type === 'all' || type === 'order') {
         notifications.push({
-          id: `order-${order.id}`,
+          id: `recent-order-${order.id}`,
           type: 'order',
           title: 'New Order Received',
-          message: `Order #${order.orderNumber} has been placed by ${order.customer?.name || 'Customer'}`,
+          message: `Order #${order.orderNumber} placed by ${order.customer?.name || 'Customer'} - $${order.total.toFixed(2)}`,
           createdAt: order.createdAt,
           isRead: false,
           readAt: null,
+          priority: 'NORMAL',
           user: {
             id: order.customer?.id,
             name: order.customer?.name,
             email: order.customer?.email,
           },
-          metadata: { orderId: order.id },
+          metadata: { orderId: order.id, orderNumber: order.orderNumber },
+        });
+      }
+    });
+
+    // Add urgent pending order notifications (high priority)
+    urgentPendingOrders.forEach(order => {
+      if (type === 'all' || type === 'pending') {
+        const hoursOld = Math.floor((Date.now() - new Date(order.createdAt).getTime()) / (1000 * 60 * 60));
+        notifications.push({
+          id: `urgent-pending-${order.id}`,
+          type: 'pending',
+          title: 'Urgent: Pending Order Needs Attention',
+          message: `Order #${order.orderNumber} pending for ${hoursOld}h - ${order.customer?.name || 'Customer'} - $${order.total.toFixed(2)}`,
+          createdAt: order.createdAt,
+          isRead: false,
+          readAt: null,
+          priority: 'HIGH',
+          user: {
+            id: order.customer?.id,
+            name: order.customer?.name,
+            email: order.customer?.email,
+          },
+          metadata: { orderId: order.id, orderNumber: order.orderNumber, hoursOld },
+        });
+      }
+    });
+
+    // Add old pending order notifications
+    pendingOrders.forEach(order => {
+      if (type === 'all' || type === 'pending') {
+        const hoursOld = Math.floor((Date.now() - new Date(order.createdAt).getTime()) / (1000 * 60 * 60));
+        notifications.push({
+          id: `old-pending-${order.id}`,
+          type: 'pending',
+          title: 'Old Pending Order',
+          message: `Order #${order.orderNumber} pending for ${hoursOld}h - Needs follow-up`,
+          createdAt: order.createdAt,
+          isRead: false,
+          readAt: null,
+          priority: 'NORMAL',
+          user: {
+            id: order.customer?.id,
+            name: order.customer?.name,
+            email: order.customer?.email,
+          },
+          metadata: { orderId: order.id, orderNumber: order.orderNumber, hoursOld },
         });
       }
     });
@@ -76,22 +180,57 @@ export async function GET(request: NextRequest) {
     // Add inventory notifications
     lowStockProducts.forEach(product => {
       if (type === 'all' || type === 'inventory') {
+        const priority = product.stock === 0 ? 'URGENT' : product.stock <= 2 ? 'HIGH' : 'NORMAL';
         notifications.push({
           id: `inventory-${product.id}`,
           type: 'inventory',
-          title: 'Low Stock Alert',
-          message: `Product "${product.name}" is running low on stock (${product.stock} remaining)`,
+          title: product.stock === 0 ? 'Out of Stock!' : 'Low Stock Alert',
+          message: `"${product.name}" - ${product.stock} remaining${product.stock === 0 ? ' (SOLD OUT)' : ''}`,
           createdAt: new Date(),
           isRead: false,
           readAt: null,
+          priority,
           user: null,
-          metadata: { productId: product.id },
+          metadata: { productId: product.id, stock: product.stock },
         });
       }
     });
 
-    // Sort by timestamp (newest first)
-    notifications.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    // Add review moderation notifications
+    pendingReviews.forEach(review => {
+      if (type === 'all' || type === 'review') {
+        notifications.push({
+          id: `review-${review.id}`,
+          type: 'review',
+          title: 'Review Awaiting Moderation',
+          message: `${review.rating}-star review for "${review.product.name}" by ${review.user?.name || 'Guest'}`,
+          createdAt: review.createdAt,
+          isRead: false,
+          readAt: null,
+          priority: 'NORMAL',
+          user: review.user ? {
+            id: review.user.id,
+            name: review.user.name,
+            email: review.user.email,
+          } : null,
+          metadata: { 
+            reviewId: review.id, 
+            productId: review.productId,
+            productName: review.product.name,
+            rating: review.rating,
+          },
+        });
+      }
+    });
+
+    // Sort by priority first, then by timestamp (newest first)
+    const priorityOrder = { 'URGENT': 4, 'HIGH': 3, 'NORMAL': 2, 'LOW': 1 };
+    notifications.sort((a, b) => {
+      const priorityDiff = (priorityOrder[b.priority as keyof typeof priorityOrder] || 0) - 
+                          (priorityOrder[a.priority as keyof typeof priorityOrder] || 0);
+      if (priorityDiff !== 0) return priorityDiff;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
 
     // Apply pagination
     const total = notifications.length;

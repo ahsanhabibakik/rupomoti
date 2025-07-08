@@ -3,14 +3,23 @@ import { auth } from '@/app/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
-// Query schema for filtering
+// Query schema for filtering with proper handling of empty strings
 const querySchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(10),
-  search: z.string().optional(),
-  status: z.enum(['active', 'inactive', 'all']).default('all'),
-  sortBy: z.enum(['name', 'createdAt', 'products']).default('createdAt'),
-  sortOrder: z.enum(['asc', 'desc']).default('desc'),
+  search: z.string().optional().default(''),
+  status: z.string().optional().transform(val => {
+    if (!val || val === '') return 'all';
+    return ['active', 'inactive', 'all'].includes(val) ? val : 'all';
+  }),
+  sortBy: z.string().optional().transform(val => {
+    if (!val || val === '' || val === 'sortOrder') return 'createdAt';
+    return ['name', 'createdAt', 'products'].includes(val) ? val : 'createdAt';
+  }),
+  sortOrder: z.string().optional().transform(val => {
+    if (!val || val === '') return 'desc';
+    return ['asc', 'desc'].includes(val) ? val : 'desc';
+  }),
   dateFrom: z.string().optional(),
   dateTo: z.string().optional(),
 });
