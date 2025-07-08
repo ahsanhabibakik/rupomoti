@@ -28,8 +28,20 @@ export const metadata: Metadata = {
 }
 
 export default async function HomePage() {
-  const { popularProducts, newArrivals, featuredProducts, regularProducts } = await getHomePageData()
-  const categories = await getCategories({ active: true, level: 0 })
+  try {
+    // Get data with error handling
+    const [homePageData, categoriesData] = await Promise.allSettled([
+      getHomePageData(),
+      getCategories({ active: true, level: 0 })
+    ])
+
+    // Check if any data fetching failed and provide defaults
+    const { popularProducts, newArrivals, featuredProducts, regularProducts } = 
+      homePageData.status === 'fulfilled' ? homePageData.value : { 
+        popularProducts: [], newArrivals: [], featuredProducts: [], regularProducts: [] 
+      }
+    
+    const categories = categoriesData.status === 'fulfilled' ? categoriesData.value : []
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -205,4 +217,18 @@ export default async function HomePage() {
       </AnimatedSection>
     </div>
   )
+  } catch (error) {
+    console.error('Homepage error:', error)
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Something went wrong</h2>
+        <p className="text-gray-600 mb-4">We're having trouble loading the page. Please try again later.</p>
+        <Button asChild>
+          <Link href="/shop">
+            Browse Products
+          </Link>
+        </Button>
+      </div>
+    )
+  }
 }
