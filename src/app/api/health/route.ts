@@ -1,20 +1,28 @@
 import { NextResponse } from 'next/server'
 import { prisma, checkDatabaseConnection } from '@/lib/prisma'
-import { checkSteadfastConnection } from '@/lib/steadfast'
+import { env } from '@/lib/env'
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export async function GET() {
   const healthStatus = {
     status: 'checking',
     timestamp: new Date().toISOString(),
+    environment: env.NODE_ENV,
     services: {
       database: {
         status: 'checking',
         collections: {},
         error: null
       },
-      steadfast: {
+      environment: {
         status: 'checking',
-        error: null
+        variables: {
+          DATABASE_URL: !!env.DATABASE_URL,
+          NEXTAUTH_SECRET: !!env.NEXTAUTH_SECRET,
+          NEXTAUTH_URL: !!env.NEXTAUTH_URL,
+        }
       }
     }
   }
@@ -22,19 +30,20 @@ export async function GET() {
   try {
     // Check database connection and collections
     try {
-      await prisma.$connect()
-      healthStatus.services.database.status = 'connected'
+      const dbConnectionResult = await checkDatabaseConnection(2)
+      healthStatus.services.database.status = dbConnectionResult ? 'connected' : 'error'
 
-      // Test collections
+      // Test critical collections with timeout
+      const timeoutPromise = (ms: number) => new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Query timeout')), ms)
+      )
+      
+      // Test only critical collections to avoid timeouts
       const collections = [
         { name: 'User', query: () => prisma.user.count() },
         { name: 'Product', query: () => prisma.product.count() },
         { name: 'Category', query: () => prisma.category.count() },
-        { name: 'Order', query: () => prisma.order.count() },
-        { name: 'Customer', query: () => prisma.customer.count() },
-        { name: 'Media', query: () => prisma.media.count() },
-        { name: 'Coupon', query: () => prisma.coupon.count() },
-        { name: 'Setting', query: () => prisma.setting.count() }
+        { name: 'Order', query: () => prisma.order.count() }
       ]
 
       for (const collection of collections) {

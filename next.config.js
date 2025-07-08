@@ -19,13 +19,6 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['@prisma/client'],
   },
-  // Add webpack optimization for Prisma
-  webpack: (config, { isServer }) => {
-    if (isServer) {
-      config.externals.push('@prisma/client');
-    }
-    return config;
-  },
   // Completely disable standalone output which causes symlink permission issues on Windows
   // For production deployment, this should be re-enabled on the deployment server
   // output: 'standalone',

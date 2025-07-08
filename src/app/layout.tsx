@@ -4,7 +4,7 @@ import { Providers } from '@/components/providers'
 import './globals.css'
 import { Metadata } from 'next'
 import { Analytics } from '@vercel/analytics/react'
-import '@/utils/force-light-mode' // Force light mode utility
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -74,12 +74,14 @@ export default function RootLayout({
   return (
     <html lang="en" className="light" data-theme="light" style={{colorScheme: 'light'}} suppressHydrationWarning>
       <body className={`${inter.className} bg-background text-foreground`}>
-        <Providers>
-          <RootLayoutClient>
-            {children}
-          </RootLayoutClient>
-          {process.env.NODE_ENV === 'production' && <Analytics />}
-        </Providers>
+        <ErrorBoundary>
+          <Providers>
+            <RootLayoutClient>
+              {children}
+            </RootLayoutClient>
+            {process.env.NODE_ENV === 'production' && <Analytics />}
+          </Providers>
+        </ErrorBoundary>
       </body>
     </html>
   )
