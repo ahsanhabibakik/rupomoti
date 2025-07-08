@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from "next-auth/react";
 import { Menu, Search, ShoppingCart, User, Shield, LogOut, Settings } from "lucide-react";
+import { Logo } from "./Logo";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { setCartDrawerOpen } from "@/redux/slices/uiSlice";
 import SearchModal from "@/components/search/SearchModal";
@@ -120,9 +121,9 @@ function MobileNav() {
             <SheetContent side="left" className="w-[320px]">
                 {/* Logo Section */}
                 <div className="flex items-center justify-center py-2 border-b mb-6">
-                    <Link href="/" className="flex items-center gap-2 mx-auto pb-4" onClick={() => setIsOpen(false)}>
-                        <Image src="/images/branding/logo.png" alt="Rupomoti" width={80} height={35} className="object-contain -mt-4" />
-                    </Link>
+                    <div onClick={() => setIsOpen(false)}>
+                        <Logo variant="small" className="mx-auto pb-4" />
+                    </div>
                 </div>
                 
                 {/* Two Column Navigation */}
@@ -255,16 +256,14 @@ export function Navbar() {
           {/* Left section: Mobile menu + Desktop logo */}
           <div className="flex items-center gap-4 flex-shrink-0">
             <MobileNav />
-            <Link href="/" className="hidden md:flex items-center gap-2">
-              <Image src="/images/branding/logo.png" alt="Rupomoti" width={110} height={40} className="object-contain" />
-            </Link>
+            <div className="hidden md:block">
+              <Logo variant="medium" />
+            </div>
           </div>
 
           {/* Center section: Mobile logo + Desktop navigation */}
           <div className="flex items-center justify-center md:hidden flex-1">
-            <Link href="/" className="flex items-center gap-2">
-               <Image src="/images/branding/logo.png" alt="Rupomoti" width={90} height={32} className="object-contain"/>
-            </Link>
+            <Logo variant="default" />
           </div>
 
           <nav className="hidden md:flex items-center gap-8 flex-1 justify-center max-w-2xl">

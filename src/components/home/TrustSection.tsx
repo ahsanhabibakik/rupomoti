@@ -18,7 +18,7 @@ const trustFeatures = [
   {
     icon: Truck,
     title: "Free Shipping",
-    description: "Complimentary shipping on all orders above $50"
+    description: "Complimentary shipping on all orders above ৳5,000"
   },
   {
     icon: RefreshCw,

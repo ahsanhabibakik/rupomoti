@@ -4,5 +4,6 @@
     "**/.git/**": true,
     "**/dist/**": true
   },
-  "files.useExperimentalFileWatcher": true
+  "files.useExperimentalFileWatcher": true,
+  "github.copilot.chat.codesearch.enabled": true
 }

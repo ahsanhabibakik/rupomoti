@@ -1,0 +1,15 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build Remote Workspace Index",
+			"type": "shell",
+			"command": "echo",
+			"args": [
+				"Please run 'GitHub Copilot: Build Remote Workspace Index' from the Command Palette (Ctrl+Shift+P)"
+			],
+			"group": "build",
+			"problemMatcher": []
+		}
+	]
+}

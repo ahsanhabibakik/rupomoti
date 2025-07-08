@@ -1,0 +1,10 @@
+<svg width="400" height="300" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="300" fill="#F8F9FA"/>
+  <ellipse cx="200" cy="120" rx="45" ry="15" fill="#E2E8F0"/>
+  <ellipse cx="200" cy="125" rx="35" ry="12" fill="#94A3B8"/>
+  <circle cx="180" cy="120" r="4" fill="#475569"/>
+  <circle cx="200" cy="118" r="4" fill="#475569"/>
+  <circle cx="220" cy="120" r="4" fill="#475569"/>
+  <text x="200" y="200" text-anchor="middle" fill="#475569" font-family="Arial, sans-serif" font-size="16" font-weight="600">Necklaces</text>
+  <text x="200" y="220" text-anchor="middle" fill="#94A3B8" font-family="Arial, sans-serif" font-size="12">Beautiful necklace designs</text>
+</svg>

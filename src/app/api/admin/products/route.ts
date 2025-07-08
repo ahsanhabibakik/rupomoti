@@ -99,7 +99,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, slug: providedSlug, ...rest } = body;
+    const { name, slug: providedSlug, variants, ...rest } = body;
     
     // Validate required fields
     if (!name?.trim()) {
@@ -141,6 +141,25 @@ export async function POST(request: Request) {
       },
     });
 
+    // Create variants if provided
+    if (variants && Array.isArray(variants) && variants.length > 0) {
+      await prisma.productVariant.createMany({
+        data: variants.map((variant: any) => ({
+          productId: product.id,
+          size: variant.size || null,
+          color: variant.color || null,
+          weight: variant.weight || null,
+          material: variant.material || null,
+          price: variant.price || null,
+          stock: variant.stock || 0,
+          sku: variant.sku || null,
+          image: variant.image || null,
+          isDefault: variant.isDefault || false,
+          isActive: variant.isActive || true
+        }))
+      });
+    }
+
     return NextResponse.json({ product });
   } catch (error) {
     console.error('Failed to create product:', error);
@@ -156,7 +175,7 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { id, name, slug: providedSlug, ...rest } = body;
+    const { id, name, slug: providedSlug, variants, ...rest } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
@@ -231,6 +250,33 @@ export async function PUT(request: Request) {
       where: { id },
       data: updateData,
     });
+
+    // Handle variants if provided
+    if (variants && Array.isArray(variants)) {
+      // Delete existing variants
+      await prisma.productVariant.deleteMany({
+        where: { productId: id }
+      });
+
+      // Create new variants
+      if (variants.length > 0) {
+        await prisma.productVariant.createMany({
+          data: variants.map((variant: any) => ({
+            productId: id,
+            size: variant.size || null,
+            color: variant.color || null,
+            weight: variant.weight || null,
+            material: variant.material || null,
+            price: variant.price || null,
+            stock: variant.stock || 0,
+            sku: variant.sku || null,
+            image: variant.image || null,
+            isDefault: variant.isDefault || false,
+            isActive: variant.isActive || true
+          }))
+        });
+      }
+    }
 
     return NextResponse.json({ product });
   } catch (error) {

@@ -184,7 +184,7 @@ export function ProductCard({ product, compact = false, className }: ProductCard
         compact && "p-1.5"
       )}>
         <div> {/* Content that stays at the top */}
-          <Link href={`/product/${id}`} className="block">
+          <Link href={`/product/${product.slug || id}`} className="block">
             <h3 className={cn(
               "font-semibold text-neutral mb-1 line-clamp-2 hover:text-primary transition-colors",
               // Responsive text sizing

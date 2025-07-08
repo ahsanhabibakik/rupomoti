@@ -22,32 +22,39 @@ export async function getHomePageData() {
     stock: { gt: 0 }
   }
 
+  // Enhanced query to remove landing page products completely
   const [featuredProducts, popularProducts, newArrivals, regularProducts] = await Promise.all([
     prisma.product.findMany({
       where: { 
         ...baseWhere,
-        isFeatured: true 
+        isFeatured: true
       },
       take: 12,
-      orderBy: { createdAt: 'desc' },
+      orderBy: [
+        { createdAt: 'desc' }
+      ],
       include: { category: true },
     }),
     prisma.product.findMany({
       where: { 
         ...baseWhere,
-        isPopular: true 
+        isPopular: true
       },
       take: 12,
-      orderBy: { createdAt: 'desc' },
+      orderBy: [
+        { createdAt: 'desc' }
+      ],
       include: { category: true },
     }),
     prisma.product.findMany({
       where: { 
         ...baseWhere,
-        isNewArrival: true 
+        isNewArrival: true
       },
       take: 12,
-      orderBy: { createdAt: 'desc' },
+      orderBy: [
+        { createdAt: 'desc' }
+      ],
       include: { category: true },
     }),
     // Get regular products (not featured, not popular, not new arrivals)
@@ -59,13 +66,15 @@ export async function getHomePageData() {
         isNewArrival: false
       },
       take: 12,
-      orderBy: { createdAt: 'desc' },
+      orderBy: [
+        { createdAt: 'desc' }
+      ],
       include: { category: true },
     }),
   ])
 
   // Smart product count logic
-  const getOptimalProductCount = (products: any[]) => {
+  const getOptimalProductCount = (products: Product[]) => {
     const count = products.length
     if (count >= 8) return 8
     if (count >= 4) return 4

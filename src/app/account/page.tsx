@@ -38,6 +38,9 @@ import { addToCart } from '@/redux/slices/cartSlice'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { EmailNotificationsCard } from '@/components/account/EmailNotificationsCard'
+import { PasswordChangeCard } from '@/components/account/PasswordChangeCard'
+import { TwoFactorAuthCard } from '@/components/account/TwoFactorAuthCard'
 
 const tabs = [
   { id: 'profile', label: 'Profile', icon: User, category: 'primary' },
@@ -686,19 +689,248 @@ export default function AccountPage() {
 
                 {/* Reviews Tab */}
                 {activeTab === 'reviews' && (
-                  <div className="text-center py-12">
-                    <MessageSquare className="w-16 h-16 text-pearl-essence-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-pearl-essence-700 mb-2">Reviews Section</h3>
-                    <p className="text-pearl-essence-600">Your jewelry reviews will appear here</p>
+                  <div>
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-lg font-semibold text-pearl-essence-700">My Reviews</h3>
+                      <Button
+                        onClick={() => setShowReviewModal(true)}
+                        className="bg-pearl-essence-600 hover:bg-pearl-essence-700 text-white"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Write Review
+                      </Button>
+                    </div>
+                    
+                    {loading.reviews ? (
+                      <div className="space-y-4">
+                        {[...Array(3)].map((_, i) => (
+                          <div key={i} className="bg-white p-4 rounded-lg shadow animate-pulse">
+                            <div className="flex items-center space-x-4">
+                              <div className="w-16 h-16 bg-gray-300 rounded-md"></div>
+                              <div className="flex-1">
+                                <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
+                                <div className="h-3 bg-gray-300 rounded w-1/2"></div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : error.reviews ? (
+                      <div className="text-center py-12">
+                        <MessageSquare className="w-16 h-16 text-red-400 mx-auto mb-4" />
+                        <p className="text-red-600">{error.reviews}</p>
+                        <Button
+                          onClick={() => fetchReviews()}
+                          variant="outline"
+                          className="mt-4"
+                        >
+                          Try Again
+                        </Button>
+                      </div>
+                    ) : reviews.length === 0 ? (
+                      <div className="text-center py-12">
+                        <MessageSquare className="w-16 h-16 text-pearl-essence-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold text-pearl-essence-700 mb-2">No Reviews Yet</h3>
+                        <p className="text-pearl-essence-600 mb-4">Share your thoughts about the jewelry you've purchased</p>
+                        <Button
+                          onClick={() => setShowReviewModal(true)}
+                          className="bg-pearl-essence-600 hover:bg-pearl-essence-700 text-white"
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Write Your First Review
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {reviews.map((review) => (
+                          <div key={review.id} className="bg-white p-4 rounded-lg shadow border border-pearl-essence-200 hover:shadow-md transition-shadow">
+                            <div className="flex items-start space-x-4">
+                              <div className="relative w-16 h-16 flex-shrink-0">
+                                <Image
+                                  src={review.product?.images?.[0] || '/placeholder.png'}
+                                  alt={review.product?.name || 'Product'}
+                                  fill
+                                  className="object-cover rounded-md"
+                                />
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between mb-2">
+                                  <h4 className="font-medium text-pearl-essence-900">
+                                    {review.product?.name || 'Unknown Product'}
+                                  </h4>
+                                  <div className="flex items-center space-x-2">
+                                    <div className="flex items-center">
+                                      {[...Array(5)].map((_, i) => (
+                                        <Star
+                                          key={i}
+                                          className={`w-4 h-4 ${
+                                            i < review.rating
+                                              ? 'fill-yellow-400 text-yellow-400'
+                                              : 'text-gray-300'
+                                          }`}
+                                        />
+                                      ))}
+                                    </div>
+                                    <span className="text-sm text-gray-500">
+                                      {new Date(review.createdAt).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                </div>
+                                {review.title && (
+                                  <h5 className="font-medium text-pearl-essence-800 mb-1">
+                                    {review.title}
+                                  </h5>
+                                )}
+                                {review.comment && (
+                                  <p className="text-pearl-essence-600 text-sm mb-2">
+                                    {review.comment}
+                                  </p>
+                                )}
+                                <div className="flex items-center justify-between">
+                                  <Badge 
+                                    variant={review.status === 'APPROVED' ? 'default' : 'secondary'}
+                                    className="text-xs"
+                                  >
+                                    {review.status}
+                                  </Badge>
+                                  <div className="flex items-center space-x-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        setEditingReview(review);
+                                        setShowReviewModal(true);
+                                      }}
+                                    >
+                                      <Edit className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        setSelectedProduct(review.product);
+                                        // Handle view product
+                                      }}
+                                    >
+                                      <Eye className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 
                 {/* Addresses Tab */}
                 {activeTab === 'addresses' && (
-                  <div className="text-center py-12">
-                    <MapPin className="w-16 h-16 text-pearl-essence-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-pearl-essence-700 mb-2">Address Management</h3>
-                    <p className="text-pearl-essence-600">Manage your shipping addresses</p>
+                  <div>
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-lg font-semibold text-pearl-essence-700">My Addresses</h3>
+                      <Button
+                        onClick={() => setEditingAddress({})}
+                        className="bg-pearl-essence-600 hover:bg-pearl-essence-700 text-white"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Address
+                      </Button>
+                    </div>
+                    
+                    {loading.addresses ? (
+                      <div className="space-y-4">
+                        {[...Array(2)].map((_, i) => (
+                          <div key={i} className="bg-white p-4 rounded-lg shadow animate-pulse">
+                            <div className="space-y-2">
+                              <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+                              <div className="h-3 bg-gray-300 rounded w-1/2"></div>
+                              <div className="h-3 bg-gray-300 rounded w-2/3"></div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : error.addresses ? (
+                      <div className="text-center py-12">
+                        <MapPin className="w-16 h-16 text-red-400 mx-auto mb-4" />
+                        <p className="text-red-600">{error.addresses}</p>
+                        <Button
+                          onClick={() => fetchAddresses()}
+                          variant="outline"
+                          className="mt-4"
+                        >
+                          Try Again
+                        </Button>
+                      </div>
+                    ) : addresses.length === 0 ? (
+                      <div className="text-center py-12">
+                        <MapPin className="w-16 h-16 text-pearl-essence-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold text-pearl-essence-700 mb-2">No Addresses Yet</h3>
+                        <p className="text-pearl-essence-600 mb-4">Add your shipping addresses for faster checkout</p>
+                        <Button
+                          onClick={() => setEditingAddress({})}
+                          className="bg-pearl-essence-600 hover:bg-pearl-essence-700 text-white"
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add Your First Address
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {addresses.map((address) => (
+                          <div key={address.id} className="bg-white p-4 rounded-lg shadow border border-pearl-essence-200 hover:shadow-md transition-shadow">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2 mb-2">
+                                  <h4 className="font-medium text-pearl-essence-900">{address.name}</h4>
+                                  {address.isDefault && (
+                                    <Badge className="bg-pearl-essence-100 text-pearl-essence-700 text-xs">
+                                      Default
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-sm text-pearl-essence-600 mb-1">{address.phone}</p>
+                                <p className="text-sm text-pearl-essence-600">
+                                  {address.street}, {address.city}, {address.state} {address.postalCode}
+                                </p>
+                                <p className="text-sm text-pearl-essence-600">{address.country}</p>
+                              </div>
+                              <div className="flex items-center space-x-2 ml-4">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setEditingAddress(address)}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    // Handle delete address
+                                    if (confirm('Are you sure you want to delete this address?')) {
+                                      fetch('/api/addresses', {
+                                        method: 'DELETE',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ id: address.id })
+                                      }).then(() => {
+                                        fetchAddresses();
+                                        showToast.success('Address deleted successfully');
+                                      }).catch(() => {
+                                        showToast.error('Failed to delete address');
+                                      });
+                                    }
+                                  }}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -713,10 +945,13 @@ export default function AccountPage() {
 
                 {/* Settings Tab */}
                 {activeTab === 'settings' && (
-                  <div className="text-center py-12">
-                    <Settings className="w-16 h-16 text-pearl-essence-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-pearl-essence-700 mb-2">Account Settings</h3>
-                    <p className="text-pearl-essence-600">Customize your account preferences</p>
+                  <div className="space-y-8">
+                    <h3 className="text-2xl font-bold text-pearl-essence-900">Account Settings</h3>
+                    
+                    <EmailNotificationsCard />
+                    <PasswordChangeCard />
+                    {/* <TwoFactorAuthCard /> */}
+
                   </div>
                 )}
               </div>

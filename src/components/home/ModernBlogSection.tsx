@@ -200,6 +200,11 @@ export default function ModernBlogSection({
     )
   }
 
+  // Don't render the section if there are no posts
+  if (posts.length === 0) {
+    return null
+  }
+
   const featuredPost = posts.find(post => post.featured)
   const regularPosts = posts.filter(post => !post.featured).slice(0, 3)
 

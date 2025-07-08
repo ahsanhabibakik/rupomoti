@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useState, Suspense } from 'react'
+import { ConnectionStatus } from '@/components/ConnectionStatus'
 import { useRouter, usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
-import Image from 'next/image'
+import { Logo } from '@/components/layout/Logo'
 import {
   LayoutDashboard,
   Package,
@@ -28,12 +29,14 @@ import {
   User,
   TrendingUp,
   Mail,
+  Flag,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
+import AdminNotifications from '@/components/admin/AdminNotifications'
 // Temporarily comment out problematic imports
 // import { AdminThemeProvider } from '@/components/admin/AdminThemeProvider'
 // import { CustomColorManager } from '@/components/admin/CustomColorManager'
@@ -43,6 +46,7 @@ const navigation = [
   { name: 'Products', href: '/admin/products', icon: Package, badge: '12' },
   { name: 'Categories', href: '/admin/categories', icon: FolderTree, badge: null },
   { name: 'Orders', href: '/admin/orders', icon: ListOrdered, badge: '5' },
+  { name: 'Fake Orders', href: '/admin/fake-orders', icon: Flag, badge: null },
   { name: 'Customers', href: '/admin/customers', icon: Users, badge: '24' },
   { name: 'User Management', href: '/admin/users', icon: Shield, badge: null },
   { name: 'Media', href: '/admin/media', icon: ImageIcon, badge: null },
@@ -63,27 +67,23 @@ const navigation = [
 ]
 
 const quickStats = [
-  { name: 'Total Sales', value: '$12,345', change: '+12%', icon: TrendingUp },
+  { name: 'Total Sales', value: '৳12,345', change: '+12%', icon: TrendingUp },
   { name: 'Orders', value: '156', change: '+8%', icon: ShoppingCart },
   { name: 'Customers', value: '2,847', change: '+15%', icon: Users },
   { name: 'Products', value: '89', change: '+3%', icon: Package },
 ]
 
 function Sidebar({ className, onClose }: { className?: string; onClose?: () => void }) {
-  const pathname = usePathname()
+  const pathname = usePathname();
+  const { data: session } = useSession();
+  const userRole = session?.user?.role;
 
   return (
     <div className={cn("flex flex-col h-full", className)}>
       {/* Header with Logo and Back to Home */}
       <div className="flex items-center justify-between h-16 px-4 border-b bg-white">
         <Link href="/admin" className="flex items-center gap-3 group" onClick={onClose}>
-          <Image 
-            src="/images/branding/logo.png" 
-            alt="Rupomoti" 
-            width={32} 
-            height={32} 
-            className="rounded-lg"
-          />
+          <Logo variant="small" className="rounded-lg" />
           <div className="flex flex-col">
             <span className="text-lg font-bold text-primary group-hover:underline">Rupomoti</span>
             <span className="text-xs text-gray-500">Admin Panel</span>
@@ -249,9 +249,8 @@ export default function AdminLayout({
 
   return (
     <>
-      {/* Temporarily commented out AdminThemeProvider */}
-      {/* <AdminThemeProvider> */}
-      <div className="min-h-screen bg-gray-50 text-gray-900" data-admin-theme-container style={{colorScheme: 'light'}}>
+      {/* Admin panel container */}
+      <div className="min-h-screen bg-gray-50 text-gray-900" data-admin-container>
       {/* Top Bar - Mobile */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -266,13 +265,7 @@ export default function AdminLayout({
             </SheetContent>
           </Sheet>
           <Link href="/" className="flex items-center gap-2">
-            <Image 
-              src="/images/branding/logo.png" 
-              alt="Rupomoti" 
-              width={28} 
-              height={28} 
-              className="rounded-lg"
-            />
+            <Logo variant="small" className="rounded-lg" />
             <span className="font-bold text-primary">Admin</span>
           </Link>
         </div>
@@ -322,46 +315,7 @@ export default function AdminLayout({
 
       {/* Desktop Top Bar */}
       <div className="hidden lg:flex fixed top-0 right-0 z-30 p-4 gap-2">
-        <div className="relative">
-          <button
-            onClick={() => setShowNotifications((v) => !v)}
-            className="p-2 rounded-full bg-white/80 border border-gray-200 shadow hover:bg-gray-100 transition-colors"
-            aria-label="Show notifications"
-          >
-            <Bell className="h-5 w-5 text-primary" />
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 font-bold">{notifications.length}</span>
-          </button>
-          {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-40">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-primary">Notifications</h3>
-                <button 
-                  onClick={() => setShowNotifications(false)}
-                  className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {notifications.map((n) => (
-                  <div key={n.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
-                    <div className={cn(
-                      "w-2 h-2 rounded-full mt-2",
-                      n.type === 'order' ? "bg-blue-500" : 
-                      n.type === 'alert' ? "bg-red-500" : 
-                      n.type === 'review' ? "bg-green-500" : "bg-gray-500"
-                    )} />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{n.text}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{n.time}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-        {/* <CustomColorManager /> */}
+        <AdminNotifications />
       </div>
 
       {/* Desktop sidebar */}
@@ -380,7 +334,6 @@ export default function AdminLayout({
         </div>
       </div>
     </div>
-    {/* </AdminThemeProvider> */}
     </>
   )
 }

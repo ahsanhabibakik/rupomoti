@@ -4,11 +4,18 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
+    console.log('🔍 Wishlist API - GET request started');
+    
     const session = await auth();
+    console.log('📝 Session:', { hasSession: !!session, userId: session?.user?.id });
+    
     if (!session?.user?.id) {
+      console.log('❌ Unauthorized access attempt');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    console.log('🔄 Fetching wishlist items for user:', session.user.id);
+    
     const wishlistItems = await prisma.wishlistItem.findMany({
       where: { userId: session.user.id },
       include: {
@@ -25,10 +32,14 @@ export async function GET() {
       orderBy: { createdAt: 'desc' }
     });
 
+    console.log('✅ Wishlist items fetched:', wishlistItems.length);
     return NextResponse.json(wishlistItems);
   } catch (error) {
-    console.error('Error fetching wishlist:', error);
-    return NextResponse.json({ error: 'Failed to fetch wishlist' }, { status: 500 });
+    console.error('❌ Error fetching wishlist:', error);
+    return NextResponse.json({ 
+      error: 'Failed to fetch wishlist', 
+      details: error instanceof Error ? error.message : 'Unknown error' 
+    }, { status: 500 });
   }
 }
 
@@ -118,4 +129,4 @@ export async function DELETE(request: NextRequest) {
     console.error('Error removing from wishlist:', error);
     return NextResponse.json({ error: 'Failed to remove from wishlist' }, { status: 500 });
   }
-} 
+}

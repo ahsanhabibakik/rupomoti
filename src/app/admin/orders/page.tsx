@@ -155,7 +155,7 @@ const OrdersList = React.memo(({ status }: { status: 'active' | 'trashed' | 'fak
 
   const { search, from, to, page, limit, sortBy, sortOrder } = queryParams;
 
-  // Enhanced query with better caching strategy
+  // Enhanced query with better caching strategy and error handling
   const { 
     data, 
     error, 
@@ -164,6 +164,8 @@ const OrdersList = React.memo(({ status }: { status: 'active' | 'trashed' | 'fak
   } = useQuery({
     queryKey: ['orders', { status, search, from, to, page, limit, sortBy, sortOrder }],
     queryFn: async () => {
+      console.log('🔍 Fetching orders with params:', { status, search, from, to, page, limit });
+      
       const query = new URLSearchParams({
         status: status,
         search: search ?? '',
@@ -185,12 +187,16 @@ const OrdersList = React.memo(({ status }: { status: 'active' | 'trashed' | 'fak
         cache: 'no-store',
       });
       
+      console.log('📡 Response status:', response.status);
+      
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Network error' }));
+        console.error('❌ API Error:', errorData);
         throw new Error(errorData.error || 'Failed to fetch orders');
       }
       
       const result = await response.json();
+      console.log('📊 Fetched data:', { ordersCount: result.orders?.length || 0, totalCount: result.totalCount });
       
       // Mark new orders based on last refresh
       if (result.orders) {
@@ -1614,7 +1620,7 @@ export default function OrdersPage() {
       <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="border-b bg-slate-50 px-6 py-4">
-            <TabsList className="grid w-full max-w-md grid-cols-3 bg-white p-1 rounded-lg h-auto shadow-sm border">
+            <TabsList className="grid w-full max-w-md grid-cols-2 bg-white p-1 rounded-lg h-auto shadow-sm border">
               <TabsTrigger 
                 value="active" 
                 className="relative data-[state=active]:bg-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-sm text-slate-600 hover:text-slate-800 transition-all duration-200 font-medium py-2.5 px-4 rounded-md"
@@ -1627,15 +1633,6 @@ export default function OrdersPage() {
                       {newOrderNotifications > 99 ? '99+' : newOrderNotifications}
                     </Badge>
                   )}
-                </div>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="fake"
-                className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm text-slate-600 hover:text-slate-800 transition-all duration-200 font-medium py-2.5 px-4 rounded-md"
-              >
-                <div className="flex items-center gap-2">
-                  <Flag className="h-4 w-4" />
-                  <span className="hidden sm:inline">Fake</span>
                 </div>
               </TabsTrigger>
               <TabsTrigger 
@@ -1653,9 +1650,6 @@ export default function OrdersPage() {
           <div className="p-6">
             <TabsContent value="active" className="mt-0">
                 <OrdersList status="active" />
-            </TabsContent>
-            <TabsContent value="fake" className="mt-0">
-                <OrdersList status="fake" />
             </TabsContent>
             <TabsContent value="trashed" className="mt-0">
                 <OrdersList status="trashed" />
