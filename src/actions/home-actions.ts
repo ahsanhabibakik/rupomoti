@@ -23,6 +23,14 @@ async function fetchFromAPI(endpoint: string) {
     
     if (!response.ok) {
       console.error(`Failed to fetch ${endpoint}:`, response.status, response.statusText)
+      
+      // Try fallback to mongo endpoint if enhanced fails
+      if (endpoint.includes('products-enhanced')) {
+        const fallbackEndpoint = endpoint.replace('products-enhanced', 'products-mongo')
+        console.log('Trying fallback:', fallbackEndpoint)
+        return await fetchFromAPI(fallbackEndpoint)
+      }
+      
       return null
     }
     
@@ -31,6 +39,18 @@ async function fetchFromAPI(endpoint: string) {
     return data
   } catch (error) {
     console.error(`Error fetching ${endpoint}:`, error)
+    
+    // Try fallback to mongo endpoint if enhanced fails
+    if (endpoint.includes('products-enhanced')) {
+      const fallbackEndpoint = endpoint.replace('products-enhanced', 'products-mongo')
+      console.log('Trying fallback after error:', fallbackEndpoint)
+      try {
+        return await fetchFromAPI(fallbackEndpoint)
+      } catch (fallbackError) {
+        console.error('Fallback also failed:', fallbackError)
+      }
+    }
+    
     return null
   }
 }

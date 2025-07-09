@@ -383,6 +383,14 @@ const config = {
         'premium': '0 8px 32px 0 color-mix(in srgb, var(--gold-tertiary) 15%, transparent)',
         'accent': '0 4px 20px 0 color-mix(in srgb, var(--rose-gold-primary) 30%, transparent)',
       },
+      screens: {
+        'xs': '480px',
+        'sm': '640px',
+        'md': '768px',
+        'lg': '1024px',
+        'xl': '1280px',
+        '2xl': '1536px',
+      },
     },
   },
   plugins: [

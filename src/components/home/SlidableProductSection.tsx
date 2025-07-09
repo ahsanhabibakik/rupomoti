@@ -55,13 +55,13 @@ export default function SlidableProductSection({
 
   if (safeProducts.length === 0) {
     return (
-      <section className={`py-12 ${className}`}>
+      <section className={`py-8 sm:py-10 md:py-12 ${className}`}>
         <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
               {title}
             </h2>
-            <p className="text-gray-600">No products available at the moment.</p>
+            <p className="text-sm sm:text-base text-gray-600">No products available at the moment.</p>
           </div>
         </div>
       </section>
@@ -69,10 +69,10 @@ export default function SlidableProductSection({
   }
 
   return (
-    <section className={`py-12 ${className}`}>
+    <section className={`py-8 sm:py-10 md:py-12 ${className}`}>
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-3 sm:mb-0">
             {title}
           </h2>
           
@@ -114,18 +114,21 @@ export default function SlidableProductSection({
           <div
             ref={scrollContainerRef}
             onScroll={handleScroll}
-            className="flex gap-6 overflow-x-auto scrollbar-hide scroll-smooth pb-4"
+            className="flex gap-3 sm:gap-4 md:gap-6 overflow-x-auto scrollbar-hide scroll-smooth pb-4"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            {products.map((product, index) => (
+            {safeProducts.map((product, index) => (
               <motion.div
                 key={product.id}
-                className="flex-none w-full sm:w-72 md:w-80"
+                className="flex-none w-48 xs:w-52 sm:w-64 md:w-72 lg:w-80"
                 initial={{ opacity: 0, x: 50 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
               >
-                <ProductCard product={product} />
+                <ProductCard 
+                  product={product} 
+                  className="h-full"
+                />
               </motion.div>
             ))}
           </div>
