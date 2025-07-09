@@ -1,47 +1,45 @@
 'use server'
 
-import { Category } from '@prisma/client'
-import { prisma, withRetry } from '@/lib/prisma'
-
 interface GetCategoriesParams {
   level?: number
   active?: boolean
   parent?: string | null
 }
 
-export async function getCategories(params: GetCategoriesParams = {}): Promise<Category[]> {
+async function fetchFromAPI(endpoint: string) {
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+  const response = await fetch(`${baseUrl}${endpoint}`, {
+    cache: 'no-store',
+    headers: {
+      'Content-Type': 'application/json',
+    }
+  })
+  
+  if (!response.ok) {
+    console.error(`Failed to fetch ${endpoint}:`, response.status, response.statusText)
+    return null
+  }
+  
+  return response.json()
+}
+
+export async function getCategories(params: GetCategoriesParams = {}) {
   try {
-    return await withRetry(async () => {
-      const where: any = {}
-      
-      if (params.active !== undefined) {
-        where.isActive = params.active
-      }
-      
-      // If we want top-level categories (level 0 or parent null)
-      if (params.level === 0 || params.parent === null) {
-        // Get all categories and filter manually since Prisma null query seems to have issues
-        const allCategories = await prisma.category.findMany({
-          where: params.active !== undefined ? { isActive: params.active } : {},
-          orderBy: {
-            sortOrder: 'asc',
-          },
-        })
-        
-        // Filter for top-level categories (those with null parentId)
-        return allCategories.filter(cat => cat.parentId === null)
-      } else if (params.parent) {
-        where.parentId = params.parent
-      }
-      
-      const categories = await prisma.category.findMany({
-        where,
-        orderBy: {
-          sortOrder: 'asc',
-        },
-      })
-      return categories
-    })
+    // Build query parameters
+    const queryParams = new URLSearchParams()
+    if (params.active !== undefined) {
+      queryParams.append('active', params.active.toString())
+    }
+    
+    const data = await fetchFromAPI(`/api/categories-mongo?${queryParams.toString()}`)
+    const categories = data?.data || []
+    
+    // Filter for top-level categories if requested
+    if (params.level === 0 || params.parent === null) {
+      return categories.filter((cat: any) => !cat.parentId)
+    }
+    
+    return categories
   } catch (error) {
     console.error('Error fetching categories:', error)
     return []

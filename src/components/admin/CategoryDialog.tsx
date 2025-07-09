@@ -199,7 +199,7 @@ export function CategoryDialog({
     setIsSubmitting(true)
 
     try {
-      const url = '/api/categories'
+      const url = '/api/categories-mongo'
       const method = isEditing ? 'PUT' : 'POST'
       
       // Add default image if none provided

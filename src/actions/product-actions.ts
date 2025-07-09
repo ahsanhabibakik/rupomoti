@@ -1,49 +1,60 @@
 'use server'
 
-import { prisma } from '@/lib/prisma'
 import { notFound } from 'next/navigation'
 
-export async function getProductBySlug(slug: string) {
-  const product = await prisma.product.findUnique({
-    where: { slug },
-    include: {
-      category: true,
-    },
+async function fetchFromAPI(endpoint: string) {
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+  const response = await fetch(`${baseUrl}${endpoint}`, {
+    cache: 'no-store',
+    headers: {
+      'Content-Type': 'application/json',
+    }
   })
+  
+  if (!response.ok) {
+    console.error(`Failed to fetch ${endpoint}:`, response.status, response.statusText)
+    return null
+  }
+  
+  return response.json()
+}
 
-  if (!product) {
+export async function getProductBySlug(slug: string) {
+  try {
+    const data = await fetchFromAPI(`/api/products-mongo?slug=${slug}`)
+    const products = data?.data || []
+    
+    if (products.length === 0) {
+      notFound()
+    }
+
+    return products[0]
+  } catch (error) {
+    console.error('Error fetching product by slug:', error)
     notFound()
   }
-
-  return product
 }
 
 export async function getRelatedProducts(categoryId: string, currentProductId: string) {
-  return await prisma.product.findMany({
-    where: {
-      categoryId,
-      id: { not: currentProductId },
-      status: 'ACTIVE',
-      stock: { gt: 0 }, // Only show in-stock products
-    },
-    take: 4,
-    include: {
-      category: true,
-    },
-  })
+  try {
+    const data = await fetchFromAPI(`/api/products-mongo?categoryId=${categoryId}&limit=4`)
+    const products = data?.data || []
+    
+    // Filter out the current product
+    return products.filter((product: any) => product.id !== currentProductId)
+  } catch (error) {
+    console.error('Error fetching related products:', error)
+    return []
+  }
 }
 
 export async function getProductReviews(productId: string) {
-  return await prisma.review.findMany({
-    where: { productId },
-    include: {
-      user: {
-        select: {
-          name: true,
-          email: true,
-        },
-      },
-    },
-    orderBy: { createdAt: 'desc' },
-  })
+  try {
+    // For now, return empty reviews since we don't have a reviews endpoint yet
+    // TODO: Implement reviews endpoint when needed
+    return []
+  } catch (error) {
+    console.error('Error fetching product reviews:', error)
+    return []
+  }
 }

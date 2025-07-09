@@ -16,12 +16,12 @@ export function useProducts(options: UseProductsOptions = {}) {
   if (adminView) params.set('adminView', 'true');
   if (includeOutOfStock) params.set('includeOutOfStock', 'true');
   
-  const url = `/api/products${params.toString() ? `?${params.toString()}` : ''}`;
+  const url = `/api/products-mongo${params.toString() ? `?${params.toString()}` : ''}`;
   const { data, error, mutate } = useSWR(url, fetcher)
 
   const createProduct = async (productData: any) => {
     return showToast.promise(
-      fetch('/api/products', {
+      fetch('/api/products-mongo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(productData),
@@ -40,7 +40,7 @@ export function useProducts(options: UseProductsOptions = {}) {
 
   const updateProduct = async (id: string, productData: any) => {
     return showToast.promise(
-      fetch(`/api/products/${id}`, {
+      fetch(`/api/products-mongo/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(productData),
@@ -59,7 +59,7 @@ export function useProducts(options: UseProductsOptions = {}) {
 
   const deleteProduct = async (id: string) => {
     return showToast.promise(
-      fetch(`/api/products/${id}`, {
+      fetch(`/api/products-mongo/${id}`, {
         method: 'DELETE',
       }).then((res) => {
         if (!res.ok) throw new Error('Failed to delete product')

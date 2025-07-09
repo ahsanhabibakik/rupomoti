@@ -144,7 +144,7 @@ async function getInitialProducts() {
       return { products: [], total: 0, hasMore: false };
     }
     
-    const res = await fetch(`/api/products?limit=${PAGE_SIZE}&sort=newest&page=1`, { 
+    const res = await fetch(`/api/products-mongo?limit=${PAGE_SIZE}&sort=newest&page=1`, { 
       cache: 'no-store',
       headers: {
         'Content-Type': 'application/json',
@@ -273,7 +273,7 @@ export default function ShopPage() {
     params.append('limit', PAGE_SIZE.toString());
 
     try {
-      const res = await fetch(`/api/products?${params.toString()}`, {
+      const res = await fetch(`/api/products-mongo?${params.toString()}`, {
         signal: abortControllerRef.current.signal,
         headers: {
           'Content-Type': 'application/json',

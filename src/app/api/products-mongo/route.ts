@@ -55,7 +55,7 @@ export async function GET(request: Request) {
     }
 
     // Only show active products
-    filter.isActive = true
+    filter.status = 'ACTIVE'
 
     // Get total count
     const totalProducts = await productsCollection.countDocuments(filter)
@@ -158,5 +158,48 @@ export async function GET(request: Request) {
       },
       { status: 500 }
     )
+  }
+}
+
+export async function POST(request: Request) {
+  let client: MongoClient | null = null
+  
+  try {
+    const body = await request.json()
+    client = await getMongoClient()
+    const db = client.db()
+    const collection = db.collection('Product')
+    
+    // Generate unique slug if not provided
+    if (!body.slug && body.name) {
+      body.slug = body.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+    }
+    
+    // Add timestamps
+    const now = new Date()
+    body.createdAt = now
+    body.updatedAt = now
+    
+    const result = await collection.insertOne(body)
+    
+    return NextResponse.json({
+      success: true,
+      data: { ...body, id: result.insertedId.toString() }
+    })
+    
+  } catch (error) {
+    console.error('Product creation error:', error)
+    return NextResponse.json(
+      { error: 'Failed to create product', message: error instanceof Error ? error.message : 'Internal server error' },
+      { status: 500 }
+    )
+  } finally {
+    if (client) {
+      try {
+        await client.close()
+      } catch (closeError) {
+        console.error('Error closing MongoDB connection:', closeError)
+      }
+    }
   }
 }

@@ -34,11 +34,11 @@ export function useCategories({ page = 1, pageSize = 10, search = '' } = {}) {
     search,
   });
 
-  const { data, error, mutate } = useSWR<CategoriesResponse>(`/api/categories?${searchParams}`, fetcher)
+  const { data, error, mutate } = useSWR<CategoriesResponse>(`/api/categories-mongo?${searchParams}`, fetcher)
 
   const createCategory = async (categoryData: Omit<Category, 'id' | 'slug'>) => {
     return showToast.promise(
-      fetch('/api/categories', {
+      fetch('/api/categories-mongo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(categoryData),
@@ -60,7 +60,7 @@ export function useCategories({ page = 1, pageSize = 10, search = '' } = {}) {
 
   const updateCategory = async (id: string, categoryData: Partial<Category>) => {
     return showToast.promise(
-      fetch(`/api/categories/${id}`, {
+      fetch(`/api/categories-mongo/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, ...categoryData }),
@@ -82,7 +82,7 @@ export function useCategories({ page = 1, pageSize = 10, search = '' } = {}) {
 
   const deleteCategory = async (id: string) => {
     return showToast.promise(
-      fetch(`/api/categories/${id}`, {
+      fetch(`/api/categories-mongo/${id}`, {
         method: 'DELETE',
       }).then(async (res) => {
         if (!res.ok) {

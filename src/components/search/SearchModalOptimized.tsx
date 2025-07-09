@@ -94,7 +94,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
         params.append("categories", category);
       }
 
-      const response = await fetch(`/api/products?${params.toString()}`);
+      const response = await fetch(`/api/products-mongo?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
         // Ensure we safely extract product data and category names

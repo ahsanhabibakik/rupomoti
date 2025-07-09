@@ -1,21 +1,35 @@
 'use server'
 
-import { prisma, withRetry } from '@/lib/prisma'
 import { Product } from '@/types/product'
+
+async function fetchFromAPI(endpoint: string) {
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+  const response = await fetch(`${baseUrl}${endpoint}`, {
+    cache: 'no-store',
+    headers: {
+      'Content-Type': 'application/json',
+    }
+  })
+  
+  if (!response.ok) {
+    console.error(`Failed to fetch ${endpoint}:`, response.status, response.statusText)
+    return null
+  }
+  
+  return response.json()
+}
 
 export async function getProducts(filter: { [key: string]: boolean }): Promise<Product[]> {
   try {
-    return await withRetry(async () => {
-      const products = await prisma.product.findMany({
-        where: filter,
-        take: 4,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          category: true,
-        },
-      })
-      return products as Product[]
+    // Build query parameters from filter
+    const params = new URLSearchParams()
+    Object.entries(filter).forEach(([key, value]) => {
+      if (value) params.append(key, 'true')
     })
+    params.append('limit', '4')
+    
+    const data = await fetchFromAPI(`/api/products-mongo?${params.toString()}`)
+    return data?.data || []
   } catch (error) {
     console.error('Error fetching products:', error)
     return []
@@ -24,71 +38,27 @@ export async function getProducts(filter: { [key: string]: boolean }): Promise<P
 
 export async function getHomePageData() {
   try {
-    // Common filter to exclude out-of-stock products for regular users
-    const baseWhere = {
-      status: 'ACTIVE' as const,
-      stock: { gt: 0 }
-    }    // Enhanced query to remove landing page products completely
-    const [featuredProducts, popularProducts, newArrivals, regularProducts] = await withRetry(async () => {
-      return await Promise.all([
-        prisma.product.findMany({
-          where: { 
-            ...baseWhere,
-            isFeatured: true
-          },
-          take: 12,
-          orderBy: [
-            { createdAt: 'desc' }
-          ],
-          include: { category: true },
-        }),
-        prisma.product.findMany({
-          where: { 
-            ...baseWhere,
-            isPopular: true
-          },
-          take: 12,
-          orderBy: [
-            { createdAt: 'desc' }
-          ],
-          include: { category: true },
-        }),
-        prisma.product.findMany({
-          where: { 
-            ...baseWhere,
-            isNewArrival: true
-          },
-          take: 12,
-          orderBy: [
-            { createdAt: 'desc' }
-          ],
-          include: { category: true },
-        }),
-        // Get regular products (not featured, not popular, not new arrivals)
-        prisma.product.findMany({
-          where: { 
-            ...baseWhere,
-            isFeatured: false,
-            isPopular: false,
-            isNewArrival: false
-          },
-          take: 12,
-          orderBy: [
-            { createdAt: 'desc' }
-          ],
-          include: { category: true },
-        }),
-      ])
-    })
+    // Fetch different product types using MongoDB endpoints
+    const [featuredData, popularData, newArrivalsData, regularData] = await Promise.all([
+      fetchFromAPI('/api/products-mongo?isFeatured=true&limit=12&sort=newest'),
+      fetchFromAPI('/api/products-mongo?isPopular=true&limit=12&sort=newest'),
+      fetchFromAPI('/api/products-mongo?limit=12&sort=newest'),
+      fetchFromAPI('/api/products-mongo?limit=8&sort=oldest')
+    ])
 
-  // Smart product count logic
-  const getOptimalProductCount = (products: Product[]) => {
-    const count = products.length
-    if (count >= 8) return 8
-    if (count >= 4) return 4
-    if (count >= 3) return count
-    return 0 // Hide section if less than 3 products
-  }
+    const featuredProducts = featuredData?.data || []
+    const popularProducts = popularData?.data || []
+    const newArrivals = newArrivalsData?.data || []
+    const regularProducts = regularData?.data || []
+
+    // Smart product count logic
+    const getOptimalProductCount = (products: Product[]) => {
+      const count = products.length
+      if (count >= 8) return 8
+      if (count >= 4) return 4
+      if (count >= 3) return count
+      return 0 // Hide section if less than 3 products
+    }
 
     return {
       featuredProducts: featuredProducts.slice(0, getOptimalProductCount(featuredProducts)) as Product[],
