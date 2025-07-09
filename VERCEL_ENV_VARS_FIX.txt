@@ -1,0 +1,35 @@
+# CRITICAL VERCEL ENVIRONMENT VARIABLES TO FIX
+
+# 🔧 UPDATE THESE IN VERCEL DASHBOARD:
+# Go to: https://vercel.com/dashboard → Your Project → Settings → Environment Variables
+
+# 1. MOST CRITICAL - Update this one first:
+NEXTAUTH_URL=https://rupomoti.com
+# (Change from: https://www.rupomoti.com)
+
+# 2. Ensure these are also set correctly:
+NODE_ENV=production
+DATABASE_URL=mongodb+srv://rupomotibusiness:pGhePonAlcVB3sf0@cluster0.p0tpuuo.mongodb.net/rupomoti?retryWrites=true&w=majority
+NEXTAUTH_SECRET=Q7z9f8mHBKwP6R2VjpThcFMsYAYa5nKM
+GOOGLE_CLIENT_ID=340102371641-uj74n18rrpbql3g8r6vqg2v5ha94mm9u.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=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
+
+# 3. Cloudinary variables (for images):
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=dotinshdj
+NEXT_PUBLIC_CLOUDINARY_API_KEY=258755974622473
+NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=rupomoti_uploads
+CLOUDINARY_URL=cloudinary://258755974622473:Yi_5MEKzk4uf0UkNj9g7ZwLJzjg@dotinshdj
+
+# 📝 STEPS:
+# 1. Update NEXTAUTH_URL in Vercel (remove www)
+# 2. Click "Redeploy" in Vercel
+# 3. Wait for deployment to complete
+# 4. Test https://rupomoti.com
+
+# 🎯 EXPECTED RESULT:
+# After this fix, everything should work:
+# - Homepage will show products and categories
+# - Shop page will show products (not "No Products Found")
+# - New arrivals page will work without errors
+# - Google sign-in will work properly
+# - Email sign-in will work properly
