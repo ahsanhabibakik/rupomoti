@@ -17,15 +17,33 @@ interface RegularProductSectionProps {
 
 export default function RegularProductSection({ 
   title, 
-  products, 
+  products = [], // Add default empty array
   viewAllLink, 
   className = "",
   maxProducts = 8
 }: RegularProductSectionProps) {
-  const displayProducts = products.slice(0, maxProducts)
+  // Safely handle products array
+  const safeProducts = Array.isArray(products) ? products : []
+  const displayProducts = safeProducts.slice(0, maxProducts)
+
+  // Don't render if no products
+  if (displayProducts.length === 0) {
+    return (
+      <section className={`py-8 sm:py-12 md:py-16 ${className}`}>
+        <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              {title}
+            </h2>
+            <p className="text-sm sm:text-base text-gray-600">No products available at the moment.</p>
+          </div>
+        </div>
+      </section>
+    )
+  }
 
   return (
-    <section className={`py-16 ${className}`}>
+    <section className={`py-8 sm:py-12 md:py-16 ${className}`}>
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div 
@@ -33,13 +51,13 @@ export default function RegularProductSection({
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-12"
+          className="text-center mb-8 sm:mb-10 md:mb-12"
         >
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
             {title}
           </h2>
-          <div className="w-24 h-1 bg-gradient-to-r from-orange-500 to-red-500 mx-auto mb-6"></div>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <div className="w-16 sm:w-20 md:w-24 h-1 bg-gradient-to-r from-orange-500 to-red-500 mx-auto mb-4 sm:mb-5 md:mb-6"></div>
+          <p className="text-sm sm:text-base md:text-lg text-gray-600 max-w-2xl mx-auto px-4">
             Discover our carefully curated collection of beautiful jewelry pieces
           </p>
         </motion.div>
@@ -50,7 +68,7 @@ export default function RegularProductSection({
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6"
+          className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 gap-y-4 sm:gap-y-6"
         >
           {displayProducts.map((product, index) => (
             <motion.div
@@ -76,12 +94,12 @@ export default function RegularProductSection({
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.4 }}
-            className="text-center mt-12"
+            className="text-center mt-8 sm:mt-10 md:mt-12"
           >
-            <Button asChild size="lg" className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300">
+            <Button asChild size="lg" className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base rounded-full shadow-lg hover:shadow-xl transition-all duration-300">
               <Link href={viewAllLink} className="flex items-center gap-2">
                 View All Products
-                <ArrowRight className="w-5 h-5" />
+                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
               </Link>
             </Button>
           </motion.div>

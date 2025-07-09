@@ -7,22 +7,27 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ProductCard } from '@/components/products/ProductCard'
 
+import { Product } from '@/types/product'
+
 interface SlidableProductSectionProps {
   title: string
-  products: any[]
+  products: Product[]
   viewAllLink: string
   className?: string
 }
 
 export default function SlidableProductSection({ 
   title, 
-  products, 
+  products = [], // Add default empty array
   viewAllLink, 
   className = "" 
 }: SlidableProductSectionProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(true)
+
+  // Safely handle products array
+  const safeProducts = Array.isArray(products) ? products : []
 
   const handleScroll = () => {
     const container = scrollContainerRef.current
@@ -35,19 +40,32 @@ export default function SlidableProductSection({
   const scrollLeft = () => {
     const container = scrollContainerRef.current
     if (container) {
-      container.scrollBy({ left: -300, behavior: 'smooth' })
+      const scrollAmount = window.innerWidth < 768 ? 250 : 300
+      container.scrollBy({ left: -scrollAmount, behavior: 'smooth' })
     }
   }
 
   const scrollRight = () => {
     const container = scrollContainerRef.current
     if (container) {
-      container.scrollBy({ left: 300, behavior: 'smooth' })
+      const scrollAmount = window.innerWidth < 768 ? 250 : 300
+      container.scrollBy({ left: scrollAmount, behavior: 'smooth' })
     }
   }
 
-  if (!products || products.length === 0) {
-    return null
+  if (safeProducts.length === 0) {
+    return (
+      <section className={`py-12 ${className}`}>
+        <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+              {title}
+            </h2>
+            <p className="text-gray-600">No products available at the moment.</p>
+          </div>
+        </div>
+      </section>
+    )
   }
 
   return (
@@ -59,11 +77,13 @@ export default function SlidableProductSection({
           </h2>
           
           {/* Desktop Navigation */}
-          {products.length > 3 && (
+          {safeProducts.length > 3 && (
             <div className="hidden md:flex gap-2">
               <button
                 onClick={scrollLeft}
                 disabled={!canScrollLeft}
+                title="Scroll left"
+                aria-label="Scroll products left"
                 className={`p-2 rounded-full border transition-all duration-200 ${
                   canScrollLeft 
                     ? 'text-gray-700 hover:text-orange-600 hover:shadow-md bg-white' 
@@ -75,6 +95,8 @@ export default function SlidableProductSection({
               <button
                 onClick={scrollRight}
                 disabled={!canScrollRight}
+                title="Scroll right"
+                aria-label="Scroll products right"
                 className={`p-2 rounded-full border transition-all duration-200 ${
                   canScrollRight 
                     ? 'text-gray-700 hover:text-orange-600 hover:shadow-md bg-white' 

@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { Logo } from './Logo'
 import {
   Sparkles,
@@ -43,6 +42,12 @@ const footerLinks = {
     { name: 'Terms of Service', href: '/terms' },
     { name: 'Sitemap', href: '/sitemap' },
   ],
+  developer: [
+    { name: '🚀 Features Demo', href: '/demo' },
+    { name: '🧪 API Test Suite', href: '/test-features' },
+    { name: '📊 Analytics Dashboard', href: '/demo?tab=analytics' },
+    { name: '⚙️ Admin Features', href: '/demo?tab=admin' },
+  ],
 }
 
 const socialLinks = [
@@ -82,7 +87,7 @@ export default function Footer() {
       } else {
         toast.error(result.message || 'An error occurred.')
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to subscribe. Please try again later.')
     } finally {
       setIsLoading(false)
@@ -233,6 +238,24 @@ export default function Footer() {
                 >
                   <Sparkles size={16} className="text-champagne-gold" />
                   About Us
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/demo"
+                  className="text-pearl-white hover:text-champagne-gold transition-colors flex items-center gap-2"
+                >
+                  <Sparkles size={16} className="text-champagne-gold" />
+                  🚀 Features Demo
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/test-features"
+                  className="text-pearl-white hover:text-champagne-gold transition-colors flex items-center gap-2"
+                >
+                  <Sparkles size={16} className="text-champagne-gold" />
+                  🧪 API Test Suite
                 </Link>
               </li>
             </ul>

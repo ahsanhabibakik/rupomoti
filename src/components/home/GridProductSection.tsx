@@ -5,9 +5,11 @@ import { Button } from '@/components/ui/button'
 import { ProductCard } from '@/components/products/ProductCard'
 import { ArrowRight } from 'lucide-react'
 
+import { Product } from '@/types/product'
+
 interface GridProductSectionProps {
   title: string
-  products: any[]
+  products: Product[]
   viewAllLink: string
   className?: string
   mobileColumns?: number
@@ -17,15 +19,43 @@ interface GridProductSectionProps {
 
 export default function GridProductSection({
   title,
-  products,
+  products = [], // Add default empty array
   viewAllLink,
   className = '',
   mobileColumns = 2,
   desktopColumns = 4,
   showMoreProducts = 8
 }: GridProductSectionProps) {
-  // Show more products on mobile for grid layout
-  const displayProducts = products.slice(0, showMoreProducts)
+  // Safely handle products array
+  const safeProducts = Array.isArray(products) ? products : []
+  const displayProducts = safeProducts.slice(0, showMoreProducts)
+
+  // Don't render if no products
+  if (displayProducts.length === 0) {
+    return (
+      <section className={`py-12 md:py-16 ${className}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-3">
+              {title}
+            </h2>
+            <p className="text-muted-foreground">No products available at the moment.</p>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  // Improved responsive grid classes
+  const getGridClasses = () => {
+    const mobile = mobileColumns === 1 ? 'grid-cols-1' : 'grid-cols-2'
+    const tablet = desktopColumns <= 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'
+    const desktop = desktopColumns === 5 ? 'lg:grid-cols-5' : 
+                   desktopColumns === 6 ? 'lg:grid-cols-6' : 
+                   desktopColumns === 3 ? 'lg:grid-cols-3' : 
+                   'lg:grid-cols-4'
+    return `${mobile} ${tablet} ${desktop}`
+  }
 
   return (
     <section className={`py-12 md:py-16 ${className}`}>
@@ -52,31 +82,7 @@ export default function GridProductSection({
         </div>
 
         {/* Products Grid */}
-        <div className={`grid gap-3 md:gap-4 lg:gap-6 ${
-          mobileColumns === 1 
-            ? 'grid-cols-1' 
-            : mobileColumns === 3 
-            ? 'grid-cols-3' 
-            : 'grid-cols-2'
-        } ${
-          Math.min(desktopColumns, 3) === 1 
-            ? 'md:grid-cols-1' 
-            : Math.min(desktopColumns, 3) === 2
-            ? 'md:grid-cols-2'
-            : 'md:grid-cols-3'
-        } ${
-          desktopColumns === 1 
-            ? 'lg:grid-cols-1' 
-            : desktopColumns === 2
-            ? 'lg:grid-cols-2'
-            : desktopColumns === 3
-            ? 'lg:grid-cols-3'
-            : desktopColumns === 5
-            ? 'lg:grid-cols-5'
-            : desktopColumns === 6
-            ? 'lg:grid-cols-6'
-            : 'lg:grid-cols-4'
-        }`}>
+        <div className={`grid gap-3 md:gap-4 lg:gap-6 ${getGridClasses()}`}>
           {displayProducts.map((product) => (
             <div key={product.id} className="w-full">
               <ProductCard
