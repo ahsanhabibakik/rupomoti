@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import dbConnect from '@/lib/mongoose'
+import Order from '@/models/Order'
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 // Webhook handler for Steadfast delivery status updates
 export async function POST(request: Request) {
@@ -30,100 +34,96 @@ export async function POST(request: Request) {
         console.warn('⚠️ Unknown notification type:', payload.notification_type)
     }
 
-    return NextResponse.json({ status: 'success', message: 'Webhook received successfully.' })
+    return NextResponse.json({ status: 'success' })
   } catch (error) {
-    console.error('❌ Webhook processing error:', error)
-    return NextResponse.json(
-      { status: 'error', message: 'Failed to process webhook' },
-      { status: 500 }
-    )
+    console.error('❌ Webhook error:', error)
+    return NextResponse.json({ status: 'error', message: 'Internal server error' }, { status: 500 })
   }
 }
 
-async function handleDeliveryStatus(payload: any) {
-  const { consignment_id, invoice, status, cod_amount, delivery_charge, tracking_message, updated_at } = payload
-
-  // Map Steadfast status to our OrderStatus
-  const orderStatus = mapSteadfastStatus(status)
-
+async function handleDeliveryStatus(payload: Record<string, unknown>) {
   try {
-    // Find order by invoice number
-    const order = await prisma.order.findFirst({
-      where: { orderNumber: invoice }
+    await dbConnect()
+    
+    // Find order by consignment ID
+    const order = await Order.findOne({
+      steadfastConsignmentId: payload.consignment_id,
+      deletedAt: null
     })
 
     if (!order) {
-      console.error('❌ Order not found for invoice:', invoice)
+      console.warn('⚠️ Order not found for consignment:', payload.consignment_id)
       return
     }
 
-    // Update order status and Steadfast info
-    await prisma.order.update({
-      where: { id: order.id },
-      data: {
-        status: orderStatus,
-        steadfastInfo: {
-          consignmentId: consignment_id.toString(),
-          status: status,
-          lastUpdate: new Date(updated_at),
-          deliveryCharge: delivery_charge,
-          codAmount: cod_amount,
-          lastMessage: tracking_message
-        }
-      }
-    })
+    // Update order status based on delivery status
+    const statusMapping: Record<string, string> = {
+      'delivered': 'DELIVERED',
+      'partial_delivered': 'DELIVERED',
+      'cancelled': 'CANCELLED',
+      'returned': 'CANCELLED',
+      'hold': 'PROCESSING',
+      'in_transit': 'SHIPPED'
+    }
 
-    console.log('✅ Order status updated:', { invoice, status: orderStatus })
+    const newStatus = statusMapping[payload.delivery_status]
+    if (newStatus && newStatus !== order.status) {
+      await Order.findByIdAndUpdate(order._id, {
+        status: newStatus,
+        updatedAt: new Date()
+      })
+      
+      console.log(`✅ Order ${order.orderNumber} status updated to ${newStatus}`)
+    }
   } catch (error) {
-    console.error('❌ Failed to update order status:', error)
-    throw error
+    console.error('❌ Error handling delivery status:', error)
   }
 }
 
-async function handleTrackingUpdate(payload: any) {
-  const { consignment_id, invoice, tracking_message, updated_at } = payload
-
+async function handleTrackingUpdate(payload: Record<string, unknown>) {
   try {
-    // Find order by invoice number
-    const order = await prisma.order.findFirst({
-      where: { orderNumber: invoice }
+    await dbConnect()
+    
+    // Find order by consignment ID
+    const order = await Order.findOne({
+      steadfastConsignmentId: payload.consignment_id,
+      deletedAt: null
     })
 
     if (!order) {
-      console.error('❌ Order not found for invoice:', invoice)
+      console.warn('⚠️ Order not found for consignment:', payload.consignment_id)
       return
     }
 
     // Update tracking information
-    await prisma.order.update({
-      where: { id: order.id },
-      data: {
-        steadfastInfo: {
-          ...order.steadfastInfo,
-          lastUpdate: new Date(updated_at),
-          lastMessage: tracking_message
-        }
-      }
-    })
+    const updateData: Record<string, unknown> = {
+      updatedAt: new Date()
+    }
 
-    console.log('✅ Tracking info updated:', { invoice, message: tracking_message })
+    if (payload.tracking_number) {
+      updateData.trackingNumber = payload.tracking_number
+    }
+
+    if (payload.current_status) {
+      const statusMapping: Record<string, string> = {
+        'picked_up': 'CONFIRMED',
+        'in_transit': 'SHIPPED', 
+        'out_for_delivery': 'SHIPPED',
+        'delivered': 'DELIVERED',
+        'cancelled': 'CANCELLED',
+        'returned': 'CANCELLED'
+      }
+
+      const newStatus = statusMapping[payload.current_status]
+      if (newStatus) {
+        updateData.status = newStatus
+      }
+    }
+
+    await Order.findByIdAndUpdate(order._id, updateData)
+    
+    console.log(`✅ Order ${order.orderNumber} tracking updated`)
   } catch (error) {
-    console.error('❌ Failed to update tracking info:', error)
-    throw error
+    console.error('❌ Error handling tracking update:', error)
   }
 }
-
-function mapSteadfastStatus(steadfastStatus: string): 'PENDING' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' {
-  switch (steadfastStatus.toLowerCase()) {
-    case 'delivered':
-      return 'DELIVERED'
-    case 'partial_delivered':
-      return 'DELIVERED'
-    case 'cancelled':
-      return 'CANCELLED'
-    case 'pending':
-      return 'PROCESSING'
-    default:
-      return 'SHIPPED'
-  }
-} 

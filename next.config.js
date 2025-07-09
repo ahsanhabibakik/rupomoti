@@ -91,10 +91,10 @@ const nextConfig = {
   },
   webpack: (config, { isServer }) => {
     if (isServer) {
-      // Ensure Prisma binaries are included in the server bundle
-      config.externals.push({
-        '@prisma/client': '@prisma/client',
-      })
+      // Don't externalize Prisma client for serverless deployment
+      config.externals = config.externals.filter(
+        (external) => typeof external !== 'string' || !external.includes('@prisma/client')
+      )
     }
     return config
   },

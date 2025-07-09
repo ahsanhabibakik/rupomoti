@@ -27,13 +27,13 @@ const createPrismaClient = () => {
         url: env.DATABASE_URL
       }
     },
-    // Add connection pooling configuration
-    // __internal: {
-    //   engine: {
-    //     pool_timeout: 20,
-    //     connection_limit: 5,
-    //   }
-    // }
+    // Optimize for serverless deployment
+    __internal: {
+      engine: {
+        pool_timeout: 20,
+        connection_limit: 3,
+      }
+    }
   })
 }
 
@@ -44,6 +44,18 @@ const prismaClient =
 if (env.NODE_ENV !== 'production') globalForPrisma.prisma = prismaClient
 
 export { prismaClient as prisma }
+
+// Initialize Prisma with proper connection handling for serverless
+export async function initializePrisma() {
+  try {
+    await prismaClient.$connect()
+    console.log('✅ Prisma Client connected successfully')
+    return true
+  } catch (error) {
+    console.error('❌ Failed to connect Prisma Client:', error)
+    return false
+  }
+}
 
 // Re-export the connection check function with retry logic
 export async function checkDatabaseConnection(retries = 3): Promise<boolean> {
@@ -80,7 +92,7 @@ export async function withRetry<T>(
   retries = 2,
   delay = 1000
 ): Promise<T> {
-  let lastError: any
+  let lastError: unknown
   
   for (let attempt = 1; attempt <= retries + 1; attempt++) {
     try {

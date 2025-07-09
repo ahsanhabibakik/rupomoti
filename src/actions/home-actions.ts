@@ -23,14 +23,6 @@ async function fetchFromAPI(endpoint: string) {
     
     if (!response.ok) {
       console.error(`Failed to fetch ${endpoint}:`, response.status, response.statusText)
-      
-      // Try fallback to mongo endpoint if enhanced fails
-      if (endpoint.includes('products-enhanced')) {
-        const fallbackEndpoint = endpoint.replace('products-enhanced', 'products-mongo')
-        console.log('Trying fallback:', fallbackEndpoint)
-        return await fetchFromAPI(fallbackEndpoint)
-      }
-      
       return null
     }
     
@@ -39,18 +31,6 @@ async function fetchFromAPI(endpoint: string) {
     return data
   } catch (error) {
     console.error(`Error fetching ${endpoint}:`, error)
-    
-    // Try fallback to mongo endpoint if enhanced fails
-    if (endpoint.includes('products-enhanced')) {
-      const fallbackEndpoint = endpoint.replace('products-enhanced', 'products-mongo')
-      console.log('Trying fallback after error:', fallbackEndpoint)
-      try {
-        return await fetchFromAPI(fallbackEndpoint)
-      } catch (fallbackError) {
-        console.error('Fallback also failed:', fallbackError)
-      }
-    }
-    
     return null
   }
 }
@@ -64,8 +44,8 @@ export async function getProducts(filter: { [key: string]: boolean }): Promise<P
     })
     params.append('limit', '4')
     
-    // Use enhanced endpoint for better performance and computed fields
-    const data = await fetchFromAPI(`/api/products-enhanced?${params.toString()}`)
+    // Use mongo endpoint for better performance and computed fields
+    const data = await fetchFromAPI(`/api/products-mongo?${params.toString()}`)
     return data?.data || []
   } catch (error) {
     console.error('Error fetching products:', error)
@@ -77,20 +57,12 @@ export async function getHomePageData() {
   try {
     console.log('Starting home page data fetch...')
     
-    // Try enhanced endpoints first, fallback to mongo endpoints
+    // Use mongo endpoints directly
     const [featuredData, popularData, newArrivalsData, saleData] = await Promise.allSettled([
-      fetchFromAPI('/api/products-enhanced?type=featured&limit=12').then(data => 
-        data || fetchFromAPI('/api/products-mongo?featured=true&limit=12')
-      ),
-      fetchFromAPI('/api/products-enhanced?type=popular&limit=12').then(data => 
-        data || fetchFromAPI('/api/products-mongo?popular=true&limit=12')
-      ),
-      fetchFromAPI('/api/products-enhanced?limit=12').then(data => 
-        data || fetchFromAPI('/api/products-mongo?limit=12')
-      ),
-      fetchFromAPI('/api/products-enhanced?type=sale&limit=8').then(data => 
-        data || fetchFromAPI('/api/products-mongo?limit=8')
-      )
+      fetchFromAPI('/api/products-mongo?isFeatured=true&limit=12'),
+      fetchFromAPI('/api/products-mongo?isPopular=true&limit=12'),
+      fetchFromAPI('/api/products-mongo?sort=newest&limit=12'),
+      fetchFromAPI('/api/products-mongo?limit=8')
     ])
 
     const getFulfilledData = (result: PromiseSettledResult<{ data?: Product[] } | null>) => {
@@ -170,7 +142,7 @@ export async function searchProducts(query: string, filters?: {
     if (filters?.maxPrice) params.append('maxPrice', filters.maxPrice.toString())
     if (filters?.limit) params.append('limit', filters.limit.toString())
     
-    const data = await fetchFromAPI(`/api/products-enhanced?${params.toString()}`)
+    const data = await fetchFromAPI(`/api/products-mongo?${params.toString()}`)
     return data?.data || []
   } catch (error) {
     console.error('Error searching products:', error)
@@ -181,7 +153,7 @@ export async function searchProducts(query: string, filters?: {
 // 🚀 NEW: Get products on sale with computed discount info
 export async function getSaleProducts(limit = 12) {
   try {
-    const data = await fetchFromAPI(`/api/products-enhanced?type=sale&limit=${limit}`)
+    const data = await fetchFromAPI(`/api/products-mongo?type=sale&limit=${limit}`)
     return data?.data || []
   } catch (error) {
     console.error('Error fetching sale products:', error)
@@ -192,7 +164,7 @@ export async function getSaleProducts(limit = 12) {
 // 🚀 NEW: Get products by price range with enhanced filtering
 export async function getProductsByPriceRange(minPrice: number, maxPrice: number) {
   try {
-    const data = await fetchFromAPI(`/api/products-enhanced?minPrice=${minPrice}&maxPrice=${maxPrice}`)
+    const data = await fetchFromAPI(`/api/products-mongo?minPrice=${minPrice}&maxPrice=${maxPrice}`)
     return data?.data || []
   } catch (error) {
     console.error('Error fetching products by price range:', error)
@@ -203,7 +175,7 @@ export async function getProductsByPriceRange(minPrice: number, maxPrice: number
 // 🚀 NEW: Get category analytics
 export async function getCategoryAnalytics() {
   try {
-    const data = await fetchFromAPI('/api/categories-enhanced?type=analytics')
+    const data = await fetchFromAPI('/api/categories-mongo?type=analytics')
     return data?.data || []
   } catch (error) {
     console.error('Error fetching category analytics:', error)
@@ -214,7 +186,7 @@ export async function getCategoryAnalytics() {
 // 🚀 NEW: Get categories with product counts
 export async function getCategoriesWithCounts() {
   try {
-    const data = await fetchFromAPI('/api/categories-enhanced?type=with_counts')
+    const data = await fetchFromAPI('/api/categories-mongo?type=with_counts')
     return data?.data || []
   } catch (error) {
     console.error('Error fetching categories with counts:', error)
