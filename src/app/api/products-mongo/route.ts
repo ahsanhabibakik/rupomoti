@@ -1,23 +1,14 @@
 import { NextResponse } from 'next/server'
-import { MongoClient } from 'mongodb'
+import dbConnect from '@/lib/mongoose'
+import Product from '@/models/Product'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-async function getMongoClient() {
-  const client = new MongoClient(process.env.DATABASE_URL!, {
-    maxPoolSize: 10,
-    serverSelectionTimeoutMS: 5000,
-    socketTimeoutMS: 45000,
-  })
-  await client.connect()
-  return client
-}
-
 export async function GET(request: Request) {
-  let client: MongoClient | null = null
-  
   try {
+    await dbConnect()
+    
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1', 10);
     const pageSize = parseInt(searchParams.get('pageSize') || '12', 10);
@@ -27,10 +18,6 @@ export async function GET(request: Request) {
     const maxPrice = searchParams.get('maxPrice');
     const sortBy = searchParams.get('sortBy') || 'createdAt';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
-
-    client = await getMongoClient()
-    const db = client.db()
-    const productsCollection = db.collection('Product')
 
     // Build query filter
     const filter: Record<string, unknown> = {}
@@ -54,23 +41,46 @@ export async function GET(request: Request) {
       filter.price = priceFilter
     }
 
+    // Handle special query parameters
+    const isFeatured = searchParams.get('isFeatured')
+    const isPopular = searchParams.get('isPopular')
+    const limit = searchParams.get('limit')
+    const sort = searchParams.get('sort')
+
+    if (isFeatured === 'true') {
+      filter.isFeatured = true
+    }
+
+    if (isPopular === 'true') {
+      filter.isPopular = true
+    }
+
     // Only show active products
     filter.status = 'ACTIVE'
 
     // Get total count
-    const totalProducts = await productsCollection.countDocuments(filter)
+    const totalProducts = await Product.countDocuments(filter)
 
     // Build sort object
-    const sort: Record<string, 1 | -1> = {}
-    sort[sortBy] = sortOrder === 'asc' ? 1 : -1
+    const sortObj: Record<string, 1 | -1> = {}
+    if (sort === 'newest') {
+      sortObj.createdAt = -1
+    } else if (sort === 'oldest') {
+      sortObj.createdAt = 1
+    } else {
+      sortObj[sortBy] = sortOrder === 'asc' ? 1 : -1
+    }
 
     // Get products with pagination
-    const products = await productsCollection
-      .find(filter)
-      .sort(sort)
-      .skip((page - 1) * pageSize)
-      .limit(pageSize)
-      .toArray()
+    let query = Product.find(filter).sort(sortObj)
+
+    if (limit) {
+      query = query.limit(parseInt(limit, 10))
+    } else {
+      query = query.skip((page - 1) * pageSize).limit(pageSize)
+    }
+
+    const products = await query.lean().exec()
 
     // Transform products to match expected format
     const transformedProducts = products.map(product => ({
@@ -78,53 +88,26 @@ export async function GET(request: Request) {
       name: product.name,
       description: product.description || null,
       price: product.price || 0,
-      compareAtPrice: product.compareAtPrice || null,
+      discountPrice: product.discountPrice || null,
       sku: product.sku || null,
-      barcode: product.barcode || null,
-      slug: product.slug,
       images: product.images || [],
-      featuredImage: product.featuredImage || null,
-      isActive: product.isActive || true,
+      status: product.status,
       isFeatured: product.isFeatured || false,
+      isPopular: product.isPopular || false,
       categoryId: product.categoryId || null,
       stock: product.stock || 0,
-      lowStockThreshold: product.lowStockThreshold || 5,
       weight: product.weight || null,
       dimensions: product.dimensions || null,
+      materials: product.materials || [],
+      colors: product.colors || [],
+      sizes: product.sizes || [],
       tags: product.tags || [],
       seo: product.seo || {},
       createdAt: product.createdAt,
-      updatedAt: product.updatedAt,
-      category: null as { id: string; name: string; slug: string } | null // Will be populated if needed
+      updatedAt: product.updatedAt
     }))
 
-    // Get category information if products have categoryId
-    const categoryIds = [...new Set(transformedProducts.map(p => p.categoryId).filter(Boolean))]
-    
-    if (categoryIds.length > 0) {
-      const categories = await db.collection('Category')
-        .find({ _id: { $in: categoryIds.map(id => id) } })
-        .toArray()
-      
-      const categoryMap = new Map(categories.map(cat => [cat._id.toString(), cat]))
-      
-      transformedProducts.forEach(product => {
-        if (product.categoryId) {
-          const category = categoryMap.get(product.categoryId)
-          if (category) {
-            product.category = {
-              id: category._id.toString(),
-              name: category.name,
-              slug: category.slug
-            }
-          }
-        }
-      })
-    }
-
     const totalPages = Math.ceil(totalProducts / pageSize)
-
-    await client.close()
 
     return NextResponse.json({
       success: true,
@@ -142,14 +125,6 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error('Products API Error:', error)
     
-    if (client) {
-      try {
-        await client.close()
-      } catch (closeError) {
-        console.error('Error closing MongoDB connection:', closeError)
-      }
-    }
-
     return NextResponse.json(
       { 
         error: 'Failed to fetch products',
@@ -162,29 +137,21 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  let client: MongoClient | null = null
-  
   try {
+    await dbConnect()
+    
     const body = await request.json()
-    client = await getMongoClient()
-    const db = client.db()
-    const collection = db.collection('Product')
     
-    // Generate unique slug if not provided
-    if (!body.slug && body.name) {
-      body.slug = body.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
-    }
-    
-    // Add timestamps
-    const now = new Date()
-    body.createdAt = now
-    body.updatedAt = now
-    
-    const result = await collection.insertOne(body)
+    // Create new product using Mongoose
+    const product = new Product(body)
+    const savedProduct = await product.save()
     
     return NextResponse.json({
       success: true,
-      data: { ...body, id: result.insertedId.toString() }
+      data: {
+        id: savedProduct._id.toString(),
+        ...savedProduct.toObject()
+      }
     })
     
   } catch (error) {
@@ -193,13 +160,5 @@ export async function POST(request: Request) {
       { error: 'Failed to create product', message: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }
     )
-  } finally {
-    if (client) {
-      try {
-        await client.close()
-      } catch (closeError) {
-        console.error('Error closing MongoDB connection:', closeError)
-      }
-    }
   }
 }
