@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation'
 
 export default function CustomTestSignIn() {
   const [formData, setFormData] = useState({
-    email: 'test@example.com',
-    password: 'password123'
+    email: 'admin@rupomoti.com',
+    password: 'admin123'
   })
   const [result, setResult] = useState('')
   const [loading, setLoading] = useState(false)
@@ -18,35 +18,29 @@ export default function CustomTestSignIn() {
     setResult('')
 
     try {
-      // Test direct authentication via API
-      const response = await fetch('/api/auth/callback/credentials', {
+      // Test custom signin API that bypasses CSRF
+      const response = await fetch('/api/auth/custom-signin', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/json',
         },
-        body: new URLSearchParams({
+        body: JSON.stringify({
           email: formData.email,
-          password: formData.password,
-          json: 'true',
-          callbackUrl: '/account'
+          password: formData.password
         }),
       })
 
-      console.log('Response status:', response.status)
-      console.log('Response headers:', response.headers)
+      const data = await response.json()
       
-      if (response.redirected) {
-        setResult(`Redirected to: ${response.url}`)
-        // Check if redirected to success page
-        if (!response.url.includes('error')) {
-          setResult('✅ Authentication successful! Redirected successfully.')
-          setTimeout(() => router.push('/account'), 2000)
-        } else {
-          setResult(`❌ Authentication failed: ${new URL(response.url).searchParams.get('error')}`)
-        }
+      if (data.success) {
+        setResult('✅ Custom signin successful!\n' + JSON.stringify(data, null, 2))
+        
+        // Try to redirect to account page
+        setTimeout(() => {
+          router.push('/account')
+        }, 2000)
       } else {
-        const responseText = await response.text()
-        setResult(`Response: ${responseText.substring(0, 200)}...`)
+        setResult('❌ Custom signin failed:\n' + JSON.stringify(data, null, 2))
       }
     } catch (error) {
       setResult(`❌ Exception: ${(error as Error).message}`)
