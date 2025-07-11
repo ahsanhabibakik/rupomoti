@@ -9,7 +9,7 @@ interface GetCategoriesParams {
 async function fetchFromAPI(endpoint: string) {
   // Server-side needs absolute URLs, client-side can use relative
   const baseUrl = typeof window === 'undefined'
-    ? `http://localhost:${process.env.PORT || 3005}`
+    ? `http://localhost:${process.env.PORT || 3000}`
     : ''
   
   const url = baseUrl + endpoint

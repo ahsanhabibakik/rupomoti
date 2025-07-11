@@ -6,7 +6,7 @@ async function fetchFromAPI(endpoint: string) {
   try {
     // Server-side needs absolute URLs, client-side can use relative
     const baseUrl = typeof window === 'undefined'
-      ? `http://localhost:${process.env.PORT || 3004}`
+      ? `http://localhost:${process.env.PORT || 3000}`
       : ''
     
     const url = baseUrl + endpoint
