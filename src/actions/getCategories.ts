@@ -20,8 +20,8 @@ async function fetchFromAPI(endpoint: string) {
     headers: {
       'Content-Type': 'application/json',
     },
-    // Add timeout
-    signal: AbortSignal.timeout(10000)
+    // Increase timeout for MongoDB cold start
+    signal: AbortSignal.timeout(15000)
   })
   
   if (!response.ok) {
