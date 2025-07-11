@@ -12,9 +12,15 @@ import { ThemeProvider } from '@/components/theme-provider'
 // Error boundary for session provider
 function SafeSessionProvider({ children }: { children: React.ReactNode }) {
   try {
+    // Get the current origin for NextAuth
+    const baseUrl = typeof window !== 'undefined' 
+      ? window.location.origin 
+      : process.env.NEXTAUTH_URL || 'http://localhost:3000'
+    
     return (
       <SessionProvider
-        refetchInterval={5 * 60}
+        basePath="/api/auth"
+        refetchInterval={0}
         refetchOnWindowFocus={false}
       >
         {children}
