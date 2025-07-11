@@ -7,12 +7,21 @@ interface GetCategoriesParams {
 }
 
 async function fetchFromAPI(endpoint: string) {
-  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
-  const response = await fetch(`${baseUrl}${endpoint}`, {
+  // Server-side needs absolute URLs, client-side can use relative
+  const baseUrl = typeof window === 'undefined'
+    ? `http://localhost:${process.env.PORT || 3005}`
+    : ''
+  
+  const url = baseUrl + endpoint
+  console.log('Fetching categories from:', url)
+  
+  const response = await fetch(url, {
     cache: 'no-store',
     headers: {
       'Content-Type': 'application/json',
-    }
+    },
+    // Add timeout
+    signal: AbortSignal.timeout(10000)
   })
   
   if (!response.ok) {

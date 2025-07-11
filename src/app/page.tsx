@@ -1,6 +1,5 @@
-// ISR: Revalidate homepage data every hour
-export const revalidate = 3600
-export const dynamic = 'auto'
+// Force dynamic rendering for real-time product data
+export const dynamic = 'force-dynamic'
 
 import { Metadata } from 'next'
 import Image from 'next/image'
