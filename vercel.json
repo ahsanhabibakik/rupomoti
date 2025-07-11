@@ -9,7 +9,6 @@
       "memory": 512
     }
   },
-  "outputFileTracing": true,
   "headers": [
     {
       "source": "/(.*)",
