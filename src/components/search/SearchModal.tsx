@@ -8,8 +8,8 @@ import Link from "next/link";
 // import { safeRenderPrice, safeRenderCategory } from '@/lib/search-utils'
 
 // Temporary helper functions until search utils are reimplemented
-const safeRenderPrice = (price: number, salePrice?: number) => {
-  const displayPrice = salePrice && salePrice < price ? salePrice : price;
+const safeRenderPrice = (price: number, discountPrice?: number) => {
+  const displayPrice = discountPrice && discountPrice < price ? discountPrice : price;
   return `৳${displayPrice.toLocaleString()}`;
 };
 
@@ -18,13 +18,16 @@ const safeRenderCategory = (category: string) => {
 };
 
 interface Product {
-  id: string;
+  _id: string;
+  id?: string; // Keep for backward compatibility
   name: string;
   description: string;
   price: number;
-  salePrice?: number;
+  discountPrice?: number; // Changed from salePrice to match Mongoose model
   images: string[];
   category: string;
+  categoryId?: string;
+  slug?: string; // Add slug property
   isNewArrival?: boolean;
   isPopular?: boolean;
   isFeatured?: boolean;
@@ -265,8 +268,8 @@ export default function SearchModal({ isOpen, onClose }: { isOpen: boolean; onCl
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {filteredProducts.slice(0, 8).map((product) => (
                       <Link
-                        key={product.id}
-                        href={`/product/${product.slug || product.id}`}
+                        key={product._id || product.id}
+                        href={`/product/${product.slug || product._id || product.id}`}
                         onClick={onClose}
                         className="group bg-white rounded-lg border border-gray-200 hover:border-orange-300 overflow-hidden transition-all duration-300 hover:shadow-lg transform hover:scale-105"
                       >
@@ -294,9 +297,9 @@ export default function SearchModal({ isOpen, onClose }: { isOpen: boolean; onCl
                           </h4>
                           <div className="mt-2 flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              {product.salePrice ? (
+                              {product.discountPrice ? (
                                 <>
-                                  <span className="text-red-600 font-bold text-sm">{safeRenderPrice(product.salePrice)}</span>
+                                  <span className="text-red-600 font-bold text-sm">{safeRenderPrice(product.discountPrice)}</span>
                                   <span className="text-gray-500 line-through text-xs">{safeRenderPrice(product.price)}</span>
                                 </>
                               ) : (

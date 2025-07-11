@@ -60,8 +60,7 @@ const CategorySchema = new Schema<ICategory>({
   collection: 'Category'
 })
 
-// Create indexes
-CategorySchema.index({ slug: 1 })
+// Create indexes (slug index is already created by unique: true)
 CategorySchema.index({ isActive: 1 })
 CategorySchema.index({ sortOrder: 1 })
 CategorySchema.index({ parentId: 1 })

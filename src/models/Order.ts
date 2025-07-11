@@ -192,9 +192,8 @@ const OrderSchema = new Schema<IOrder>({
   collection: 'Order'
 })
 
-// Create indexes
+// Create indexes (orderNumber index is already created by unique: true)
 OrderSchema.index({ userId: 1 })
-OrderSchema.index({ orderNumber: 1 })
 OrderSchema.index({ status: 1 })
 OrderSchema.index({ paymentStatus: 1 })
 OrderSchema.index({ createdAt: -1 })
