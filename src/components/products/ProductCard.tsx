@@ -13,11 +13,39 @@ import { useWishlist } from '@/hooks/useWishlist'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Product } from '@/types/product'
+import { optimizeCloudinaryUrl, isCloudinaryUrl } from '@/utils/cloudinary'
 
 interface ProductCardProps {
   product: Product
   compact?: boolean
   className?: string
+}
+
+// Utility function to get optimized product image
+const getOptimizedProductImage = (image: string | undefined, size: 'small' | 'medium' | 'large' = 'medium'): string => {
+  if (!image || typeof image !== 'string' || image.trim() === '') {
+    return '/images/placeholder.jpg'
+  }
+
+  const trimmedImage = image.trim()
+  
+  // If it's a Cloudinary URL, optimize it
+  if (isCloudinaryUrl(trimmedImage)) {
+    const sizes = {
+      small: { width: 300, height: 300 },
+      medium: { width: 500, height: 500 },
+      large: { width: 800, height: 800 }
+    }
+    
+    const { width, height } = sizes[size]
+    return optimizeCloudinaryUrl(trimmedImage, width, height, {
+      quality: 'auto',
+      format: 'auto',
+      crop: 'fill'
+    })
+  }
+  
+  return trimmedImage
 }
 
 export function ProductCard({ product, compact = false, className }: ProductCardProps) {
@@ -33,6 +61,10 @@ export function ProductCard({ product, compact = false, className }: ProductCard
 
   const isOutOfStock = typeof stock === 'number' ? stock <= 0 : false;
 
+  // Get optimized images
+  const primaryImage = getOptimizedProductImage(images?.[0], compact ? 'small' : 'medium')
+  const hoverImage = getOptimizedProductImage(images?.[1], compact ? 'small' : 'medium')
+
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -40,7 +72,7 @@ export function ProductCard({ product, compact = false, className }: ProductCard
       id,
       name: name || 'Unnamed Product',
       price: finalPrice,
-      image: images[0] || '/images/placeholder.jpg',
+      image: primaryImage,
       quantity: 1,
       category: 'Uncategorized'
     }
@@ -80,17 +112,17 @@ export function ProductCard({ product, compact = false, className }: ProductCard
       )}>
         {/* Main Image */}
         <Image
-          src={images[0]}
+          src={primaryImage}
           alt={name || 'Unnamed Product'}
           fill
           className={cn(
             "object-cover transition-opacity duration-300",
-            isHovered && images[1] ? "opacity-0" : "opacity-100"
+            isHovered && hoverImage !== primaryImage ? "opacity-0" : "opacity-100"
           )}
           sizes={compact ? "(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw" : "(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 50vw"}
           onLoad={() => setIsImageLoading(false)}
           onError={(e) => {
-            console.error('Product image failed to load:', images[0])
+            console.error('Product image failed to load:', primaryImage)
             // Set fallback image on error
             e.currentTarget.src = '/images/placeholder.jpg'
             setIsImageLoading(false)
@@ -98,9 +130,9 @@ export function ProductCard({ product, compact = false, className }: ProductCard
         />
         
         {/* Hover Image */}
-        {images[1] && (
+        {hoverImage && hoverImage !== primaryImage && (
           <Image
-            src={images[1]}
+            src={hoverImage}
             alt={`${name || 'Unnamed Product'} - alternate view`}
             fill
             className={cn(
@@ -108,6 +140,10 @@ export function ProductCard({ product, compact = false, className }: ProductCard
               isHovered ? "opacity-100" : "opacity-0"
             )}
             sizes={compact ? "(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw" : "(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 50vw"}
+            onError={(e) => {
+              console.error('Product hover image failed to load:', hoverImage)
+              e.currentTarget.style.display = 'none'
+            }}
           />
         )}
         {/* Loading Overlay */}

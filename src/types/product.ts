@@ -4,13 +4,16 @@ export interface Product {
   id: string
   name: string
   description: string
+  slug?: string
   price: number
+  salePrice?: number // Add salePrice field
   discountPrice?: number
   categoryId: string
   images: string[]
   status: 'ACTIVE' | 'INACTIVE' | 'DRAFT'
   isFeatured: boolean
   isPopular: boolean
+  isNewArrival?: boolean // Add isNewArrival field
   stock: number
   sku: string
   weight?: number
