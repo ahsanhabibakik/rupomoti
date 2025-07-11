@@ -16,6 +16,10 @@ export interface ICategory extends Document {
   }
   createdAt: Date
   updatedAt: Date
+  // Virtual fields
+  productCount?: number
+  hasProducts?: boolean
+  displayName?: string
 }
 
 const CategorySchema = new Schema<ICategory>({
@@ -75,7 +79,7 @@ CategorySchema.virtual('productCount', {
 })
 
 CategorySchema.virtual('hasProducts').get(function() {
-  return this.productCount > 0
+  return this.productCount !== undefined && this.productCount > 0
 })
 
 CategorySchema.virtual('displayName').get(function() {
