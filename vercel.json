@@ -5,9 +5,11 @@
   "regions": ["iad1"],
   "functions": {
     "src/app/api/**/*.ts": {
-      "maxDuration": 30
+      "maxDuration": 30,
+      "memory": 512
     }
   },
+  "outputFileTracing": true,
   "headers": [
     {
       "source": "/(.*)",
