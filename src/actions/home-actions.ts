@@ -4,9 +4,9 @@ import { Product } from '@/types/product'
 
 async function fetchFromAPI(endpoint: string) {
   try {
-    // Use different URLs for server vs client
-    const baseUrl = typeof window === 'undefined' 
-      ? (process.env.NEXTAUTH_URL || 'http://localhost:3005') 
+    // Server-side needs absolute URLs, client-side can use relative
+    const baseUrl = typeof window === 'undefined'
+      ? `http://localhost:${process.env.PORT || 3004}`
       : ''
     
     const url = baseUrl + endpoint

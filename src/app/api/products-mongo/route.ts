@@ -10,42 +10,15 @@ export async function GET(request: Request) {
     await dbConnect()
     
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const pageSize = parseInt(searchParams.get('pageSize') || '12', 10);
-    const search = searchParams.get('search') || '';
-    const category = searchParams.get('category') || '';
-    const minPrice = searchParams.get('minPrice');
-    const maxPrice = searchParams.get('maxPrice');
-    const sortBy = searchParams.get('sortBy') || 'createdAt';
-    const sortOrder = searchParams.get('sortOrder') || 'desc';
-
-    // Build query filter
-    const filter: Record<string, unknown> = {}
     
-    if (search) {
-      filter.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { 'seo.keywords': { $regex: search, $options: 'i' } }
-      ]
-    }
-
-    if (category) {
-      filter.categoryId = category
-    }
-
-    if (minPrice || maxPrice) {
-      const priceFilter: Record<string, number> = {}
-      if (minPrice) priceFilter.$gte = parseFloat(minPrice)
-      if (maxPrice) priceFilter.$lte = parseFloat(maxPrice)
-      filter.price = priceFilter
-    }
-
     // Handle special query parameters
     const isFeatured = searchParams.get('isFeatured')
     const isPopular = searchParams.get('isPopular')
     const limit = searchParams.get('limit')
     const sort = searchParams.get('sort')
+
+    // Build filter
+    const filter: Record<string, unknown> = { status: 'ACTIVE' }
 
     if (isFeatured === 'true') {
       filter.isFeatured = true
@@ -55,71 +28,46 @@ export async function GET(request: Request) {
       filter.isPopular = true
     }
 
-    // Only show active products
-    filter.status = 'ACTIVE'
-
-    // Get total count
-    const totalProducts = await Product.countDocuments(filter)
-
-    // Build sort object
-    const sortObj: Record<string, 1 | -1> = {}
+    // Build sort
+    let sortObj: Record<string, 1 | -1> = { createdAt: -1 }
     if (sort === 'newest') {
-      sortObj.createdAt = -1
-    } else if (sort === 'oldest') {
-      sortObj.createdAt = 1
-    } else {
-      sortObj[sortBy] = sortOrder === 'asc' ? 1 : -1
+      sortObj = { createdAt: -1 }
     }
 
-    // Get products with pagination
+    // Build query
     let query = Product.find(filter).sort(sortObj)
 
     if (limit) {
       query = query.limit(parseInt(limit, 10))
-    } else {
-      query = query.skip((page - 1) * pageSize).limit(pageSize)
     }
 
     const products = await query.lean().exec()
 
-    // Transform products to match expected format
+    // Transform products
     const transformedProducts = products.map(product => ({
       id: product._id.toString(),
       name: product.name,
       description: product.description || null,
       price: product.price || 0,
       discountPrice: product.discountPrice || null,
+      salePrice: product.salePrice || null,
       sku: product.sku || null,
       images: product.images || [],
       status: product.status,
       isFeatured: product.isFeatured || false,
       isPopular: product.isPopular || false,
+      isNewArrival: product.isNewArrival || false,
+      slug: product.slug || null,
       categoryId: product.categoryId || null,
       stock: product.stock || 0,
-      weight: product.weight || null,
-      dimensions: product.dimensions || null,
-      materials: product.materials || [],
-      colors: product.colors || [],
-      sizes: product.sizes || [],
       tags: product.tags || [],
-      seo: product.seo || {},
       createdAt: product.createdAt,
       updatedAt: product.updatedAt
     }))
 
-    const totalPages = Math.ceil(totalProducts / pageSize)
-
     return NextResponse.json({
       success: true,
-      data: transformedProducts,
-      pagination: {
-        page,
-        pageSize,
-        totalProducts,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPreviousPage: page > 1,
-      },
+      data: transformedProducts
     })
 
   } catch (error) {
@@ -128,8 +76,7 @@ export async function GET(request: Request) {
     return NextResponse.json(
       { 
         error: 'Failed to fetch products',
-        message: error instanceof Error ? error.message : 'Internal server error',
-        timestamp: new Date().toISOString()
+        message: error instanceof Error ? error.message : 'Internal server error'
       },
       { status: 500 }
     )
