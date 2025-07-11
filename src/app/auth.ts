@@ -1,6 +1,9 @@
 import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import Google from "next-auth/providers/google"
+import User from '../models/User'
+import bcrypt from 'bcryptjs'
+import dbConnect from '../lib/mongoose'
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-for-development',
@@ -31,19 +34,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             throw new Error('Email and password are required')
           }
 
-          // Import Mongoose User model
-          const { default: User } = await import('../models/User')
-          const bcrypt = await import('bcryptjs')
-          const mongoose = await import('mongoose')
-          
-          // Connect to MongoDB if not already connected
-          if (mongoose.default.connection.readyState !== 1) {
-            const mongoUri = process.env.MONGODB_URI || process.env.MONGODB_URL
-            if (!mongoUri) {
-              throw new Error('MongoDB connection string not found')
-            }
-            await mongoose.default.connect(mongoUri)
-          }
+          // Connect to MongoDB
+          await dbConnect()
 
           // Find user by email
           const user = await User.findOne({ email: email.toLowerCase() })
