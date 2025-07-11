@@ -5,6 +5,7 @@ import './globals.css'
 import { Metadata } from 'next'
 import { Analytics } from '@vercel/analytics/react'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -80,6 +81,7 @@ export default function RootLayout({
               {children}
             </RootLayoutClient>
             {process.env.NODE_ENV === 'production' && <Analytics />}
+            {process.env.NODE_ENV === 'production' && <SpeedInsights />}
           </Providers>
         </ErrorBoundary>
       </body>
