@@ -53,8 +53,8 @@ export async function GET(request: Request) {
     // Price filter
     if (minPrice > 0 || maxPrice < 1000000) {
       query.price = {}
-      if (minPrice > 0) (query.price as any).$gte = minPrice
-      if (maxPrice < 1000000) (query.price as any).$lte = maxPrice
+      if (minPrice > 0) query.price.$gte = minPrice
+      if (maxPrice < 1000000) query.price.$lte = maxPrice
     }
 
     // Stock filter
@@ -63,81 +63,91 @@ export async function GET(request: Request) {
     }
 
     // Special filters
-    if (featured) query.featured = true
-    if (popular) query.popular = true
-    if (newArrivals) query.isNewArrival = true
+    if (featured) query.isFeatured = true
+    if (popular) query.isPopular = true
+    if (newArrivals) {
+      const thirtyDaysAgo = new Date()
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+      query.createdAt = { $gte: thirtyDaysAgo }
+    }
 
-    // Sort options
-    let sortOptions: Record<string, 1 | -1> = {}
+    // Build sort
+    const sortOptions: Record<string, unknown> = {}
     switch (sort) {
-      case 'price-asc':
-        sortOptions = { price: 1 }
+      case 'price-low':
+        sortOptions.price = 1
         break
-      case 'price-desc':
-        sortOptions = { price: -1 }
+      case 'price-high':
+        sortOptions.price = -1
         break
       case 'popular':
-        sortOptions = { views: -1, rating: -1 }
+        sortOptions.isPopular = -1
+        sortOptions.createdAt = -1
         break
-      case 'rating':
-        sortOptions = { rating: -1 }
+      case 'featured':
+        sortOptions.isFeatured = -1
+        sortOptions.createdAt = -1
         break
       case 'newest':
       default:
-        sortOptions = { createdAt: -1 }
+        sortOptions.createdAt = -1
         break
     }
 
     // Calculate pagination
     const skip = (page - 1) * limit
 
-    // Execute queries in parallel
+    // Execute queries
     const [products, totalCount] = await Promise.all([
       Product.find(query)
-        .populate('category', 'name displayName')
+        .populate('categoryId', 'name slug')
         .sort(sortOptions)
-        .limit(limit)
         .skip(skip)
+        .limit(limit)
         .lean(),
       Product.countDocuments(query)
     ])
 
-    // Calculate pagination metadata
+    // Calculate pagination info
     const totalPages = Math.ceil(totalCount / limit)
     const hasNextPage = page < totalPages
     const hasPrevPage = page > 1
 
     const response = {
-      products,
+      success: true,
+      data: products,
       pagination: {
         page,
         limit,
-        totalCount,
+        total: totalCount,
         totalPages,
         hasNextPage,
         hasPrevPage,
+        nextPage: hasNextPage ? page + 1 : null,
+        prevPage: hasPrevPage ? page - 1 : null
       },
       filters: {
         search,
         categories,
-        priceRange: { min: minPrice, max: maxPrice },
+        minPrice,
+        maxPrice,
         sort,
         includeOutOfStock,
         featured,
         popular,
-        newArrivals,
+        newArrivals
       }
     }
 
     return NextResponse.json(response, {
-      status: 200,
-      headers: CACHE_HEADERS,
+      headers: CACHE_HEADERS
     })
 
   } catch (error) {
-    console.error('Products API error:', error)
+    console.error('Error fetching products:', error)
     return NextResponse.json(
       { 
+        success: false, 
         error: 'Failed to fetch products',
         message: error instanceof Error ? error.message : 'Unknown error'
       },
@@ -146,45 +156,91 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export const POST = withMongoose(async (req) => {
   try {
     await dbConnect()
 
     const body = await request.json()
-    
+    const {
+      name,
+      description,
+      price,
+      salePrice,
+      sku,
+      stock,
+      images,
+      category,
+      isFeatured,
+      isPopular,
+      tags,
+      weight,
+      dimensions,
+      materials,
+      careInstructions
+    } = body
+
     // Validate required fields
-    const { name, description, price, category } = body
-    
     if (!name || !description || !price || !category) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { 
+          success: false, 
+          error: 'Missing required fields',
+          required: ['name', 'description', 'price', 'category']
+        },
         { status: 400 }
       )
     }
 
-    // Verify category exists
-    const categoryDoc = await Category.findById(category)
-    if (!categoryDoc) {
+    // Check if category exists
+    const categoryExists = await Category.findById(category)
+    if (!categoryExists) {
       return NextResponse.json(
-        { error: 'Invalid category' },
+        { success: false, error: 'Category not found' },
         { status: 400 }
       )
     }
+
+    // Generate slug from name
+    const slug = name.toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '')
 
     // Create product
-    const product = await Product.create({
-      ...body,
-      slug: body.slug || name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-'),
+    const product = new Product({
+      name,
+      slug,
+      description,
+      price,
+      salePrice,
+      sku: sku || `PROD-${Date.now()}`,
+      stock: stock || 0,
+      images: images || [],
+      category,
+      isFeatured: isFeatured || false,
+      isPopular: isPopular || false,
+      tags: tags || [],
+      weight,
+      dimensions,
+      materials,
+      careInstructions
     })
 
-    await product.populate('category', 'name displayName')
+    await product.save()
 
-    return NextResponse.json(product, { status: 201 })
+    // Populate category for response
+    await product.populate('category', 'name slug')
+
+    return NextResponse.json({
+      success: true,
+      data: product,
+      message: 'Product created successfully'
+    }, { status: 201 })
 
   } catch (error) {
-    console.error('Create product error:', error)
+    console.error('Error creating product:', error)
     return NextResponse.json(
       { 
+        success: false, 
         error: 'Failed to create product',
         message: error instanceof Error ? error.message : 'Unknown error'
       },

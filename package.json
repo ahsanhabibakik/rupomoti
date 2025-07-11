@@ -21,13 +21,12 @@
     "vercel-build": "pnpm check-env && pnpm build",
     "test-migration": "bash scripts/test-migration.sh",
     "finalize-migration": "node scripts/finalize-migration-new.js",
-    "migration-summary": "bash scripts/generate-migration-summary.sh",
+    "migration-summary": "node scripts/migration-summary.js",
     "validate-models": "node scripts/validate-mongoose-models.js",
     "debug-mongoose": "node scripts/debug-mongoose-migration.js",
     "find-critical-imports": "bash scripts/find-critical-prisma-imports.sh > CRITICAL_PRISMA_IMPORTS.md",
     "migrate-api-routes": "node scripts/migrate-api-routes.js",
     "fix-prisma-imports": "node scripts/fix-prisma-imports.js",
-    "migration-summary": "node scripts/migration-summary.js",
     "validate-migration": "npx tsx scripts/validate-migration.js",
     "complete-migration": "bash scripts/complete-migration.sh"
   },
@@ -109,5 +108,6 @@
     "tailwindcss": "^3.3.0",
     "tsx": "^4.7.0",
     "typescript": "^5"
-  }
+  },
+  "packageManager": "pnpm@10.12.1+sha512.f0dda8580f0ee9481c5c79a1d927b9164f2c478e90992ad268bbb2465a736984391d6333d2c327913578b2804af33474ca554ba29c04a8b13060a717675ae3ac"
 }

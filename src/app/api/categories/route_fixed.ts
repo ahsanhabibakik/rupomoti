@@ -37,6 +37,8 @@ export async function GET(request: Request) {
     // Execute query with pagination
     const [categories, totalCount] = await Promise.all([
       Category.find(query)
+        .populate('parent', 'name slug')
+        .populate('children', 'name slug')
         .sort({ level: 1, sortOrder: 1, name: 1 })
         .skip(skip)
         .limit(pageSize)
@@ -98,8 +100,8 @@ export async function POST(request: Request) {
     }
 
     // If parent is specified, validate it exists
-    if (body.parentId) {
-      const parentCategory = await Category.findById(body.parentId)
+    if (body.parent) {
+      const parentCategory = await Category.findById(body.parent)
       if (!parentCategory) {
         return NextResponse.json(
           { error: 'Parent category not found' },
@@ -113,6 +115,9 @@ export async function POST(request: Request) {
 
     // Create category
     const category = await Category.create(body)
+    
+    // Populate relationships
+    await category.populate('parent', 'name slug')
 
     return NextResponse.json(category, { status: 201 })
 
