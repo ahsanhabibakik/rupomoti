@@ -5,19 +5,13 @@ import User from '../models/User'
 import bcrypt from 'bcryptjs'
 import dbConnect from '../lib/mongoose'
 
-export default NextAuth({
+const authOptions = {
   secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-for-development',
   session: {
-    strategy: 'jwt',
+    strategy: 'jwt' as const,
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   providers: [
-    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? [
-      GoogleProvider({
-        clientId: process.env.GOOGLE_CLIENT_ID!,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      })
-    ] : []),
     CredentialsProvider({
       name: "credentials",
       credentials: {
@@ -62,9 +56,13 @@ export default NextAuth({
         }
       },
     }),
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user }: any) {
       if (user && user.id) {
         token.id = user.id
         token.email = user.email
@@ -74,7 +72,7 @@ export default NextAuth({
       }
       return token
     },
-    async session({ session, token }) {
+    async session({ session, token }: any) {
       if (token) {
         session.user.id = token.id as string
         session.user.email = token.email as string
@@ -90,4 +88,6 @@ export default NextAuth({
     error: '/auth/error',
   },
   debug: process.env.NODE_ENV === 'development',
-})
+}
+
+export default authOptions
