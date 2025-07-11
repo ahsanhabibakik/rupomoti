@@ -83,8 +83,7 @@ const UserSchema = new Schema<IUser>({
   collection: 'User'
 })
 
-// Create indexes
-UserSchema.index({ email: 1 })
+// Create indexes (email index is already created by unique: true)
 UserSchema.index({ role: 1 })
 UserSchema.index({ isAdmin: 1 })
 UserSchema.index({ createdAt: -1 })
