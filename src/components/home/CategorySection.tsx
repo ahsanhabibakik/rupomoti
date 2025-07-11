@@ -5,10 +5,10 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { Category } from '@prisma/client'
+import { ICategory } from '@/models/Category'
 
 interface CategorySectionProps {
-  categories: Category[]
+  categories: ICategory[]
 }
 
 export default function CategorySection({ categories }: CategorySectionProps) {

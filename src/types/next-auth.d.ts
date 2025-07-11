@@ -1,6 +1,7 @@
-import { Role } from "@prisma/client";
-import NextAuth, { DefaultSession, DefaultUser } from "next-auth";
-import { JWT, DefaultJWT } from "next-auth/jwt";
+import { DefaultSession, DefaultUser } from "next-auth";
+import { DefaultJWT } from "next-auth/jwt";
+
+type Role = 'USER' | 'ADMIN' | 'SUPER_ADMIN'
 
 declare module "next-auth" {
   interface Session {

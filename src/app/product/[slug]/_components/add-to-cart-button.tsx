@@ -6,11 +6,12 @@ import { ShoppingCart, Minus, Plus } from 'lucide-react'
 import { useAppDispatch } from '@/redux/hooks'
 import { addToCart } from '@/redux/slices/cartSlice'
 import { showToast } from '@/lib/toast'
-import { type Prisma } from '@prisma/client'
+import { IProduct } from '@/models/Product'
+import { ICategory } from '@/models/Category'
 
-type Product = Prisma.ProductGetPayload<{
-  include: { category: true }
-}>
+type Product = IProduct & {
+  category?: ICategory
+}
 
 interface AddToCartButtonProps {
   product: Product
@@ -24,7 +25,7 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
     dispatch(addToCart({ 
       id: product.id,
       name: product.name,
-      price: product.salePrice ?? product.price,
+      price: product.discountPrice ?? product.price,
       image: (product.images as string[])[0],
       category: product.category?.name || 'Unknown',
       quantity 

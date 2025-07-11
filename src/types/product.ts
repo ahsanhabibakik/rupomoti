@@ -1,10 +1,60 @@
-import { Product as PrismaProduct, Category as PrismaCategory } from '@prisma/client'
-
-export type Product = PrismaProduct & {
-  category: PrismaCategory
+// Product and Category types for Mongoose
+export interface Product {
+  _id: string
+  id: string
+  name: string
+  description: string
+  price: number
+  discountPrice?: number
+  categoryId: string
+  images: string[]
+  status: 'ACTIVE' | 'INACTIVE' | 'DRAFT'
+  isFeatured: boolean
+  isPopular: boolean
+  stock: number
+  sku: string
+  weight?: number
+  dimensions?: {
+    length: number
+    width: number
+    height: number
+  }
+  materials?: string[]
+  colors?: string[]
+  sizes?: string[]
+  tags?: string[]
+  seo?: {
+    title?: string
+    description?: string
+    keywords?: string
+  }
+  createdAt: Date
+  updatedAt: Date
+  category?: Category
 }
 
-export type Category = PrismaCategory
+export interface Category {
+  _id: string
+  id: string
+  name: string
+  description?: string
+  slug: string
+  image?: string
+  parentId?: string
+  isActive: boolean
+  sortOrder: number
+  seo?: {
+    title?: string
+    description?: string
+    keywords?: string
+  }
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface ProductWithCategory extends Product {
+  category: Category
+}
 
 // Legacy interface for backward compatibility
 export interface ProductLegacy {

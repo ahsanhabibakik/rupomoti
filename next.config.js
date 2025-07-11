@@ -15,17 +15,16 @@ const nextConfig = {
       'node_modules/@esbuild/linux-x64',
     ],
   },
-  // Include Prisma binaries for serverless deployment
+  // Include MongoDB and Mongoose binaries for serverless deployment
   outputFileTracingIncludes: {
     '/api/**/*': [
-      './node_modules/.prisma/client/**/*',
-      './node_modules/@prisma/client/**/*',
-      './prisma/**/*'
+      './node_modules/mongoose/**/*',
+      './node_modules/mongodb/**/*'
     ],
   },
   // Optimize build and runtime performance
   experimental: {
-    optimizePackageImports: ['@prisma/client'],
+    optimizePackageImports: ['mongoose'],
   },
   // Completely disable standalone output which causes symlink permission issues on Windows
   // For production deployment, this should be re-enabled on the deployment server
@@ -81,7 +80,7 @@ const nextConfig = {
     ],
     unoptimized: process.env.NODE_ENV === 'development',
   },
-  serverExternalPackages: ['bcrypt', 'mongodb', 'mongoose', '@auth/prisma-adapter'],
+  serverExternalPackages: ['bcrypt'],
   compress: true,
   generateEtags: true,
   distDir: '.next',
@@ -91,9 +90,9 @@ const nextConfig = {
   },
   webpack: (config, { isServer }) => {
     if (isServer) {
-      // Don't externalize Prisma client for serverless deployment
+      // Ensure mongoose and mongodb packages work in serverless environment
       config.externals = config.externals.filter(
-        (external) => typeof external !== 'string' || !external.includes('@prisma/client')
+        (external) => typeof external !== 'string' || (!external.includes('mongoose') && !external.includes('mongodb'))
       )
     }
     return config

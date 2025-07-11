@@ -21,7 +21,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { SlidersHorizontal, Search, Loader2, Frown } from 'lucide-react'
-import { Category } from '@prisma/client'
+import { ICategory } from '@/models/Category'
 import { Product } from '@/types/product'
 import { getCategories } from '@/actions/getCategories'
 
@@ -56,7 +56,7 @@ function FilterSection({
   setSelectedCategories: React.Dispatch<React.SetStateAction<string[]>>;
   priceRange: [number, number];
   setPriceRange: (value: [number, number]) => void;
-  categories: Category[];
+  categories: ICategory[];
   onClearFilters?: () => void;
   hasActiveFilters?: boolean;
 }) {
@@ -89,10 +89,10 @@ function FilterSection({
         <h3 className="font-semibold text-foreground mb-4">Categories</h3>
         <div className="max-h-64 overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
           {categories.map((category) => (
-            <label key={category.id} className="flex items-center space-x-3 cursor-pointer group">
+            <label key={category._id} className="flex items-center space-x-3 cursor-pointer group">
               <input
                 type="checkbox"
-                id={`cat-${category.id}`}
+                id={`cat-${category._id}`}
                 checked={selectedCategories.includes(category.slug)}
                 onChange={(e) => {
                   const { checked } = e.target;
@@ -173,7 +173,7 @@ export default function ShopPage() {
   const searchParams = useSearchParams()
   
   // State management
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<ICategory[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [totalProducts, setTotalProducts] = useState(0);
   const [page, setPage] = useState(1);

@@ -1,9 +1,29 @@
 import { NextResponse } from 'next/server'
-import { prisma, checkDatabaseConnection } from '@/lib/prisma'
+import mongoose from 'mongoose'
+import Product from '@/models/Product'
+import Category from '@/models/Category'
+import Order from '@/models/Order'
 import { env } from '@/lib/env'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
+
+async function checkDatabaseConnection(retries = 3): Promise<boolean> {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      if (!mongoose.connection.readyState) {
+        await mongoose.connect(process.env.MONGODB_URI!)
+      }
+      return true
+    } catch (error) {
+      console.error(`Database connection attempt ${attempt}/${retries} failed:`, error)
+      if (attempt === retries) {
+        return false
+      }
+    }
+  }
+  return false
+}
 
 interface HealthStatus {
   status: string;
@@ -12,7 +32,7 @@ interface HealthStatus {
   services: {
     database: {
       status: string;
-      collections: Record<string, any>;
+      collections: Record<string, { status: string; count?: number; error?: string }>;
       error: string | null;
     };
     environment: {
@@ -37,7 +57,7 @@ export async function GET() {
       environment: {
         status: 'checking',
         variables: {
-          DATABASE_URL: !!env.DATABASE_URL,
+          MONGODB_URI: !!process.env.MONGODB_URI,
           NEXTAUTH_SECRET: !!env.NEXTAUTH_SECRET,
           NEXTAUTH_URL: !!env.NEXTAUTH_URL,
         }
@@ -59,10 +79,9 @@ export async function GET() {
         
         // Test only critical collections to avoid timeouts
         const collections = [
-          { name: 'User', query: () => prisma.user.count() },
-          { name: 'Product', query: () => prisma.product.count() },
-          { name: 'Category', query: () => prisma.category.count() },
-          { name: 'Order', query: () => prisma.order.count() }
+          { name: 'Product', query: () => Product.countDocuments() },
+          { name: 'Category', query: () => Category.countDocuments() },
+          { name: 'Order', query: () => Order.countDocuments() }
         ]
   
         for (const collection of collections) {
@@ -95,10 +114,15 @@ export async function GET() {
     }
 
     // Check environment variables
-    const requiredVars = ['DATABASE_URL', 'NEXTAUTH_SECRET', 'NEXTAUTH_URL']
-    const missingVars = requiredVars.filter(v => !env[v as keyof typeof env])
+    const requiredVars = ['MONGODB_URI', 'NEXTAUTH_SECRET', 'NEXTAUTH_URL']
+    const missingVars = requiredVars.filter(v => !process.env[v])
     
     healthStatus.services.environment.status = missingVars.length > 0 ? 'warning' : 'ok'
+    healthStatus.services.environment.variables = {
+      MONGODB_URI: !!process.env.MONGODB_URI,
+      NEXTAUTH_SECRET: !!process.env.NEXTAUTH_SECRET,
+      NEXTAUTH_URL: !!process.env.NEXTAUTH_URL
+    }
     
     if (missingVars.length > 0) {
       healthStatus.services.environment.missing = missingVars

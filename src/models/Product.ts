@@ -10,6 +10,7 @@ export interface IProduct extends Document {
   images: string[]
   status: 'ACTIVE' | 'INACTIVE' | 'DRAFT'
   isFeatured: boolean
+  isNewArrival: boolean
   isPopular: boolean
   stock: number
   sku: string
@@ -70,6 +71,10 @@ const ProductSchema = new Schema<IProduct>({
     type: Boolean,
     default: false
   },
+  isNewArrival: {
+    type: Boolean,
+    default: false
+  },
   isPopular: {
     type: Boolean,
     default: false
@@ -114,6 +119,7 @@ ProductSchema.index({ name: 'text', description: 'text', 'seo.keywords': 'text' 
 ProductSchema.index({ categoryId: 1 })
 ProductSchema.index({ status: 1 })
 ProductSchema.index({ isFeatured: 1 })
+ProductSchema.index({ isNewArrival: 1 })
 ProductSchema.index({ isPopular: 1 })
 ProductSchema.index({ price: 1 })
 ProductSchema.index({ createdAt: -1 })
@@ -163,6 +169,10 @@ ProductSchema.statics.findByCategory = function(categoryId: string) {
 
 ProductSchema.statics.findFeatured = function(limit = 12) {
   return this.find({ isFeatured: true, status: 'ACTIVE' }).limit(limit)
+}
+
+ProductSchema.statics.findNewArrivals = function(limit = 12) {
+  return this.find({ isNewArrival: true, status: 'ACTIVE' }).limit(limit)
 }
 
 ProductSchema.statics.findPopular = function(limit = 12) {

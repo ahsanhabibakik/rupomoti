@@ -5,7 +5,17 @@ import { X, Filter, Sparkles, Clock, TrendingUp, Search as SearchIcon, ArrowRigh
 import { BsSearch } from "react-icons/bs";
 import Image from "next/image";
 import Link from "next/link";
-import { safeRenderPrice, safeRenderCategory } from '@/lib/search-utils'
+// import { safeRenderPrice, safeRenderCategory } from '@/lib/search-utils'
+
+// Temporary helper functions until search utils are reimplemented
+const safeRenderPrice = (price: number, salePrice?: number) => {
+  const displayPrice = salePrice && salePrice < price ? salePrice : price;
+  return `৳${displayPrice.toLocaleString()}`;
+};
+
+const safeRenderCategory = (category: string) => {
+  return category || 'Uncategorized';
+};
 
 interface Product {
   id: string;
@@ -181,6 +191,8 @@ export default function SearchModal({ isOpen, onClose }: { isOpen: boolean; onCl
                 <button
                   onClick={onClose}
                   className="p-3 hover:bg-gray-100 rounded-2xl transition-all duration-200 text-gray-500 hover:text-gray-700 group"
+                  title="Close search modal"
+                  aria-label="Close search modal"
                 >
                   <X size={24} className="group-hover:rotate-90 transition-transform duration-200" />
                 </button>
@@ -302,7 +314,7 @@ export default function SearchModal({ isOpen, onClose }: { isOpen: boolean; onCl
                 ) : (
                   <div className="text-center py-8">
                     <SearchIcon size={48} className="text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500 mb-2">No products found for "{searchQuery}"</p>
+                    <p className="text-gray-500 mb-2">No products found for &quot;{searchQuery}&quot;</p>
                     <p className="text-sm text-gray-400">Try adjusting your search or browse our categories</p>
                   </div>
                 )}

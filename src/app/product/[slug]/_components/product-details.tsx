@@ -8,23 +8,19 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
-import { type Prisma } from '@prisma/client'
+import { IProduct } from '@/models/Product'
+import { ICategory } from '@/models/Category'
 
-type ProductWithCategoryAndReviews = Prisma.ProductGetPayload<{
-  include: {
-    category: true,
-    reviews: {
-      include: {
-        user: {
-          select: {
-            name: true,
-            image: true,
-          }
-        }
-      }
+type ProductWithCategoryAndReviews = IProduct & {
+  category?: ICategory
+  reviews: Array<{
+    rating: number
+    user: {
+      name: string
+      image?: string
     }
-  }
-}>
+  }>
+}
 
 interface ProductDetailsProps {
   product: ProductWithCategoryAndReviews
@@ -35,8 +31,8 @@ export function ProductDetails({ product }: ProductDetailsProps) {
     ? product.reviews.reduce((acc, review) => acc + review.rating, 0) / product.reviews.length
     : 0
 
-  const discountPercentage = product.salePrice 
-    ? Math.round(((product.price - product.salePrice) / product.price) * 100)
+  const discountPercentage = product.discountPrice 
+    ? Math.round(((product.price - product.discountPrice) / product.price) * 100)
     : 0
 
   return (

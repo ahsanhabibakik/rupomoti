@@ -1,7 +1,9 @@
 'use client';
 
 import { Badge, BadgeProps } from '@/components/ui/badge';
-import { OrderStatus, PaymentStatus } from '@prisma/client';
+
+export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
 
 interface StatusBadgeProps extends BadgeProps {
   status: OrderStatus | PaymentStatus;
@@ -11,14 +13,15 @@ const statusMap: Record<OrderStatus | PaymentStatus, { label: string; variant: B
   // Order Statuses
   PENDING: { label: 'Pending', variant: 'warning' },
   CONFIRMED: { label: 'Confirmed', variant: 'info' },
+  PROCESSING: { label: 'Processing', variant: 'info' },
   SHIPPED: { label: 'Shipped', variant: 'processing' },
   DELIVERED: { label: 'Delivered', variant: 'success' },
   CANCELLED: { label: 'Cancelled', variant: 'destructive' },
   
   // Payment Statuses
   PAID: { label: 'Paid', variant: 'success' },
-  UNPAID: { label: 'Unpaid', variant: 'destructive' },
-  // Assuming PENDING is shared
+  FAILED: { label: 'Failed', variant: 'destructive' },
+  REFUNDED: { label: 'Refunded', variant: 'secondary' },
 };
 
 export function StatusBadge({ status, className, ...props }: StatusBadgeProps) {

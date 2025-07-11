@@ -7,10 +7,22 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Star } from 'lucide-react'
 import { showToast } from '@/lib/toast'
-import { createReview } from '@/lib/actions/review-actions'
-import { type getReviewsForProduct } from '@/lib/actions/review-actions'
+// import { createReview } from '@/lib/actions/review-actions'
+// import { type getReviewsForProduct } from '@/lib/actions/review-actions'
 
-type Review = Awaited<ReturnType<typeof getReviewsForProduct>>[0]
+// type Review = Awaited<ReturnType<typeof getReviewsForProduct>>[0]
+
+// Temporary type until review system is reimplemented with Mongoose
+type Review = {
+  id: string
+  rating: number
+  comment: string
+  user: {
+    name: string
+    image?: string
+  }
+  createdAt: Date
+}
 
 interface ReviewSectionProps {
   productId: string
@@ -20,7 +32,7 @@ interface ReviewSectionProps {
 
 export function ReviewSection({ productId, productSlug, initialReviews = [] }: ReviewSectionProps) {
   const { data: session } = useSession()
-  const [reviews, setReviews] = useState(initialReviews)
+  const [reviews] = useState(initialReviews)
   const [isPending, startTransition] = useTransition()
 
   const handleReviewSubmit = async (formData: FormData) => {
@@ -44,14 +56,9 @@ export function ReviewSection({ productId, productSlug, initialReviews = [] }: R
     }
 
     startTransition(async () => {
-      setReviews(prev => [newReview, ...prev]);
-      const result = await createReview(formData)
-      if (result?.error) {
-        showToast.error(result.error)
-        setReviews(prev => prev.filter(r => r.id !== newReview.id)); // remove optimistic update
-      } else {
-        showToast.success('Review submitted successfully!')
-      }
+      // TODO: Implement review creation with Mongoose
+      showToast.error('Review functionality temporarily disabled')
+      return
     })
   }
 

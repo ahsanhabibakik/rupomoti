@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/app/auth'
-import { prisma } from '@/lib/prisma'
+import mongoose from 'mongoose'
+import Order from '@/models/Order'
 
 export async function GET() {
   try {
@@ -23,23 +24,25 @@ export async function GET() {
       }, { status: 401 })
     }
     
+    // Connect to MongoDB
+    if (!mongoose.connection.readyState) {
+      await mongoose.connect(process.env.MONGODB_URI!)
+    }
+    
     // Get total orders without any filters
-    const totalOrders = await prisma.order.count()
-    const activeOrders = await prisma.order.count({ where: { deletedAt: null } })
+    const totalOrders = await Order.countDocuments()
+    const activeOrders = await Order.countDocuments({ deletedAt: null })
     
     // Get first 3 orders
-    const orders = await prisma.order.findMany({
-      take: 3,
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        orderNumber: true,
-        status: true,
-        deletedAt: true,
-        isFakeOrder: true,
-        createdAt: true
-      }
+    const orders = await Order.find({}, {
+      orderNumber: 1,
+      status: 1,
+      deletedAt: 1,
+      isFakeOrder: 1,
+      createdAt: 1
     })
+      .limit(3)
+      .sort({ createdAt: -1 })
     
     return NextResponse.json({
       success: true,

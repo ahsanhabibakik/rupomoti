@@ -1,40 +1,38 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import mongoose from 'mongoose'
+import Order from '@/models/Order'
 
 export async function GET() {
   try {
     console.log('🧪 Testing MongoDB isFakeOrder query fix...')
     
+    // Connect to MongoDB
+    if (!mongoose.connection.readyState) {
+      await mongoose.connect(process.env.MONGODB_URI!)
+    }
+    
     // Test the corrected query
-    const activeOrders = await prisma.order.findMany({
-      where: {
-        deletedAt: null,
-        isFakeOrder: false // Explicitly match false for MongoDB
-      },
-      select: {
-        id: true,
-        orderNumber: true,
-        isFakeOrder: true,
-        deletedAt: true,
-        createdAt: true,
-        recipientName: true,
-        total: true
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 10
+    const activeOrders = await Order.find({
+      deletedAt: null,
+      isFakeOrder: false // Explicitly match false for MongoDB
+    }, {
+      orderNumber: 1,
+      isFakeOrder: 1,
+      deletedAt: 1,
+      createdAt: 1,
+      recipientName: 1,
+      total: 1
+    })
+      .sort({ createdAt: -1 })
+      .limit(10)
+
+    const activeCount = await Order.countDocuments({
+      deletedAt: null,
+      isFakeOrder: false
     })
 
-    const activeCount = await prisma.order.count({
-      where: {
-        deletedAt: null,
-        isFakeOrder: false
-      }
-    })
-
-    const allCount = await prisma.order.count({
-      where: {
-        deletedAt: null
-      }
+    const allCount = await Order.countDocuments({
+      deletedAt: null
     })
 
     console.log('✅ Query test results:', {
