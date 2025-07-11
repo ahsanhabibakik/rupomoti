@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import dbConnect from '@/lib/dbConnect';
 
 /**
  * Convert a string to a URL-friendly slug

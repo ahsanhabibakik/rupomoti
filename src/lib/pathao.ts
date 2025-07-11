@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import dbConnect from '@/lib/dbConnect';
 import { z } from 'zod';
 
 const pathaoEnvSchema = z.object({

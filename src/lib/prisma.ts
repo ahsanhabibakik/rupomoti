@@ -1,4 +1,5 @@
-import { PrismaClient } from '@prisma/client'
+// Import Mongoose models to replace Prisma models
+
 import { env } from './env'
 
 const globalForPrisma = globalThis as unknown as {

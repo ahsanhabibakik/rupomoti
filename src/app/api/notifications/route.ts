@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/app/auth';
-import { prisma } from '@/lib/prisma';
+import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
+
 
 export const dynamic = 'force-dynamic';
 
@@ -47,7 +48,7 @@ export async function GET() {
   }
 }
 
-export async function PATCH(request: Request) {
+export const PATCH = withMongoose(async (req) => {
   try {
     const session = await auth();
     if (!session?.user?.id) {

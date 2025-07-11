@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma'
+import dbConnect from '@/lib/dbConnect';
 
 export class AuditLogger {
   static async log({

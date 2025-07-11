@@ -36,7 +36,24 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { showToast } from '@/lib/toast'
-import { OrderStatus, PaymentStatus, Prisma } from '@prisma/client'
+// Define our own types to replace Prisma imports
+const OrderStatus = {
+  PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING',
+  SHIPPED: 'SHIPPED',
+  DELIVERED: 'DELIVERED',
+  CANCELLED: 'CANCELLED'
+}
+
+const PaymentStatus = {
+  PENDING: 'PENDING',
+  PAID: 'PAID',
+  FAILED: 'FAILED',
+  REFUNDED: 'REFUNDED'
+}
+
+// Define a replacement for Prisma.Decimal
+type Decimal = number
 import {
   Loader2,
   Package,

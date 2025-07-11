@@ -2,6 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose'
 
 export interface IUser extends Document {
   _id: string
+  id: string
   name?: string
   email: string
   phone?: string
@@ -10,9 +11,18 @@ export interface IUser extends Document {
   password?: string
   createdAt: Date
   updatedAt: Date
-  role: 'USER' | 'ADMIN' | 'SUPER_ADMIN'
+  role: 'USER' | 'ADMIN' | 'SUPER_ADMIN' | 'MANAGER'
   isAdmin: boolean
   isFlagged: boolean
+  address?: string
+  city?: string
+  state?: string
+  zipCode?: string
+  country?: string
+  dateOfBirth?: Date
+  gender?: 'MALE' | 'FEMALE' | 'OTHER'
+  isActive: boolean
+  lastLogin?: Date
   
   // Two-Factor Authentication fields
   twoFactorEnabled?: boolean
@@ -20,6 +30,11 @@ export interface IUser extends Document {
   twoFactorSecret?: string
   twoFactorCode?: string
   twoFactorCodeExpires?: Date
+  
+  // Instance methods
+  getDisplayName(): string
+  isVerified(): boolean
+  hasRole(role: string): boolean
 }
 
 const UserSchema = new Schema<IUser>({
@@ -49,7 +64,7 @@ const UserSchema = new Schema<IUser>({
   },
   role: {
     type: String,
-    enum: ['USER', 'ADMIN', 'SUPER_ADMIN'],
+    enum: ['USER', 'ADMIN', 'SUPER_ADMIN', 'MANAGER'],
     default: 'USER'
   },
   isAdmin: {
@@ -59,6 +74,43 @@ const UserSchema = new Schema<IUser>({
   isFlagged: {
     type: Boolean,
     default: false
+  },
+  address: {
+    type: String,
+    default: null
+  },
+  city: {
+    type: String,
+    default: null
+  },
+  state: {
+    type: String,
+    default: null
+  },
+  zipCode: {
+    type: String,
+    default: null
+  },
+  country: {
+    type: String,
+    default: 'Bangladesh'
+  },
+  dateOfBirth: {
+    type: Date,
+    default: null
+  },
+  gender: {
+    type: String,
+    enum: ['MALE', 'FEMALE', 'OTHER'],
+    default: null
+  },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  lastLogin: {
+    type: Date,
+    default: null
   },
   
   // Two-Factor Authentication fields
@@ -89,9 +141,26 @@ UserSchema.index({ role: 1 })
 UserSchema.index({ isAdmin: 1 })
 UserSchema.index({ createdAt: -1 })
 
+// Virtual field for ID
+UserSchema.virtual('id').get(function() {
+  return this._id.toString()
+})
+
 // Instance methods
+UserSchema.methods.getDisplayName = function(): string {
+  return this.name || this.email.split('@')[0]
+}
+
+UserSchema.methods.isVerified = function(): boolean {
+  return !!this.emailVerified
+}
+
+UserSchema.methods.hasRole = function(role: string): boolean {
+  return this.role === role || (role === 'ADMIN' && this.isAdmin)
+}
+
 UserSchema.methods.isAdminUser = function() {
-  return this.role === 'ADMIN' || this.role === 'SUPER_ADMIN' || this.isAdmin
+  return this.role === 'ADMIN' || this.role === 'SUPER_ADMIN' || this.role === 'MANAGER' || this.isAdmin
 }
 
 UserSchema.methods.isSuperAdmin = function() {
@@ -99,7 +168,7 @@ UserSchema.methods.isSuperAdmin = function() {
 }
 
 UserSchema.methods.canManageUsers = function() {
-  return this.role === 'SUPER_ADMIN'
+  return this.role === 'SUPER_ADMIN' || this.role === 'MANAGER'
 }
 
 // Static methods
@@ -121,6 +190,24 @@ UserSchema.statics.findAdmins = function() {
 UserSchema.virtual('displayName').get(function() {
   return this.name || this.email.split('@')[0]
 })
+
+// Ensure virtuals are included when converting to JSON
+UserSchema.set('toJSON', { virtuals: true })
+UserSchema.set('toObject', { virtuals: true })
+
+UserSchema.statics.getStats = function() {
+  return this.aggregate([
+    {
+      $group: {
+        _id: null,
+        total: { $sum: 1 },
+        active: { $sum: { $cond: ['$isActive', 1, 0] } },
+        verified: { $sum: { $cond: ['$emailVerified', 1, 0] } },
+        admins: { $sum: { $cond: [{ $in: ['$role', ['ADMIN', 'SUPER_ADMIN', 'MANAGER']] }, 1, 0] } }
+      }
+    }
+  ])
+}
 
 // Ensure virtuals are included when converting to JSON
 UserSchema.set('toJSON', { virtuals: true })

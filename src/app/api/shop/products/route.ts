@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import dbConnect from '@/lib/mongoose'
+import Product from '@/models/Product'
 
-export async function GET(request: Request) {
+export const GET = withMongoose(async (req) => {
   try {
+    await dbConnect()
+
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category')
     const search = searchParams.get('search')
@@ -12,89 +15,59 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get('limit') || '12')
     const skip = (page - 1) * limit
 
-    // Build where condition
-    const where: any = {
-      status: 'ACTIVE'
-    }
+    // Build query
+    const query: Record<string, unknown> = {}
 
     if (category) {
-      where.category = {
-        slug: category
-      }
+      query['category.slug'] = category
     }
 
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } }
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
       ]
     }
 
-    // Build orderBy condition
-    let orderBy: any = {}
-    switch (sort) {
-      case 'price_asc':
-        orderBy = { price: 'asc' }
-        break
-      case 'price_desc':
-        orderBy = { price: 'desc' }
-        break
-      case 'name':
-        orderBy = { name: 'asc' }
-        break
-      case 'rating':
-        // For rating, we'd need to calculate avg rating from reviews
-        orderBy = { createdAt: 'desc' }
-        break
-      default:
-        orderBy = { [sort]: order }
-    }
+    // Build sort
+    const sortOptions: Record<string, unknown> = {}
+    sortOptions[sort] = order === 'desc' ? -1 : 1
 
-    const [products, total] = await Promise.all([
-      prisma.product.findMany({
-        where,
-        include: {
-          category: {
-            select: {
-              id: true,
-              name: true,
-              slug: true
-            }
-          },
-          reviews: {
-            select: {
-              rating: true
-            }
-          }
-        },
-        orderBy,
-        skip,
-        take: limit
-      }),
-      prisma.product.count({ where })
+    // Execute queries
+    const [products, totalCount] = await Promise.all([
+      Product.find(query)
+        .populate('category', 'name slug')
+        .sort(sortOptions)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Product.countDocuments(query)
     ])
 
-    // Calculate average rating for each product
-    const productsWithRating = products.map(product => ({
-      ...product,
-      averageRating: product.reviews.length > 0
-        ? product.reviews.reduce((acc, review) => acc + review.rating, 0) / product.reviews.length
-        : 0,
-      reviewCount: product.reviews.length,
-      reviews: undefined // Remove reviews from response to keep it clean
-    }))
+    const totalPages = Math.ceil(totalCount / limit)
 
     return NextResponse.json({
-      products: productsWithRating,
+      success: true,
+      data: products,
       pagination: {
         page,
         limit,
-        total,
-        totalPages: Math.ceil(total / limit)
+        total: totalCount,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
       }
     })
+
   } catch (error) {
-    console.error('Error fetching products:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Error fetching shop products:', error)
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: 'Failed to fetch products',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    )
   }
 }

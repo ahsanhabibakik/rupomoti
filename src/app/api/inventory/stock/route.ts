@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { InventoryManager } from '@/lib/inventory'
 
-export async function POST(request: NextRequest) {
+export const POST = withMongoose(async (req) => {
   try {
     const session = await auth()
     

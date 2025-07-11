@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { signIn } from 'next-auth/react'
 
-export async function POST(request: NextRequest) {
+export const POST = withMongoose(async (req) => {
   try {
     const { email, password } = await request.json()
     

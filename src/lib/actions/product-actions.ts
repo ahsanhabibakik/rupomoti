@@ -1,5 +1,5 @@
 import 'server-only'
-import { prisma } from '@/lib/prisma'
+import dbConnect from '@/lib/dbConnect';
 
 export async function getProduct(slug: string) {
   const product = await prisma.product.findUnique({

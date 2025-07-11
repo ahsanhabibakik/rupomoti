@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 
 // Production-ready logging utility
 export class ProductionLogger {
-  static log(level: 'info' | 'error' | 'warn' | 'debug', message: string, data?: any) {
+  static log(level: 'info' | 'error' | 'warn' | 'debug', message: string, data?: Record<string, unknown>) {
     const timestamp = new Date().toISOString()
     const logEntry = {
       timestamp,
@@ -19,11 +19,11 @@ export class ProductionLogger {
     return logEntry
   }
   
-  static info(message: string, data?: any) {
+  static info(message: string, data?: Record<string, unknown>) {
     return this.log('info', message, data)
   }
   
-  static error(message: string, data?: any) {
+  static error(message: string, data?: Record<string, unknown>) {
     return this.log('error', message, data)
   }
 }

@@ -1,4 +1,5 @@
-import { PrismaClient } from '@prisma/client'
+// Import Mongoose models to replace Prisma models
+
 import { InventoryManager } from './inventory'
 
 const prisma = new PrismaClient()

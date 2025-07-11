@@ -1,10 +1,10 @@
-import { PrismaAdapter } from "@auth/prisma-adapter"
 import NextAuth from "next-auth"
-import { prisma } from "@/lib/prisma"
+import dbConnect from '@/lib/dbConnect';
 import bcrypt from "bcryptjs"
 import Credentials from "next-auth/providers/credentials"
 import Google from "next-auth/providers/google"
 import type { Adapter } from "next-auth/adapters"
+import { MongooseAdapter, ensureAuthModels } from '@/lib/mongoose-adapter';
 
 // Create a safe adapter that handles edge runtime issues
 const createSafeAdapter = () => {
@@ -13,9 +13,15 @@ const createSafeAdapter = () => {
       console.warn('Using JWT-only mode in edge runtime')
       return undefined
     }
-    return PrismaAdapter(prisma) as Adapter
+    
+    // Ensure auth models are registered
+    ensureAuthModels().catch(err => {
+      console.error('Failed to ensure auth models:', err)
+    });
+    
+    return MongooseAdapter() as Adapter
   } catch (error) {
-    console.error('Failed to create Prisma adapter:', error)
+    console.error('Failed to create Mongoose adapter:', error)
     return undefined
   }
 }

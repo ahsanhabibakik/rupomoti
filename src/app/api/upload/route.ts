@@ -8,7 +8,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-export async function POST(request: NextRequest) {
+export const POST = withMongoose(async (req) => {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;

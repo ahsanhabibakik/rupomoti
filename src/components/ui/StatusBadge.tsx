@@ -1,7 +1,7 @@
 'use client';
 
 import { Badge, BadgeProps } from '@/components/ui/badge';
-import { OrderStatus, PaymentStatus } from '@prisma/client';
+import { OrderStatus, PaymentStatus } from '@/types/mongoose-types';
 
 interface StatusBadgeProps extends BadgeProps {
   status: OrderStatus | PaymentStatus;
@@ -11,14 +11,15 @@ const statusMap: Record<OrderStatus | PaymentStatus, { label: string; variant: B
   // Order Statuses
   PENDING: { label: 'Pending', variant: 'warning' },
   CONFIRMED: { label: 'Confirmed', variant: 'info' },
+  PROCESSING: { label: 'Processing', variant: 'warning' },
   SHIPPED: { label: 'Shipped', variant: 'processing' },
   DELIVERED: { label: 'Delivered', variant: 'success' },
   CANCELLED: { label: 'Cancelled', variant: 'destructive' },
+  REFUNDED: { label: 'Refunded', variant: 'secondary' },
   
   // Payment Statuses
   PAID: { label: 'Paid', variant: 'success' },
-  UNPAID: { label: 'Unpaid', variant: 'destructive' },
-  // Assuming PENDING is shared
+  FAILED: { label: 'Failed', variant: 'destructive' }
 };
 
 export function StatusBadge({ status, className, ...props }: StatusBadgeProps) {

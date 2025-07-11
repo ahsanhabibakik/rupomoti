@@ -1,10 +1,21 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/app/auth";
-import { prisma } from "@/lib/prisma";
+import dbConnect from '@/lib/dbConnect';
 import { generateUniqueOrderNumber } from "@/lib/server/order-number-generator";
 import { StockManager } from "@/lib/stock-manager";
 import { AuditLogger } from "@/lib/audit-logger";
-import { OrderStatus, Prisma } from "@prisma/client";
+// Define OrderStatus enum to replace Prisma import
+enum OrderStatus {
+  PENDING = 'PENDING',
+  PROCESSING = 'PROCESSING',
+  SHIPPED = 'SHIPPED',
+  DELIVERED = 'DELIVERED',
+  CANCELLED = 'CANCELLED'
+}
+// Define Decimal type to replace Prisma.Decimal
+type Decimal = number;
+// Import Mongoose models to replace Prisma models
+
 
 // Force dynamic rendering to ensure fresh data
 export const dynamic = 'force-dynamic';

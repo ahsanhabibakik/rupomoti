@@ -1,4 +1,5 @@
-import { PrismaClient } from '@prisma/client'
+// Import Mongoose models to replace Prisma models
+
 import { createHash } from 'crypto'
 import fs from 'fs'
 import path from 'path'

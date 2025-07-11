@@ -1,26 +1,5 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  reactStrictMode: true,
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  // Move outputFileTracingExcludes to root level as per Next.js 15
-  outputFileTracingExcludes: {
-    '*': [
-      'node_modules/@swc/core-linux-x64-gnu',
-      'node_modules/@swc/core-linux-x64-musl',
-      'node_modules/@esbuild/linux-x64',
-    ],
-  },
-  // Include Prisma binaries for serverless deployment
-  outputFileTracingIncludes: {
-    '/api/**/*': [
-      './node_modules/.prisma/client/**/*',
-      './node_modules/@prisma/client/**/*',
-      './prisma/**/*'
+*',
+      './node_modules/@prisma/client*'
     ],
   },
   // Optimize build and runtime performance

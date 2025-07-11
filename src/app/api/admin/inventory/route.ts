@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/app/auth'
 import { InventoryManager } from '@/lib/inventory'
 
-export async function POST(request: NextRequest) {
+export const POST = withMongoose(async (req) => {
   try {
     const session = await auth()
     
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
 
       case 'bulk-update':
         const bulkResults = await InventoryManager.bulkStockUpdate(
-          params.updates.map((update: any) => ({
+          params.updates.map((update: Record<string, unknown>) => ({
             ...update,
             userId: session.user.id
           }))
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export const GET = withMongoose(async (req) => {
   try {
     const session = await auth()
     

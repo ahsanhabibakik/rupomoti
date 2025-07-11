@@ -28,7 +28,8 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import { NewsletterSubscription, NewsletterTag } from '@prisma/client'
+// Import Mongoose models to replace Prisma models
+
 import { Download, Search, PlusCircle, Tag as TagIcon, ChevronDown } from 'lucide-react'
 import { format } from 'date-fns'
 import { Combobox } from '@/components/ui/combobox'

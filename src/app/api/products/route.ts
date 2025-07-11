@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { Prisma, ProductStatus } from '@prisma/client'
+import dbConnect from '@/lib/mongoose'
+import Product from '@/models/Product'
+import Category from '@/models/Category'
 
 // Cache configuration
 const CACHE_DURATION = 60 * 5 // 5 minutes in seconds
@@ -10,342 +11,240 @@ const CACHE_HEADERS = {
   'Vercel-CDN-Cache-Control': `max-age=${CACHE_DURATION}`,
 }
 
-// Constants for performance optimization
 const MAX_LIMIT = 100
 const DEFAULT_LIMIT = 30
-const MAX_PRICE = 1000000
-const SORT_OPTIONS = ['newest', 'price-low', 'price-high', 'popular', 'featured'] as const
 
-// Type definitions for better performance
-interface QueryParams {
-  search?: string
-  categories: string[]
-  minPrice: number
-  maxPrice: number
-  sort: string
-  page: number
-  limit: number
-  status?: ProductStatus
-  includeOutOfStock: boolean
-  adminView: boolean
-}
-
-interface CacheKey {
-  search: string
-  categories: string
-  priceRange: string
-  sort: string
-  page: number
-  limit: number
-  status: string
-  includeOutOfStock: boolean
-  adminView: boolean
-}
-
-// In-memory cache with TTL (consider Redis for production)
-const cache = new Map<string, { data: unknown; timestamp: number }>()
-
-function generateCacheKey(params: CacheKey): string {
-  return `products:${JSON.stringify(params)}`
-}
-
-function getCachedData(key: string) {
-  const cached = cache.get(key)
-  if (!cached) return null
-  
-  const now = Date.now()
-  if (now - cached.timestamp > CACHE_DURATION * 1000) {
-    cache.delete(key)
-    return null
-  }
-  
-  return cached.data
-}
-
-function setCachedData(key: string, data: unknown) {
-  // Prevent memory leaks by limiting cache size
-  if (cache.size > 1000) {
-    const firstKey = cache.keys().next().value
-    cache.delete(firstKey)
-  }
-  
-  cache.set(key, { data, timestamp: Date.now() })
-}
-
-function parseQueryParams(searchParams: URLSearchParams): QueryParams {
-  const search = searchParams.get('search')?.trim() || undefined
-  const categories = searchParams.getAll('categories').filter(Boolean)
-  const minPrice = Math.max(0, Number(searchParams.get('minPrice')) || 0)
-  const maxPrice = Math.min(MAX_PRICE, Number(searchParams.get('maxPrice')) || MAX_PRICE)
-  const sort = SORT_OPTIONS.includes(searchParams.get('sort') as typeof SORT_OPTIONS[number]) 
-    ? searchParams.get('sort')! 
-    : 'newest'
-  const page = Math.max(1, Number(searchParams.get('page')) || 1)
-  const limit = Math.min(MAX_LIMIT, Math.max(1, Number(searchParams.get('limit')) || DEFAULT_LIMIT))
-  const status = searchParams.get('status') as ProductStatus | undefined
-  const includeOutOfStock = searchParams.get('includeOutOfStock') === 'true'
-  const adminView = searchParams.get('adminView') === 'true'
-
-  return {
-    search,
-    categories,
-    minPrice,
-    maxPrice,
-    sort,
-    page,
-    limit,
-    status,
-    includeOutOfStock,
-    adminView
-  }
-}
-
-function buildWhereClause(params: QueryParams): Prisma.ProductWhereInput {
-  const { search, categories, minPrice, maxPrice, status, includeOutOfStock, adminView } = params
-
-  const where: Prisma.ProductWhereInput = {
-    // Price filter - always applied
-    price: {
-      gte: minPrice,
-      lte: maxPrice,
-    },
-  }
-
-  // Category filter - only apply if categories are specified
-  if (categories.length > 0) {
-    where.category = {
-      slug: { in: categories },
-      isActive: true,
-    }
-  }
-  // Note: If no categories specified, don't filter by category at all
-
-  // Search filter with optimized full-text search
-  if (search) {
-    // Use more efficient search strategy
-    const searchTerms = search.toLowerCase().split(' ').filter(term => term.length > 1)
-    
-    if (searchTerms.length === 1) {
-      // Single term search
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-        { category: { name: { contains: search, mode: 'insensitive' } } },
-      ]
-    } else {
-      // Multiple terms search - use AND logic for better relevance
-      where.AND = searchTerms.map(term => ({
-        OR: [
-          { name: { contains: term, mode: 'insensitive' } },
-          { description: { contains: term, mode: 'insensitive' } },
-          { category: { name: { contains: term, mode: 'insensitive' } } },
-        ]
-      }))
-    }
-  }
-
-  // Status filter
-  if (status) {
-    where.status = status
-  } else if (!adminView) {
-    // Only show active products for regular users
-    where.status = ProductStatus.ACTIVE
-  }
-
-  // Stock filter
-  if (!includeOutOfStock && !adminView) {
-    where.stock = { gt: 0 }
-  }
-
-  return where
-}
-
-function buildOrderByClause(sort: string): Prisma.ProductOrderByWithRelationInput | Prisma.ProductOrderByWithRelationInput[] {
-  switch (sort) {
-    case 'price-low':
-      return { price: 'asc' }
-    case 'price-high':
-      return { price: 'desc' }
-    case 'popular':
-      return [{ isPopular: 'desc' }, { createdAt: 'desc' }]
-    case 'featured':
-      return [{ isFeatured: 'desc' }, { createdAt: 'desc' }]
-    case 'newest':
-    default:
-      return { createdAt: 'desc' }
-  }
-}
-
-export async function GET(request: Request) {
+export const GET = withMongoose(async (req) => {
   try {
-    const { searchParams } = new URL(request.url)
-    const params = parseQueryParams(searchParams)
-    
-    // Generate cache key
-    const cacheKey = generateCacheKey({
-      search: params.search || '',
-      categories: params.categories.join(','),
-      priceRange: `${params.minPrice}-${params.maxPrice}`,
-      sort: params.sort,
-      page: params.page,
-      limit: params.limit,
-      status: params.status || '',
-      includeOutOfStock: params.includeOutOfStock,
-      adminView: params.adminView,
-    })
+    await dbConnect()
 
-    // Check cache first (skip cache for admin views or real-time data)
-    if (!params.adminView) {
-      const cachedData = getCachedData(cacheKey)
-      if (cachedData) {
-        return NextResponse.json(cachedData, {
-          headers: {
-            ...CACHE_HEADERS,
-            'X-Cache': 'HIT',
-          }
-        })
-      }
+    const { searchParams } = new URL(request.url)
+    
+    // Parse query parameters
+    const search = searchParams.get('search') || ''
+    const categories = searchParams.get('categories')?.split(',').filter(Boolean) || []
+    const minPrice = Number(searchParams.get('minPrice')) || 0
+    const maxPrice = Number(searchParams.get('maxPrice')) || 1000000
+    const sort = searchParams.get('sort') || 'newest'
+    const page = Number(searchParams.get('page')) || 1
+    const limit = Math.min(Number(searchParams.get('limit')) || DEFAULT_LIMIT, MAX_LIMIT)
+    const includeOutOfStock = searchParams.get('includeOutOfStock') === 'true'
+    const featured = searchParams.get('featured') === 'true'
+    const popular = searchParams.get('popular') === 'true'
+    const newArrivals = searchParams.get('newArrivals') === 'true'
+
+    // Build query
+    const query: Record<string, unknown> = {}
+
+    // Search filter
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { sku: { $regex: search, $options: 'i' } }
+      ]
     }
 
-    // Build optimized queries
-    const where = buildWhereClause(params)
-    const orderBy = buildOrderByClause(params.sort)
-    const skip = (params.page - 1) * params.limit
+    // Category filter
+    if (categories.length > 0) {
+      query.category = { $in: categories }
+    }
 
-    // Execute queries in parallel for better performance
-    const [totalProducts, products] = await Promise.all([
-      // Optimized count query
-      prisma.product.count({ 
-        where,
-        // Skip expensive operations for count
-      }),
-      
-      // Optimized product query with selective field loading
-      prisma.product.findMany({
-        where,
-        orderBy,
-        skip,
-        take: params.limit,
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          price: true,
-          salePrice: true,  // Changed from compareAtPrice to salePrice
-          stock: true,
-          status: true,
-          isFeatured: true,
-          isNewArrival: true,
-          isPopular: true,
-          createdAt: true,
-          updatedAt: true,
-          images: true,  // Simplified to get all images array
-          category: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-            }
-          },
-          // Removed tags and views as they don't exist in schema
-        },
-      })
+    // Price filter
+    if (minPrice > 0 || maxPrice < 1000000) {
+      query.price = {}
+      if (minPrice > 0) query.price.$gte = minPrice
+      if (maxPrice < 1000000) query.price.$lte = maxPrice
+    }
+
+    // Stock filter
+    if (!includeOutOfStock) {
+      query.stock = { $gt: 0 }
+    }
+
+    // Special filters
+    if (featured) query.isFeatured = true
+    if (popular) query.isPopular = true
+    if (newArrivals) {
+      const thirtyDaysAgo = new Date()
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+      query.createdAt = { $gte: thirtyDaysAgo }
+    }
+
+    // Build sort
+    const sortOptions: Record<string, unknown> = {}
+    switch (sort) {
+      case 'price-low':
+        sortOptions.price = 1
+        break
+      case 'price-high':
+        sortOptions.price = -1
+        break
+      case 'popular':
+        sortOptions.isPopular = -1
+        sortOptions.createdAt = -1
+        break
+      case 'featured':
+        sortOptions.isFeatured = -1
+        sortOptions.createdAt = -1
+        break
+      case 'newest':
+      default:
+        sortOptions.createdAt = -1
+        break
+    }
+
+    // Calculate pagination
+    const skip = (page - 1) * limit
+
+    // Execute queries
+    const [products, totalCount] = await Promise.all([
+      Product.find(query)
+        .populate('categoryId', 'name slug')
+        .sort(sortOptions)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Product.countDocuments(query)
     ])
 
-    // Calculate pagination metadata
-    const totalPages = Math.ceil(totalProducts / params.limit)
-    const hasMore = params.page * params.limit < totalProducts
-    const hasPrevious = params.page > 1
+    // Calculate pagination info
+    const totalPages = Math.ceil(totalCount / limit)
+    const hasNextPage = page < totalPages
+    const hasPrevPage = page > 1
 
-    const responseData = {
-      products,
+    const response = {
+      success: true,
+      data: products,
       pagination: {
-        total: totalProducts,
-        page: params.page,
-        limit: params.limit,
+        page,
+        limit,
+        total: totalCount,
         totalPages,
-        hasMore,
-        hasPrevious,
+        hasNextPage,
+        hasPrevPage,
+        nextPage: hasNextPage ? page + 1 : null,
+        prevPage: hasPrevPage ? page - 1 : null
       },
       filters: {
-        search: params.search,
-        categories: params.categories,
-        priceRange: [params.minPrice, params.maxPrice],
-        sort: params.sort,
-      },
-      meta: {
-        timestamp: new Date().toISOString(),
-        cached: false,
+        search,
+        categories,
+        minPrice,
+        maxPrice,
+        sort,
+        includeOutOfStock,
+        featured,
+        popular,
+        newArrivals
       }
     }
 
-    // Cache the result (skip caching for admin views)
-    if (!params.adminView) {
-      setCachedData(cacheKey, responseData)
-    }
-
-    return NextResponse.json(responseData, {
-      headers: {
-        ...CACHE_HEADERS,
-        'X-Cache': 'MISS',
-        'X-Total-Count': totalProducts.toString(),
-      }
+    return NextResponse.json(response, {
+      headers: CACHE_HEADERS
     })
 
   } catch (error) {
     console.error('Error fetching products:', error)
-    
-    // Return structured error response
     return NextResponse.json(
       { 
+        success: false, 
         error: 'Failed to fetch products',
-        message: process.env.NODE_ENV === 'development' ? (error as Error).message : 'Internal server error',
-        timestamp: new Date().toISOString(),
+        message: error instanceof Error ? error.message : 'Unknown error'
       },
-      { 
-        status: 500,
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-        }
-      }
+      { status: 500 }
     )
   }
 }
 
-// Optional: Add other HTTP methods for comprehensive API
-
-export async function HEAD(request: Request) {
+export const POST = withMongoose(async (req) => {
   try {
-    const { searchParams } = new URL(request.url)
-    const params = parseQueryParams(searchParams)
-    const where = buildWhereClause(params)
-    
-    const totalProducts = await prisma.product.count({ where })
-    
-    return new Response(null, {
-      status: 200,
-      headers: {
-        ...CACHE_HEADERS,
-        'X-Total-Count': totalProducts.toString(),
-        'Content-Type': 'application/json',
-      }
-    })
-  } catch {
-    return new Response(null, { status: 500 })
-  }
-}
+    await dbConnect()
 
-// Cleanup function to clear expired cache entries (call periodically)
-export function cleanupCache() {
-  const now = Date.now()
-  const expiredKeys = []
-  
-  for (const [key, value] of cache.entries()) {
-    if (now - value.timestamp > CACHE_DURATION * 1000) {
-      expiredKeys.push(key)
+    const body = await request.json()
+    const {
+      name,
+      description,
+      price,
+      salePrice,
+      sku,
+      stock,
+      images,
+      category,
+      isFeatured,
+      isPopular,
+      tags,
+      weight,
+      dimensions,
+      materials,
+      careInstructions
+    } = body
+
+    // Validate required fields
+    if (!name || !description || !price || !category) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Missing required fields',
+          required: ['name', 'description', 'price', 'category']
+        },
+        { status: 400 }
+      )
     }
+
+    // Check if category exists
+    const categoryExists = await Category.findById(category)
+    if (!categoryExists) {
+      return NextResponse.json(
+        { success: false, error: 'Category not found' },
+        { status: 400 }
+      )
+    }
+
+    // Generate slug from name
+    const slug = name.toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '')
+
+    // Create product
+    const product = new Product({
+      name,
+      slug,
+      description,
+      price,
+      salePrice,
+      sku: sku || `PROD-${Date.now()}`,
+      stock: stock || 0,
+      images: images || [],
+      category,
+      isFeatured: isFeatured || false,
+      isPopular: isPopular || false,
+      tags: tags || [],
+      weight,
+      dimensions,
+      materials,
+      careInstructions
+    })
+
+    await product.save()
+
+    // Populate category for response
+    await product.populate('category', 'name slug')
+
+    return NextResponse.json({
+      success: true,
+      data: product,
+      message: 'Product created successfully'
+    }, { status: 201 })
+
+  } catch (error) {
+    console.error('Error creating product:', error)
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: 'Failed to create product',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    )
   }
-  
-  expiredKeys.forEach(key => cache.delete(key))
-  return expiredKeys.length
 }

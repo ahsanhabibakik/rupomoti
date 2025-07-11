@@ -6,7 +6,7 @@ export interface IProduct extends Document {
   description: string
   price: number
   discountPrice?: number
-  categoryId: string
+  categoryId: mongoose.Types.ObjectId
   images: string[]
   status: 'ACTIVE' | 'INACTIVE' | 'DRAFT'
   isFeatured: boolean
@@ -54,7 +54,8 @@ const ProductSchema = new Schema<IProduct>({
     min: 0
   },
   categoryId: {
-    type: String,
+    type: Schema.Types.ObjectId,
+    ref: 'Category',
     required: true
   },
   images: [{
@@ -140,6 +141,14 @@ ProductSchema.virtual('isLowStock').get(function() {
   return this.stock > 0 && this.stock <= 5
 })
 
+// Virtual for category population
+ProductSchema.virtual('category', {
+  ref: 'Category',
+  localField: 'categoryId',
+  foreignField: '_id',
+  justOne: true
+})
+
 // Instance methods
 ProductSchema.methods.updateStock = function(quantity: number) {
   this.stock = Math.max(0, this.stock + quantity)
@@ -193,7 +202,7 @@ ProductSchema.statics.searchProducts = function(query: string) {
 }
 
 // Pre-save middleware
-ProductSchema.pre('save', function(next) {
+ProductSchema.pre('save', function(this: IProduct, next) {
   // Auto-generate SKU if not provided
   if (!this.sku && this.name) {
     this.sku = this.name.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 8) + '-' + Date.now().toString().slice(-4)
@@ -208,7 +217,7 @@ ProductSchema.pre('save', function(next) {
 })
 
 // Post-save middleware for logging
-ProductSchema.post('save', function(doc) {
+ProductSchema.post('save', function(this: IProduct, doc) {
   console.log(`Product saved: ${doc.name} (${doc._id})`)
 })
 

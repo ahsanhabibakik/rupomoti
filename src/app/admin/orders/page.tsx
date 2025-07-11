@@ -13,7 +13,10 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { format } from 'date-fns';
-import { Prisma } from '@prisma/client';
+// Define Decimal type to replace Prisma.Decimal
+type Decimal = number;
+// Import Mongoose models to replace Prisma models
+
 import { OrderDetailsDialog } from '@/components/admin/OrderDetailsDialog';
 import { CourierAssignmentForm } from '@/components/admin/CourierAssignmentForm';
 import { ShipNowButton } from '@/components/admin/ShipNowButton';

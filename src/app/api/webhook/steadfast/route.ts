@@ -6,7 +6,7 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 // Webhook handler for Steadfast delivery status updates
-export async function POST(request: Request) {
+export const POST = withMongoose(async (req) => {
   try {
     // Verify webhook auth token
     const authHeader = request.headers.get('authorization')

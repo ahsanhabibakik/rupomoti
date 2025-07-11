@@ -1,6 +1,18 @@
-import { prisma } from "@/lib/prisma";
-import { OrderStatus } from "@prisma/client";
-import { Prisma } from "@prisma/client";
+import dbConnect from '@/lib/dbConnect';
+// Define OrderStatus enum to replace Prisma import
+enum OrderStatus {
+  PENDING = 'PENDING',
+  PROCESSING = 'PROCESSING',
+  SHIPPED = 'SHIPPED',
+  DELIVERED = 'DELIVERED',
+  CANCELLED = 'CANCELLED'
+}
+// Import Mongoose models to replace Prisma models
+
+// Define Decimal type to replace Prisma.Decimal
+type Decimal = number;
+// Import Mongoose models to replace Prisma models
+
 
 export async function getOrders({
   search = "",

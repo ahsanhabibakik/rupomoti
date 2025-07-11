@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth'
 import { InventoryManager } from '@/lib/inventory'
 
 // GET /api/inventory/alerts - Get inventory alerts
-export async function GET(request: NextRequest) {
+export const GET = withMongoose(async (req) => {
   try {
     const session = await auth()
     
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/inventory/alerts - Update stock for a product
-export async function POST(request: NextRequest) {
+export const POST = withMongoose(async (req) => {
   try {
     const session = await auth()
     

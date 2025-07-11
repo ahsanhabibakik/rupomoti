@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { Category } from '@prisma/client'
+import { Category } from '@/types/mongoose-types'
 
 interface CategorySectionProps {
   categories: Category[]

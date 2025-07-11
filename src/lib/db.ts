@@ -1,6 +1,7 @@
-import { PrismaClient } from '@prisma/client'
+// MongoDB connection and validation utilities
+
 import { parse as parseUrl } from 'url'
-import { setupPrisma } from './prisma-setup'
+import dbConnect from './dbConnect'
 
 // Validate MongoDB connection string
 function validateMongoDBUrl(url: string): { isValid: boolean; error?: string } {

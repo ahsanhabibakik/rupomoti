@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { BANGLADESH_UPAZILAS, BANGLADESH_DISTRICTS } from '@/lib/constants/bangladesh-locations';
 
-export async function GET(request: Request) {
+export const GET = withMongoose(async (req) => {
     try {
         const { searchParams } = new URL(request.url);
         const districtName = searchParams.get('district');

@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import dbConnect from '@/lib/dbConnect';
 import { generateSmartOrderCode } from '@/lib/utils/order-number';
 
 // Get next sequence number for scaling

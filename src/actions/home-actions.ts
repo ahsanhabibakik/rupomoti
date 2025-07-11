@@ -44,8 +44,8 @@ export async function getProducts(filter: { [key: string]: boolean }): Promise<P
     })
     params.append('limit', '4')
     
-    // Use mongo endpoint for better performance and computed fields
-    const data = await fetchFromAPI(`/api/products-mongo?${params.toString()}`)
+    // Use the new Mongoose-based products endpoint
+    const data = await fetchFromAPI(`/api/products?${params.toString()}`)
     return data?.data || []
   } catch (error) {
     console.error('Error fetching products:', error)
@@ -57,12 +57,12 @@ export async function getHomePageData() {
   try {
     console.log('Starting home page data fetch...')
     
-    // Use mongo endpoints directly
+    // Use the new Mongoose-based products endpoint
     const [featuredData, popularData, newArrivalsData, saleData] = await Promise.allSettled([
-      fetchFromAPI('/api/products-mongo?isFeatured=true&limit=12'),
-      fetchFromAPI('/api/products-mongo?isPopular=true&limit=12'),
-      fetchFromAPI('/api/products-mongo?sort=newest&limit=12'),
-      fetchFromAPI('/api/products-mongo?limit=8')
+      fetchFromAPI('/api/products?featured=true&limit=12'),
+      fetchFromAPI('/api/products?popular=true&limit=12'),
+      fetchFromAPI('/api/products?sort=newest&limit=12'),
+      fetchFromAPI('/api/products?limit=8')
     ])
 
     const getFulfilledData = (result: PromiseSettledResult<{ data?: Product[] } | null>) => {

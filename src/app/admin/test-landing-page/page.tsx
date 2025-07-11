@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma'
+import dbConnect from '@/lib/dbConnect';
 
 export default async function AdminTestPage() {
   // Get some test products for the landing page builder

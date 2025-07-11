@@ -92,7 +92,7 @@ export function ReviewModal({ isOpen, onClose, product, existingReview, onReview
         <div className="flex items-center space-x-4 mb-6 p-4 bg-gray-50 rounded-lg">
           <div className="relative w-16 h-16 flex-shrink-0">
             <Image
-              src={product.images?.[0] || '/images/placeholder.jpg'}
+              src={product.images?.[0] || '/images/placeholder.svg'}
               alt={product.name}
               fill
               className="rounded-lg object-cover"

@@ -1,7 +1,16 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/app/auth";
-import { prisma } from "@/lib/prisma";
-import { OrderStatus, OrderType } from "@prisma/client";
+import dbConnect from '@/lib/dbConnect';
+// Define OrderStatus enum to replace Prisma import
+enum OrderStatus {
+  PENDING = 'PENDING',
+  PROCESSING = 'PROCESSING',
+  SHIPPED = 'SHIPPED',
+  DELIVERED = 'DELIVERED',
+  CANCELLED = 'CANCELLED'
+}
+// Import Mongoose models to replace Prisma models
+
 
 // Force dynamic rendering to ensure fresh data
 export const dynamic = 'force-dynamic';

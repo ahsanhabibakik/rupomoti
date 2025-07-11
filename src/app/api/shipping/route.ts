@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/app/auth'
 import { ShippingManager } from '@/lib/shipping'
 
-export async function POST(request: NextRequest) {
+export const POST = withMongoose(async (req) => {
   try {
     const session = await auth()
     
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export const GET = withMongoose(async (req) => {
   try {
     const { searchParams } = new URL(request.url)
     const orderId = searchParams.get('orderId')

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { verifyAdminAccess } from '@/lib/admin-auth';
 import { isSlugAvailable, validateSlug } from '@/lib/utils/slug';
 
-export async function GET(request: Request) {
+export const GET = withMongoose(async (req) => {
   try {
     const { authorized } = await verifyAdminAccess();
     if (!authorized) {

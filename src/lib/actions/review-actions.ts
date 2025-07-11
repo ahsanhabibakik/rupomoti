@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { prisma } from '@/lib/prisma'
+import dbConnect from '@/lib/dbConnect';
 import { auth } from '@/app/auth'
 
 export async function createReview(formData: FormData) {

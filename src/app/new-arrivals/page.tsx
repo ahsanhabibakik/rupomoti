@@ -4,7 +4,8 @@ export const dynamic = 'auto'
 
 import { ProductCard } from '@/components/products/ProductCard'
 import { Badge } from '@/components/ui/badge'
-import { PrismaClient } from '@prisma/client'
+// Import Mongoose models to replace Prisma models
+
 import Link from 'next/link'
 import { Sparkles, Clock, Star, Filter, Grid, List } from 'lucide-react'
 import { Suspense } from 'react'

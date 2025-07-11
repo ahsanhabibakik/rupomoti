@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "dev:turbo": "next dev --turbo",
-    "x": "pnpm i && pnpm g && pnpm dev ",
+    "x": "pnpm i && pnpm dev ",
     "dev:turbopack": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
@@ -16,16 +16,23 @@
     "seed:super-admins": "npx tsx scripts/seed-super-admins.ts",
     "verify:super-admins": "npx tsx scripts/verify-super-admins.ts",
     "seed:media": "npx tsx scripts/seed-media.ts",
-    "g": "npx prisma generate",
-    "p": "npx prisma db push",
-    "studio": "npx prisma studio",
     "pre-commit": "bash scripts/pre-commit-check.sh",
-    "ci": "pnpm check-env && pnpm g && pnpm lint && pnpm build",
-    "vercel-build": "pnpm check-env && pnpm g && pnpm build",
-    "postinstall": "prisma generate"
+    "ci": "pnpm check-env && pnpm lint && pnpm build",
+    "vercel-build": "pnpm check-env && pnpm build",
+    "test-migration": "bash scripts/test-migration.sh",
+    "finalize-migration": "node scripts/finalize-migration-new.js",
+    "migration-summary": "bash scripts/generate-migration-summary.sh",
+    "validate-models": "node scripts/validate-mongoose-models.js",
+    "debug-mongoose": "node scripts/debug-mongoose-migration.js",
+    "find-critical-imports": "bash scripts/find-critical-prisma-imports.sh > CRITICAL_PRISMA_IMPORTS.md",
+    "migrate-api-routes": "node scripts/migrate-api-routes.js",
+    "fix-prisma-imports": "node scripts/fix-prisma-imports.js",
+    "migration-summary": "node scripts/migration-summary.js",
+    "validate-migration": "npx tsx scripts/validate-migration.js",
+    "complete-migration": "bash scripts/complete-migration.sh"
   },
   "dependencies": {
-    "@auth/prisma-adapter": "^2.10.0",
+    "@auth/mongodb-adapter": "^3.10.0",
     "@hello-pangea/dnd": "^18.0.1",
     "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^3.3.4",
@@ -87,7 +94,6 @@
     "zod": "^3.25.67"
   },
   "devDependencies": {
-    "@prisma/client": "^6.11.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/jspdf": "^2.0.0",
     "@types/lodash": "^4.17.19",
@@ -100,7 +106,6 @@
     "eslint": "^9.30.0",
     "eslint-config-next": "15.3.4",
     "postcss": "^8.5.6",
-    "prisma": "^6.11.1",
     "tailwindcss": "4.1.11",
     "tsx": "^4.20.3",
     "typescript": "^5"

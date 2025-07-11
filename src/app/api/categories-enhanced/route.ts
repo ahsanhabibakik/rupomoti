@@ -4,7 +4,7 @@ import { Categories } from '@/lib/services'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-export async function GET(request: Request) {
+export const GET = withMongoose(async (req) => {
   try {
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type') || 'active'
@@ -94,7 +94,7 @@ export async function GET(request: Request) {
 }
 
 // Advanced category operations
-export async function POST(request: Request) {
+export const POST = withMongoose(async (req) => {
   try {
     const body = await request.json()
     const { action, data } = body

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useForm, SubmitHandler, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Order } from '@prisma/client';
+import { Order } from '@/types/mongoose-types';
 import { toast } from 'sonner';
 import { useSWRConfig } from 'swr';
 import { Button } from '@/components/ui/button';

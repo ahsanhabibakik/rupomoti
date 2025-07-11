@@ -11,7 +11,7 @@ export async function GET() {
   });
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withMongoose(async (req) => {
   try {
     console.log('🔧 Debug: Upload endpoint called');
     

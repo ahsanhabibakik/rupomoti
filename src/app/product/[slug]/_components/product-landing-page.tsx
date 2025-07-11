@@ -21,7 +21,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ReviewSystem } from '@/components/reviews/review-system'
-import { type Prisma } from '@prisma/client'
+
 
 // Import the interfaces from the types
 import { LandingPageData, LandingPageSection } from '@/types/landing-page'

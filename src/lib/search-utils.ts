@@ -1,4 +1,6 @@
-import { Product } from '@prisma/client'
+// Import Mongoose models to replace Prisma models
+import Product from '@/models/Product';
+
 
 export interface SafeProduct {
   id: string;

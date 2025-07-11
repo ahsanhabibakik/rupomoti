@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/app/auth'
 
-export async function GET(request: NextRequest) {
+export const GET = withMongoose(async (req) => {
   try {
     const session = await auth()
     

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/app/auth';
-import { prisma } from '@/lib/prisma';
+import dbConnect from '@/lib/dbConnect';
 import { AuditLogger } from '@/lib/audit-logger';
 
 export const dynamic = 'force-dynamic';

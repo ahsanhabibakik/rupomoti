@@ -5,7 +5,7 @@ import Product from '@/models/Product'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-export async function GET(request: Request) {
+export const GET = withMongoose(async (req) => {
   try {
     await dbConnect()
     
@@ -136,7 +136,7 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export const POST = withMongoose(async (req) => {
   try {
     await dbConnect()
     

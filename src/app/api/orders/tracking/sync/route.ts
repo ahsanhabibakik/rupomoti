@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth'
 import { OrderTrackingManager } from '@/lib/order-tracking'
 
 // POST /api/orders/tracking/sync - Sync order statuses with courier
-export async function POST(request: NextRequest) {
+export const POST = withMongoose(async (req) => {
   try {
     const session = await auth()
     
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
 }
 
 // GET /api/orders/tracking/sync - Get tracking info for multiple orders
-export async function GET(request: NextRequest) {
+export const GET = withMongoose(async (req) => {
   try {
     const session = await auth()
     

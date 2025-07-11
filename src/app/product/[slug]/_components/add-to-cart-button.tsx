@@ -6,7 +6,7 @@ import { ShoppingCart, Minus, Plus } from 'lucide-react'
 import { useAppDispatch } from '@/redux/hooks'
 import { addToCart } from '@/redux/slices/cartSlice'
 import { showToast } from '@/lib/toast'
-import { type Prisma } from '@prisma/client'
+
 
 type Product = Prisma.ProductGetPayload<{
   include: { category: true }

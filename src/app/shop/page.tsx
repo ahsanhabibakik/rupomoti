@@ -21,7 +21,9 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { SlidersHorizontal, Search, Loader2, Frown } from 'lucide-react'
-import { Category } from '@prisma/client'
+// Import Mongoose models to replace Prisma models
+import Category from '@/models/Category';
+
 import { Product } from '@/types/product'
 import { getCategories } from '@/actions/getCategories'
 

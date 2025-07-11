@@ -1,365 +1,316 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@/app/auth'
-import { prisma } from '@/lib/prisma'
+import dbConnect from '@/lib/mongoose'
+import Category from '@/models/Category'
 
-export async function GET(request: Request) {
+export const GET = withMongoose(async (req) => {
   try {
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const pageSize = parseInt(searchParams.get('pageSize') || '10', 10);
-    const search = searchParams.get('search') || '';
+    await dbConnect()
 
-    const where: any = {};
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '1', 10)
+    const pageSize = parseInt(searchParams.get('pageSize') || '10', 10)
+    const search = searchParams.get('search') || ''
+    const active = searchParams.get('active')
+    const level = searchParams.get('level')
+
+    // Build query
+    const query: Record<string, unknown> = {}
+    
     if (search) {
-      where.name = {
-        contains: search,
-        mode: 'insensitive',
-      };
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ]
     }
 
-    const totalCategories = await prisma.category.count({ where });
-    const categories = await prisma.category.findMany({
-      where,
-      orderBy: {
-        name: 'asc'
-      },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-      include: {
-        _count: {
-          select: { products: true }
+    if (active !== null && active !== undefined) {
+      query.isActive = active === 'true'
+    }
+
+    if (level !== null && level !== undefined) {
+      query.level = parseInt(level, 10)
+    }
+
+    // Calculate pagination
+    const skip = (page - 1) * pageSize
+
+    // Execute queries
+    const [categories, totalCategories] = await Promise.all([
+      Category.find(query)
+        .sort({ sortOrder: 1, name: 1 })
+        .skip(skip)
+        .limit(pageSize)
+        .lean(),
+      Category.countDocuments(query)
+    ])
+
+    // Get product counts for each category
+    const categoriesWithCounts = await Promise.all(
+      categories.map(async (category) => {
+        const productCount = await Category.aggregate([
+          { $match: { _id: category._id } },
+          {
+            $lookup: {
+              from: 'Product',
+              localField: '_id',
+              foreignField: 'category',
+              as: 'products'
+            }
+          },
+          {
+            $project: {
+              productCount: { $size: '$products' }
+            }
+          }
+        ])
+
+        return {
+          ...category,
+          id: (category as any)._id.toString(),
+          _count: {
+            products: productCount[0]?.productCount || 0
+          }
         }
-      }
-    });
+      })
+    )
+
+    const totalPages = Math.ceil(totalCategories / pageSize)
 
     return NextResponse.json({
-      categories,
-      totalCount: totalCategories,
-      totalPages: Math.ceil(totalCategories / pageSize),
-    });
+      success: true,
+      data: categoriesWithCounts,
+      pagination: {
+        page,
+        pageSize,
+        total: totalCategories,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
+      }
+    })
+
   } catch (error) {
     console.error('Error fetching categories:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch categories' },
+      { 
+        success: false, 
+        error: 'Failed to fetch categories',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }
 }
 
-export async function POST(request: Request) {
+export const POST = withMongoose(async (req) => {
   try {
-    const session = await auth()
+    await dbConnect()
 
-    if (!session?.user?.email) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    // Check if user is admin
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    })
-    
-    if (!user?.isAdmin) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin access required' },
-        { status: 401 }
-      )
-    }
-
+    const body = await request.json()
     const {
       name,
       slug,
       description,
       image,
-      parentId,
-      isActive = true,
-      sortOrder = 0,
+      isActive,
+      sortOrder,
       metaTitle,
-      metaDescription
-    } = await request.json()
+      metaDescription,
+      parentId
+    } = body
 
-    if (!name || !slug) {
+    // Validate required fields
+    if (!name) {
       return NextResponse.json(
-        { error: 'Name and slug are required' },
+        { success: false, error: 'Name is required' },
         { status: 400 }
       )
     }
 
-    // Check if slug already exists
-    const existingCategory = await prisma.category.findUnique({
-      where: { slug }
-    })
+    // Generate slug if not provided
+    const categorySlug = slug || name.toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '')
 
+    // Check if slug already exists
+    const existingCategory = await Category.findOne({ slug: categorySlug })
     if (existingCategory) {
       return NextResponse.json(
-        { error: 'Category with this slug already exists' },
+        { success: false, error: 'Slug already exists' },
         { status: 400 }
       )
     }
 
     // If parentId is provided, check if parent exists
     if (parentId) {
-      const parentCategory = await prisma.category.findUnique({
-        where: { id: parentId }
-      })
-
-      if (!parentCategory) {
+      const parent = await Category.findById(parentId)
+      if (!parent) {
         return NextResponse.json(
-          { error: 'Parent category not found' },
+          { success: false, error: 'Parent category not found' },
           { status: 400 }
         )
       }
     }
 
-    const category = await prisma.category.create({
-      data: {
-        name,
-        slug,
-        description,
-        image,
-        parentId: parentId || undefined,
-        isActive,
-        sortOrder,
-        metaTitle,
-        metaDescription
-      },
-      include: {
-        parent: true,
-        children: true,
-        _count: {
-          select: { products: true }
-        }
-      }
+    // Create category
+    const category = new Category({
+      name,
+      slug: categorySlug,
+      description,
+      image,
+      isActive: isActive !== undefined ? isActive : true,
+      sortOrder: sortOrder || 0,
+      metaTitle,
+      metaDescription,
+      parentId
     })
 
-    return NextResponse.json(category)
-  } catch (error: any) {
-    console.error('Error creating category:', error)
-    
-    if (error.code === 'P2002') {
-      return NextResponse.json(
-        { error: 'Category with this name or slug already exists' },
-        { status: 400 }
-      )
-    }
+    await category.save()
 
+    return NextResponse.json({
+      success: true,
+      data: category,
+      message: 'Category created successfully'
+    }, { status: 201 })
+
+  } catch (error) {
+    console.error('Error creating category:', error)
     return NextResponse.json(
-      { error: 'Failed to create category' },
+      { 
+        success: false, 
+        error: 'Failed to create category',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }
 }
 
-export async function PUT(request: Request) {
+export const PUT = withMongoose(async (req) => {
   try {
-    const session = await auth()
+    await dbConnect()
 
-    if (!session?.user?.email) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    // Check if user is admin
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    })
-    
-    if (!user?.isAdmin) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin access required' },
-        { status: 401 }
-      )
-    }
-
-    const {
-      id,
-      name,
-      slug,
-      description,
-      image,
-      parentId,
-      isActive,
-      sortOrder,
-      metaTitle,
-      metaDescription
-    } = await request.json()
+    const body = await request.json()
+    const { id, ...updateData } = body
 
     if (!id) {
       return NextResponse.json(
-        { error: 'Category ID is required' },
+        { success: false, error: 'Category ID is required' },
         { status: 400 }
       )
     }
 
-    // Check if category exists
-    const existingCategory = await prisma.category.findUnique({
-      where: { id }
-    })
+    // If slug is being updated, check for duplicates
+    if (updateData.slug) {
+      const existingCategory = await Category.findOne({ 
+        slug: updateData.slug,
+        _id: { $ne: id }
+      })
+      if (existingCategory) {
+        return NextResponse.json(
+          { success: false, error: 'Slug already exists' },
+          { status: 400 }
+        )
+      }
+    }
 
-    if (!existingCategory) {
+    const category = await Category.findByIdAndUpdate(
+      id,
+      { ...updateData, updatedAt: new Date() },
+      { new: true, runValidators: true }
+    )
+
+    if (!category) {
       return NextResponse.json(
-        { error: 'Category not found' },
+        { success: false, error: 'Category not found' },
         { status: 404 }
       )
     }
 
-    // If slug is changing, check if new slug already exists
-    if (slug && slug !== existingCategory.slug) {
-      const slugExists = await prisma.category.findUnique({
-        where: { slug }
-      })
-
-      if (slugExists) {
-        return NextResponse.json(
-          { error: 'Category with this slug already exists' },
-          { status: 400 }
-        )
-      }
-    }
-
-    // If parentId is provided, check if parent exists and prevent circular reference
-    if (parentId) {
-      if (parentId === id) {
-        return NextResponse.json(
-          { error: 'Category cannot be its own parent' },
-          { status: 400 }
-        )
-      }
-
-      const parentCategory = await prisma.category.findUnique({
-        where: { id: parentId }
-      })
-
-      if (!parentCategory) {
-        return NextResponse.json(
-          { error: 'Parent category not found' },
-          { status: 400 }
-        )
-      }
-    }
-
-    const category = await prisma.category.update({
-      where: { id },
-      data: {
-        name: name || existingCategory.name,
-        slug: slug || existingCategory.slug,
-        description,
-        image,
-        parentId: parentId || undefined,
-        isActive: isActive !== undefined ? isActive : existingCategory.isActive,
-        sortOrder: sortOrder !== undefined ? sortOrder : existingCategory.sortOrder,
-        metaTitle,
-        metaDescription
-      },
-      include: {
-        parent: true,
-        children: true,
-        _count: {
-          select: { products: true }
-        }
-      }
+    return NextResponse.json({
+      success: true,
+      data: category,
+      message: 'Category updated successfully'
     })
 
-    return NextResponse.json(category)
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error updating category:', error)
-    
-    if (error.code === 'P2002') {
-      return NextResponse.json(
-        { error: 'Category with this name or slug already exists' },
-        { status: 400 }
-      )
-    }
-
     return NextResponse.json(
-      { error: 'Failed to update category' },
+      { 
+        success: false, 
+        error: 'Failed to update category',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }
 }
 
-export async function DELETE(request: Request) {
+export const DELETE = withMongoose(async (req) => {
   try {
-    const session = await auth()
-
-    if (!session?.user?.email) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    // Check if user is admin
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    })
-    
-    if (!user?.isAdmin) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin access required' },
-        { status: 401 }
-      )
-    }
+    await dbConnect()
 
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 
     if (!id) {
       return NextResponse.json(
-        { error: 'Category ID is required' },
+        { success: false, error: 'Category ID is required' },
         { status: 400 }
-      )
-    }
-
-    // Check if category exists
-    const category = await prisma.category.findUnique({
-      where: { id },
-      include: {
-        children: true,
-        _count: {
-          select: { products: true }
-        }
-      }
-    })
-
-    if (!category) {
-      return NextResponse.json(
-        { error: 'Category not found' },
-        { status: 404 }
       )
     }
 
     // Check if category has products
-    if (category._count.products > 0) {
+    const productCount = await Category.aggregate([
+      { $match: { _id: id } },
+      {
+        $lookup: {
+          from: 'Product',
+          localField: '_id',
+          foreignField: 'category',
+          as: 'products'
+        }
+      },
+      {
+        $project: {
+          productCount: { $size: '$products' }
+        }
+      }
+    ])
+
+    if (productCount[0]?.productCount > 0) {
       return NextResponse.json(
-        { error: 'Cannot delete category that contains products' },
+        { 
+          success: false, 
+          error: 'Cannot delete category with products. Please move or delete products first.' 
+        },
         { status: 400 }
       )
     }
 
-    // Check if category has children
-    if (category.children.length > 0) {
+    const category = await Category.findByIdAndDelete(id)
+
+    if (!category) {
       return NextResponse.json(
-        { error: 'Cannot delete category that has subcategories' },
-        { status: 400 }
+        { success: false, error: 'Category not found' },
+        { status: 404 }
       )
     }
 
-    await prisma.category.delete({
-      where: { id }
+    return NextResponse.json({
+      success: true,
+      message: 'Category deleted successfully'
     })
 
-    return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error deleting category:', error)
     return NextResponse.json(
-      { error: 'Failed to delete category' },
+      { 
+        success: false, 
+        error: 'Failed to delete category',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }
-} 
+}

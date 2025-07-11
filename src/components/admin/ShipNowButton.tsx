@@ -3,7 +3,9 @@
 import { useShipOrder } from '@/hooks/useShipOrder';
 import { Button } from '@/components/ui/button';
 import { Loader2, Rocket, Truck } from 'lucide-react';
-import { Order } from '@prisma/client';
+// Import Mongoose models to replace Prisma models
+import Order from '@/models/Order';
+
 
 interface ShipNowButtonProps {
   order: Order;

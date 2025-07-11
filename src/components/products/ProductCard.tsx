@@ -40,7 +40,7 @@ export function ProductCard({ product, compact = false, className }: ProductCard
       id,
       name: name || 'Unnamed Product',
       price: finalPrice,
-      image: images[0] || '/images/placeholder.jpg',
+      image: images[0] || '/images/placeholder.svg',
       quantity: 1,
       category: 'Uncategorized'
     }
@@ -80,7 +80,7 @@ export function ProductCard({ product, compact = false, className }: ProductCard
       )}>
         {/* Main Image */}
         <Image
-          src={images[0]}
+          src={images[0] || '/images/placeholder.svg'}
           alt={name || 'Unnamed Product'}
           fill
           className={cn(
@@ -92,7 +92,7 @@ export function ProductCard({ product, compact = false, className }: ProductCard
           onError={(e) => {
             console.error('Product image failed to load:', images[0])
             // Set fallback image on error
-            e.currentTarget.src = '/images/placeholder.jpg'
+            e.currentTarget.src = '/images/placeholder.svg'
             setIsImageLoading(false)
           }}
         />

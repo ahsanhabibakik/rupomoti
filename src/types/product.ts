@@ -1,10 +1,41 @@
-import { Product as PrismaProduct, Category as PrismaCategory } from '@prisma/client'
+// Define our own Product and Category types
 
-export type Product = PrismaProduct & {
-  category: PrismaCategory
+export type Product = {
+  id: string
+  name: string
+  slug: string
+  description?: string
+  price: number
+  salePrice?: number | null
+  discount?: number | null
+  images: string[]
+  category?: Category | null
+  categoryId?: string | null
+  inStock: boolean
+  isFeatured: boolean
+  isPopular: boolean
+  rating?: number | null
+  sku?: string | null
+  status?: string
+  weight?: number | null
+  dimensions?: string | null
+  material?: string | null
+  care?: string | null
+  createdAt: Date | string
+  updatedAt: Date | string
 }
 
-export type Category = PrismaCategory
+export type Category = {
+  id: string
+  name: string
+  slug: string
+  description?: string | null
+  image?: string | null
+  featured?: boolean
+  parentId?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
 
 // Legacy interface for backward compatibility
 export interface ProductLegacy {

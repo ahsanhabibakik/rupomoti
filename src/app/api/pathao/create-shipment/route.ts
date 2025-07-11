@@ -16,7 +16,7 @@ const shipmentSchema = z.object({
   merchant_order_id: z.string().optional(),
 });
 
-export async function POST(request: Request) {
+export const POST = withMongoose(async (req) => {
   try {
     const body = await request.json();
     const validation = shipmentSchema.safeParse(body);

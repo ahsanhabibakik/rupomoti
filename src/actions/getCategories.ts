@@ -31,7 +31,7 @@ export async function getCategories(params: GetCategoriesParams = {}) {
       queryParams.append('active', params.active.toString())
     }
     
-    const data = await fetchFromAPI(`/api/categories-mongo?${queryParams.toString()}`)
+    const data = await fetchFromAPI(`/api/categories?${queryParams.toString()}`)
     const categories = data?.data || []
     
     // Filter for top-level categories if requested

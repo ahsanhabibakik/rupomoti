@@ -6,7 +6,9 @@ import { ShoppingCart, Minus, Plus } from 'lucide-react'
 import { useAppDispatch } from '@/redux/hooks'
 import { addToCart } from '@/redux/slices/cartSlice'
 import { showToast } from '@/lib/toast'
-import { Product } from '@prisma/client'
+// Import Mongoose models to replace Prisma models
+import Product from '@/models/Product';
+
 
 interface AddToCartButtonProps {
   product: Omit<Product, 'description' | 'stock' | 'createdAt' | 'updatedAt'> & {

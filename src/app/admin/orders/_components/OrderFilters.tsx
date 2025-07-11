@@ -20,8 +20,16 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, Search } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { OrderStatus } from '@prisma/client';
 import { DateRange } from 'react-day-picker';
+
+// Define our own OrderStatus values to replace the Prisma import
+const OrderStatus = {
+  PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING',
+  SHIPPED: 'SHIPPED',
+  DELIVERED: 'DELIVERED',
+  CANCELLED: 'CANCELLED'
+};
 
 export function OrderFilters() {
   const router = useRouter();
