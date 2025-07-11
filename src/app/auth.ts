@@ -1,27 +1,24 @@
 import NextAuth from "next-auth"
-import Credentials from "next-auth/providers/credentials"
-import Google from "next-auth/providers/google"
+import CredentialsProvider from "next-auth/providers/credentials"
+import GoogleProvider from "next-auth/providers/google"
 import User from '../models/User'
 import bcrypt from 'bcryptjs'
 import dbConnect from '../lib/mongoose'
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export default NextAuth({
   secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-for-development',
-  basePath: '/api/auth',
-  trustHost: true,
-  useSecureCookies: process.env.NODE_ENV === 'production',
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   providers: [
     ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? [
-      Google({
-        clientId: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      GoogleProvider({
+        clientId: process.env.GOOGLE_CLIENT_ID!,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       })
     ] : []),
-    Credentials({
+    CredentialsProvider({
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },

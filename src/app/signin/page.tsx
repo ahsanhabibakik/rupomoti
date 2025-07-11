@@ -82,17 +82,15 @@ export default function SignIn() {
       }
 
       if (result?.ok) {
-        // Force immediate session update and redirect without page reload
-        const response = await fetch('/api/auth/session')
-        const sessionData = await response.json()
+        // Get the session to determine redirect path
+        const sessionResponse = await fetch('/api/auth/session')
+        const sessionData = await sessionResponse.json()
         
-        if (sessionData?.user) {
-          const role = sessionData.user.role
-          if (role === 'SUPER_ADMIN' || role === 'ADMIN' || role === 'MANAGER') {
-            router.replace(callbackUrl.includes('/admin') ? callbackUrl : '/admin')
-          } else {
-            router.replace(callbackUrl === '/' ? '/account' : callbackUrl)
-          }
+        const role = sessionData?.user?.role
+        if (role === 'SUPER_ADMIN' || role === 'ADMIN' || role === 'MANAGER') {
+          router.replace(callbackUrl.includes('/admin') ? callbackUrl : '/admin')
+        } else {
+          router.replace(callbackUrl === '/' ? '/account' : callbackUrl)
         }
       }
     } catch {

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import User from '@/models/User'
 import dbConnect from '@/lib/mongoose'
-import { signIn } from '@/app/auth'
 
 export async function POST(req: NextRequest) {
   try {
@@ -42,44 +41,18 @@ export async function POST(req: NextRequest) {
 
     console.log('✅ User authenticated successfully')
 
-    // Try to use NextAuth's signIn with a custom redirect approach
-    try {
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-      })
-
-      return NextResponse.json({
-        success: true,
-        message: 'Authentication successful',
-        user: {
-          id: user._id.toString(),
-          email: user.email,
-          name: user.name || user.email.split('@')[0],
-          role: user.role,
-          isAdmin: user.isAdmin
-        },
-        nextAuthResult: result
-      })
-
-    } catch (signInError) {
-      console.log('NextAuth signIn failed, but user is valid:', signInError)
-      
-      // Return success anyway since we verified the user
-      return NextResponse.json({
-        success: true,
-        message: 'User verified, but NextAuth signIn failed',
-        user: {
-          id: user._id.toString(),
-          email: user.email,
-          name: user.name || user.email.split('@')[0],
-          role: user.role,
-          isAdmin: user.isAdmin
-        },
-        nextAuthError: (signInError as Error).message
-      })
-    }
+    // Return successful authentication result
+    return NextResponse.json({
+      success: true,
+      message: 'Authentication successful',
+      user: {
+        id: user._id.toString(),
+        email: user.email,
+        name: user.name || user.email.split('@')[0],
+        role: user.role,
+        isAdmin: user.isAdmin
+      }
+    })
 
   } catch (error) {
     console.error('💥 Custom signin error:', error)
