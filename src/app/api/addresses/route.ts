@@ -22,13 +22,6 @@ export async function GET() {
     console.error('Error fetching addresses:', error);
     return NextResponse.json({ error: 'Failed to fetch addresses' }, { status: 500 });
   }
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }}
 

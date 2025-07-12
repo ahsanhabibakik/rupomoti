@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { connectDB } from '@/lib/db';
+import connectDB from '@/lib/db';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/auth';
+import authOptions from '@/app/auth';
 
 
 import { AuditLogger } from '@/lib/audit-logger';
@@ -95,12 +95,4 @@ export async function POST(req: Request) {
     );
   }
 }
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
 }

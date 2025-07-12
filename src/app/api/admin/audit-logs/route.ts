@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/auth';
+import authOptions from '@/app/auth';
 
 
 
@@ -75,15 +75,7 @@ export async function GET(req: Request) {
     return NextResponse.json(auditLogs)
   } catch (error) {
     console.error('Error fetching audit logs:', error)
-    return NextResponse.json({ error: 'Failed to fetch audit logs' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to fetch audit logs' }, { status: 500 });
   }
 }
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
 }

@@ -1,21 +1,19 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { connectDB } from '@/lib/db';
+import { NextResponse } from 'next/server';
+import connectDB from '@/lib/db';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/auth';
-
-
+import authOptions from '@/app/auth';
+import User from '@/models/User';
 import { hash, compare } from 'bcryptjs';
 
 export async function PUT(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = await req.json();
     const { currentPassword, newPassword } = body;
 
     if (!currentPassword || !newPassword) {
@@ -33,10 +31,7 @@ export async function PUT(req: Request) {
     }
 
     // Get user with password
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { id: true, password: true }
-    });
+    const user = await User.findById(session.user.id).select('+password');
 
     if (!user || !user.password) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -52,22 +47,11 @@ export async function PUT(req: Request) {
     const hashedNewPassword = await hash(newPassword, 12);
 
     // Update password
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: { password: hashedNewPassword }
-    });
+    user.password = hashedNewPassword;
+    await user.save();
 
     return NextResponse.json({ message: 'Password updated successfully' });
   } catch (error) {
-    console.error('Error updating password:', error);
-    return NextResponse.json({ error: 'Failed to update password' }, { status: 500 });
-  }
-}
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
     console.error('Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
