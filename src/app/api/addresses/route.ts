@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/app/auth';
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/auth';
+import { connectDB } from '@/lib/db';
 
 
 export async function GET() {
   try {
-    const session = await auth();
+    await connectDB();
+    const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -20,11 +22,20 @@ export async function GET() {
     console.error('Error fetching addresses:', error);
     return NextResponse.json({ error: 'Failed to fetch addresses' }, { status: 500 });
   }
-}
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}}
 
-export const POST = withMongoose(async (req) => {
+export async function POST(req: NextRequest) {
   try {
-    const session = await auth();
+    await connectDB();
+    const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -56,9 +67,10 @@ export const POST = withMongoose(async (req) => {
   }
 }
 
-export const PUT = withMongoose(async (req) => {
+export async function PUT(req: NextRequest) {
   try {
-    const session = await auth();
+    await connectDB();
+    const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -99,9 +111,10 @@ export const PUT = withMongoose(async (req) => {
   }
 }
 
-export const DELETE = withMongoose(async (req) => {
+export async function DELETE(req: NextRequest) {
   try {
-    const session = await auth();
+    await connectDB();
+    const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

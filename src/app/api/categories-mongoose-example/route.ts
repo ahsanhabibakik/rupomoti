@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
+import { connectDB } from '@/lib/db';
+
 import Category from '@/models/Category';
 
 /**

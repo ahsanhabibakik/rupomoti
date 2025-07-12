@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { connectDB } from '@/lib/db';
 import { z } from 'zod';
 import { getPathaoAccessToken, createPathaoOrder } from '@/lib/pathao';
 
@@ -16,7 +17,9 @@ const shipmentSchema = z.object({
   merchant_order_id: z.string().optional(),
 });
 
-export const POST = withMongoose(async (req) => {
+export async function POST(req: Request) {
+  try {
+    await connectDB();
   try {
     const body = await request.json();
     const validation = shipmentSchema.safeParse(body);
@@ -44,4 +47,13 @@ export const POST = withMongoose(async (req) => {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
     return NextResponse.json({ error: 'Failed to create shipment', details: errorMessage }, { status: 500 });
   }
-} 
+}
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

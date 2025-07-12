@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/app/auth";
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
+
 
 import { z } from "zod";
 
@@ -24,9 +24,11 @@ const querySchema = z.object({
 });
 
 // GET /api/admin/coupons - Get all coupons with filtering and pagination
-export const GET = withMongoose(async (req) => {
+export async function GET(req: Request) {
   try {
-    const session = await auth();
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions);
 
     if (!session || !["SUPER_ADMIN", "ADMIN"].includes(session.user?.role as string)) {
       return NextResponse.json(
@@ -132,11 +134,20 @@ export const GET = withMongoose(async (req) => {
     );
   }
 }
-
-// POST /api/admin/coupons - Create a new coupon
-export const POST = withMongoose(async (req) => {
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}// POST /api/admin/coupons - Create a new coupon
+export async function POST(req: Request) {
   try {
-    const session = await auth();
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
 
     if (!userId || !["SUPER_ADMIN", "ADMIN"].includes(session.user?.role as string)) {
@@ -245,9 +256,11 @@ export const POST = withMongoose(async (req) => {
 }
 
 // PATCH /api/admin/coupons - Update a coupon
-export const PATCH = withMongoose(async (req) => {
+export async function PATCH(req: Request) {
   try {
-    const session = await auth();
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
 
     if (!userId || !["SUPER_ADMIN", "ADMIN"].includes(session.user?.role as string)) {
@@ -369,9 +382,11 @@ export const PATCH = withMongoose(async (req) => {
 }
 
 // DELETE /api/admin/coupons - Delete a coupon
-export const DELETE = withMongoose(async (req) => {
+export async function DELETE(req: Request) {
   try {
-    const session = await auth();
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
 
     if (!userId || !["SUPER_ADMIN", "ADMIN"].includes(session.user?.role as string)) {

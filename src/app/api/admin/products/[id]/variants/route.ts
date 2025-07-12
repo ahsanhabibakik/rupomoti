@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server';
+import { connectDB } from '@/lib/db';
 import { verifyAdminAccess } from '@/lib/admin-auth';
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
 
 
-export const GET = withMongoose(async (req) => {
+
+export async function GET(req: Request) {
+  try {
+    await connectDB();
   try {
     const { authorized } = await verifyAdminAccess();
     if (!authorized) {
@@ -25,5 +28,14 @@ export const GET = withMongoose(async (req) => {
   } catch (error) {
     console.error('Failed to fetch variants:', error);
     return NextResponse.json({ error: 'Failed to fetch variants' }, { status: 500 });
+  }
+}
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

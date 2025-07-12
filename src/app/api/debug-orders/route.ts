@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@/app/auth'
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/auth';
+
 
 
 export async function GET() {
   try {
     console.log('🧪 Debug Orders API called')
     
-    const session = await auth()
+    const session = await getServerSession(authOptions)
     
     console.log('Session data:', {
       hasSession: !!session,

@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server'
 import dbConnect from '@/lib/mongoose'
 import Product from '@/models/Product'
 
-export const GET = withMongoose(async (req) => {
+export async function GET(req: NextRequest) {
+  try {
+    await connectDB();
   try {
     await dbConnect()
 
@@ -69,5 +71,14 @@ export const GET = withMongoose(async (req) => {
       },
       { status: 500 }
     )
+  }
+}
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

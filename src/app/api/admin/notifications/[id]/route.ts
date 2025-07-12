@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/app/auth'
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/auth';
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await auth()
+    const session = await getServerSession(authOptions)
     
     if (!session?.user || !['SUPER_ADMIN', 'ADMIN', 'MANAGER'].includes(session.user.role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -26,7 +27,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await auth()
+    const session = await getServerSession(authOptions)
     
     if (!session?.user || !['SUPER_ADMIN', 'ADMIN', 'MANAGER'].includes(session.user.role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

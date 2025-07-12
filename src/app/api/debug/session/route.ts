@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-export const GET = withMongoose(async (req) => {
+export async function GET(req: Request) {
   try {
-    const session = await auth()
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions)
     
     return NextResponse.json({
       success: true,
@@ -18,5 +20,14 @@ export const GET = withMongoose(async (req) => {
       error: 'Failed to get session',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
+  }
+}
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

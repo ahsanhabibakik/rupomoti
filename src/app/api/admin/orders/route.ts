@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/app/auth";
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
+
 
 import { AuditLogger } from "@/lib/audit-logger";
 import { OptimizedStockManager } from "@/lib/optimized-stock-manager";
@@ -22,11 +22,13 @@ export const revalidate = 0;
 // Type for order where clause
 type OrderWhereInput = Prisma.OrderWhereInput;
 
-export const GET = withMongoose(async (req) => {
+export async function GET(req: Request) {
+  try {
+    await connectDB();
   console.log('🚀 Optimized Admin Orders API - Starting request...');
   
   try {
-    const session = await auth();
+    const session = await getServerSession(authOptions);
     
     // Check authentication
     if (!session?.user?.id) {
@@ -219,11 +221,20 @@ export const GET = withMongoose(async (req) => {
     );
   }
 }
-
-// Optimized order update endpoint
-export const PUT = withMongoose(async (req) => {
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}// Optimized order update endpoint
+export async function PUT(req: Request) {
   try {
-    const session = await auth();
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -276,9 +287,11 @@ export const PUT = withMongoose(async (req) => {
 }
 
 // Optimized order deletion (soft delete)
-export const DELETE = withMongoose(async (req) => {
+export async function DELETE(req: Request) {
   try {
-    const session = await auth();
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -311,9 +324,11 @@ export const DELETE = withMongoose(async (req) => {
 }
 
 // Optimized order creation
-export const POST = withMongoose(async (req) => {
+export async function POST(req: Request) {
   try {
-    const session = await auth();
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions);
     const body = await req.json();
     
     console.log('Order API - Received data:', JSON.stringify(body, null, 2));

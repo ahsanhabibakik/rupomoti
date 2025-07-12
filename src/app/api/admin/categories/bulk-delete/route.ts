@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/app/auth';
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
+import { connectDB } from '@/lib/db';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/auth';
+
 
 import { AuditLogger } from '@/lib/audit-logger';
 
@@ -8,9 +10,11 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 // Support both POST and DELETE methods for better RESTful API design
-export const POST = withMongoose(async (req) => {
+export async function POST(req: Request) {
   try {
-    const session = await auth();
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions);
 
     if (!session || !['SUPER_ADMIN', 'ADMIN'].includes(session.user?.role as string)) {
       return NextResponse.json(
@@ -89,5 +93,14 @@ export const POST = withMongoose(async (req) => {
       { error: 'Failed to delete categories' },
       { status: 500 }
     );
+  }
+}
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

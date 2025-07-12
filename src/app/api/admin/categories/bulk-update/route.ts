@@ -1,15 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/app/auth';
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
+import { connectDB } from '@/lib/db';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/auth';
+
 
 import { AuditLogger } from '@/lib/audit-logger';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export const PATCH = withMongoose(async (req) => {
+export async function PATCH(req: Request) {
   try {
-    const session = await auth();
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions);
     
     // Check authentication and authorization
     if (!session || !['SUPER_ADMIN', 'ADMIN'].includes(session.user?.role as string)) {
@@ -55,5 +59,14 @@ export const PATCH = withMongoose(async (req) => {
   } catch (error) {
     console.error(`Error during bulk ${request.method} categories:`, error);
     return NextResponse.json({ error: 'Failed to process request' }, { status: 500 });
+  }
+}
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

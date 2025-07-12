@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
+import { connectDB } from '@/lib/db';
 
 import { cookies } from 'next/headers';
-import { auth } from '@/app/auth';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/auth';
 import { z } from 'zod';
 import { nanoid } from 'nanoid';
 
@@ -14,7 +15,9 @@ const reviewSchema = z.object({
 });
 
 // Get reviews for a product or user's reviews
-export const GET = withMongoose(async (req) => {
+export async function GET(req: NextRequest) {
+  try {
+    await connectDB();
   try {
     const { searchParams } = new URL(request.url);
     const productId = searchParams.get('productId');
@@ -23,7 +26,7 @@ export const GET = withMongoose(async (req) => {
 
     // If requesting user's own reviews
     if (mine === '1') {
-      const session = await auth();
+      const session = await getServerSession(authOptions);
       if (!session?.user?.id) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
@@ -88,11 +91,20 @@ export const GET = withMongoose(async (req) => {
     return NextResponse.json({ error: 'Failed to fetch reviews' }, { status: 500 });
   }
 }
-
-// Create or update a review
-export const POST = withMongoose(async (req) => {
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}// Create or update a review
+export async function POST(req: NextRequest) {
   try {
-    const session = await auth();
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions);
     const body = await request.json();
     const validatedData = reviewSchema.parse(body);
 
@@ -195,7 +207,9 @@ export const POST = withMongoose(async (req) => {
 }
 
 // Get user's review for a specific product
-export const PUT = withMongoose(async (req) => {
+export async function PUT(req: NextRequest) {
+  try {
+    await connectDB();
   try {
     const { searchParams } = new URL(request.url);
     const productId = searchParams.get('productId');
@@ -204,7 +218,7 @@ export const PUT = withMongoose(async (req) => {
       return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
     }
 
-    const session = await auth();
+    const session = await getServerSession(authOptions);
     let userId: string | null = null;
     let anonymousToken: string | null = null;
 

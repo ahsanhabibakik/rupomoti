@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/app/auth'
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/auth';
 
 
-export const DELETE = withMongoose(async (req) => {
+
+export async function DELETE(req: Request) {
   try {
-    const session = await auth()
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions)
     
     if (!session?.user?.email) {
       console.log('Bulk delete: No session or email')
@@ -79,10 +82,19 @@ export const DELETE = withMongoose(async (req) => {
     )
   }
 }
-
-export const PATCH = withMongoose(async (req) => {
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}export async function PATCH(req: Request) {
   try {
-    const session = await auth()
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions)
     
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

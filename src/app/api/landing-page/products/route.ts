@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server'
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
 
 
-export const GET = withMongoose(async (req) => {
+
+export async function GET(req: Request) {
+  try {
+    await connectDB();
   try {
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '6')
@@ -64,5 +66,14 @@ export const GET = withMongoose(async (req) => {
       { error: 'Failed to fetch products' },
       { status: 500 }
     )
+  }
+}
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

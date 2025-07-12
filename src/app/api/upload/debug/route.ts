@@ -11,7 +11,9 @@ export async function GET() {
   });
 }
 
-export const POST = withMongoose(async (req) => {
+export async function POST(req: NextRequest) {
+  try {
+    await connectDB();
   try {
     console.log('🔧 Debug: Upload endpoint called');
     
@@ -59,5 +61,14 @@ export const POST = withMongoose(async (req) => {
     console.error('💥 Debug: Upload error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Upload failed';
     return NextResponse.json({ error: errorMessage, debug: true }, { status: 500 });
+  }
+}
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

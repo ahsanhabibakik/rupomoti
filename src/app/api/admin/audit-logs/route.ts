@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/app/auth'
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/auth';
 
 
-export const GET = withMongoose(async (req) => {
+
+export async function GET(req: Request) {
   try {
-    const session = await auth()
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions)
     
     console.log('🔐 Audit Logs API - Session check:', {
       hasSession: !!session,
@@ -73,5 +76,14 @@ export const GET = withMongoose(async (req) => {
   } catch (error) {
     console.error('Error fetching audit logs:', error)
     return NextResponse.json({ error: 'Failed to fetch audit logs' }, { status: 500 })
+  }
+}
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/app/auth';
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
+import { connectDB } from '@/lib/db';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/auth';
+
 
 import { hash, compare } from 'bcryptjs';
 
-export const PUT = withMongoose(async (req) => {
+export async function PUT(req: Request) {
   try {
-    const session = await auth();
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -57,5 +61,14 @@ export const PUT = withMongoose(async (req) => {
   } catch (error) {
     console.error('Error updating password:', error);
     return NextResponse.json({ error: 'Failed to update password' }, { status: 500 });
+  }
+}
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

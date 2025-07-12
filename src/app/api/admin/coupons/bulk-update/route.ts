@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/app/auth";
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
 
 
-export const PATCH = withMongoose(async (req) => {
+
+export async function PATCH(req: Request) {
   try {
-    const session = await auth();
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
 
     if (!userId || !["SUPER_ADMIN", "ADMIN"].includes(session.user?.role as string)) {
@@ -86,5 +88,14 @@ export const PATCH = withMongoose(async (req) => {
       { message: "Failed to update coupons" },
       { status: 500 }
     );
+  }
+}
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

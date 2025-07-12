@@ -4,7 +4,9 @@ import { Products, Categories } from '@/lib/services'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-export const GET = withMongoose(async (req) => {
+export async function GET(req: NextRequest) {
+  try {
+    await connectDB();
   try {
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type') || 'featured'
@@ -103,9 +105,18 @@ export const GET = withMongoose(async (req) => {
     )
   }
 }
-
-// Advanced product operations
-export const POST = withMongoose(async (req) => {
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}// Advanced product operations
+export async function POST(req: NextRequest) {
+  try {
+    await connectDB();
   try {
     const body = await request.json()
     const { action, data } = body

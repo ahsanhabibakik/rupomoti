@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from 'zod'
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
+
 
 import { sendEmail } from '@/lib/email'
 
@@ -35,7 +35,9 @@ function getWelcomeEmailHTML(email: string) {
   `
 }
 
-export const POST = withMongoose(async (req) => {
+export async function POST(req: Request) {
+  try {
+    await connectDB();
   try {
     const body = await request.json()
     const validation = subscribeSchema.safeParse(body)
@@ -91,4 +93,13 @@ export const POST = withMongoose(async (req) => {
       { status: 500 }
     )
   }
-} 
+}
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

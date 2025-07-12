@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
+import { connectDB } from '@/lib/db';
 
-import { auth } from '@/app/auth';
+
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/auth';
 
 // Default sections if none are found in the database
 const DEFAULT_SECTIONS = [
@@ -48,7 +50,7 @@ const DEFAULT_SECTIONS = [
 
 // Helper to get session and check for user
 const getSession = async () => {
-  const session = await auth();
+  const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     throw new Error('Unauthorized: No user session found');
   }
@@ -61,7 +63,9 @@ const hasWritePermission = (role?: string) => {
 };
 
 // GET /api/admin/media/sections - Fetch all media sections
-export const GET = withMongoose(async (req) => {
+export async function GET(req: Request) {
+  try {
+    await connectDB();
   try {
     const session = await getSession();
     
@@ -93,5 +97,14 @@ export const GET = withMongoose(async (req) => {
     
     // Return default sections on error instead of failing
     return NextResponse.json(DEFAULT_SECTIONS);
+  }
+}
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

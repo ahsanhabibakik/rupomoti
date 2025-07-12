@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/app/auth'
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/auth';
 import { InventoryManager } from '@/lib/inventory'
 
-export const POST = withMongoose(async (req) => {
+export async function POST(req: Request) {
   try {
-    const session = await auth()
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions)
     
     if (!session?.user || session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -55,10 +58,19 @@ export const POST = withMongoose(async (req) => {
     )
   }
 }
-
-export const GET = withMongoose(async (req) => {
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}export async function GET(req: Request) {
   try {
-    const session = await auth()
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions)
     
     if (!session?.user || session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

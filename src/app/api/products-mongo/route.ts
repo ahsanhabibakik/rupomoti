@@ -5,7 +5,9 @@ import Product from '@/models/Product'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-export const GET = withMongoose(async (req) => {
+export async function GET(req: Request) {
+  try {
+    await connectDB();
   try {
     await dbConnect()
     
@@ -135,8 +137,17 @@ export const GET = withMongoose(async (req) => {
     )
   }
 }
-
-export const POST = withMongoose(async (req) => {
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}export async function POST(req: Request) {
+  try {
+    await connectDB();
   try {
     await dbConnect()
     

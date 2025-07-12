@@ -7,7 +7,7 @@ export async function GET(
   { params }: { params: { productId: string } }
 ) {
   try {
-    const session = await auth()
+    const session = await getServerSession(authOptions)
     
     if (!session?.user || !['ADMIN', 'SUPER_ADMIN', 'MANAGER'].includes(session.user.role)) {
       return NextResponse.json(

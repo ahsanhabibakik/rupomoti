@@ -8,7 +8,9 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-export const POST = withMongoose(async (req) => {
+export async function POST(req: NextRequest) {
+  try {
+    await connectDB();
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
@@ -100,4 +102,13 @@ export const POST = withMongoose(async (req) => {
     const errorMessage = error instanceof Error ? error.message : 'Upload failed';
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
-} 
+}
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

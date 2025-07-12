@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/app/auth";
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
+
 
 import bcrypt from "bcryptjs";
 import { z } from "zod";
@@ -84,9 +84,11 @@ function canReadUsers(userRole: string): boolean {
 }
 
 // GET /api/admin/users - Get all users with filtering and pagination
-export const GET = withMongoose(async (req) => {
+export async function GET(req: Request) {
   try {
-    const session = await auth();
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions);
 
     if (!session || !['SUPER_ADMIN', 'ADMIN'].includes(session.user?.role as string)) {
       return NextResponse.json(
@@ -173,11 +175,20 @@ export const GET = withMongoose(async (req) => {
     );
   }
 }
-
-// POST /api/admin/users - Create a new user
-export const POST = withMongoose(async (req) => {
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}// POST /api/admin/users - Create a new user
+export async function POST(req: Request) {
   try {
-    const session = await auth();
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions);
 
     if (!session || session.user?.role !== 'SUPER_ADMIN') {
       return NextResponse.json(
@@ -241,9 +252,11 @@ export const POST = withMongoose(async (req) => {
 }
 
 // PATCH /api/admin/users - Update a user
-export const PATCH = withMongoose(async (req) => {
+export async function PATCH(req: Request) {
   try {
-    const session = await auth();
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions);
 
     if (!session || !['SUPER_ADMIN', 'ADMIN'].includes(session.user?.role as string)) {
       return NextResponse.json(
@@ -395,9 +408,11 @@ export const PATCH = withMongoose(async (req) => {
 }
 
 // DELETE /api/admin/users - Delete a user
-export const DELETE = withMongoose(async (req) => {
+export async function DELETE(req: Request) {
   try {
-    const session = await auth();
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions);
 
     if (!session || session.user?.role !== 'SUPER_ADMIN') {
       return NextResponse.json(

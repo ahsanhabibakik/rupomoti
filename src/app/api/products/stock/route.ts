@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { connectDB } from '@/lib/db';
 
-import { auth } from '@/app/auth';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/auth';
 
 const prisma = new PrismaClient();
 
 // Update product stock
-export const PATCH = withMongoose(async (req) => {
+export async function PATCH(req: Request) {
   try {
-    const session = await auth();
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions);
     
     if (!session?.user || !['SUPER_ADMIN', 'ADMIN', 'MANAGER'].includes(session.user.role as string)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -84,11 +88,20 @@ export const PATCH = withMongoose(async (req) => {
     }, { status: 500 });
   }
 }
-
-// Bulk stock update
-export const POST = withMongoose(async (req) => {
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}// Bulk stock update
+export async function POST(req: Request) {
   try {
-    const session = await auth();
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions);
     
     if (!session?.user || !['SUPER_ADMIN', 'ADMIN'].includes(session.user.role as string)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

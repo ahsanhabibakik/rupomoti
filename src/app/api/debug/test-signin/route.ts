@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { signIn } from 'next-auth/react'
 
-export const POST = withMongoose(async (req) => {
+export async function POST(req: Request) {
+  try {
+    await connectDB();
   try {
     const { email, password } = await request.json()
     
@@ -22,5 +24,14 @@ export const POST = withMongoose(async (req) => {
       error: 'Test failed',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
+  }
+}
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

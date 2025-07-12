@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@/app/auth'
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/auth';
+
 
 import { generateUniqueOrderNumber } from '@/lib/server/order-number-generator'
 import { StockManager } from '@/lib/stock-manager'
@@ -39,9 +40,11 @@ export async function GET() {
   }
 }
 
-export const PUT = withMongoose(async (req) => {
+export async function PUT(req: Request) {
   try {
-    const session = await auth()
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions)
 
     if (!session) {
       return NextResponse.json(
@@ -77,10 +80,19 @@ export const PUT = withMongoose(async (req) => {
     )
   }
 }
-
-export const DELETE = withMongoose(async (req) => {
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}export async function DELETE(req: Request) {
   try {
-    const session = await auth()
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions)
 
     if (!session) {
       return NextResponse.json(
@@ -113,9 +125,11 @@ export const DELETE = withMongoose(async (req) => {
   }
 }
 
-export const POST = withMongoose(async (req) => {
+export async function POST(req: Request) {
   try {
-    const session = await auth();
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions);
     const body = await req.json();
     
     console.log('Order API - Received data:', JSON.stringify(body, null, 2));

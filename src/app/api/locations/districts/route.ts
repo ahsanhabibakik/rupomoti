@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { connectDB } from '@/lib/db';
 import { BANGLADESH_DISTRICTS } from '@/lib/constants/bangladesh-locations';
 
 export async function GET() {

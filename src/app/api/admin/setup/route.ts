@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server'
 import { hash } from 'bcryptjs'
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
 
 
-export const POST = withMongoose(async (req) => {
+
+export async function POST(req: Request) {
+  try {
+    await connectDB();
   try {
     const { email, password, name } = await req.json()
 
@@ -53,4 +55,13 @@ export const POST = withMongoose(async (req) => {
       { status: 500 }
     )
   }
-} 
+}
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

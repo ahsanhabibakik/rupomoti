@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from 'zod';
-import { auth } from '@/app/auth';
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/auth';
+
 
 // Define OrderStatus type to replace Prisma import
 const OrderStatus = {
@@ -37,7 +38,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: { orderId: string } }
 ) {
-  const session = await auth();
+  const session = await getServerSession(authOptions);
   if (!session?.user?.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -181,7 +182,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { orderId: string } }
 ) {
-  const session = await auth();
+  const session = await getServerSession(authOptions);
   if (!session?.user?.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }

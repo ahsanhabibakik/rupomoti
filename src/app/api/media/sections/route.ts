@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
+
 
 
 // GET - Fetch all media sections
 export async function GET() {
   try {
-    const session = await auth()
+    const session = await getServerSession(authOptions)
     if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -22,9 +22,11 @@ export async function GET() {
 }
 
 // POST - Create new media section
-export const POST = withMongoose(async (req) => {
+export async function POST(req: Request) {
   try {
-    const session = await auth()
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions)
     if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -52,11 +54,20 @@ export const POST = withMongoose(async (req) => {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
-
-// PUT - Update media section
-export const PUT = withMongoose(async (req) => {
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}// PUT - Update media section
+export async function PUT(req: Request) {
   try {
-    const session = await auth()
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions)
     if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

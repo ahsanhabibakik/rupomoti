@@ -1,12 +1,15 @@
-import { auth } from '@/app/auth';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/auth';
 import { NextResponse } from 'next/server'
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
+
 
 import { getAuthSession } from '@/lib/auth'
 import { z } from 'zod'
 
-export const GET = withMongoose(async (req) => {
-  const session = await auth()
+export async function GET(req: Request) {
+  try {
+    await connectDB();
+  const session = await getServerSession(authOptions)
   if (!session?.user?.isAdmin) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
   }
@@ -21,13 +24,22 @@ export const GET = withMongoose(async (req) => {
     return NextResponse.json({ message: 'An unexpected error occurred.' }, { status: 500 })
   }
 }
-
-const createTagSchema = z.object({
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}const createTagSchema = z.object({
   name: z.string().min(1, 'Tag name cannot be empty.'),
 })
 
-export const POST = withMongoose(async (req) => {
-  const session = await auth()
+export async function POST(req: Request) {
+  try {
+    await connectDB();
+  const session = await getServerSession(authOptions)
   if (!session?.user?.isAdmin) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
   }

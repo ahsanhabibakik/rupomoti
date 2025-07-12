@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/app/auth";
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
+
 
 import { z } from "zod";
 
@@ -8,9 +8,11 @@ const bulkDeleteSchema = z.object({
   userIds: z.array(z.string()).min(1, "At least one user ID is required"),
 });
 
-export const POST = withMongoose(async (req) => {
+export async function POST(req: Request) {
   try {
-    const session = await auth();
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions);
 
     if (!session || session.user?.role !== 'SUPER_ADMIN') {
       return NextResponse.json(
@@ -80,5 +82,14 @@ export const POST = withMongoose(async (req) => {
       { message: "Failed to delete users" },
       { status: 500 }
     );
+  }
+}
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

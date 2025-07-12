@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
+import { connectDB } from '@/lib/db';
+
 
 import { z } from 'zod';
 import { getPathaoAccessToken, fetchPathaoCities, fetchPathaoZones } from '@/lib/pathao';
@@ -32,7 +33,9 @@ async function fetchAllPathaoLocations() {
   return allLocations;
 }
 
-export const POST = withMongoose(async (req) => {
+export async function POST(req: Request) {
+  try {
+    await connectDB();
   try {
     const env = syncEnvSchema.parse(process.env);
     const secret = request.headers.get('x-sync-secret');
@@ -68,4 +71,13 @@ export const POST = withMongoose(async (req) => {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
     return NextResponse.json({ error: 'Failed to sync locations', details: errorMessage }, { status: 500 });
   }
-} 
+}
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

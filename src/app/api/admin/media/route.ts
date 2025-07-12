@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
+import { connectDB } from '@/lib/db';
 
-import { auth } from '@/app/auth';
+
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/auth';
 import { z } from 'zod';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
@@ -9,7 +11,7 @@ import { existsSync } from 'fs';
 
 // Helper to get session and check for user
 const getSession = async () => {
-  const session = await auth();
+  const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     throw new Error('Unauthorized: No user session found');
   }
@@ -22,7 +24,9 @@ const hasWritePermission = (role?: string) => {
 };
 
 // GET /api/admin/media - Fetch all media
-export const GET = withMongoose(async (req) => {
+export async function GET(req: Request) {
+  try {
+    await connectDB();
   try {
     const session = await getSession();
     // Allow read access for more roles if needed, for now restricted
@@ -40,8 +44,15 @@ export const GET = withMongoose(async (req) => {
     return NextResponse.json({ error: errorMessage }, { status: statusCode });
   }
 }
-
-// Helper to upload a file to local storage
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}// Helper to upload a file to local storage
 const uploadFile = async (file: File, section: string) => {
   // Check if this is an SVG from Cloudinary - if so, don't save it locally
   if ((file.type === 'image/svg+xml' || file.name.endsWith('.svg')) && file.name.includes('cloudinary')) {
@@ -82,7 +93,9 @@ const uploadFile = async (file: File, section: string) => {
 };
 
 // POST /api/admin/media - Upload new media
-export const POST = withMongoose(async (req) => {
+export async function POST(req: Request) {
+  try {
+    await connectDB();
   try {
     const session = await getSession();
     if (!hasWritePermission(session.user.role)) {
@@ -242,7 +255,9 @@ const updateSchema = z.object({
 });
 
 // PUT /api/admin/media?id=... - Update media details
-export const PUT = withMongoose(async (req) => {
+export async function PUT(req: Request) {
+  try {
+    await connectDB();
   try {
     const session = await getSession();
     if (!hasWritePermission(session.user.role)) {
@@ -368,10 +383,20 @@ export const PUT = withMongoose(async (req) => {
     const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
-}
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}}
 
 // DELETE /api/admin/media?id=... - Delete media
-export const DELETE = withMongoose(async (req) => {
+export async function DELETE(req: Request) {
+  try {
+    await connectDB();
   try {
     const session = await getSession();
     if (!hasWritePermission(session.user.role)) {

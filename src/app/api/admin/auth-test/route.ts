@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/app/auth';
+import { connectDB } from '@/lib/db';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/auth';
 
 export async function GET() {
   try {
-    const session = await auth();
+    const session = await getServerSession(authOptions);
     
     if (!session?.user) {
       return NextResponse.json({ 

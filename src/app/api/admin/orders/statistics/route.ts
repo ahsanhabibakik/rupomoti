@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/app/auth";
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
 
 
-export const GET = withMongoose(async (req) => {
+
+export async function GET(req: Request) {
   try {
-    const session = await auth();
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions);
     if (!session?.user?.isAdmin && session?.user?.role !== 'ADMIN' && session?.user?.role !== 'MANAGER') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -54,5 +56,14 @@ export const GET = withMongoose(async (req) => {
       { error: 'Failed to fetch order statistics' },
       { status: 500 }
     );
+  }
+}
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

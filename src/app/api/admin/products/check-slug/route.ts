@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
+import { connectDB } from '@/lib/db';
 import { verifyAdminAccess } from '@/lib/admin-auth';
 import { isSlugAvailable, validateSlug } from '@/lib/utils/slug';
 
-export const GET = withMongoose(async (req) => {
+export async function GET(req: Request) {
+  try {
+    await connectDB();
   try {
     const { authorized } = await verifyAdminAccess();
     if (!authorized) {
@@ -37,5 +40,14 @@ export const GET = withMongoose(async (req) => {
   } catch (error) {
     console.error('Failed to check slug availability:', error);
     return NextResponse.json({ error: 'Failed to check slug availability' }, { status: 500 });
+  }
+}
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

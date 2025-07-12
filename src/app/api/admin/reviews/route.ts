@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
+import { connectDB } from '@/lib/db';
 import { verifyAdminAccess } from '@/lib/admin-auth';
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
+
 
 import { z } from 'zod';
 
@@ -11,7 +12,9 @@ const moderationSchema = z.object({
 });
 
 // Get pending reviews for moderation
-export const GET = withMongoose(async (req) => {
+export async function GET(req: Request) {
+  try {
+    await connectDB();
   try {
     const { authorized } = await verifyAdminAccess();
     if (!authorized) {
@@ -79,9 +82,18 @@ export const GET = withMongoose(async (req) => {
     return NextResponse.json({ error: 'Failed to fetch reviews' }, { status: 500 });
   }
 }
-
-// Moderate a review (approve/reject)
-export const POST = withMongoose(async (req) => {
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}// Moderate a review (approve/reject)
+export async function POST(req: Request) {
+  try {
+    await connectDB();
   try {
     const { authorized, user } = await verifyAdminAccess();
     if (!authorized || !user) {
@@ -161,7 +173,9 @@ export const POST = withMongoose(async (req) => {
 }
 
 // Bulk moderation
-export const PUT = withMongoose(async (req) => {
+export async function PUT(req: Request) {
+  try {
+    await connectDB();
   try {
     const { authorized, user } = await verifyAdminAccess();
     if (!authorized || !user) {

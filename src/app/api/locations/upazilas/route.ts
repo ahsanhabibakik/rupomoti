@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
+import { connectDB } from '@/lib/db';
 import { BANGLADESH_UPAZILAS, BANGLADESH_DISTRICTS } from '@/lib/constants/bangladesh-locations';
 
-export const GET = withMongoose(async (req) => {
+export async function GET(req: Request) {
+  try {
+    await connectDB();
     try {
         const { searchParams } = new URL(request.url);
         const districtName = searchParams.get('district');
@@ -32,4 +35,13 @@ export const GET = withMongoose(async (req) => {
         console.error("Error fetching upazilas:", error);
         return NextResponse.json({ error: 'Failed to fetch upazilas' }, { status: 500 });
     }
-} 
+}
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

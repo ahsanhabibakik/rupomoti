@@ -7,7 +7,7 @@ export async function GET(
   { params }: { params: { orderId: string } }
 ) {
   try {
-    const session = await auth()
+    const session = await getServerSession(authOptions)
     const orderId = params.orderId
 
     if (!session?.user) {
@@ -42,7 +42,7 @@ export async function POST(
   { params }: { params: { orderId: string } }
 ) {
   try {
-    const session = await auth()
+    const session = await getServerSession(authOptions)
     
     if (!session?.user || !['ADMIN', 'SUPER_ADMIN', 'MANAGER'].includes(session.user.role)) {
       return NextResponse.json(

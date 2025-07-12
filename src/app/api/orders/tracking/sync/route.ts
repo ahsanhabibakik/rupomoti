@@ -3,9 +3,11 @@ import { auth } from '@/lib/auth'
 import { OrderTrackingManager } from '@/lib/order-tracking'
 
 // POST /api/orders/tracking/sync - Sync order statuses with courier
-export const POST = withMongoose(async (req) => {
+export async function POST(req: Request) {
   try {
-    const session = await auth()
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions)
     
     if (!session?.user || !['ADMIN', 'SUPER_ADMIN', 'MANAGER'].includes(session.user.role)) {
       return NextResponse.json(
@@ -50,11 +52,20 @@ export const POST = withMongoose(async (req) => {
     )
   }
 }
-
-// GET /api/orders/tracking/sync - Get tracking info for multiple orders
-export const GET = withMongoose(async (req) => {
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}// GET /api/orders/tracking/sync - Get tracking info for multiple orders
+export async function GET(req: Request) {
   try {
-    const session = await auth()
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions)
     
     if (!session?.user || !['ADMIN', 'SUPER_ADMIN', 'MANAGER'].includes(session.user.role)) {
       return NextResponse.json(

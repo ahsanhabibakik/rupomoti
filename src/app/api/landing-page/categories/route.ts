@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server'
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
 
 
-export const GET = withMongoose(async (req) => {
+
+export async function GET(req: Request) {
+  try {
+    await connectDB();
   try {
     // Fetch active categories for landing page
     const categories = await prisma.category.findMany({
@@ -55,8 +57,15 @@ export const GET = withMongoose(async (req) => {
     )
   }
 }
-
-// Helper function to get Bangla category names
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}// Helper function to get Bangla category names
 function getBanglaName(englishName: string): string {
   const translations: Record<string, string> = {
     'Necklaces': 'হার',

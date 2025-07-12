@@ -9,8 +9,10 @@
  * }
  */
 import { NextResponse } from 'next/server';
-import { auth } from '@/app/auth';
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
+import { connectDB } from '@/lib/db';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/auth';
+
 
 import { z } from 'zod';
 
@@ -183,8 +185,10 @@ async function getRedxAreaInfo(district: string, areaName: string) {
 }
 
 // --- Main API Handler ---
-export const POST = withMongoose(async (req) => {
-    const session = await auth();
+export async function POST(req: Request) {
+  try {
+    await connectDB();
+    const session = await getServerSession(authOptions);
     if (!session || !['SUPER_ADMIN', 'ADMIN', 'MANAGER'].includes(session.user?.role as string)) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -361,4 +365,13 @@ export const POST = withMongoose(async (req) => {
         console.error('💥 Shipment creation failed:', error.message);
         return NextResponse.json({ error: error.message || 'An unexpected error occurred.' }, { status: 500 });
     }
-} 
+}
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

@@ -1,12 +1,16 @@
 import { NextResponse } from 'next/server';
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
+import { connectDB } from '@/lib/db';
 
-import { auth } from '@/app/auth';
+
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/auth';
 import { AuditLogger } from '@/lib/audit-logger';
 
-export const POST = withMongoose(async (req) => {
+export async function POST(req: Request) {
   try {
-    const session = await auth();
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions);
     if (
       !session ||
       !session.user ||
@@ -60,5 +64,14 @@ export const POST = withMongoose(async (req) => {
       { error: 'Failed to delete customers' },
       { status: 500 }
     );
+  }
+}
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

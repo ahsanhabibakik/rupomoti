@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
+import { connectDB } from '@/lib/db';
 
 
 export const revalidate = 60; // Revalidate every 60 seconds

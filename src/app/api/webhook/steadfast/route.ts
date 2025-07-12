@@ -6,7 +6,9 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 // Webhook handler for Steadfast delivery status updates
-export const POST = withMongoose(async (req) => {
+export async function POST(req: NextRequest) {
+  try {
+    await connectDB();
   try {
     // Verify webhook auth token
     const authHeader = request.headers.get('authorization')
@@ -40,8 +42,15 @@ export const POST = withMongoose(async (req) => {
     return NextResponse.json({ status: 'error', message: 'Internal server error' }, { status: 500 })
   }
 }
-
-async function handleDeliveryStatus(payload: Record<string, unknown>) {
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}async function handleDeliveryStatus(payload: Record<string, unknown>) {
   try {
     await dbConnect()
     

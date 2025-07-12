@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
+import { connectDB } from '@/lib/db';
 import { verifyAdminAccess } from '@/lib/admin-auth';
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
+
 
 import { generateUniqueSlugFromDB, validateSlug, isSlugAvailable } from '@/lib/utils/slug';
 
-export const GET = withMongoose(async (req) => {
+export async function GET(req: Request) {
+  try {
+    await connectDB();
   try {
     const { authorized } = await verifyAdminAccess();
     if (!authorized) {
@@ -91,8 +94,17 @@ export const GET = withMongoose(async (req) => {
     return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
   }
 }
-
-export const POST = withMongoose(async (req) => {
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}export async function POST(req: Request) {
+  try {
+    await connectDB();
   try {
     const { authorized } = await verifyAdminAccess();
     if (!authorized) {
@@ -168,7 +180,9 @@ export const POST = withMongoose(async (req) => {
   }
 }
 
-export const PUT = withMongoose(async (req) => {
+export async function PUT(req: Request) {
+  try {
+    await connectDB();
   try {
     const { authorized } = await verifyAdminAccess();
     if (!authorized) {
@@ -286,7 +300,9 @@ export const PUT = withMongoose(async (req) => {
   }
 }
 
-export const DELETE = withMongoose(async (req) => {
+export async function DELETE(req: Request) {
+  try {
+    await connectDB();
     try {
       const { authorized } = await verifyAdminAccess();
       if (!authorized) {
@@ -312,7 +328,9 @@ export const DELETE = withMongoose(async (req) => {
     }
 }
 
-export const PATCH = withMongoose(async (req) => {
+export async function PATCH(req: Request) {
+  try {
+    await connectDB();
   try {
     const { authorized } = await verifyAdminAccess();
     if (!authorized) {

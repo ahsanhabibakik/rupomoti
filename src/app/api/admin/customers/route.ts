@@ -1,141 +1,153 @@
-import { NextResponse } from 'next/server';
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
+import { NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth/next'
+import authOptions from '@/app/auth'
+import dbConnect from '@/lib/mongoose'
+import User from '@/models/User'
+import Order from '@/models/Order'
 
-import { auth } from '@/app/auth';
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
-
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-
-export const GET = withMongoose(async (req) => {
+export async function GET(request: Request) {
   try {
-    const session = await auth();
+    const session = await getServerSession(authOptions)
+    
     if (
       !session ||
       !session.user ||
       !['ADMIN', 'MANAGER', 'SUPER_ADMIN'].includes(session.user.role)
     ) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { searchParams } = new URL(request.url);
-    const search = searchParams.get('search');
-    const status = searchParams.get('status') || 'all';
-    const from = searchParams.get('from');
-    const to = searchParams.get('to');
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20', 10)));
-    const offset = (page - 1) * limit;
+    await dbConnect()
 
-    console.log('📊 Query params:', { search, status, from, to, page, limit });
+    const { searchParams } = new URL(request.url)
+    const search = searchParams.get('search')
+    const status = searchParams.get('status') || 'all'
+    const from = searchParams.get('from')
+    const to = searchParams.get('to')
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10))
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20', 10)))
+    const offset = (page - 1) * limit
 
-    // Build where clause
-    const where: Prisma.CustomerWhereInput = {};
+    console.log('📊 Query params:', { search, status, from, to, page, limit })
+
+    // Build query
+    const query: any = {}
     
     // Search filter
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } },
-        { phone: { contains: search, mode: 'insensitive' } },
-      ];
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { phone: { $regex: search, $options: 'i' } },
+      ]
     }
 
     // Status filter
     switch (status) {
       case 'verified':
-        where.isVerified = true;
-        break;
+        query.isVerified = true
+        break
       case 'unverified':
-        where.isVerified = false;
-        break;
-      case 'flagged':
-        where.isFlagged = true;
-        break;
-      case 'vip':
-        // VIP customers are those with high total spending
-        // We'll filter this after the query since we need to calculate total spent
-        break;
+        query.isVerified = false
+        break
+      case 'admin':
+        query.role = { $in: ['ADMIN', 'SUPER_ADMIN', 'MANAGER'] }
+        break
+      case 'user':
+        query.role = 'USER'
+        break
     }
 
     // Date range filter
     if (from && to) {
-      where.createdAt = {
-        gte: new Date(from),
-        lte: new Date(to)
-      };
+      query.createdAt = {
+        $gte: new Date(from),
+        $lte: new Date(to)
+      }
     }
 
-    console.log('🔍 Where clause:', JSON.stringify(where, null, 2));
+    console.log('🔍 Query:', JSON.stringify(query, null, 2))
 
     // Execute parallel queries for better performance
     const [customers, totalCount] = await Promise.all([
-      prisma.customer.findMany({
-        where,
-        include: {
-          orders: {
-            select: {
-              id: true,
-              total: true,
-              status: true,
-              createdAt: true,
-              orderNumber: true
-            },
-            orderBy: { createdAt: 'desc' },
-            take: 5 // Only get recent orders for details
-          },
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              image: true
-            }
+      User.find(query)
+        .select('-password') // Exclude password field
+        .sort({ createdAt: -1 })
+        .skip(offset)
+        .limit(limit)
+        .lean(),
+      User.countDocuments(query)
+    ])
+
+    // Get order statistics for each customer
+    const customersWithStats = await Promise.all(
+      customers.map(async (customer: any) => {
+        try {
+          const orders = await Order.find({ userId: customer._id })
+            .select('total status createdAt orderNumber')
+            .sort({ createdAt: -1 })
+            .limit(5)
+            .lean()
+
+          const allOrders = await Order.find({ userId: customer._id })
+            .select('total')
+            .lean()
+
+          const totalSpent = allOrders.reduce((sum: number, order: any) => sum + (order.total || 0), 0)
+          const totalOrders = allOrders.length
+          const averageOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0
+          const lastOrderDate = orders.length > 0 ? orders[0].createdAt : null
+
+          return {
+            id: customer._id.toString(),
+            name: customer.name,
+            email: customer.email,
+            phone: customer.phone,
+            image: customer.image,
+            role: customer.role || 'USER',
+            isVerified: customer.isVerified || false,
+            totalOrders,
+            totalSpent,
+            averageOrderValue,
+            lastOrderDate,
+            createdAt: customer.createdAt,
+            updatedAt: customer.updatedAt,
+            recentOrders: orders
           }
-        },
-        orderBy: { createdAt: 'desc' },
-        skip: offset,
-        take: limit
-      }),
-      prisma.customer.count({ where })
-    ]);
-
-    // Process customers data to include calculated fields
-    const processedCustomers = customers.map(customer => {
-      const totalSpent = customer.orders.reduce((sum, order) => sum + order.total, 0);
-      const totalOrders = customer.orders.length;
-      const averageOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0;
-      const lastOrderDate = customer.orders.length > 0 ? customer.orders[0].createdAt : null;
-
-      return {
-        id: customer.id,
-        name: customer.name,
-        email: customer.email,
-        phone: customer.phone,
-        image: customer.image,
-        role: customer.role || 'USER',
-        isVerified: customer.isVerified || false,
-        isFlagged: customer.isFlagged || false,
-        totalOrders,
-        totalSpent,
-        averageOrderValue,
-        lastOrderDate,
-        createdAt: customer.createdAt,
-        updatedAt: customer.updatedAt,
-        orders: customer.orders,
-        user: customer.user
-      };
-    });
+        } catch (error) {
+          console.error('Error processing customer stats:', error)
+          return {
+            id: customer._id.toString(),
+            name: customer.name,
+            email: customer.email,
+            phone: customer.phone,
+            image: customer.image,
+            role: customer.role || 'USER',
+            isVerified: customer.isVerified || false,
+            totalOrders: 0,
+            totalSpent: 0,
+            averageOrderValue: 0,
+            lastOrderDate: null,
+            createdAt: customer.createdAt,
+            updatedAt: customer.updatedAt,
+            recentOrders: []
+          }
+        }
+      })
+    )
 
     // Filter VIP customers if requested
-    let filteredCustomers = processedCustomers;
+    let filteredCustomers = customersWithStats
     if (status === 'vip') {
-      filteredCustomers = processedCustomers.filter(c => c.totalSpent > 50000); // VIP threshold
+      filteredCustomers = customersWithStats.filter((c: any) => c.totalSpent > 50000) // VIP threshold
     }
 
-    const totalPages = Math.ceil(totalCount / limit);
+    const totalPages = Math.ceil(totalCount / limit)
 
-    console.log(`✅ Returning ${filteredCustomers.length} customers (page ${page}/${totalPages})`);
+    console.log(`✅ Returning ${filteredCustomers.length} customers (page ${page}/${totalPages})`)
 
     return NextResponse.json({
       customers: filteredCustomers,
@@ -143,12 +155,15 @@ export const GET = withMongoose(async (req) => {
       page,
       totalPages,
       limit
-    });
+    })
   } catch (error) {
-    console.error('❌ Failed to fetch customers:', error);
+    console.error('❌ Failed to fetch customers:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch customers' },
+      { 
+        error: 'Failed to fetch customers',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
-    );
+    )
   }
 }

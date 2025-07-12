@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/app/auth";
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
+
 
 
 export async function GET() {
   try {
-    const session = await auth();
+    const session = await getServerSession(authOptions);
 
     if (!session || !['SUPER_ADMIN', 'ADMIN'].includes(session.user?.role as string)) {
       return NextResponse.json(
@@ -39,9 +39,11 @@ export async function GET() {
   }
 }
 
-export const PATCH = withMongoose(async (req) => {
+export async function PATCH(req: Request) {
   try {
-    const session = await auth();
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions);
 
     if (!session || !['SUPER_ADMIN', 'ADMIN'].includes(session.user?.role as string)) {
       return NextResponse.json(
@@ -98,5 +100,14 @@ export const PATCH = withMongoose(async (req) => {
       { message: "Something went wrong" },
       { status: 500 }
     );
+  }
+}
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

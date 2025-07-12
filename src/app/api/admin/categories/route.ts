@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/app/auth';
-import { withMongoose, parseQueryParams, getPaginationParams } from '@/lib/mongoose-utils';
+import { connectDB } from '@/lib/db';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/auth';
+
 
 import { z } from 'zod';
 
@@ -26,9 +28,11 @@ const querySchema = z.object({
 });
 
 // GET /api/admin/categories - Get all categories with filtering and pagination
-export const GET = withMongoose(async (req) => {
+export async function GET(req: Request) {
   try {
-    const session = await auth();
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions);
 
     if (!session || !['SUPER_ADMIN', 'ADMIN'].includes(session.user?.role as string)) {
       return NextResponse.json(
@@ -128,11 +132,20 @@ export const GET = withMongoose(async (req) => {
     );
   }
 }
-
-// POST /api/admin/categories - Create new category
-export const POST = withMongoose(async (req) => {
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}} catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}// POST /api/admin/categories - Create new category
+export async function POST(req: Request) {
   try {
-    const session = await auth();
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions);
 
     if (!session || !['SUPER_ADMIN', 'ADMIN'].includes(session.user?.role as string)) {
       return NextResponse.json(
@@ -200,9 +213,11 @@ export const POST = withMongoose(async (req) => {
 }
 
 // PUT /api/admin/categories - Update category
-export const PUT = withMongoose(async (req) => {
+export async function PUT(req: Request) {
   try {
-    const session = await auth();
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions);
 
     if (!session || !['SUPER_ADMIN', 'ADMIN'].includes(session.user?.role as string)) {
       return NextResponse.json(
@@ -293,9 +308,11 @@ export const PUT = withMongoose(async (req) => {
 }
 
 // DELETE /api/admin/categories - Delete category
-export const DELETE = withMongoose(async (req) => {
+export async function DELETE(req: Request) {
   try {
-    const session = await auth();
+    await connectDB();
+  try {
+    const session = await getServerSession(authOptions);
 
     if (!session || !['SUPER_ADMIN', 'ADMIN'].includes(session.user?.role as string)) {
       return NextResponse.json(
