@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/auth';
+import authOptions from '@/app/auth';
 import { connectDB } from '@/lib/db';
 
 
@@ -22,8 +22,7 @@ export async function GET() {
     console.error('Error fetching addresses:', error);
     return NextResponse.json({ error: 'Failed to fetch addresses' }, { status: 500 });
   }
-  }
-}}
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -33,7 +32,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = await req.json();
     const { name, phone, street, city, state, postalCode, country } = body;
 
     if (!name || !phone || !street || !city || !state || !postalCode || !country) {
@@ -68,7 +67,7 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = await req.json();
     const { id, name, phone, street, city, state, postalCode, country } = body;
 
     if (!id || !name || !phone || !street || !city || !state || !postalCode || !country) {
@@ -112,7 +111,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = await req.json();
     const { id } = body;
 
     if (!id) {

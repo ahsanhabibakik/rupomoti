@@ -72,10 +72,9 @@ export async function GET(req: Request) {
 
     console.log('📊 Audit Logs found for order:', auditLogs.length);
 
-    return NextResponse.json(auditLogs)
+    return NextResponse.json(auditLogs);
   } catch (error) {
-    console.error('Error fetching audit logs:', error)
+    console.error('Error fetching audit logs:', error);
     return NextResponse.json({ error: 'Failed to fetch audit logs' }, { status: 500 });
   }
-}
 }

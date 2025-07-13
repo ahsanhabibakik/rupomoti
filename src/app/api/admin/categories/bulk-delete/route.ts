@@ -13,7 +13,6 @@ export const revalidate = 0;
 export async function POST(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
 
     if (!session || !['SUPER_ADMIN', 'ADMIN'].includes(session.user?.role as string)) {
@@ -23,7 +22,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const body = await request.json();
+    const body = await req.json();
     const { categoryIds } = body;
 
     if (!categoryIds || !Array.isArray(categoryIds) || categoryIds.length === 0) {
@@ -94,5 +93,4 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
-}
 }

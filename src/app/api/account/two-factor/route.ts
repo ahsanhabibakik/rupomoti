@@ -1,9 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import { getServerSession } from 'next-auth/next';
 import authOptions from '@/app/auth';
-
-
+import User from '@/models/User';
 import { randomBytes } from 'crypto';
 
 // Email service (you might want to use a proper email service like SendGrid, Nodemailer, etc.)
@@ -15,20 +14,14 @@ async function sendVerificationEmail(email: string, code: string) {
 
 export async function GET() {
   try {
+    await connectDB();
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { 
-        id: true, 
-        email: true,
-        twoFactorEnabled: true,
-        twoFactorMethod: true
-      }
-    });
+    const user = await User.findById(session.user.id)
+      .select('+twoFactorEnabled +twoFactorMethod');
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -47,24 +40,15 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = await req.json();
     const { action, verificationCode } = body;
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { 
-        id: true, 
-        email: true,
-        twoFactorEnabled: true,
-        twoFactorSecret: true
-      }
-    });
+    const user = await User.findById(session.user.id).select('+email +twoFactorEnabled +twoFactorSecret');
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -78,14 +62,10 @@ export async function POST(req: Request) {
       // Store the verification code temporarily (expires in 10 minutes)
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
       
-      await prisma.user.update({
-        where: { id: session.user.id },
-        data: {
-          twoFactorSecret: secret,
-          twoFactorCode: code,
-          twoFactorCodeExpires: expiresAt
-        }
-      });
+      user.twoFactorSecret = secret;
+      user.twoFactorCode = code;
+      user.twoFactorCodeExpires = expiresAt;
+      await user.save();
 
       // Send verification email
       await sendVerificationEmail(user.email!, code);
@@ -101,13 +81,8 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Verification code is required' }, { status: 400 });
       }
 
-      const userWithCode = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { 
-          twoFactorCode: true,
-          twoFactorCodeExpires: true
-        }
-      });
+      const userWithCode = await User.findById(session.user.id)
+        .select('+twoFactorCode +twoFactorCodeExpires');
 
       if (!userWithCode?.twoFactorCode || !userWithCode?.twoFactorCodeExpires) {
         return NextResponse.json({ error: 'No verification code found' }, { status: 400 });
@@ -122,15 +97,11 @@ export async function POST(req: Request) {
       }
 
       // Enable 2FA
-      await prisma.user.update({
-        where: { id: session.user.id },
-        data: {
-          twoFactorEnabled: true,
-          twoFactorMethod: 'email',
-          twoFactorCode: null,
-          twoFactorCodeExpires: null
-        }
-      });
+      userWithCode.twoFactorEnabled = true;
+      userWithCode.twoFactorMethod = 'email';
+      userWithCode.twoFactorCode = null;
+      userWithCode.twoFactorCodeExpires = null;
+      await userWithCode.save();
 
       return NextResponse.json({ 
         message: 'Two-factor authentication has been enabled successfully!',
@@ -139,16 +110,12 @@ export async function POST(req: Request) {
     }
 
     if (action === 'disable') {
-      await prisma.user.update({
-        where: { id: session.user.id },
-        data: {
-          twoFactorEnabled: false,
-          twoFactorMethod: null,
-          twoFactorSecret: null,
-          twoFactorCode: null,
-          twoFactorCodeExpires: null
-        }
-      });
+      user.twoFactorEnabled = false;
+      user.twoFactorMethod = null;
+      user.twoFactorSecret = null;
+      user.twoFactorCode = null;
+      user.twoFactorCodeExpires = null;
+      await user.save();
 
       return NextResponse.json({ 
         message: 'Two-factor authentication has been disabled.',
@@ -161,5 +128,4 @@ export async function POST(req: Request) {
     console.error('Error managing 2FA:', error);
     return NextResponse.json({ error: 'Failed to manage 2FA' }, { status: 500 });
   }
-}
 }

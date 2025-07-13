@@ -12,7 +12,6 @@ export const revalidate = 0;
 export async function PATCH(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
     
     // Check authentication and authorization
@@ -21,7 +20,7 @@ export async function PATCH(req: Request) {
     }
 
     // Parse request body
-    const body = await request.json().catch(() => ({}));
+    const body = await req.json().catch(() => ({}));
     const { action, categoryIds } = body;
 
     // Validate input
@@ -57,8 +56,7 @@ export async function PATCH(req: Request) {
       count: updatedCategories.count
     });
   } catch (error) {
-    console.error(`Error during bulk ${request.method} categories:`, error);
+    console.error(`Error during bulk ${req.method} categories:`, error);
     return NextResponse.json({ error: 'Failed to process request' }, { status: 500 });
   }
-}
 }
