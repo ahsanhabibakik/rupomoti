@@ -25,19 +25,15 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions)
     if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
     const body = await request.json()
     const { name, title, description, maxItems, settings } = body
-
     if (!name || !title) {
       return NextResponse.json({ error: 'Name and title are required' }, { status: 400 })
     }
-
     const section = await prisma.mediaSection.create({
       data: {
         name,
@@ -47,26 +43,16 @@ export async function POST(req: Request) {
         settings: settings || {}
       }
     })
-
     return NextResponse.json(section)
   } catch (error) {
     console.error('Error creating media section:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}// PUT - Update media section
+// PUT - Update media section
 export async function PUT(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions)
     if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

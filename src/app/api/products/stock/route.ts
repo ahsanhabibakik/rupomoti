@@ -10,30 +10,21 @@ const prisma = new PrismaClient();
 export async function PATCH(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
-    
     if (!session?.user || !['SUPER_ADMIN', 'ADMIN', 'MANAGER'].includes(session.user.role as string)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    const { productId, quantity, operation } = await request.json();
-
+    const { productId, quantity, operation } = await req.json();
     if (!productId || typeof quantity !== 'number') {
       return NextResponse.json({ error: 'Product ID and quantity are required' }, { status: 400 });
     }
-
-    // Get current product stock
     const product = await prisma.product.findUnique({
       where: { id: productId }
     });
-
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
-
     let newStock = product.stock;
-    
     switch (operation) {
       case 'decrement':
         newStock = Math.max(0, product.stock - quantity);
@@ -47,8 +38,6 @@ export async function PATCH(req: Request) {
       default:
         return NextResponse.json({ error: 'Invalid operation' }, { status: 400 });
     }
-
-    // Update the product stock
     const updatedProduct = await prisma.product.update({
       where: { id: productId },
       data: { 
@@ -56,8 +45,6 @@ export async function PATCH(req: Request) {
         updatedAt: new Date()
       }
     });
-
-    // Log stock change
     await prisma.stockLog.create({
       data: {
         productId,
@@ -69,17 +56,14 @@ export async function PATCH(req: Request) {
         userId: session.user.id,
       }
     }).catch(() => {
-      // If stockLog table doesn't exist, we'll create it later
       console.log('Stock log table not found, skipping log');
     });
-
     return NextResponse.json({
       success: true,
       product: updatedProduct,
       previousStock: product.stock,
       newStock
     });
-
   } catch (error) {
     console.error('Stock update error:', error);
     return NextResponse.json({ 
@@ -88,48 +72,30 @@ export async function PATCH(req: Request) {
     }, { status: 500 });
   }
 }
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}// Bulk stock update
+// Bulk stock update
 export async function POST(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
-    
     if (!session?.user || !['SUPER_ADMIN', 'ADMIN'].includes(session.user.role as string)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    const { updates } = await request.json(); // Array of {productId, quantity, operation}
-
+    const { updates } = await req.json(); // Array of {productId, quantity, operation}
     if (!Array.isArray(updates) || updates.length === 0) {
       return NextResponse.json({ error: 'Updates array is required' }, { status: 400 });
     }
-
     const results = [];
-
     for (const update of updates) {
       try {
         const { productId, quantity, operation } = update;
-        
         const product = await prisma.product.findUnique({
           where: { id: productId }
         });
-
         if (!product) {
           results.push({ productId, success: false, error: 'Product not found' });
           continue;
         }
-
         let newStock = product.stock;
-        
         switch (operation) {
           case 'decrement':
             newStock = Math.max(0, product.stock - quantity);
@@ -144,7 +110,6 @@ export async function POST(req: Request) {
             results.push({ productId, success: false, error: 'Invalid operation' });
             continue;
         }
-
         const updatedProduct = await prisma.product.update({
           where: { id: productId },
           data: { 
@@ -152,8 +117,6 @@ export async function POST(req: Request) {
             updatedAt: new Date()
           }
         });
-
-        // Log stock change
         await prisma.stockLog.create({
           data: {
             productId,
@@ -167,7 +130,6 @@ export async function POST(req: Request) {
         }).catch(() => {
           console.log('Stock log table not found, skipping log');
         });
-
         results.push({ 
           productId, 
           success: true, 
@@ -175,7 +137,6 @@ export async function POST(req: Request) {
           newStock,
           product: updatedProduct
         });
-
       } catch (error) {
         results.push({ 
           productId: update.productId, 
@@ -184,7 +145,6 @@ export async function POST(req: Request) {
         });
       }
     }
-
     return NextResponse.json({
       success: true,
       results,
@@ -192,7 +152,6 @@ export async function POST(req: Request) {
       successCount: results.filter(r => r.success).length,
       failureCount: results.filter(r => !r.success).length
     });
-
   } catch (error) {
     console.error('Bulk stock update error:', error);
     return NextResponse.json({ 

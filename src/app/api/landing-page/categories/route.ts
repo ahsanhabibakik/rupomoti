@@ -5,7 +5,6 @@ import { NextResponse } from 'next/server'
 export async function GET(req: Request) {
   try {
     await connectDB();
-  try {
     // Fetch active categories for landing page
     const categories = await prisma.category.findMany({
       where: {
@@ -50,22 +49,11 @@ export async function GET(req: Request) {
       categories: transformedCategories
     })
   } catch (error) {
-    console.error('Failed to fetch landing page categories:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch categories' },
-      { status: 500 }
-    )
+    console.error('Landing page categories error:', error)
+    return NextResponse.json({ error: 'Failed to fetch landing page categories', details: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 })
   }
 }
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}// Helper function to get Bangla category names
+// Helper function to get Bangla category names
 function getBanglaName(englishName: string): string {
   const translations: Record<string, string> = {
     'Necklaces': 'হার',

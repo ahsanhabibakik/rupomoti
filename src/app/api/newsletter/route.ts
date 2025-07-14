@@ -38,10 +38,8 @@ function getWelcomeEmailHTML(email: string) {
 export async function POST(req: Request) {
   try {
     await connectDB();
-  try {
     const body = await request.json()
     const validation = subscribeSchema.safeParse(body)
-
     if (!validation.success) {
       return NextResponse.json(
         {
@@ -51,25 +49,19 @@ export async function POST(req: Request) {
         { status: 400 }
       )
     }
-
     const { email } = validation.data
-
     const existingSubscriber = await prisma.newsletterSubscription.findUnique({
       where: { email },
     })
-
     if (existingSubscriber) {
       return NextResponse.json(
         { message: 'This email is already subscribed.' },
         { status: 409 }
       )
     }
-
     await prisma.newsletterSubscription.create({
       data: { email },
     })
-
-    // Send welcome email
     try {
       await sendEmail({
         to: email,
@@ -78,10 +70,7 @@ export async function POST(req: Request) {
       })
     } catch (emailError) {
       console.error('Failed to send welcome email:', emailError)
-      // Don't block the user's subscription if the email fails.
-      // Log the error for monitoring.
     }
-
     return NextResponse.json(
       { message: 'Thank you for subscribing! A welcome email is on its way.' },
       { status: 201 }
@@ -92,14 +81,5 @@ export async function POST(req: Request) {
       { message: 'An unexpected error occurred. Please try again later.' },
       { status: 500 }
     )
-  }
-}
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

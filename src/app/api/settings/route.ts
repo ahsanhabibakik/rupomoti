@@ -48,21 +48,16 @@ export async function GET() {
 export async function PUT(req: NextRequest) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    const body = await request.json();
+    const body = await req.json();
     const { emailNotifications, smsNotifications, privacySettings } = body;
-
     let settings = await prisma.userSetting.findUnique({
       where: { userId: session.user.id }
     });
-
     if (settings) {
-      // Update existing settings
       settings = await prisma.userSetting.update({
         where: { userId: session.user.id },
         data: {
@@ -72,7 +67,6 @@ export async function PUT(req: NextRequest) {
         }
       });
     } else {
-      // Create new settings
       settings = await prisma.userSetting.create({
         data: {
           userId: session.user.id,
@@ -93,19 +87,9 @@ export async function PUT(req: NextRequest) {
         }
       });
     }
-
     return NextResponse.json(settings);
   } catch (error) {
     console.error('Error updating settings:', error);
     return NextResponse.json({ error: 'Failed to update settings' }, { status: 500 });
-  }
-}
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

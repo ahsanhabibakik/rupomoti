@@ -6,7 +6,6 @@ import { InventoryManager } from '@/lib/inventory'
 export async function GET(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions)
     
     if (!session?.user || !['ADMIN', 'SUPER_ADMIN', 'MANAGER'].includes(session.user.role)) {
@@ -27,26 +26,14 @@ export async function GET(req: Request) {
       total: alerts.length
     })
   } catch (error) {
-    console.error('Failed to fetch inventory alerts:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch inventory alerts' },
-      { status: 500 }
-    )
+    console.error('Inventory alerts error:', error)
+    return NextResponse.json({ error: 'Failed to fetch inventory alerts', details: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 })
   }
 }
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}// POST /api/inventory/alerts - Update stock for a product
+// POST /api/inventory/alerts - Update stock for a product
 export async function POST(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions)
     
     if (!session?.user || !['ADMIN', 'SUPER_ADMIN', 'MANAGER'].includes(session.user.role)) {

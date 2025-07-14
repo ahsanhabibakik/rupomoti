@@ -7,31 +7,24 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: NextRequest) {
   try {
     await connectDB();
-  try {
-    const { searchParams } = new URL(request.url)
+    const { searchParams } = new URL(req.url)
     const type = searchParams.get('type') || 'featured'
     const limit = parseInt(searchParams.get('limit') || '12')
     const category = searchParams.get('category')
     const search = searchParams.get('search')
     const minPrice = searchParams.get('minPrice')
     const maxPrice = searchParams.get('maxPrice')
-
     let data
-
     if (search) {
-      // Search products
       data = await Products.searchProducts(search, limit)
     } else if (minPrice && maxPrice) {
-      // Price range filter
       data = await Products.getProductsInPriceRange(
         parseFloat(minPrice), 
         parseFloat(maxPrice)
       )
     } else if (category) {
-      // Products by category
       data = await Products.getProductsByCategory(category, limit)
     } else {
-      // Product collections
       switch (type) {
         case 'featured':
           data = await Products.getFeaturedProducts(limit)
@@ -46,8 +39,6 @@ export async function GET(req: NextRequest) {
           data = await Products.getFeaturedProducts(limit)
       }
     }
-
-    // Transform data to include computed fields
     const transformedData = data.map(product => ({
       id: product._id.toString(),
       name: product.name,
@@ -78,7 +69,6 @@ export async function GET(req: NextRequest) {
       createdAt: product.createdAt,
       updatedAt: product.updatedAt
     }))
-
     return NextResponse.json({
       success: true,
       data: transformedData,
@@ -92,10 +82,8 @@ export async function GET(req: NextRequest) {
         }
       }
     })
-
   } catch (error) {
     console.error('Enhanced Products API Error:', error)
-    
     return NextResponse.json(
       { 
         error: 'Failed to fetch products',
@@ -105,22 +93,12 @@ export async function GET(req: NextRequest) {
     )
   }
 }
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}// Advanced product operations
+// Advanced product operations
 export async function POST(req: NextRequest) {
   try {
     await connectDB();
-  try {
-    const body = await request.json()
+    const body = await req.json()
     const { action, data } = body
-
     switch (action) {
       case 'bulk_discount':
         const discountResults = await Products.applyBulkDiscount(
@@ -132,7 +110,6 @@ export async function POST(req: NextRequest) {
           message: `Applied ${data.percentage}% discount to ${discountResults.length} products`,
           data: discountResults
         })
-
       case 'bulk_stock_update':
         const stockResults = await Products.updateBulkStock(data.updates)
         return NextResponse.json({
@@ -140,24 +117,20 @@ export async function POST(req: NextRequest) {
           message: 'Stock updated for multiple products',
           data: stockResults
         })
-
       case 'category_analytics':
         const analytics = await Categories.getCategoryAnalytics()
         return NextResponse.json({
           success: true,
           data: analytics
         })
-
       default:
         return NextResponse.json(
           { error: 'Invalid action' },
           { status: 400 }
         )
     }
-
   } catch (error) {
     console.error('Enhanced Products POST Error:', error)
-    
     return NextResponse.json(
       { 
         error: 'Failed to process request',

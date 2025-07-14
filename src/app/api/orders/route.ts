@@ -43,19 +43,15 @@ export async function GET() {
 export async function PUT(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions)
-
     if (!session) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
-
     const json = await request.json()
     const { id, ...data } = json
-
     const order = await prisma.order.update({
       where: { id },
       data: {
@@ -70,7 +66,6 @@ export async function PUT(req: Request) {
         }
       }
     })
-
     return NextResponse.json(order)
   } catch (error) {
     console.error('Error updating order:', error)
@@ -80,18 +75,10 @@ export async function PUT(req: Request) {
     )
   }
 }
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}export async function DELETE(req: Request) {
+
+export async function DELETE(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions)
 
     if (!session) {
@@ -128,7 +115,6 @@ export async function PUT(req: Request) {
 export async function POST(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
     const body = await req.json();
     

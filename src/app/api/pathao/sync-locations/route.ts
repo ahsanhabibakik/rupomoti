@@ -36,21 +36,16 @@ async function fetchAllPathaoLocations() {
 export async function POST(req: Request) {
   try {
     await connectDB();
-  try {
     const env = syncEnvSchema.parse(process.env);
     const secret = request.headers.get('x-sync-secret');
     if (secret !== env.PATHAO_SYNC_SECRET) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
     const locations = await fetchAllPathaoLocations();
-
     if (locations.length === 0) {
       return NextResponse.json({ message: 'No locations fetched from Pathao. Database not updated.' }, { status: 500 });
     }
-
     console.log(`Syncing ${locations.length} cities with zones to the database...`);
-    
     const operations = locations.map(loc =>
       prisma.pathaoLocation.upsert({
         where: { city_id: loc.city_id },
@@ -58,26 +53,15 @@ export async function POST(req: Request) {
         create: { city_id: loc.city_id, city_name: loc.city_name, zones: loc.zones },
       })
     );
-
     await prisma.$transaction(operations);
-
-    console.log('✅ Pathao locations synced successfully.');
+    console.log('\u2705 Pathao locations synced successfully.');
     return NextResponse.json({
       message: 'Pathao locations synced successfully.',
       cityCount: locations.length,
     });
   } catch (error) {
-    console.error('💥 Failed to sync Pathao locations:', error);
+    console.error('\ud83d\udca5 Failed to sync Pathao locations:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
     return NextResponse.json({ error: 'Failed to sync locations', details: errorMessage }, { status: 500 });
-  }
-}
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -9,22 +9,16 @@ export const dynamic = 'force-dynamic'
 export async function POST(req: NextRequest) {
   try {
     await connectDB();
-  try {
-    // Verify webhook auth token
-    const authHeader = request.headers.get('authorization')
+    const authHeader = req.headers.get('authorization')
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 })
     }
-
     const token = authHeader.split(' ')[1]
     if (token !== process.env.STEADFAST_WEBHOOK_TOKEN) {
       return NextResponse.json({ status: 'error', message: 'Invalid token' }, { status: 401 })
     }
-
-    const payload = await request.json()
+    const payload = await req.json()
     console.log('📦 Steadfast webhook received:', payload)
-
-    // Handle different notification types
     switch (payload.notification_type) {
       case 'delivery_status':
         await handleDeliveryStatus(payload)
@@ -35,22 +29,14 @@ export async function POST(req: NextRequest) {
       default:
         console.warn('⚠️ Unknown notification type:', payload.notification_type)
     }
-
     return NextResponse.json({ status: 'success' })
   } catch (error) {
     console.error('❌ Webhook error:', error)
     return NextResponse.json({ status: 'error', message: 'Internal server error' }, { status: 500 })
   }
 }
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}async function handleDeliveryStatus(payload: Record<string, unknown>) {
+
+async function handleDeliveryStatus(payload: Record<string, unknown>) {
   try {
     await dbConnect()
     

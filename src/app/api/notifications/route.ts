@@ -53,32 +53,17 @@ export async function GET() {
 export async function PATCH(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
     const { notificationId, read } = await request.json();
-
     if (!notificationId) {
       return NextResponse.json({ error: 'Notification ID is required' }, { status: 400 });
     }
-
-    // In a real app, you'd update the notification in the database
-    // For now, just return success
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error updating notification:', error);
     return NextResponse.json({ error: 'Failed to update notification' }, { status: 500 });
-  }
-}
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

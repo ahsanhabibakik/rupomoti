@@ -20,40 +20,25 @@ const shipmentSchema = z.object({
 export async function POST(req: Request) {
   try {
     await connectDB();
-  try {
     const body = await request.json();
     const validation = shipmentSchema.safeParse(body);
-
     if (!validation.success) {
       return NextResponse.json({ error: 'Invalid input', details: validation.error.flatten() }, { status: 400 });
     }
-    
     const payload = {
         ...validation.data,
         delivery_type: 48, // 48 for Normal Delivery
         item_type: 2,      // 2 for Parcel
     };
-
     const accessToken = await getPathaoAccessToken();
     const shipmentDetails = await createPathaoOrder(payload, accessToken);
-
     return NextResponse.json({
       message: 'Shipment created successfully!',
       data: shipmentDetails.data
     });
-
   } catch (error) {
-    console.error('💥 Failed to create Pathao shipment:', error);
+    console.error('\ud83d\udca5 Failed to create Pathao shipment:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
     return NextResponse.json({ error: 'Failed to create shipment', details: errorMessage }, { status: 500 });
-  }
-}
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

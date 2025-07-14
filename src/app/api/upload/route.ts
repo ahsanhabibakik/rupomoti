@@ -11,57 +11,37 @@ cloudinary.config({
 export async function POST(req: NextRequest) {
   try {
     await connectDB();
-  try {
-    const formData = await request.formData();
+    const formData = await req.formData();
     const file = formData.get('file') as File;
-    
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
-
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       return NextResponse.json({ error: 'Only image files are allowed' }, { status: 400 });
     }
-
-    // Validate file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
       return NextResponse.json({ error: 'File size must be less than 5MB' }, { status: 400 });
     }
-    
-    // Special handling for SVG files
     const isSvg = file.type === 'image/svg+xml' || formData.get('isSvg') === 'true';
-
-    // Convert file to buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-
-    // Get section parameter or use default
     const section = formData.get('section') as string || 'general';
-    
-    // Setup transformation options based on section
     let options: Record<string, any> = {
       resource_type: 'auto',
       folder: `rupomoti/${section}`,
     };
-    
-    // Special handling for SVG files - minimal transformations
     if (isSvg) {
-      // For SVGs, don't apply transformations that could break the vector format
       options = {
         ...options,
-        resource_type: 'image', // SVGs should be uploaded as images
-        format: 'svg', // Preserve the SVG format
+        resource_type: 'image',
+        format: 'svg',
       };
     } else {
-      // Standard image transformations for non-SVG files
       options = {
         ...options,
         quality: 'auto:good',
         fetch_format: 'auto',
       };
-      
-      // Apply section-specific dimensions for non-SVG files
       if (section === 'logo') {
         options.width = 300;
         options.height = 100;
@@ -80,8 +60,6 @@ export async function POST(req: NextRequest) {
         options.crop = 'limit';
       }
     }
-    
-    // Upload to cloudinary with optimization
     const result = await new Promise((resolve, reject) => {
       cloudinary.uploader.upload_stream(
         options,
@@ -95,20 +73,10 @@ export async function POST(req: NextRequest) {
         }
       ).end(buffer);
     });
-
     return NextResponse.json({ url: (result as { secure_url: string }).secure_url });
   } catch (error) {
     console.error('Upload error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Upload failed';
     return NextResponse.json({ error: errorMessage }, { status: 500 });
-  }
-}
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

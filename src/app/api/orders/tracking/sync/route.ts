@@ -6,26 +6,21 @@ import { OrderTrackingManager } from '@/lib/order-tracking'
 export async function POST(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions)
-    
     if (!session?.user || !['ADMIN', 'SUPER_ADMIN', 'MANAGER'].includes(session.user.role)) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
-
-    const body = await request.json()
+    const body = await req.json()
     const { orderIds } = body
-
     if (!orderIds || !Array.isArray(orderIds)) {
       return NextResponse.json(
         { error: 'Order IDs array is required' },
         { status: 400 }
       )
     }
-
     const results = []
     for (const orderId of orderIds) {
       try {
@@ -39,7 +34,6 @@ export async function POST(req: Request) {
         })
       }
     }
-
     return NextResponse.json({
       success: true,
       results
@@ -52,40 +46,26 @@ export async function POST(req: Request) {
     )
   }
 }
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}// GET /api/orders/tracking/sync - Get tracking info for multiple orders
+// GET /api/orders/tracking/sync - Get tracking info for multiple orders
 export async function GET(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions)
-    
     if (!session?.user || !['ADMIN', 'SUPER_ADMIN', 'MANAGER'].includes(session.user.role)) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
-
-    const { searchParams } = new URL(request.url)
+    const { searchParams } = new URL(req.url)
     const orderIds = searchParams.get('orderIds')?.split(',') || []
-
     if (orderIds.length === 0) {
       return NextResponse.json(
         { error: 'Order IDs are required' },
         { status: 400 }
       )
     }
-
     const results = await OrderTrackingManager.bulkTrackOrders(orderIds)
-
     return NextResponse.json({
       success: true,
       results

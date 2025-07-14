@@ -5,10 +5,8 @@ import Product from '@/models/Product'
 export async function GET(req: NextRequest) {
   try {
     await connectDB();
-  try {
     await dbConnect()
-
-    const { searchParams } = new URL(request.url)
+    const { searchParams } = new URL(req.url)
     const category = searchParams.get('category')
     const search = searchParams.get('search')
     const sort = searchParams.get('sort') || 'createdAt'
@@ -16,26 +14,18 @@ export async function GET(req: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '12')
     const skip = (page - 1) * limit
-
-    // Build query
     const query: Record<string, unknown> = {}
-
     if (category) {
       query['category.slug'] = category
     }
-
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } }
       ]
     }
-
-    // Build sort
     const sortOptions: Record<string, unknown> = {}
     sortOptions[sort] = order === 'desc' ? -1 : 1
-
-    // Execute queries
     const [products, totalCount] = await Promise.all([
       Product.find(query)
         .populate('category', 'name slug')
@@ -45,9 +35,7 @@ export async function GET(req: NextRequest) {
         .lean(),
       Product.countDocuments(query)
     ])
-
     const totalPages = Math.ceil(totalCount / limit)
-
     return NextResponse.json({
       success: true,
       data: products,
@@ -60,7 +48,6 @@ export async function GET(req: NextRequest) {
         hasPrev: page > 1
       }
     })
-
   } catch (error) {
     console.error('Error fetching shop products:', error)
     return NextResponse.json(
@@ -71,14 +58,5 @@ export async function GET(req: NextRequest) {
       },
       { status: 500 }
     )
-  }
-}
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

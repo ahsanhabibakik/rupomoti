@@ -5,7 +5,6 @@ import { InventoryManager } from '@/lib/inventory'
 export async function POST(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions)
     
     if (!session?.user || !['ADMIN', 'SUPER_ADMIN', 'MANAGER'].includes(session.user.role)) {
@@ -39,12 +38,37 @@ export async function POST(req: Request) {
     )
   }
 }
+
+export async function GET(req: Request) {
+  try {
+    await connectDB();
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user || !['ADMIN', 'SUPER_ADMIN', 'MANAGER'].includes(session.user.role)) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const body = await request.json()
+    const { productIds } = body
+
+    if (!productIds || !Array.isArray(productIds)) {
+      return NextResponse.json(
+        { error: 'Product IDs array is required' },
+        { status: 400 }
+      )
+    }
+
+    const stockData = await InventoryManager.getRealTimeStock(productIds)
+
+    return NextResponse.json({
+      success: true,
+      stocks: stockData
+    })
   } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Inventory stock error:', error)
+    return NextResponse.json({ error: 'Failed to fetch inventory stock', details: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 })
   }
 }

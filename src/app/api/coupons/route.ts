@@ -8,8 +8,7 @@ import { z } from 'zod'
 export async function GET(req: Request) {
   try {
     await connectDB();
-  try {
-    const { searchParams } = new URL(request.url)
+    const { searchParams } = new URL(req.url)
     const q = searchParams.get('q')
     const status = searchParams.get('status')
     const type = searchParams.get('type')
@@ -44,15 +43,8 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Failed to fetch coupons' }, { status: 500 })
   }
 }
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}const couponSchema = z.object({
+
+const couponSchema = z.object({
   code: z.string().min(1),
   type: z.enum(['PERCENTAGE', 'FIXED_AMOUNT']),
   value: z.coerce.number(),
@@ -67,13 +59,12 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const json = await request.json()
+    const json = await req.json()
     
     // Transform empty strings for optional fields to null for Prisma
     const transformedJson = {
@@ -100,15 +91,7 @@ export async function POST(req: Request) {
     }
     return NextResponse.json({ error: 'Failed to create coupon' }, { status: 500 })
   }
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}}
+}
 
 const updateCouponSchema = couponSchema.extend({
   id: z.string(),
@@ -117,13 +100,12 @@ const updateCouponSchema = couponSchema.extend({
 export async function PUT(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const json = await request.json()    
+    const json = await req.json()    
     const { id, ...dataToUpdate } = updateCouponSchema.parse({
       ...json,
       type: json.type === 'percentage' ? 'PERCENTAGE' : json.type === 'fixed' ? 'FIXED_AMOUNT' : json.type,
@@ -152,13 +134,12 @@ export async function PUT(req: Request) {
 export async function DELETE(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { searchParams } = new URL(request.url)
+    const { searchParams } = new URL(req.url)
     const id = searchParams.get('id')
 
     if (!id) {

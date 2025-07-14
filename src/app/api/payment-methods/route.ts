@@ -27,23 +27,18 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
     const body = await request.json();
     const { type, provider, cardNumber, expiryMonth, expiryYear, cardholderName, isDefault } = body;
-
     if (!type || !provider || !cardNumber || !expiryMonth || !expiryYear || !cardholderName) {
       return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
     }
-
     // Mask the card number for security
     const last4 = cardNumber.slice(-4);
     const maskedCardNumber = `**** **** **** ${last4}`;
-
     const paymentMethod = await prisma.userPaymentMethod.create({
       data: {
         type,
@@ -57,37 +52,25 @@ export async function POST(req: Request) {
         userId: session.user.id
       }
     });
-
     return NextResponse.json(paymentMethod);
   } catch (error) {
     console.error('Error creating payment method:', error);
     return NextResponse.json({ error: 'Failed to create payment method' }, { status: 500 });
   }
 }
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}export async function PUT(req: Request) {
+
+export async function PUT(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
     const body = await request.json();
     const { id, type, provider, cardNumber, expiryMonth, expiryYear, cardholderName, isDefault } = body;
-
     if (!id || !type || !provider || !cardNumber || !expiryMonth || !expiryYear || !cardholderName) {
       return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
     }
-
     // Verify the payment method belongs to the user
     const existingPaymentMethod = await prisma.userPaymentMethod.findFirst({
       where: { id, userId: session.user.id }
@@ -125,12 +108,10 @@ export async function POST(req: Request) {
 export async function DELETE(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
     const body = await request.json();
     const { id } = body;
 

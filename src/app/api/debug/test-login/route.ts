@@ -6,7 +6,6 @@ import bcrypt from 'bcryptjs'
 export async function POST(req: Request) {
   try {
     await connectDB();
-  try {
     const { email, password } = await request.json()
     
     console.log('Testing login for:', email)
@@ -35,19 +34,6 @@ export async function POST(req: Request) {
     })
   } catch (error) {
     console.error('Test login error:', error)
-    return NextResponse.json({
-      success: false,
-      error: 'Test failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
-  }
-}
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Test failed', details: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 })
   }
 }

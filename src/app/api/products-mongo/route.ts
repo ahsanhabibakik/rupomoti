@@ -8,10 +8,8 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: Request) {
   try {
     await connectDB();
-  try {
     await dbConnect()
-    
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get('page') || '1', 10);
     const pageSize = parseInt(searchParams.get('pageSize') || '12', 10);
     const search = searchParams.get('search') || '';
@@ -20,10 +18,7 @@ export async function GET(req: Request) {
     const maxPrice = searchParams.get('maxPrice');
     const sortBy = searchParams.get('sortBy') || 'createdAt';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
-
-    // Build query filter
     const filter: Record<string, unknown> = {}
-    
     if (search) {
       filter.$or = [
         { name: { $regex: search, $options: 'i' } },
@@ -31,39 +26,27 @@ export async function GET(req: Request) {
         { 'seo.keywords': { $regex: search, $options: 'i' } }
       ]
     }
-
     if (category) {
       filter.categoryId = category
     }
-
     if (minPrice || maxPrice) {
       const priceFilter: Record<string, number> = {}
       if (minPrice) priceFilter.$gte = parseFloat(minPrice)
       if (maxPrice) priceFilter.$lte = parseFloat(maxPrice)
       filter.price = priceFilter
     }
-
-    // Handle special query parameters
     const isFeatured = searchParams.get('isFeatured')
     const isPopular = searchParams.get('isPopular')
     const limit = searchParams.get('limit')
     const sort = searchParams.get('sort')
-
     if (isFeatured === 'true') {
       filter.isFeatured = true
     }
-
     if (isPopular === 'true') {
       filter.isPopular = true
     }
-
-    // Only show active products
     filter.status = 'ACTIVE'
-
-    // Get total count
     const totalProducts = await Product.countDocuments(filter)
-
-    // Build sort object
     const sortObj: Record<string, 1 | -1> = {}
     if (sort === 'newest') {
       sortObj.createdAt = -1
@@ -72,19 +55,13 @@ export async function GET(req: Request) {
     } else {
       sortObj[sortBy] = sortOrder === 'asc' ? 1 : -1
     }
-
-    // Get products with pagination
     let query = Product.find(filter).sort(sortObj)
-
     if (limit) {
       query = query.limit(parseInt(limit, 10))
     } else {
       query = query.skip((page - 1) * pageSize).limit(pageSize)
     }
-
     const products = await query.lean().exec()
-
-    // Transform products to match expected format
     const transformedProducts = products.map(product => ({
       id: product._id.toString(),
       name: product.name,
@@ -108,9 +85,7 @@ export async function GET(req: Request) {
       createdAt: product.createdAt,
       updatedAt: product.updatedAt
     }))
-
     const totalPages = Math.ceil(totalProducts / pageSize)
-
     return NextResponse.json({
       success: true,
       data: transformedProducts,
@@ -123,10 +98,8 @@ export async function GET(req: Request) {
         hasPreviousPage: page > 1,
       },
     })
-
   } catch (error) {
     console.error('Products API Error:', error)
-    
     return NextResponse.json(
       { 
         error: 'Failed to fetch products',
@@ -137,26 +110,13 @@ export async function GET(req: Request) {
     )
   }
 }
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}export async function POST(req: Request) {
+export async function POST(req: Request) {
   try {
     await connectDB();
-  try {
     await dbConnect()
-    
-    const body = await request.json()
-    
-    // Create new product using Mongoose
+    const body = await req.json()
     const product = new Product(body)
     const savedProduct = await product.save()
-    
     return NextResponse.json({
       success: true,
       data: {
@@ -164,7 +124,6 @@ export async function GET(req: Request) {
         ...savedProduct.toObject()
       }
     })
-    
   } catch (error) {
     console.error('Product creation error:', error)
     return NextResponse.json(

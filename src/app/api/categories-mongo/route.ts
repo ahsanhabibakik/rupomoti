@@ -9,10 +9,9 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: Request) {
   try {
     await connectDB();
-  try {
     await dbConnect()
     
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get('page') || '1', 10);
     const pageSize = parseInt(searchParams.get('pageSize') || '10', 10);
     const search = searchParams.get('search') || '';
@@ -78,31 +77,19 @@ export async function GET(req: Request) {
 
   } catch (error) {
     console.error('Categories API Error:', error)
-    
     return NextResponse.json(
-      { 
-        error: 'Failed to fetch categories',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { error: 'Failed to fetch categories', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
 }
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}export async function POST(req: Request) {
+
+export async function POST(req: Request) {
   try {
     await connectDB();
-  try {
     await dbConnect()
     
-    const body = await request.json()
+    const body = await req.json()
     const { name, description, image, slug, isActive = true, sortOrder = 0, seo } = body
 
     if (!name || !slug) {
