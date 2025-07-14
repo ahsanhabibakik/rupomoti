@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/app/auth";
+import { getServerSession } from 'next-auth/next';
+import authOptions from "@/app/auth";
+import dbConnect from '@/lib/mongoose';
+import Coupon from '@/models/Coupon';
+import Order from '@/models/Order';
+import AuditLog from '@/models/AuditLog';
 
 
 
 export async function DELETE(req: Request) {
   try {
-    await connectDB();
+    await dbConnect();
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
 
@@ -27,21 +32,17 @@ export async function DELETE(req: Request) {
     }
 
     // Get coupons before deletion for audit log
-    const coupons = await prisma.coupon.findMany({
-      where: { id: { in: couponIds } }
+    const coupons = await Coupon.find({
+      _id: { $in: couponIds }
     });
 
     // Check if any coupons are used in orders
-    const ordersWithCoupons = await prisma.order.findMany({
-      where: { 
-        OR: [
-          { appliedCoupon: { in: coupons.map(c => c.code) } },
-          { couponId: { in: couponIds } }
-        ]
-      },
-      select: { id: true, appliedCoupon: true, couponId: true },
-      take: 1,
-    });
+    const ordersWithCoupons = await Order.find({
+      $or: [
+        { appliedCoupon: { $in: coupons.map(c => c.code) } },
+        { couponId: { $in: couponIds } }
+      ]
+    }).select('_id appliedCoupon couponId').limit(1);
 
     if (ordersWithCoupons.length > 0) {
       return NextResponse.json(
@@ -51,29 +52,25 @@ export async function DELETE(req: Request) {
     }
 
     // Delete coupons
-    const result = await prisma.coupon.deleteMany({
-      where: {
-        id: { in: couponIds }
-      }
+    const result = await Coupon.deleteMany({
+      _id: { $in: couponIds }
     });
 
     // Create audit logs for bulk delete
     await Promise.all(
       coupons.map(coupon =>
-        prisma.auditLog.create({
-          data: {
-            model: "Coupon",
-            recordId: coupon.id,
-            userId,
-            action: "BULK_DELETE",
-            oldValue: JSON.stringify(coupon),
-            details: {
-              deletedCoupon: coupon,
-              user: {
-                id: session.user?.id,
-                name: session.user?.name,
-                email: session.user?.email,
-              },
+        AuditLog.create({
+          model: "Coupon",
+          recordId: coupon._id.toString(),
+          userId,
+          action: "BULK_DELETE",
+          oldValue: JSON.stringify(coupon),
+          details: {
+            deletedCoupon: coupon,
+            user: {
+              id: session.user?.id,
+              name: session.user?.name,
+              email: session.user?.email,
             },
           },
         })
@@ -81,8 +78,8 @@ export async function DELETE(req: Request) {
     );
 
     return NextResponse.json({
-      message: `Successfully deleted ${result.count} coupons`,
-      count: result.count
+      message: `Successfully deleted ${result.deletedCount} coupons`,
+      count: result.deletedCount
     });
   } catch (error) {
     console.error("Error bulk deleting coupons:", error);
@@ -90,9 +87,5 @@ export async function DELETE(req: Request) {
       { message: "Failed to delete coupons" },
       { status: 500 }
     );
-  }
-, { status: 500 });
-  }
-, { status: 500 });
   }
 }

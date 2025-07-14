@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/app/auth";
+import { getServerSession } from 'next-auth/next';
+import authOptions from "@/app/auth";
+import dbConnect from '@/lib/mongoose';
+import Coupon from '@/models/Coupon';
+import AuditLog from '@/models/AuditLog';
 
 
 
 export async function PATCH(req: Request) {
   try {
-    await connectDB();
+    await dbConnect();
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
 
@@ -43,34 +47,30 @@ export async function PATCH(req: Request) {
     }
 
     // Update multiple coupons
-    const result = await prisma.coupon.updateMany({
-      where: {
-        id: { in: couponIds }
-      },
-      data: updateData
-    });
+    const result = await Coupon.updateMany(
+      { _id: { $in: couponIds } },
+      updateData
+    );
 
     // Create audit logs for bulk update
-    const coupons = await prisma.coupon.findMany({
-      where: { id: { in: couponIds } }
+    const coupons = await Coupon.find({
+      _id: { $in: couponIds }
     });
 
     await Promise.all(
       coupons.map(coupon =>
-        prisma.auditLog.create({
-          data: {
-            model: "Coupon",
-            recordId: coupon.id,
-            userId,
-            action: "BULK_UPDATE",
-            details: {
-              action,
-              coupon,
-              user: {
-                id: session.user?.id,
-                name: session.user?.name,
-                email: session.user?.email,
-              },
+        AuditLog.create({
+          model: "Coupon",
+          recordId: coupon._id.toString(),
+          userId,
+          action: "BULK_UPDATE",
+          details: {
+            action,
+            coupon,
+            user: {
+              id: session.user?.id,
+              name: session.user?.name,
+              email: session.user?.email,
             },
           },
         })
@@ -78,8 +78,8 @@ export async function PATCH(req: Request) {
     );
 
     return NextResponse.json({
-      message: `Successfully ${action}d ${result.count} coupons`,
-      count: result.count
+      message: `Successfully ${action}d ${result.modifiedCount} coupons`,
+      count: result.modifiedCount
     });
   } catch (error) {
     console.error("Error bulk updating coupons:", error);
@@ -87,9 +87,5 @@ export async function PATCH(req: Request) {
       { message: "Failed to update coupons" },
       { status: 500 }
     );
-  }
-, { status: 500 });
-  }
-, { status: 500 });
   }
 }

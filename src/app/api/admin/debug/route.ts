@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/auth';
+import authOptions from '@/app/auth';
+import dbConnect from '@/lib/mongoose';
+import User from '@/models/User';
+import Order from '@/models/Order';
+import AuditLog from '@/models/AuditLog';
 
 
 
 export async function GET(req: Request) {
   try {
-    await connectDB();
-  try {
+    await dbConnect();
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.isAdmin && session?.user?.role !== 'ADMIN') {
@@ -135,14 +138,5 @@ export async function GET(req: Request) {
       error: 'Database diagnostic failed',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
-  }
-}
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

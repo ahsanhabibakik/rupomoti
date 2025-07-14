@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
-import { connectDB } from '@/lib/db';
-
-
+import dbConnect from '@/lib/mongoose';
+import User from '@/models/User';
 import { getServerSession } from 'next-auth/next';
 import authOptions from '@/app/auth';
 import { AuditLogger } from '@/lib/audit-logger';
+import AuditLog from '@/models/AuditLog';
 
 export async function POST(req: Request) {
   try {
-    await connectDB();
+    await dbConnect();
     const session = await getServerSession(authOptions);
     if (
       !session ||
@@ -30,14 +30,13 @@ export async function POST(req: Request) {
     console.log(`🗑️ Bulk deleting ${customerIds.length} customers...`);
 
     // Get customer details for audit log
-    const customersToDelete = await prisma.customer.findMany({
-      where: { id: { in: customerIds } },
-      select: { id: true, name: true, email: true }
-    });
+    const customersToDelete = await User.find({
+      _id: { $in: customerIds }
+    }).select('_id name email');
 
     // Delete customers (this should cascade to related records)
-    const deleteResult = await prisma.customer.deleteMany({
-      where: { id: { in: customerIds } }
+    const deleteResult = await User.deleteMany({
+      _id: { $in: customerIds }
     });
 
     // Log the action
@@ -46,16 +45,16 @@ export async function POST(req: Request) {
       userId: session.user.id,
       details: {
         deletedCustomers: customersToDelete,
-        deletedCount: deleteResult.count
+        deletedCount: deleteResult.deletedCount
       }
     });
 
-    console.log(`✅ Successfully deleted ${deleteResult.count} customers`);
+    console.log(`✅ Successfully deleted ${deleteResult.deletedCount} customers`);
 
     return NextResponse.json({
       success: true,
-      deletedCount: deleteResult.count,
-      message: `Successfully deleted ${deleteResult.count} customer(s)`
+      deletedCount: deleteResult.deletedCount,
+      message: `Successfully deleted ${deleteResult.deletedCount} customer(s)`
     });
   } catch (error) {
     console.error('❌ Failed to delete customers:', error);
@@ -63,9 +62,5 @@ export async function POST(req: Request) {
       { error: 'Failed to delete customers' },
       { status: 500 }
     );
-  }
-, { status: 500 });
-  }
-, { status: 500 });
   }
 }

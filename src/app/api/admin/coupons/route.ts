@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/app/auth";
+import { getServerSession } from 'next-auth/next';
+import authOptions from "@/app/auth";
+import dbConnect from '@/lib/mongoose';
+import Coupon from '@/models/Coupon';
+import AuditLog from '@/models/AuditLog';
 
 
 import { z } from "zod";
@@ -26,7 +30,7 @@ const querySchema = z.object({
 // GET /api/admin/coupons - Get all coupons with filtering and pagination
 export async function GET(req: Request) {
   try {
-    await connectDB();
+    await dbConnect();
     const session = await getServerSession(authOptions);
 
     if (!session || !["SUPER_ADMIN", "ADMIN"].includes(session.user?.role as string)) {
@@ -78,32 +82,30 @@ export async function GET(req: Request) {
 
     const skip = (query.page - 1) * query.limit;
 
-    const [coupons, totalCount] = await prisma.$transaction([
-      prisma.coupon.findMany({
-        where,
-        orderBy: {
-          [query.sortBy]: query.sortOrder,
-        },
-        skip,
-        take: query.limit,
-        include: {
-          createdBy: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          updatedBy: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-        },
-      }),
-      prisma.coupon.count({ where }),
+    // Convert Prisma where conditions to Mongoose
+    const mongooseWhere: any = {};
+    if (where.isActive !== undefined) {
+      mongooseWhere.isActive = where.isActive;
+    }
+    if (where.type) {
+      mongooseWhere.type = where.type;
+    }
+    if (where.name && where.name.contains) {
+      mongooseWhere.name = { $regex: where.name.contains, $options: 'i' };
+    }
+    if (where.code && where.code.contains) {
+      mongooseWhere.code = { $regex: where.code.contains, $options: 'i' };
+    }
+
+    // Execute queries in parallel (similar to transaction)
+    const [coupons, totalCount] = await Promise.all([
+      Coupon.find(mongooseWhere)
+        .sort({ [query.sortBy]: query.sortOrder === 'asc' ? 1 : -1 })
+        .skip(skip)
+        .limit(query.limit)
+        .populate('createdBy', 'id name email')
+        .populate('updatedBy', 'id name email'),
+      Coupon.countDocuments(mongooseWhere),
     ]);
 
     const totalPages = Math.ceil(totalCount / query.limit);
@@ -132,14 +134,12 @@ export async function GET(req: Request) {
       { status: 500 }
     );
   }
-, { status: 500 });
-  }
-, { status: 500 });
-  }
-}// POST /api/admin/coupons - Create a new coupon
+}
+
+// POST /api/admin/coupons - Create a new coupon
 export async function POST(req: Request) {
   try {
-    await connectDB();
+    await dbConnect();
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
 
@@ -174,9 +174,7 @@ export async function POST(req: Request) {
     }
 
     // Check if coupon code already exists
-    const existingCoupon = await prisma.coupon.findUnique({
-      where: { code },
-    });
+    const existingCoupon = await Coupon.findOne({ code });
 
     if (existingCoupon) {
       return NextResponse.json(
@@ -186,54 +184,40 @@ export async function POST(req: Request) {
     }
 
     // Create coupon
-    const coupon = await prisma.coupon.create({
-      data: {
-        code,
-        type,
-        value: parseFloat(value),
-        description,
-        minimumAmount: minimumAmount ? parseFloat(minimumAmount) : null,
-        maximumDiscount: maximumDiscount ? parseFloat(maximumDiscount) : null,
-        usageLimit: usageLimit ? parseInt(usageLimit) : null,
-        validFrom: validFrom ? new Date(validFrom) : new Date(),
-        validUntil: validUntil ? new Date(validUntil) : undefined,
-        isActive,
-        applicableZones: applicableZones || [],
-        createdById: userId,
-        updatedById: userId,
-      },
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        updatedBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
+    const coupon = await Coupon.create({
+      code,
+      type,
+      value: parseFloat(value),
+      description,
+      minimumAmount: minimumAmount ? parseFloat(minimumAmount) : null,
+      maximumDiscount: maximumDiscount ? parseFloat(maximumDiscount) : null,
+      usageLimit: usageLimit ? parseInt(usageLimit) : null,
+      validFrom: validFrom ? new Date(validFrom) : new Date(),
+      validUntil: validUntil ? new Date(validUntil) : undefined,
+      isActive,
+      applicableZones: applicableZones || [],
+      createdById: userId,
+      updatedById: userId,
     });
 
+    // Populate the created coupon with user details
+    await coupon.populate([
+      { path: 'createdBy', select: 'id name email' },
+      { path: 'updatedBy', select: 'id name email' }
+    ]);
+
     // Create audit log
-    await prisma.auditLog.create({
-      data: {
-        model: "Coupon",
-        recordId: coupon.id,
-        userId,
-        action: "CREATE",
-        details: {
-          coupon,
-          user: {
-            id: session.user?.id,
-            name: session.user?.name,
-            email: session.user?.email,
-          },
+    await AuditLog.create({
+      model: "Coupon",
+      recordId: coupon._id.toString(),
+      userId,
+      action: "CREATE",
+      details: {
+        coupon,
+        user: {
+          id: session.user?.id,
+          name: session.user?.name,
+          email: session.user?.email,
         },
       },
     });
@@ -251,7 +235,7 @@ export async function POST(req: Request) {
 // PATCH /api/admin/coupons - Update a coupon
 export async function PATCH(req: Request) {
   try {
-    await connectDB();
+    await dbConnect();
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
 
@@ -273,9 +257,7 @@ export async function PATCH(req: Request) {
     }
 
     // Check if coupon exists
-    const existingCoupon = await prisma.coupon.findUnique({
-      where: { id: couponId },
-    });
+    const existingCoupon = await Coupon.findById(couponId);
 
     if (!existingCoupon) {
       return NextResponse.json(
@@ -322,37 +304,24 @@ export async function PATCH(req: Request) {
     processedData.updatedById = userId;
 
     // Update coupon
-    const updatedCoupon = await prisma.coupon.update({
-      where: { id: couponId },
-      data: processedData,
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        updatedBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
-    });
+    const updatedCoupon = await Coupon.findByIdAndUpdate(
+      couponId,
+      processedData,
+      { new: true }
+    ).populate([
+      { path: 'createdBy', select: 'id name email' },
+      { path: 'updatedBy', select: 'id name email' }
+    ]);
 
     // Create audit log
-    await prisma.auditLog.create({
-      data: {
-        model: "Coupon",
-        recordId: couponId,
-        userId,
-        action: "UPDATE",
-        oldValue: JSON.stringify(existingCoupon),
-        newValue: JSON.stringify(updatedCoupon),
-        details: {
+    await AuditLog.create({
+      model: "Coupon",
+      recordId: couponId,
+      userId,
+      action: "UPDATE",
+      oldValue: JSON.stringify(existingCoupon),
+      newValue: JSON.stringify(updatedCoupon),
+      details: {
           changes: processedData,
           user: {
             id: session.user?.id,
@@ -360,7 +329,6 @@ export async function PATCH(req: Request) {
             email: session.user?.email,
           },
         },
-      },
     });
 
     return NextResponse.json(updatedCoupon);
@@ -376,7 +344,7 @@ export async function PATCH(req: Request) {
 // DELETE /api/admin/coupons - Delete a coupon
 export async function DELETE(req: Request) {
   try {
-    await connectDB();
+    await dbConnect();
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
 
@@ -398,9 +366,7 @@ export async function DELETE(req: Request) {
     }
 
     // Check if coupon exists
-    const coupon = await prisma.coupon.findUnique({
-      where: { id: couponId },
-    });
+    const coupon = await Coupon.findById(couponId);
 
     if (!coupon) {
       return NextResponse.json(
@@ -410,15 +376,12 @@ export async function DELETE(req: Request) {
     }
 
     // Check if coupon is used in any orders
-    const ordersWithCoupon = await prisma.order.findMany({
-      where: { 
-        OR: [
-          { appliedCoupon: coupon.code },
-          { couponId: couponId }
-        ]
-      },
-      take: 1,
-    });
+    const ordersWithCoupon = await Order.find({
+      $or: [
+        { appliedCoupon: coupon.code },
+        { couponId: couponId }
+      ]
+    }).limit(1);
 
     if (ordersWithCoupon.length > 0) {
       return NextResponse.json(
@@ -428,19 +391,16 @@ export async function DELETE(req: Request) {
     }
 
     // Delete coupon
-    await prisma.coupon.delete({
-      where: { id: couponId },
-    });
+    await Coupon.findByIdAndDelete(couponId);
 
     // Create audit log
-    await prisma.auditLog.create({
-      data: {
-        model: "Coupon",
-        recordId: couponId,
-        userId,
-        action: "DELETE",
-        oldValue: JSON.stringify(coupon),
-        details: {
+    await AuditLog.create({
+      model: "Coupon",
+      recordId: couponId,
+      userId,
+      action: "DELETE",
+      oldValue: JSON.stringify(coupon),
+      details: {
           deletedCoupon: coupon,
           user: {
             id: session.user?.id,
@@ -448,7 +408,6 @@ export async function DELETE(req: Request) {
             email: session.user?.email,
           },
         },
-      },
     });
 
     return NextResponse.json({ message: "Coupon deleted successfully" });
