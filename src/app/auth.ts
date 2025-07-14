@@ -27,10 +27,9 @@ const authOptions = {
 
           // Dynamic imports to avoid Edge Runtime issues
           const { default: dbConnect } = await import('../lib/mongoose')
-          const { default: User } = await import('../models/User')
-
-          // Connect to MongoDB
+          const { getUserModel } = await import('../models/User')
           await dbConnect()
+          const User = getUserModel()
 
           // Find user by email
           const user = await User.findOne({ email: email.toLowerCase() })

@@ -1,7 +1,4 @@
 import { NextResponse } from 'next/server'
-import dbConnect from '@/lib/mongoose'
-import Product from '@/models/Product'
-import Category from '@/models/Category'
 
 // Cache configuration
 const CACHE_DURATION = 60 * 5 // 5 minutes in seconds
@@ -16,7 +13,10 @@ const DEFAULT_LIMIT = 30
 
 export async function GET(request: Request) {
   try {
-    await dbConnect()
+    const { default: dbConnect } = await import('@/lib/mongoose');
+    const { default: Product } = await import('@/models/Product');
+    const { default: Category } = await import('@/models/Category');
+    await dbConnect();
 
     const { searchParams } = new URL(request.url)
     
@@ -158,7 +158,10 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    await dbConnect()
+    const { default: dbConnect } = await import('@/lib/mongoose');
+    const { default: Product } = await import('@/models/Product');
+    const { default: Category } = await import('@/models/Category');
+    await dbConnect();
 
     const body = await request.json()
     const {

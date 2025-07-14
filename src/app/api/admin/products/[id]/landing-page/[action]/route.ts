@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 
 
-import { auth } from '@/app/auth';
+const { auth } = await import('@/app/auth');
 
 export async function POST(
   request: NextRequest,

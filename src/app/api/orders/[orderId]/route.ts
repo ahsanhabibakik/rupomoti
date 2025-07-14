@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
-import { auth } from '@/app/auth';
+const { auth } = await import('@/app/auth');
 
 
 import { StockManager } from '@/lib/stock-manager';

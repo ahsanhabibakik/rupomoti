@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/app/auth';
 import { connectDB } from '@/lib/db';
-
 
 export async function GET() {
   try {
+    const { auth } = await import('@/app/auth');
     await connectDB();
     const session = await auth();
     if (!session?.user?.id) {
@@ -25,6 +24,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const { auth } = await import('@/app/auth');
     await connectDB();
     const session = await auth();
     if (!session?.user?.id) {
@@ -60,6 +60,7 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
+    const { auth } = await import('@/app/auth');
     await connectDB();
     const session = await auth();
     if (!session?.user?.id) {
@@ -104,6 +105,7 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
+    const { auth } = await import('@/app/auth');
     await connectDB();
     const session = await auth();
     if (!session?.user?.id) {

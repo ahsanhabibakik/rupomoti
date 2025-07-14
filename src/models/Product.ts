@@ -225,4 +225,6 @@ ProductSchema.post('save', function(this: IProduct, doc) {
 ProductSchema.set('toJSON', { virtuals: true })
 ProductSchema.set('toObject', { virtuals: true })
 
-export default mongoose.models.Product || mongoose.model<IProduct>('Product', ProductSchema)
+export function getProductModel() {
+  return mongoose.models.Product || mongoose.model<IProduct>('Product', ProductSchema)
+}

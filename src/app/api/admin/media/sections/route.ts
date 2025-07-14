@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 
 
-import { auth } from '@/app/auth';
+const { auth } = await import('@/app/auth');
 
 // Default sections if none are found in the database
 const DEFAULT_SECTIONS = [

@@ -1,5 +1,3 @@
-import mongoose from 'mongoose'
-
 const MONGODB_URI = process.env.DATABASE_URL!
 
 if (!MONGODB_URI) {
@@ -18,6 +16,7 @@ if (!cached) {
 }
 
 async function dbConnect() {
+  const mongoose = (await import('mongoose')).default;
   if (cached.conn) {
     return cached.conn
   }

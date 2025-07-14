@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/app/auth';
+const { auth } = await import('@/app/auth');
 import { hash, compare } from 'bcryptjs';
 
 export async function PUT(req: Request) {
   try {
     const { default: dbConnect } = await import('@/lib/mongoose');
-    const { default: User } = await import('@/models/User');
+    const { getUserModel } = await import('@/models/User');
     await dbConnect();
+    const User = getUserModel();
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

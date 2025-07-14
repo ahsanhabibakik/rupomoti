@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/app/auth';
+const { auth } = await import('@/app/auth');
 import { randomBytes } from 'crypto';
 
 // Email service (you might want to use a proper email service like SendGrid, Nodemailer, etc.)
@@ -12,8 +12,9 @@ async function sendVerificationEmail(email: string, code: string) {
 export async function GET() {
   try {
     const { default: dbConnect } = await import('@/lib/mongoose');
-    const { default: User } = await import('@/models/User');
+    const { getUserModel } = await import('@/models/User');
     await dbConnect();
+    const User = getUserModel();
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -39,8 +40,9 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const { default: dbConnect } = await import('@/lib/mongoose');
-    const { default: User } = await import('@/models/User');
+    const { getUserModel } = await import('@/models/User');
     await dbConnect();
+    const User = getUserModel();
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

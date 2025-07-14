@@ -176,4 +176,6 @@ CategorySchema.post('save', function(doc) {
 CategorySchema.set('toJSON', { virtuals: true })
 CategorySchema.set('toObject', { virtuals: true })
 
-export default mongoose.models.Category || mongoose.model<ICategory>('Category', CategorySchema)
+export function getCategoryModel() {
+  return mongoose.models.Category || mongoose.model<ICategory>('Category', CategorySchema)
+}

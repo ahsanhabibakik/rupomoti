@@ -1,4 +1,4 @@
-import { auth } from '@/app/auth';
+const { auth } = await import('@/app/auth');
 import { NextResponse } from 'next/server'
 
 

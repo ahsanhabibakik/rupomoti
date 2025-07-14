@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import { cookies } from 'next/headers';
-import { auth } from '@/app/auth';
+const { auth } = await import('@/app/auth');
 import { z } from 'zod';
 import { nanoid } from 'nanoid';
 
