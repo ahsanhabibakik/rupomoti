@@ -90,4 +90,5 @@ const authOptions = {
   debug: process.env.NODE_ENV === 'development',
 }
 
-export default authOptions
+export { authOptions };
+export const auth = authOptions;

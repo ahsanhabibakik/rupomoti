@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import { getServerSession } from 'next-auth/next';
-import authOptions from '@/app/auth';
+import { authOptions } from '@/app/auth';
 
 
 import { AuditLogger } from '@/lib/audit-logger';

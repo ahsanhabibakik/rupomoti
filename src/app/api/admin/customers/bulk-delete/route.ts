@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongoose';
 import User from '@/models/User';
 import { getServerSession } from 'next-auth/next';
-import authOptions from '@/app/auth';
+import { authOptions } from '@/app/auth';
 import { AuditLogger } from '@/lib/audit-logger';
 import AuditLog from '@/models/AuditLog';
 

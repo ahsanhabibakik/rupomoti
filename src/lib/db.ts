@@ -112,3 +112,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 export default prisma 
+
+export async function connectDB() {
+  return prisma;
+} 

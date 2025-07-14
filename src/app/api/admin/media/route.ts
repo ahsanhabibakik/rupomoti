@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongoose';
 import Media from '@/models/Media';
 import { getServerSession } from 'next-auth/next';
-import authOptions from '@/app/auth';
+import { authOptions } from '@/app/auth';
 import { z } from 'zod';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';

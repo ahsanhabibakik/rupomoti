@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from 'next-auth/next';
-import authOptions from "@/app/auth";
+import { authOptions } from "@/app/auth";
 import dbConnect from '@/lib/mongoose';
 import Coupon from '@/models/Coupon';
 import Order from '@/models/Order';
