@@ -144,7 +144,12 @@ export async function GET(req: Request) {
                 }
               }
             },
-            take: 3 // Reduced from 5 to 3 for better performance
+            take: 3, // Reduced from 5 to 3 for better performance
+            where: {
+              productId: {
+                not: undefined
+              }
+            }
           }
         },
         orderBy: { createdAt: 'desc' },

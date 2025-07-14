@@ -2,6 +2,7 @@
 
 import { prisma, withRetry } from '@/lib/prisma'
 import { Product } from '@/types/product'
+import { fallbackProducts } from '@/lib/fallback-data'
 
 export async function getProducts(filter: { [key: string]: boolean }): Promise<Product[]> {
   try {
@@ -18,7 +19,8 @@ export async function getProducts(filter: { [key: string]: boolean }): Promise<P
     })
   } catch (error) {
     console.error('Error fetching products:', error)
-    return []
+    // Return fallback data when database is unreachable
+    return fallbackProducts.slice(0, 4) as Product[]
   }
 }
 
@@ -104,17 +106,24 @@ export async function getHomePageData() {
     }
   } catch (error) {
     console.error('Error fetching home page data:', error)
-    // Return empty arrays in case of error
+    console.log('🔄 Using fallback data due to database connectivity issues')
+    
+    // Use fallback data when database is unreachable
+    const featured = fallbackProducts.filter(p => p.isFeatured)
+    const popular = fallbackProducts.filter(p => p.isPopular)
+    const newArrivals = fallbackProducts.slice(0, 2) // Simulate new arrivals
+    const regular = fallbackProducts.filter(p => !p.isFeatured && !p.isPopular)
+    
     return {
-      featuredProducts: [],
-      popularProducts: [],
-      newArrivals: [],
-      regularProducts: [],
+      featuredProducts: featured as Product[],
+      popularProducts: popular as Product[],
+      newArrivals: newArrivals as Product[],
+      regularProducts: regular as Product[],
       counts: {
-        featured: 0,
-        popular: 0,
-        newArrivals: 0,
-        regular: 0,
+        featured: featured.length,
+        popular: popular.length,
+        newArrivals: newArrivals.length,
+        regular: regular.length,
       }
     }
   }

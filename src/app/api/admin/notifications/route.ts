@@ -80,6 +80,9 @@ export async function GET(request: NextRequest) {
           lte: 5,
         },
         status: 'ACTIVE',
+        categoryId: {
+          not: undefined
+        }
       },
       orderBy: {
         stock: 'asc',

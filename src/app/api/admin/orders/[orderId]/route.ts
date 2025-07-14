@@ -19,7 +19,7 @@ const patchBodySchema = z.object({
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> }
 ) {
   const session = await auth();
   if (!session?.user?.isAdmin) {
@@ -27,6 +27,7 @@ export async function PATCH(
   }
 
   try {
+    const { orderId } = await params;
     const body = await request.json();
     const validation = patchBodySchema.safeParse(body);
 
@@ -35,7 +36,7 @@ export async function PATCH(
     }
 
     const order = await prisma.order.findUnique({
-        where: { id: params.orderId },
+        where: { id: orderId },
         include: { user: true }
     });
 
@@ -96,7 +97,7 @@ export async function PATCH(
     // Handle regular order updates
     const updatedOrder = await prisma.$transaction(async (tx) => {
       const originalOrder = await tx.order.findUnique({
-        where: { id: params.orderId },
+        where: { id: orderId },
       });
 
       if (!originalOrder) {
@@ -114,7 +115,7 @@ export async function PATCH(
         if (oldValue !== newValue && userId) {
           auditLogs.push({
             model: 'Order',
-            recordId: params.orderId,
+            recordId: orderId,
             userId,
             action: 'UPDATE',
             field: key,
@@ -147,7 +148,7 @@ export async function PATCH(
       }
       
       const updated = await tx.order.update({
-        where: { id: params.orderId },
+        where: { id: orderId },
         data: updateData,
       });
       
@@ -163,7 +164,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> }
 ) {
   const session = await auth();
   if (!session?.user?.isAdmin) {
@@ -171,8 +172,9 @@ export async function DELETE(
   }
 
   try {
+    const { orderId } = await params;
     const order = await prisma.order.findUnique({
-      where: { id: params.orderId },
+      where: { id: orderId },
       select: { userId: true },
     });
 
@@ -182,7 +184,7 @@ export async function DELETE(
 
     await prisma.$transaction(async (tx) => {
       await tx.order.update({
-        where: { id: params.orderId },
+        where: { id: orderId },
         data: { deletedAt: new Date() },
       });
 

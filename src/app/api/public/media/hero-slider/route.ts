@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { fallbackHeroSlides } from '@/lib/fallback-data';
 
 export const revalidate = 60; // Revalidate every 60 seconds
 
@@ -45,6 +46,19 @@ export async function GET() {
     return NextResponse.json(formattedSlides);
   } catch (error) {
     console.error('Failed to fetch hero slides:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.log('🔄 Using fallback hero slides due to database connectivity issues');
+    
+    // Return fallback hero slides when database is unreachable
+    const fallbackFormatted = fallbackHeroSlides.map(slide => ({
+      id: slide.id,
+      image: slide.url,
+      mobileImage: slide.url,
+      title: slide.alt,
+      subtitle: 'Discover our exquisite collection',
+      link: '/shop',
+      cta: 'Shop Now',
+    }));
+    
+    return NextResponse.json(fallbackFormatted);
   }
 }

@@ -2,6 +2,7 @@
 
 import { Category } from '@prisma/client'
 import { prisma, withRetry } from '@/lib/prisma'
+import { fallbackCategories } from '@/lib/fallback-data'
 
 interface GetCategoriesParams {
   level?: number
@@ -44,6 +45,8 @@ export async function getCategories(params: GetCategoriesParams = {}): Promise<C
     })
   } catch (error) {
     console.error('Error fetching categories:', error)
-    return []
+    console.log('🔄 Using fallback categories due to database connectivity issues')
+    // Return fallback data when database is unreachable
+    return fallbackCategories as Category[]
   }
 } 

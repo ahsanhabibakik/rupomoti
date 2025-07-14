@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/app/auth'
 import { prisma } from '@/lib/prisma'
 import { generateUniqueOrderNumber } from '@/lib/server/order-number-generator'
-import { StockManager } from '@/lib/stock-manager'
 import { AuditLogger } from '@/lib/audit-logger'
 
 export async function GET() {
@@ -204,26 +203,39 @@ export async function POST(req: Request) {
         });
       }
 
-      // Use a transaction to ensure atomicity
+      // Use an optimized transaction with increased timeout
       const order = await prisma.$transaction(async (tx) => {
-        // 1. Check stock availability using StockManager
-        const stockCheck = await StockManager.checkStockAvailability(
-          items.map((item: { productId: string; quantity: number }) => ({
-            productId: item.productId,
-            quantity: item.quantity
-          }))
-        );
-
-        if (!stockCheck.allAvailable) {
-          const unavailableItems = stockCheck.checks
-            .filter(check => !check.available)
-            .map(check => `${check.productName || check.productId}: ${check.reason}`)
-            .join(', ');
-          throw new Error(`Stock not available: ${unavailableItems}`);
-        }
-        
-        // 2. Generate unique order number
+        // 1. Generate unique order number first (faster)
         const newOrderNumber = await generateUniqueOrderNumber();
+        
+        // 2. Quick stock check without StockManager (to avoid timeout)
+        const stockProducts = await tx.product.findMany({
+          where: {
+            id: {
+              in: items.map((item: { productId: string }) => item.productId)
+            }
+          },
+          select: {
+            id: true,
+            name: true,
+            stock: true,
+            status: true
+          }
+        });
+
+        // Quick stock validation
+        for (const item of items) {
+          const product = stockProducts.find(p => p.id === item.productId);
+          if (!product) {
+            throw new Error(`Product not found: ${item.productId}`);
+          }
+          if (product.status !== 'ACTIVE') {
+            throw new Error(`Product ${product.name} is not available`);
+          }
+          if (product.stock < item.quantity) {
+            throw new Error(`Insufficient stock for ${product.name}. Available: ${product.stock}, Requested: ${item.quantity}`);
+          }
+        }
         
         // 3. Create the order
         const createdOrder = await tx.order.create({
@@ -266,20 +278,22 @@ export async function POST(req: Request) {
           },
         });
 
-        // 4. Reserve stock using StockManager
-        try {
-          await StockManager.reserveStockForOrder(
-            createdOrder.id,
-            items.map((item: { productId: string; quantity: number }) => ({
-              productId: item.productId,
-              quantity: item.quantity
-            }))
-          );
-        } catch (stockError) {
-          throw new Error(`Failed to reserve stock: ${stockError instanceof Error ? stockError.message : 'Unknown error'}`);
+        // 4. Update stock directly in transaction for speed
+        for (const item of items) {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: {
+                decrement: item.quantity
+              }
+            }
+          });
         }
 
         return createdOrder;
+      }, {
+        maxWait: 10000,  // 10 seconds max wait
+        timeout: 30000,  // 30 seconds timeout
       });
 
       // 5. Log order creation to audit log
