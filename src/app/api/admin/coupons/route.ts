@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-const { auth } = await import('@/app/auth');
+
 import { authOptions } from "@/app/auth";
 import dbConnect from '@/lib/mongoose';
 import Coupon from '@/models/Coupon';

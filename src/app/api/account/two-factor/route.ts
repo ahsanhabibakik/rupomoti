@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-const { auth } = await import('@/app/auth');
+
 import { randomBytes } from 'crypto';
 
 // Email service (you might want to use a proper email service like SendGrid, Nodemailer, etc.)

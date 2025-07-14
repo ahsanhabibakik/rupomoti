@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-const { auth } = await import('@/app/auth');
+
 import dbConnect from '@/lib/dbConnect';
 import { AuditLogger } from '@/lib/audit-logger';
 

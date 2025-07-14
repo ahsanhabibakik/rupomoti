@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongoose';
 import User from '@/models/User';
-const { auth } = await import('@/app/auth');
+
 import { AuditLogger } from '@/lib/audit-logger';
 import AuditLog from '@/models/AuditLog';
 

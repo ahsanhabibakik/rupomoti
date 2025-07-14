@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
-const { auth } = await import('@/app/auth');
+
 
 export async function GET() {
   try {

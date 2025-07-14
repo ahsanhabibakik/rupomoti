@@ -10,7 +10,7 @@
  */
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
-const { auth } = await import('@/app/auth');
+
 
 
 import { z } from 'zod';

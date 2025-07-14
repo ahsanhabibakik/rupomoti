@@ -1,4 +1,4 @@
-const { auth } = await import('@/app/auth');
+
 import { NextResponse } from 'next/server'
 
 

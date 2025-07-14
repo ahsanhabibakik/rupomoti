@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-const { auth } = await import('@/app/auth');
+
 import { ShippingManager } from '@/lib/shipping'
 
 export async function POST(req: NextRequest) {

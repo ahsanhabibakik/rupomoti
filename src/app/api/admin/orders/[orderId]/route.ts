@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from 'zod';
-const { auth } = await import('@/app/auth');
+
 
 
 // Define OrderStatus type to replace Prisma import

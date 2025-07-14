@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-const { auth } = await import('@/app/auth');
+
 
 export async function GET(req: Request) {
   try {

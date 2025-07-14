@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 
-const { auth } = await import('@/app/auth');
+
 
 const prisma = new PrismaClient();
 

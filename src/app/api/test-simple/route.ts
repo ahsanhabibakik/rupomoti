@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-const { auth } = await import('@/app/auth');
+
 import { connectDB } from '@/lib/db';
 
 
