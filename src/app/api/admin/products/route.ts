@@ -8,7 +8,6 @@ import { generateUniqueSlugFromDB, validateSlug, isSlugAvailable } from '@/lib/u
 export async function GET(req: Request) {
   try {
     await connectDB();
-  try {
     const { authorized } = await verifyAdminAccess();
     if (!authorized) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -94,18 +93,10 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
   }
 }
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}export async function POST(req: Request) {
+
+export async function POST(req: Request) {
   try {
     await connectDB();
-  try {
     const { authorized } = await verifyAdminAccess();
     if (!authorized) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -183,7 +174,6 @@ export async function GET(req: Request) {
 export async function PUT(req: Request) {
   try {
     await connectDB();
-  try {
     const { authorized } = await verifyAdminAccess();
     if (!authorized) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -303,35 +293,33 @@ export async function PUT(req: Request) {
 export async function DELETE(req: Request) {
   try {
     await connectDB();
-    try {
-      const { authorized } = await verifyAdminAccess();
-      if (!authorized) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-  
-      const { searchParams } = new URL(request.url);
-      const id = searchParams.get('id');
-  
-      if (!id) {
-        return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
-      }
-  
-      await prisma.product.update({
-        where: { id },
-        data: { status: 'TRASHED' },
-      });
-  
-      return NextResponse.json({ success: true, message: 'Product moved to trash.' });
-    } catch (error) {
-      console.error('Error moving product to trash:', error);
-      return NextResponse.json({ error: 'Failed to move product to trash' }, { status: 500 });
+    const { authorized } = await verifyAdminAccess();
+    if (!authorized) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+  
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+  
+    if (!id) {
+      return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
+    }
+  
+    await prisma.product.update({
+      where: { id },
+      data: { status: 'TRASHED' },
+    });
+  
+    return NextResponse.json({ success: true, message: 'Product moved to trash.' });
+  } catch (error) {
+    console.error('Error moving product to trash:', error);
+    return NextResponse.json({ error: 'Failed to move product to trash' }, { status: 500 });
+  }
 }
 
 export async function PATCH(req: Request) {
   try {
     await connectDB();
-  try {
     const { authorized } = await verifyAdminAccess();
     if (!authorized) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

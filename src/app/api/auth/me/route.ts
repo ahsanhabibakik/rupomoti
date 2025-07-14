@@ -28,32 +28,24 @@ export async function GET() {
 export async function PUT(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
     const body = await request.json();
     const { name, email, phone } = body;
-
-    // Validate required fields
     if (!name || !email) {
       return NextResponse.json({ error: 'Name and email are required' }, { status: 400 });
     }
-
-    // Check if email is already taken by another user
     const existingUser = await prisma.user.findFirst({
       where: {
         email,
         id: { not: session.user.id }
       }
     });
-
     if (existingUser) {
       return NextResponse.json({ error: 'Email is already taken' }, { status: 400 });
     }
-
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
       data: {
@@ -72,19 +64,9 @@ export async function PUT(req: Request) {
         updatedAt: true,
       }
     });
-
     return NextResponse.json(updatedUser);
   } catch (error) {
     console.error('Error updating profile:', error);
     return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 });
-  }
-}
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

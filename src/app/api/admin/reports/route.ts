@@ -11,13 +11,12 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
     if (!session || !['SUPER_ADMIN', 'ADMIN', 'MANAGER'].includes(session.user?.role as string)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(req.url);
     const period = searchParams.get('period') || '7d'; // 7d, 30d, 3m, 12m
     const type = searchParams.get('type') || 'overview'; // overview, sales, products, customers
 
@@ -480,16 +479,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Invalid report type' }, { status: 400 });
 
   } catch (error) {
-    console.error('Error generating reports:', error);
+    console.error('Error fetching reports:', error);
     return NextResponse.json({ error: 'Failed to generate reports' }, { status: 500 });
-  }
-}
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

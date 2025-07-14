@@ -25,9 +25,8 @@ type OrderWhereInput = Prisma.OrderWhereInput;
 export async function GET(req: Request) {
   try {
     await connectDB();
-  console.log('🚀 Optimized Admin Orders API - Starting request...');
-  
-  try {
+    console.log('🚀 Optimized Admin Orders API - Starting request...');
+    
     const session = await getServerSession(authOptions);
     
     // Check authentication
@@ -214,26 +213,18 @@ export async function GET(req: Request) {
     return response;
 
   } catch (error) {
-    console.error('❌ Admin Orders API Error:', error);
+    console.error('Admin Orders API Error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch orders', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
 }
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}// Optimized order update endpoint
+
+// Optimized order update endpoint
 export async function PUT(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -290,7 +281,6 @@ export async function PUT(req: Request) {
 export async function DELETE(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -327,7 +317,6 @@ export async function DELETE(req: Request) {
 export async function POST(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
     const body = await req.json();
     

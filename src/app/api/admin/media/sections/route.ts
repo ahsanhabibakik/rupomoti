@@ -66,7 +66,6 @@ const hasWritePermission = (role?: string) => {
 export async function GET(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getSession();
     
     // Allow read access for Admin and Super Admin
@@ -94,17 +93,7 @@ export async function GET(req: Request) {
     console.error('Error fetching media sections:', error);
     const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';
     const statusCode = errorMessage.startsWith('Unauthorized') ? 401 : 500;
-    
     // Return default sections on error instead of failing
     return NextResponse.json(DEFAULT_SECTIONS);
-  }
-}
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

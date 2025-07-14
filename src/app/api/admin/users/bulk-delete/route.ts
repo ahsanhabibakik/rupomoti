@@ -11,28 +11,21 @@ const bulkDeleteSchema = z.object({
 export async function POST(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
-
     if (!session || session.user?.role !== 'SUPER_ADMIN') {
       return NextResponse.json(
         { message: "Only Super Admin can bulk delete users" },
         { status: 403 }
       );
     }
-
     const body = await request.json();
     const { userIds } = bulkDeleteSchema.parse(body);
-
-    // Check if trying to delete self
     if (userIds.includes(session.user.id!)) {
       return NextResponse.json(
         { message: "Cannot delete yourself" },
         { status: 400 }
       );
     }
-
-    // Get users to be deleted for logging
     const usersToDelete = await prisma.user.findMany({
       where: { id: { in: userIds } },
       select: {
@@ -42,20 +35,15 @@ export async function POST(req: Request) {
         name: true,
       },
     });
-
     if (usersToDelete.length === 0) {
       return NextResponse.json(
         { message: "No users found to delete" },
         { status: 404 }
       );
     }
-
-    // Delete users
     const deleteResult = await prisma.user.deleteMany({
       where: { id: { in: userIds } },
     });
-
-    // Log the deletion
     console.log(`Bulk delete performed by ${session.user.email}:`, {
       deletedCount: deleteResult.count,
       deletedUsers: usersToDelete.map(u => ({
@@ -65,7 +53,6 @@ export async function POST(req: Request) {
         name: u.name
       }))
     });
-
     return NextResponse.json({
       message: `Successfully deleted ${deleteResult.count} users`,
       deletedCount: deleteResult.count,
@@ -82,14 +69,5 @@ export async function POST(req: Request) {
       { message: "Failed to delete users" },
       { status: 500 }
     );
-  }
-}
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

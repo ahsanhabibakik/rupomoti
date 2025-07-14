@@ -9,12 +9,10 @@ import { z } from 'zod'
 export async function GET(req: Request) {
   try {
     await connectDB();
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.isAdmin) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
-  }
-
-  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.isAdmin) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+    }
     const tags = await prisma.newsletterTag.findMany({
       orderBy: { name: 'asc' },
     })
@@ -24,42 +22,36 @@ export async function GET(req: Request) {
     return NextResponse.json({ message: 'An unexpected error occurred.' }, { status: 500 })
   }
 }
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}const createTagSchema = z.object({
+
+const createTagSchema = z.object({
   name: z.string().min(1, 'Tag name cannot be empty.'),
 })
 
 export async function POST(req: Request) {
   try {
     await connectDB();
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.isAdmin) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
-  }
-
-  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.isAdmin) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+    }
     const body = await request.json()
     const validation = createTagSchema.safeParse(body)
     if (!validation.success) {
       return NextResponse.json({ message: validation.error.message }, { status: 400 })
     }
-
     const { name } = validation.data
-    const newTag = await prisma.newsletterTag.create({
-      data: { name },
-    })
-    return NextResponse.json(newTag, { status: 201 })
-  } catch (error: Record<string, unknown>) {
-    if (error.code === 'P2002') {
+    try {
+      const newTag = await prisma.newsletterTag.create({
+        data: { name },
+      })
+      return NextResponse.json(newTag, { status: 201 })
+    } catch (error: any) {
+      if (error.code === 'P2002') {
         return NextResponse.json({ message: 'A tag with this name already exists.' }, { status: 409 })
+      }
+      throw error;
     }
+  } catch (error) {
     console.error('Failed to create newsletter tag:', error)
     return NextResponse.json({ message: 'An unexpected error occurred.' }, { status: 500 })
   }

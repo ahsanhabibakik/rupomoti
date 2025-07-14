@@ -6,7 +6,6 @@ import { hash } from 'bcryptjs'
 export async function POST(req: Request) {
   try {
     await connectDB();
-  try {
     const { email, password, name } = await req.json()
 
     // Validate input
@@ -54,14 +53,5 @@ export async function POST(req: Request) {
       { error: 'Error creating admin' },
       { status: 500 }
     )
-  }
-}
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

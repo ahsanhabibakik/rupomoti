@@ -7,7 +7,6 @@ import { authOptions } from '@/app/auth';
 export async function DELETE(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.email) {
@@ -82,18 +81,10 @@ export async function DELETE(req: Request) {
     )
   }
 }
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}export async function PATCH(req: Request) {
+
+export async function PATCH(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.email) {

@@ -7,7 +7,6 @@ import { verifyAdminAccess } from '@/lib/admin-auth';
 export async function GET(req: Request) {
   try {
     await connectDB();
-  try {
     const { authorized } = await verifyAdminAccess();
     if (!authorized) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -28,14 +27,5 @@ export async function GET(req: Request) {
   } catch (error) {
     console.error('Failed to fetch variants:', error);
     return NextResponse.json({ error: 'Failed to fetch variants' }, { status: 500 });
-  }
-}
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

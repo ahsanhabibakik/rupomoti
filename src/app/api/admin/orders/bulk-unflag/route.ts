@@ -8,7 +8,6 @@ import { authOptions } from '@/app/auth';
 export async function PATCH(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.email) {
@@ -56,14 +55,5 @@ export async function PATCH(req: Request) {
       { error: 'Failed to unflag orders' },
       { status: 500 }
     );
-  }
-}
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

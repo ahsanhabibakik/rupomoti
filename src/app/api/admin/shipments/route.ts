@@ -192,186 +192,175 @@ export async function POST(req: Request) {
     if (!session || !['SUPER_ADMIN', 'ADMIN', 'MANAGER'].includes(session.user?.role as string)) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    const env = getEnv(); // Ensure env is loaded
+    const body = await request.json();
+    const { orderId } = body;
+    if (!orderId) return NextResponse.json({ error: 'Invalid input: orderId is required' }, { status: 400 });
 
-    try {
-        const env = getEnv(); // Ensure env is loaded
-        const body = await request.json();
-        const { orderId } = body;
-        if (!orderId) return NextResponse.json({ error: 'Invalid input: orderId is required' }, { status: 400 });
+    const order = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: { items: { include: { product: true } }, customer: true }
+    });
 
-        const order = await prisma.order.findUnique({
-            where: { id: orderId },
-            include: { items: { include: { product: true } }, customer: true }
-        });
-
-        if (!order || !order.customer) return NextResponse.json({ error: 'Order or customer not found' }, { status: 404 });
-        
-        const courierId = order.courierName as CourierId | null;
-        if (!courierId) return NextResponse.json({ error: 'Order has no courier assigned' }, { status: 400 });
-        
-        // --- Pre-shipment Data Validation ---
-        if (courierId === 'steadfast') {
-            const phone = order.customer.phone;
-            const bdPhoneRegex = /^01[3-9]\d{8}$/;
-            if (!phone || !bdPhoneRegex.test(phone)) {
-                throw new Error(`Invalid phone number for Steadfast: '${phone}'. Please correct to an 11-digit format.`);
-            }
+    if (!order || !order.customer) return NextResponse.json({ error: 'Order or customer not found' }, { status: 404 });
+    
+    const courierId = order.courierName as CourierId | null;
+    if (!courierId) return NextResponse.json({ error: 'Order has no courier assigned' }, { status: 400 });
+    
+    // --- Pre-shipment Data Validation ---
+    if (courierId === 'steadfast') {
+        const phone = order.customer.phone;
+        const bdPhoneRegex = /^01[3-9]\d{8}$/;
+        if (!phone || !bdPhoneRegex.test(phone)) {
+            throw new Error(`Invalid phone number for Steadfast: '${phone}'. Please correct to an 11-digit format.`);
         }
-        const { recipientCity, recipientZone } = order;
-        if (!recipientCity || !recipientZone) throw new Error('Recipient city and zone are required to ship.');
+    }
+    const { recipientCity, recipientZone } = order;
+    if (!recipientCity || !recipientZone) throw new Error('Recipient city and zone are required to ship.');
 
-        let courierResponse: Record<string, unknown>;
-        let consignmentId: string | number | undefined;
-        let trackingCode: string | number | undefined;
-        const totalWeight = order.items.reduce((acc, item) => acc + (item.product.weight || 0.5) * item.quantity, 0);
+    let courierResponse: Record<string, unknown>;
+    let consignmentId: string | number | undefined;
+    let trackingCode: string | number | undefined;
+    const totalWeight = order.items.reduce((acc, item) => acc + (item.product.weight || 0.5) * item.quantity, 0);
 
-        switch (courierId) {
-            case 'steadfast': {
-                const payload = {
-                    invoice: order.orderNumber,
-                    recipient_name: order.customer.name,
-                    recipient_phone: order.customer.phone,
-                    recipient_address: `${order.customer.address}, ${recipientZone}, ${recipientCity}`,
-                    cod_amount: order.total,
-                    note: order.orderNote || 'Handle with care',
-                };
-                courierResponse = await fetchWithCourierErrorHandling(
-                    `${env.STEADFAST_API_URL}/create_order`,
-                    {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Api-Key': env.STEADFAST_API_KEY, 'Secret-Key': env.STEADFAST_SECRET_KEY },
-                        body: JSON.stringify(payload)
-                    },
-                    'Steadfast'
-                );
-                if (courierResponse.status !== 200) throw new Error(`Steadfast API Error: ${courierResponse.message || 'Unknown error'}`);
-                consignmentId = courierResponse.consignment.consignment_id;
-                trackingCode = courierResponse.consignment.tracking_code;
-                break;
+    switch (courierId) {
+        case 'steadfast': {
+            const payload = {
+                invoice: order.orderNumber,
+                recipient_name: order.customer.name,
+                recipient_phone: order.customer.phone,
+                recipient_address: `${order.customer.address}, ${recipientZone}, ${recipientCity}`,
+                cod_amount: order.total,
+                note: order.orderNote || 'Handle with care',
+            };
+            courierResponse = await fetchWithCourierErrorHandling(
+                `${env.STEADFAST_API_URL}/create_order`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Api-Key': env.STEADFAST_API_KEY, 'Secret-Key': env.STEADFAST_SECRET_KEY },
+                    body: JSON.stringify(payload)
+                },
+                'Steadfast'
+            );
+            if (courierResponse.status !== 200) throw new Error(`Steadfast API Error: ${courierResponse.message || 'Unknown error'}`);
+            consignmentId = courierResponse.consignment.consignment_id;
+            trackingCode = courierResponse.consignment.tracking_code;
+            break;
+        }
+
+        case 'redx': {
+            const areaInfo = await getRedxAreaInfo(recipientCity, recipientZone);
+            const env = getEnv();
+            const payload = {
+                customer_name: order.customer.name,
+                customer_phone: order.customer.phone,
+                customer_address: `${order.customer.address}, ${recipientZone}, ${recipientCity}`,
+                area_id: areaInfo.areaId,
+                merchant_invoice_id: order.orderNumber,
+                payment_type: "COD",
+                weight: totalWeight < 0.5 ? 0.5 : totalWeight,
+                cod_amount: order.total,
+                get_fragile: false,
+                delivery_instructions: order.orderNote,
+                value: order.subtotal,
+                item_description: order.items.map(i => i.product.name).join(', '),
+                items: order.items.map(item => ({
+                    name: item.product.name,
+                    quantity: item.quantity,
+                })),
+            };
+
+             console.log("Sending payload to RedX:", JSON.stringify(payload, null, 2));
+
+            courierResponse = await fetchWithCourierErrorHandling(
+                `${env.REDX_API_URL}/order`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'API-ACCESS-TOKEN': `Bearer ${env.REDX_API_KEY}` },
+                    body: JSON.stringify(payload)
+                },
+                'RedX'
+            );
+            trackingCode = courierResponse.tracking_id;
+            consignmentId = courierResponse.tracking_id;
+            break;
+        }
+
+        case 'pathao': {
+            const accessToken = await getPathaoAccessToken();
+            
+            // Find Pathao location IDs from our local DB
+            const cityInfo = await prisma.pathaoLocation.findFirst({
+                where: { 
+                    city_name: { equals: recipientCity, mode: 'insensitive' },
+                }
+            });
+
+            if (!cityInfo) {
+                throw new Error(`Pathao City '${recipientCity}' not found in local database. Please run the location sync or correct the city name.`);
             }
 
-            case 'redx': {
-                const areaInfo = await getRedxAreaInfo(recipientCity, recipientZone);
-                const env = getEnv();
-                const payload = {
-                    customer_name: order.customer.name,
-                    customer_phone: order.customer.phone,
-                    customer_address: `${order.customer.address}, ${recipientZone}, ${recipientCity}`,
-                    area_id: areaInfo.areaId,
-                    merchant_invoice_id: order.orderNumber,
-                    payment_type: "COD",
-                    weight: totalWeight < 0.5 ? 0.5 : totalWeight,
-                    cod_amount: order.total,
-                    get_fragile: false,
-                    delivery_instructions: order.orderNote,
-                    value: order.subtotal,
-                    item_description: order.items.map(i => i.product.name).join(', '),
-                    items: order.items.map(item => ({
-                        name: item.product.name,
-                        quantity: item.quantity,
-                    })),
-                };
-
-                 console.log("Sending payload to RedX:", JSON.stringify(payload, null, 2));
-
-                courierResponse = await fetchWithCourierErrorHandling(
-                    `${env.REDX_API_URL}/order`,
-                    {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'API-ACCESS-TOKEN': `Bearer ${env.REDX_API_KEY}` },
-                        body: JSON.stringify(payload)
-                    },
-                    'RedX'
-                );
-                trackingCode = courierResponse.tracking_id;
-                consignmentId = courierResponse.tracking_id;
-                break;
-            }
-
-            case 'pathao': {
-                const accessToken = await getPathaoAccessToken();
-                
-                // Find Pathao location IDs from our local DB
-                const cityInfo = await prisma.pathaoLocation.findFirst({
-                    where: { 
-                        city_name: { equals: recipientCity, mode: 'insensitive' },
-                    }
-                });
-
-                if (!cityInfo) {
-                    throw new Error(`Pathao City '${recipientCity}' not found in local database. Please run the location sync or correct the city name.`);
+            const zoneInfo = await prisma.pathaoLocation.findFirst({
+                where: { 
+                    city_id: cityInfo.city_id,
+                    zone_name: { equals: recipientZone, mode: 'insensitive' },
                 }
+            });
 
-                const zoneInfo = await prisma.pathaoLocation.findFirst({
-                    where: { 
-                        city_id: cityInfo.city_id,
-                        zone_name: { equals: recipientZone, mode: 'insensitive' },
-                    }
-                });
-
-                if (!zoneInfo) {
-                    throw new Error(`Pathao Zone '${recipientZone}' for City '${recipientCity}' not found in local database. Please run the location sync or correct the zone name.`);
-                }
-                
-                const payload = {
-                    store_id: env.PATHAO_STORE_ID,
-                    merchant_order_id: order.orderNumber,
-                    recipient_name: order.customer.name,
-                    recipient_phone: order.customer.phone,
-                    recipient_address: order.customer.address,
-                    recipient_city: cityInfo.city_id,
-                    recipient_zone: zoneInfo.zone_id,
-                    delivery_type: 48, // 48 for Normal, 12 for On-demand
-                    item_type: 2, // 2 for Parcel
-                    special_instruction: order.orderNote,
-                    item_quantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
-                    item_weight: totalWeight < 0.5 ? 0.5 : totalWeight,
-                    amount_to_collect: order.total,
-                    item_description: order.items.map(i => i.product.name).join(', '),
-                };
-
-                courierResponse = await fetchWithCourierErrorHandling(
-                    `${env.PATHAO_API_URL}/aladdin/api/v1/orders`,
-                    {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}`, 'Accept': 'application/json' },
-                        body: JSON.stringify(payload)
-                    },
-                    'Pathao'
-                );
-                consignmentId = courierResponse?.consignment_id;
-                trackingCode = courierResponse?.consignment_id; // Pathao uses consignment_id as tracking code
-                break;
+            if (!zoneInfo) {
+                throw new Error(`Pathao Zone '${recipientZone}' for City '${recipientCity}' not found in local database. Please run the location sync or correct the zone name.`);
             }
             
-            default:
-                throw new Error(`Courier '${courierId}' is not implemented.`);
+            const payload = {
+                store_id: env.PATHAO_STORE_ID,
+                merchant_order_id: order.orderNumber,
+                recipient_name: order.customer.name,
+                recipient_phone: order.customer.phone,
+                recipient_address: order.customer.address,
+                recipient_city: cityInfo.city_id,
+                recipient_zone: zoneInfo.zone_id,
+                delivery_type: 48, // 48 for Normal, 12 for On-demand
+                item_type: 2, // 2 for Parcel
+                special_instruction: order.orderNote,
+                item_quantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
+                item_weight: totalWeight < 0.5 ? 0.5 : totalWeight,
+                amount_to_collect: order.total,
+                item_description: order.items.map(i => i.product.name).join(', '),
+            };
+
+            courierResponse = await fetchWithCourierErrorHandling(
+                `${env.PATHAO_API_URL}/aladdin/api/v1/orders`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}`, 'Accept': 'application/json' },
+                    body: JSON.stringify(payload)
+                },
+                'Pathao'
+            );
+            consignmentId = courierResponse?.consignment_id;
+            trackingCode = courierResponse?.consignment_id; // Pathao uses consignment_id as tracking code
+            break;
         }
-
-        const updatedOrder = await prisma.order.update({
-            where: { id: orderId },
-            data: {
-                status: 'SHIPPED',
-                courierConsignmentId: consignmentId ? String(consignmentId) : undefined,
-                courierTrackingCode: trackingCode ? String(trackingCode) : undefined,
-                courierStatus: 'Shipment Created',
-                courierInfo: courierResponse as any,
-            },
-        });
-
-        return NextResponse.json({ success: true, order: updatedOrder });
-
-    } catch (error: Record<string, unknown>) {
-        console.error('💥 Shipment creation failed:', error.message);
-        return NextResponse.json({ error: error.message || 'An unexpected error occurred.' }, { status: 500 });
+        
+        default:
+            throw new Error(`Courier '${courierId}' is not implemented.`);
     }
-}
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+
+    const updatedOrder = await prisma.order.update({
+        where: { id: orderId },
+        data: {
+            status: 'SHIPPED',
+            courierConsignmentId: consignmentId ? String(consignmentId) : undefined,
+            courierTrackingCode: trackingCode ? String(trackingCode) : undefined,
+            courierStatus: 'Shipment Created',
+            courierInfo: courierResponse as any,
+        },
+    });
+
+    return NextResponse.json({ success: true, order: updatedOrder });
+
+  } catch (error: Record<string, unknown>) {
+    console.error('💥 Shipment creation failed:', error.message);
+    return NextResponse.json({ error: error.message || 'An unexpected error occurred.' }, { status: 500 });
   }
 }

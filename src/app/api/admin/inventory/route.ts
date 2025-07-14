@@ -6,7 +6,6 @@ import { InventoryManager } from '@/lib/inventory'
 export async function POST(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions)
     
     if (!session?.user || session.user.role !== 'ADMIN') {

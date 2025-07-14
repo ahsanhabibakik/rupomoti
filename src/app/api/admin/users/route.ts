@@ -87,7 +87,6 @@ function canReadUsers(userRole: string): boolean {
 export async function GET(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
 
     if (!session || !['SUPER_ADMIN', 'ADMIN'].includes(session.user?.role as string)) {
@@ -97,7 +96,7 @@ export async function GET(req: Request) {
       );
     }
 
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(req.url);
     const query = querySchema.parse(Object.fromEntries(searchParams));
 
     const where: Record<string, unknown> = {};
@@ -175,19 +174,11 @@ export async function GET(req: Request) {
     );
   }
 }
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}// POST /api/admin/users - Create a new user
+
+// POST /api/admin/users - Create a new user
 export async function POST(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
 
     if (!session || session.user?.role !== 'SUPER_ADMIN') {
@@ -197,7 +188,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const body = await request.json();
+    const body = await req.json();
     const validatedData = createUserSchema.parse(body);
 
     // Check if email already exists
@@ -255,7 +246,6 @@ export async function POST(req: Request) {
 export async function PATCH(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
 
     if (!session || !['SUPER_ADMIN', 'ADMIN'].includes(session.user?.role as string)) {
@@ -265,7 +255,7 @@ export async function PATCH(req: Request) {
       );
     }
 
-    const body = await request.json();
+    const body = await req.json();
     const { userId, ...updateData } = body;
 
     if (!userId) {
@@ -411,7 +401,6 @@ export async function PATCH(req: Request) {
 export async function DELETE(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
 
     if (!session || session.user?.role !== 'SUPER_ADMIN') {
@@ -421,7 +410,7 @@ export async function DELETE(req: Request) {
       );
     }
 
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(req.url);
     const userId = searchParams.get('userId');
 
     if (!userId) {

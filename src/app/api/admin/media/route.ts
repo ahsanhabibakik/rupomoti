@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectDB } from '@/lib/db';
-
-
+import dbConnect from '@/lib/mongoose';
+import Media from '@/models/Media';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/auth';
+import authOptions from '@/app/auth';
 import { z } from 'zod';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
@@ -26,16 +25,13 @@ const hasWritePermission = (role?: string) => {
 // GET /api/admin/media - Fetch all media
 export async function GET(req: Request) {
   try {
-    await connectDB();
-  try {
+    await dbConnect();
     const session = await getSession();
     // Allow read access for more roles if needed, for now restricted
     if (!hasWritePermission(session.user.role)) {
          return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-    const media = await prisma.media.findMany({
-      orderBy: [{ section: 'asc' }, { position: 'asc' }],
-    });
+    const media = await Media.find({}).sort({ section: 1, position: 1 });
     return NextResponse.json(media);
   } catch (error) {
     console.error('Error fetching media:', error);
@@ -44,15 +40,8 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: errorMessage }, { status: statusCode });
   }
 }
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}// Helper to upload a file to local storage
+
+// Helper to upload a file to local storage
 const uploadFile = async (file: File, section: string) => {
   // Check if this is an SVG from Cloudinary - if so, don't save it locally
   if ((file.type === 'image/svg+xml' || file.name.endsWith('.svg')) && file.name.includes('cloudinary')) {
@@ -95,8 +84,7 @@ const uploadFile = async (file: File, section: string) => {
 // POST /api/admin/media - Upload new media
 export async function POST(req: Request) {
   try {
-    await connectDB();
-  try {
+    await dbConnect();
     const session = await getSession();
     if (!hasWritePermission(session.user.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -118,9 +106,7 @@ export async function POST(req: Request) {
     
     // For logo section, check if a logo already exists
     if (section === 'logo') {
-      const existingLogo = await prisma.media.findFirst({
-        where: { section: 'logo' }
-      });
+      const existingLogo = await Media.findOne({ section: 'logo' });
       
       if (existingLogo) {
         return NextResponse.json({ 
@@ -205,7 +191,7 @@ export async function POST(req: Request) {
     }
 
     // Get the highest position for the section
-    const maxPosition = await prisma.media.findFirst({
+    const maxPosition = await Media.findOne({
       where: { section },
       orderBy: { position: 'desc' },
       select: { position: true }
@@ -218,7 +204,7 @@ export async function POST(req: Request) {
     const isSvg = (desktopFile && (desktopFile.type === 'image/svg+xml' || desktopFile.name.endsWith('.svg'))) || 
                   (cloudinaryUrl && cloudinaryUrl.toLowerCase().includes('.svg'));
 
-    const newMedia = await prisma.media.create({
+    const newMedia = await Media.create({
       data: {
         name,
         url: desktopUrl,
@@ -257,8 +243,7 @@ const updateSchema = z.object({
 // PUT /api/admin/media?id=... - Update media details
 export async function PUT(req: Request) {
   try {
-    await connectDB();
-  try {
+    await dbConnect();
     const session = await getSession();
     if (!hasWritePermission(session.user.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -286,7 +271,7 @@ export async function PUT(req: Request) {
       const mobileCloudinaryUrl = formData.get('mobileCloudinaryUrl') as string | null;
 
       // Get current media item
-      const currentMedia = await prisma.media.findUnique({
+      const currentMedia = await Media.findUnique({
         where: { id },
         select: { 
           url: true, 
@@ -360,7 +345,7 @@ export async function PUT(req: Request) {
         };
       }
 
-      const updatedMedia = await prisma.media.update({
+      const updatedMedia = await Media.update({
         where: { id },
         data: updateData
       });
@@ -371,7 +356,7 @@ export async function PUT(req: Request) {
       const body = await req.json();
       const validatedBody = updateSchema.parse(body);
 
-      const updatedMedia = await prisma.media.update({
+      const updatedMedia = await Media.update({
         where: { id },
         data: validatedBody,
       });
@@ -383,21 +368,12 @@ export async function PUT(req: Request) {
     const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}}
+}
 
 // DELETE /api/admin/media?id=... - Delete media
 export async function DELETE(req: Request) {
   try {
-    await connectDB();
-  try {
+    await dbConnect();
     const session = await getSession();
     if (!hasWritePermission(session.user.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -440,7 +416,7 @@ const mediaToDelete = await Media.findOne({ id } );
       console.warn('Error deleting files:', fileError);
     }
 
-    await prisma.media.delete({ where: { id } });
+    await Media.delete({ where: { id } });
 
     return NextResponse.json({ success: true });
   } catch (error) {

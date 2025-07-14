@@ -15,13 +15,12 @@ const moderationSchema = z.object({
 export async function GET(req: Request) {
   try {
     await connectDB();
-  try {
     const { authorized } = await verifyAdminAccess();
     if (!authorized) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(req.url);
     const status = searchParams.get('status') || 'PENDING';
     const productId = searchParams.get('productId');
     const page = parseInt(searchParams.get('page') || '1', 10);
@@ -82,25 +81,17 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Failed to fetch reviews' }, { status: 500 });
   }
 }
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}// Moderate a review (approve/reject)
+
+// Moderate a review (approve/reject)
 export async function POST(req: Request) {
   try {
     await connectDB();
-  try {
     const { authorized, user } = await verifyAdminAccess();
     if (!authorized || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = await req.json();
     const validatedData = moderationSchema.parse(body);
 
     const review = await prisma.review.findUnique({
@@ -176,13 +167,12 @@ export async function POST(req: Request) {
 export async function PUT(req: Request) {
   try {
     await connectDB();
-  try {
     const { authorized, user } = await verifyAdminAccess();
     if (!authorized || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = await req.json();
     const { reviewIds, action, moderationNote } = body;
 
     if (!reviewIds || !Array.isArray(reviewIds) || reviewIds.length === 0) {

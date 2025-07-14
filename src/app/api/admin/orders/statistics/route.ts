@@ -6,7 +6,6 @@ import { auth } from "@/app/auth";
 export async function GET(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.isAdmin && session?.user?.role !== 'ADMIN' && session?.user?.role !== 'MANAGER') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -56,14 +55,5 @@ export async function GET(req: Request) {
       { error: 'Failed to fetch order statistics' },
       { status: 500 }
     );
-  }
-}
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -6,13 +6,12 @@ import { isSlugAvailable, validateSlug } from '@/lib/utils/slug';
 export async function GET(req: Request) {
   try {
     await connectDB();
-  try {
     const { authorized } = await verifyAdminAccess();
     if (!authorized) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(req.url);
     const slug = searchParams.get('slug');
     const excludeProductId = searchParams.get('excludeProductId');
 
@@ -40,14 +39,5 @@ export async function GET(req: Request) {
   } catch (error) {
     console.error('Failed to check slug availability:', error);
     return NextResponse.json({ error: 'Failed to check slug availability' }, { status: 500 });
-  }
-}
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

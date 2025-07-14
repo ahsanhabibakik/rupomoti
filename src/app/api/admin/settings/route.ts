@@ -22,14 +22,11 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
     if (!session || !session.user || session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
     const body = await request.json();
-    
     const updatePromises = Object.entries(body).map(([key, value]) => {
       return prisma.setting.upsert({
         where: { key },
@@ -37,21 +34,10 @@ export async function POST(req: Request) {
         create: { key, value: value as any, label: key },
       });
     });
-
     await Promise.all(updatePromises);
-
     return NextResponse.json({ message: 'Settings updated successfully' });
   } catch (error) {
     console.error('Error updating settings:', error);
     return NextResponse.json({ error: 'Failed to update settings' }, { status: 500 });
-  }
-}
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

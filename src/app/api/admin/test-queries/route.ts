@@ -7,7 +7,6 @@ import { authOptions } from '@/app/auth';
 export async function GET(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.isAdmin && session?.user?.role !== 'ADMIN') {
@@ -159,19 +158,10 @@ export async function GET(req: Request) {
     })
 
   } catch (error) {
-    console.error('❌ Test Query Error:', error)
+    console.error('Test Query Error:', error)
     return NextResponse.json({ 
       error: 'Test failed',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
-  }
-}
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

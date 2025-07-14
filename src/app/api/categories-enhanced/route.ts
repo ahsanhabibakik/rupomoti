@@ -7,32 +7,26 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: Request) {
   try {
     await connectDB();
-  try {
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type') || 'active'
     const slug = searchParams.get('slug')
     const withProducts = searchParams.get('withProducts') === 'true'
     const productLimit = parseInt(searchParams.get('productLimit') || '12')
-
     let data
-
     if (slug) {
       // Get specific category with products
       data = await Categories.getCategoryWithProducts(slug, productLimit)
-      
       if (!data) {
         return NextResponse.json(
           { error: 'Category not found' },
           { status: 404 }
         )
       }
-
       return NextResponse.json({
         success: true,
         data
       })
     }
-
     switch (type) {
       case 'active':
         data = await Categories.getActiveCategories()
@@ -46,7 +40,6 @@ export async function GET(req: Request) {
       default:
         data = await Categories.getActiveCategories()
     }
-
     // Transform data
     const transformedData = data.map(category => ({
       id: category._id.toString(),
@@ -71,7 +64,6 @@ export async function GET(req: Request) {
         }
       })
     }))
-
     return NextResponse.json({
       success: true,
       data: transformedData,
@@ -81,10 +73,8 @@ export async function GET(req: Request) {
         withProducts
       }
     })
-
   } catch (error) {
     console.error('Enhanced Categories API Error:', error)
-    
     return NextResponse.json(
       { 
         error: 'Failed to fetch categories',
@@ -94,19 +84,11 @@ export async function GET(req: Request) {
     )
   }
 }
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}// Advanced category operations
+
+// Advanced category operations
 export async function POST(req: Request) {
   try {
     await connectDB();
-  try {
     const body = await request.json()
     const { action, data } = body
 

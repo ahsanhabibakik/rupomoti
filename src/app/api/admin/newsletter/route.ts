@@ -9,13 +9,10 @@ import { z } from 'zod'
 export async function GET(req: Request) {
   try {
     await connectDB();
-  const session = await getServerSession(authOptions)
-
-  if (!session?.user?.isAdmin) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
-  }
-
-  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.isAdmin) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+    }
     const subscriptions = await prisma.newsletterSubscription.findMany({
       orderBy: {
         createdAt: 'desc',
@@ -33,15 +30,8 @@ export async function GET(req: Request) {
     )
   }
 }
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}const createSubscriberSchema = z.object({
+
+const createSubscriberSchema = z.object({
   email: z.string().email(),
   tagIds: z.array(z.string()),
 })
@@ -49,39 +39,36 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     await connectDB();
-  const session = await getServerSession(authOptions)
-
-  if (!session?.user?.isAdmin) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
-  }
-
-  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.isAdmin) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+    }
     const body = await request.json()
     const validation = createSubscriberSchema.safeParse(body)
-
     if (!validation.success) {
       return NextResponse.json(validation.error.flatten(), { status: 400 })
     }
-    
     const { email, tagIds } = validation.data
-    
-    const newSubscriber = await prisma.newsletterSubscription.create({
-      data: {
-        email,
-        tags: {
-          connect: tagIds.map((id) => ({ id })),
+    try {
+      const newSubscriber = await prisma.newsletterSubscription.create({
+        data: {
+          email,
+          tags: {
+            connect: tagIds.map((id) => ({ id })),
+          },
         },
-      },
-      include: {
-        tags: true
+        include: {
+          tags: true
+        }
+      })
+      return NextResponse.json(newSubscriber, { status: 201 })
+    } catch (error: any) {
+      if (error.code === 'P2002') {
+        return NextResponse.json({ message: 'A subscriber with this email already exists.' }, { status: 409 })
       }
-    })
-
-    return NextResponse.json(newSubscriber, { status: 201 })
-  } catch (error: Record<string, unknown>) {
-    if (error.code === 'P2002') {
-      return NextResponse.json({ message: 'A subscriber with this email already exists.' }, { status: 409 })
+      throw error;
     }
+  } catch (error) {
     console.error('Failed to create subscriber:', error)
     return NextResponse.json({ message: 'An unexpected error occurred.' }, { status: 500 })
   }
