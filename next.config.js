@@ -135,6 +135,11 @@ const nextConfig = {
     formats: ['image/webp', 'image/avif'],
   },
   serverExternalPackages: ['bcrypt', 'mongodb', 'mongoose', '@auth/prisma-adapter'],
+  // Force Node.js runtime for API routes (no edge runtime for Prisma)
+  experimental: {
+    optimizePackageImports: ['@prisma/client'],
+    serverComponentsExternalPackages: ['@prisma/client', 'prisma'],
+  },
   compress: true,
   generateEtags: true,
   distDir: '.next',
