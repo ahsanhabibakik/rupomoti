@@ -1,3 +1,5 @@
+export const runtime = 'nodejs';
+
 import { Schema, Document } from 'mongoose'
 
 export interface ICategory extends Document {

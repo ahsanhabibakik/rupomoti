@@ -1,3 +1,6 @@
+export const runtime = 'nodejs';
+
+import { NextRequest } from 'next/server'
 // Re-export auth utilities for convenience
 export { auth } from '@/app/auth'
 

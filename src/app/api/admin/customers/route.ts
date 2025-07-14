@@ -1,4 +1,6 @@
-import { NextResponse } from 'next/server'
+export const runtime = 'nodejs';
+
+import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/auth'
 import dbConnect from '@/lib/mongoose'

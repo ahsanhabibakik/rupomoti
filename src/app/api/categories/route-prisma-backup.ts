@@ -1,4 +1,6 @@
-import { NextResponse } from 'next/server'
+export const runtime = 'nodejs';
+
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/app/auth'
 import dbConnect from '@/lib/dbConnect';
 

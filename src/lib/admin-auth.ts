@@ -1,3 +1,5 @@
+export const runtime = 'nodejs';
+
 import { auth } from '@/app/auth'
 
 export async function verifyAdminAccess() {

@@ -1,3 +1,5 @@
+export const runtime = 'nodejs';
+
 const MONGODB_URI = process.env.DATABASE_URL!
 
 if (!MONGODB_URI) {
