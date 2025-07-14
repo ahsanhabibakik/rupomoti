@@ -134,11 +134,10 @@ const nextConfig = {
     minimumCacheTTL: 60,
     formats: ['image/webp', 'image/avif'],
   },
-  serverExternalPackages: ['bcrypt', 'mongodb', 'mongoose', '@auth/prisma-adapter'],
-  // Force Node.js runtime for API routes (no edge runtime for Prisma)
+  serverExternalPackages: ['bcrypt', 'mongodb', 'mongoose', '@auth/prisma-adapter', '@prisma/client', 'prisma'],
+  // Optimize build and runtime performance  
   experimental: {
     optimizePackageImports: ['@prisma/client'],
-    serverComponentsExternalPackages: ['@prisma/client', 'prisma'],
   },
   compress: true,
   generateEtags: true,
