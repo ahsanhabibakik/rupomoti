@@ -1,7 +1,7 @@
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from "@/app/auth";
+import { auth } from "@/lib/auth-node";
 import dbConnect from '@/lib/dbConnect';
 // Define OrderStatus enum to replace Prisma import
 enum OrderStatus {

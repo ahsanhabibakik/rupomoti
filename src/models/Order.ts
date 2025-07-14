@@ -275,3 +275,7 @@ OrderSchema.set('toJSON', { virtuals: true })
 OrderSchema.set('toObject', { virtuals: true })
 
 export default mongoose.models.Order || mongoose.model<IOrder>('Order', OrderSchema)
+
+export function getOrderModel() {
+  return mongoose.models.Order || mongoose.model<IOrder>('Order', OrderSchema)
+}

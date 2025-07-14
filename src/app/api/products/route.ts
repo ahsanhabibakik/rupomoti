@@ -1,7 +1,9 @@
-import { NextResponse } from 'next/server'
+export const runtime = 'nodejs';
+
+import { NextRequest, NextResponse } from 'next/server'
 import dbConnect from '@/lib/mongoose'
-import Product from '@/models/Product'
-import Category from '@/models/Category'
+import { getProductModel } from '@/models/Product'
+import { getCategoryModel } from '@/models/Category'
 
 // Cache configuration
 const CACHE_DURATION = 60 * 5 // 5 minutes in seconds
@@ -93,13 +95,13 @@ export async function GET(request: Request) {
 
     // Execute queries in parallel
     const [products, totalCount] = await Promise.all([
-      Product.find(query)
+      getProductModel().find(query)
         .populate('category', 'name displayName')
         .sort(sortOptions)
         .limit(limit)
         .skip(skip)
         .lean(),
-      Product.countDocuments(query)
+      getProductModel().countDocuments(query)
     ])
 
     // Calculate pagination metadata
@@ -163,7 +165,7 @@ export async function POST(request: Request) {
     }
 
     // Verify category exists
-    const categoryDoc = await Category.findById(category)
+    const categoryDoc = await getCategoryModel().findById(category)
     if (!categoryDoc) {
       return NextResponse.json(
         { error: 'Invalid category' },
@@ -172,7 +174,7 @@ export async function POST(request: Request) {
     }
 
     // Create product
-    const product = await Product.create({
+    const product = await getProductModel().create({
       ...body,
       slug: body.slug || name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-'),
     })

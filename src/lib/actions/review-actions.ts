@@ -1,8 +1,8 @@
 export const runtime = 'nodejs';
 
 import { revalidatePath } from 'next/cache'
-import dbConnect from '@/lib/dbConnect';
-import { auth } from '@/app/auth'
+import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@/lib/auth-node'
 
 export async function createReview(formData: FormData) {
   const session = await auth()

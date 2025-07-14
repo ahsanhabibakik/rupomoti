@@ -2,10 +2,10 @@ export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/app/auth'
+import { authOptions } from '@/lib/auth-node'
 import dbConnect from '@/lib/mongoose'
-import User from '@/models/User'
-import Order from '@/models/Order'
+import { getUserModel } from '@/models/User'
+import { getOrderModel } from '@/models/Order'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -23,6 +23,8 @@ export async function GET(request: Request) {
     }
 
     await dbConnect()
+    const User = getUserModel()
+    const Order = getOrderModel()
 
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search')

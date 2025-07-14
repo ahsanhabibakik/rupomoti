@@ -1,6 +1,8 @@
 import dbConnect from '@/lib/mongoose'
-import Product from '@/models/Product'
-import Category from '@/models/Category'
+import { getProductModel } from '@/models/Product';
+import { getCategoryModel } from '@/models/Category';
+const Product = getProductModel();
+const Category = getCategoryModel();
 
 export class ProductService {
   static async init() {

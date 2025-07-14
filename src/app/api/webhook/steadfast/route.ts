@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import dbConnect from '@/lib/mongoose'
-import Order from '@/models/Order'
+import { getOrderModel } from '@/models/Order';
+const Order = getOrderModel();
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -117,7 +118,7 @@ async function handleTrackingUpdate(payload: Record<string, unknown>) {
 
     await Order.findByIdAndUpdate(order._id, updateData)
     
-    console.log(`✅ Order ${order.orderNumber} tracking updated`)
+    console.log('✅ Order tracking updated for', order.orderNumber)
   } catch (error) {
     console.error('❌ Error handling tracking update:', error)
   }

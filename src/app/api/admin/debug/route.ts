@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 import dbConnect from '@/lib/mongoose';
-import User from '@/models/User';
-import Order from '@/models/Order';
-import AuditLog from '@/models/AuditLog';
-
+import { getUserModel } from '@/models/User';
+import { getOrderModel } from '@/models/Order';
+import { getAuditLogModel } from '@/models/AuditLog';
+const User = getUserModel();
+const Order = getOrderModel();
+const AuditLog = getAuditLogModel();
 
 
 export async function GET(req: Request) {

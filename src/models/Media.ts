@@ -149,3 +149,7 @@ MediaSchema.set('toJSON', { virtuals: true })
 MediaSchema.set('toObject', { virtuals: true })
 
 export default mongoose.models.Media || mongoose.model<IMedia>('Media', MediaSchema)
+
+export function getMediaModel() {
+  return mongoose.models.Media || mongoose.model<IMedia>('Media', MediaSchema)
+}

@@ -1,3 +1,5 @@
+export const runtime = 'nodejs';
+
 import { NextResponse } from 'next/server';
 
 import { randomBytes } from 'crypto';
@@ -15,6 +17,7 @@ export async function GET() {
     const { getUserModel } = await import('@/models/User');
     await dbConnect();
     const User = getUserModel();
+    const { auth } = await import('@/lib/auth-node');
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -43,6 +46,7 @@ export async function POST(req: Request) {
     const { getUserModel } = await import('@/models/User');
     await dbConnect();
     const User = getUserModel();
+    const { auth } = await import('@/lib/auth-node');
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

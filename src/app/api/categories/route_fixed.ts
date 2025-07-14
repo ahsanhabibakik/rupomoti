@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import dbConnect from '@/lib/mongoose'
-import Category from '@/models/Category'
+import { getCategoryModel } from '@/models/Category';
+const Category = getCategoryModel();
 
 export async function GET(request: Request) {
   try {

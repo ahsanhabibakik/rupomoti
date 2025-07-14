@@ -1,6 +1,6 @@
 export const runtime = 'nodejs';
 
-import { auth } from '@/app/auth'
+import { auth } from '@/lib/auth-node'
 
 export async function verifyAdminAccess() {
   const session = await auth()

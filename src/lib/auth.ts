@@ -2,7 +2,8 @@ export const runtime = 'nodejs';
 
 import { NextRequest } from 'next/server'
 // Re-export auth utilities for convenience
-export { auth } from '@/app/auth'
+export { auth } from '@/lib/auth-node'
+export { authOptions } from '@/lib/auth-node'
 
 // Additional auth utilities
 import { getServerSession } from 'next-auth'

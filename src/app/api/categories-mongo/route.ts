@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
 import dbConnect from '@/lib/mongoose'
-import Category from '@/models/Category'
-import Product from '@/models/Product'
+import { getCategoryModel } from '@/models/Category';
+import { getProductModel } from '@/models/Product';
+const Category = getCategoryModel();
+const Product = getProductModel();
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'

@@ -1,6 +1,8 @@
-import { NextResponse } from 'next/server'
+export const runtime = 'nodejs';
+
+import { NextRequest, NextResponse } from 'next/server'
 import dbConnect from '@/lib/mongoose'
-import Category from '@/models/Category'
+import { getCategoryModel } from '@/models/Category'
 
 export async function GET(request: Request) {
   try {
@@ -36,12 +38,12 @@ export async function GET(request: Request) {
 
     // Execute query with pagination
     const [categories, totalCount] = await Promise.all([
-      Category.find(query)
+      getCategoryModel().find(query)
         .sort({ level: 1, sortOrder: 1, name: 1 })
         .skip(skip)
         .limit(pageSize)
         .lean(),
-      Category.countDocuments(query)
+      getCategoryModel().countDocuments(query)
     ])
 
     const totalPages = Math.ceil(totalCount / pageSize)
@@ -89,7 +91,7 @@ export async function POST(request: Request) {
     }
 
     // Check if slug already exists
-    const existingCategory = await Category.findOne({ slug })
+    const existingCategory = await getCategoryModel().findOne({ slug })
     if (existingCategory) {
       return NextResponse.json(
         { error: 'Category with this slug already exists' },
@@ -99,7 +101,7 @@ export async function POST(request: Request) {
 
     // If parent is specified, validate it exists
     if (body.parentId) {
-      const parentCategory = await Category.findById(body.parentId)
+      const parentCategory = await getCategoryModel().findById(body.parentId)
       if (!parentCategory) {
         return NextResponse.json(
           { error: 'Parent category not found' },
@@ -112,7 +114,7 @@ export async function POST(request: Request) {
     }
 
     // Create category
-    const category = await Category.create(body)
+    const category = await getCategoryModel().create(body)
 
     return NextResponse.json(category, { status: 201 })
 

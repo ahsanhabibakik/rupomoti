@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
-import User from '@/models/User'
+import { getUserModel } from '@/models/User';
+const User = getUserModel();
 import dbConnect from '@/lib/mongoose'
 
 export async function POST(req: NextRequest) {

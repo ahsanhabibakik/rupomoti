@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import dbConnect from '@/lib/mongoose'
-import Product from '@/models/Product'
+import { getProductModel } from '@/models/Product';
+const Product = getProductModel();
 
 export async function GET() {
   try {

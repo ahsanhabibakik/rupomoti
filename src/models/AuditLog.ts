@@ -70,3 +70,7 @@ auditLogSchema.index({ action: 1, createdAt: -1 })
 const AuditLog = mongoose.models.AuditLog || mongoose.model<IAuditLog>('AuditLog', auditLogSchema)
 
 export default AuditLog
+
+export function getAuditLogModel() {
+  return mongoose.models.AuditLog || mongoose.model<IAuditLog>('AuditLog', auditLogSchema)
+}

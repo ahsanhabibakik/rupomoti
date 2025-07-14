@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongoose';
-import Media from '@/models/Media';
+import { getMediaModel } from '@/models/Media';
+const Media = getMediaModel();
 
 import { z } from 'zod';
 import { writeFile, mkdir } from 'fs/promises';

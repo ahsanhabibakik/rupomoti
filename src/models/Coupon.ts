@@ -204,3 +204,7 @@ CouponSchema.set('toJSON', { virtuals: true })
 CouponSchema.set('toObject', { virtuals: true })
 
 export default mongoose.models.Coupon || mongoose.model<ICoupon>('Coupon', CouponSchema)
+
+export function getCouponModel() {
+  return mongoose.models.Coupon || mongoose.model<ICoupon>('Coupon', CouponSchema)
+}

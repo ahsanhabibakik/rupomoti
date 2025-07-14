@@ -1,5 +1,6 @@
 // Import Mongoose models to replace Prisma models
-import Product from '@/models/Product';
+import { getProductModel } from '@/models/Product';
+const Product = getProductModel();
 
 
 export interface SafeProduct {

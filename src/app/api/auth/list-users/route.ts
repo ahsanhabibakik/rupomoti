@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import User from '@/models/User'
+import { getUserModel } from '@/models/User';
+const User = getUserModel();
 import dbConnect from '@/lib/mongoose'
 
 export async function GET() {

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 
-import Category from '@/models/Category';
+import { getCategoryModel } from '@/models/Category';
+const Category = getCategoryModel();
 
 /**
  * GET /api/categories - Get all categories

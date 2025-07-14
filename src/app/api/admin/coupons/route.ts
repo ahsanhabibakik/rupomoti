@@ -2,10 +2,12 @@ export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server'
 
-import { authOptions } from "@/app/auth";
+import { authOptions } from "@/lib/auth-node";
 import dbConnect from '@/lib/mongoose';
-import Coupon from '@/models/Coupon';
-import AuditLog from '@/models/AuditLog';
+import { getCouponModel } from '@/models/Coupon';
+import { getAuditLogModel } from '@/models/AuditLog';
+const Coupon = getCouponModel();
+const AuditLog = getAuditLogModel();
 
 
 import { z } from "zod";

@@ -1,7 +1,7 @@
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/app/auth'
+import { auth } from '@/lib/auth-node'
 import dbConnect from '@/lib/dbConnect';
 
 export async function GET(request: Request) {

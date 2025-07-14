@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
 import dbConnect from '@/lib/mongoose'
-import Product from '@/models/Product'
-import Category from '@/models/Category'
+import { getProductModel } from '@/models/Product';
+import { getCategoryModel } from '@/models/Category';
+const Product = getProductModel();
+const Category = getCategoryModel();
 
 // Cache configuration
 const CACHE_DURATION = 60 * 5 // 5 minutes in seconds
