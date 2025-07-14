@@ -1,8 +1,5 @@
 import { NextResponse } from 'next/server';
-import connectDB from '@/lib/db';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/auth';
-import User from '@/models/User';
+import { auth } from '@/app/auth';
 import { randomBytes } from 'crypto';
 
 // Email service (you might want to use a proper email service like SendGrid, Nodemailer, etc.)
@@ -14,8 +11,10 @@ async function sendVerificationEmail(email: string, code: string) {
 
 export async function GET() {
   try {
-    await connectDB();
-    const session = await getServerSession(authOptions);
+    const { default: dbConnect } = await import('@/lib/mongoose');
+    const { default: User } = await import('@/models/User');
+    await dbConnect();
+    const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -39,8 +38,10 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    await connectDB();
-    const session = await getServerSession(authOptions);
+    const { default: dbConnect } = await import('@/lib/mongoose');
+    const { default: User } = await import('@/models/User');
+    await dbConnect();
+    const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

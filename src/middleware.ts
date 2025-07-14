@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getToken } from 'next-auth/jwt'
+import { auth } from '@/app/auth'
 
 export default async function middleware(req: NextRequest) {
   const { nextUrl } = req
@@ -16,23 +16,19 @@ export default async function middleware(req: NextRequest) {
     return NextResponse.redirect(signinUrl)
   }
   
-  // Get token - optimized with faster secret resolution
-  const token = await getToken({ 
-    req, 
-    secret: process.env.NEXTAUTH_SECRET,
-    secureCookie: process.env.NODE_ENV === 'production'
-  })
+  // Get session using auth function
+  const session = await auth()
   
   // Fast unauthorized redirect
-  if (!token) {
+  if (!session?.user) {
     const loginUrl = new URL('/signin', nextUrl.origin)
     loginUrl.searchParams.set('callbackUrl', nextUrl.pathname)
     return NextResponse.redirect(loginUrl)
   }
   
   // Optimized admin access check - combined condition
-  const userRole = token.role as string
-  const isAdmin = token.isAdmin as boolean
+  const userRole = session.user.role as string
+  const isAdmin = session.user.isAdmin as boolean
   const hasAdminAccess = isAdmin || ['ADMIN', 'SUPER_ADMIN', 'MANAGER'].includes(userRole)
   
   if (nextUrl.pathname.startsWith('/admin/media')) {

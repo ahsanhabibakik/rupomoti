@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/auth';
+import { auth } from '@/app/auth';
 
 
 
 export async function DELETE(req: Request) {
   try {
     await connectDB();
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     
     if (!session?.user?.email) {
       console.log('Bulk delete: No session or email')
@@ -85,7 +84,7 @@ export async function DELETE(req: Request) {
 export async function PATCH(req: Request) {
   try {
     await connectDB();
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

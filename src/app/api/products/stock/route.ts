@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/auth';
+import { auth } from '@/app/auth';
 
 const prisma = new PrismaClient();
 
@@ -10,7 +9,7 @@ const prisma = new PrismaClient();
 export async function PATCH(req: Request) {
   try {
     await connectDB();
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user || !['SUPER_ADMIN', 'ADMIN', 'MANAGER'].includes(session.user.role as string)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -76,7 +75,7 @@ export async function PATCH(req: Request) {
 export async function POST(req: Request) {
   try {
     await connectDB();
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user || !['SUPER_ADMIN', 'ADMIN'].includes(session.user.role as string)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

@@ -1,5 +1,4 @@
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/auth';
+import { auth } from '@/app/auth';
 import { NextResponse } from 'next/server'
 
 
@@ -9,7 +8,7 @@ import { z } from 'zod'
 export async function GET(req: Request) {
   try {
     await connectDB();
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     if (!session?.user?.isAdmin) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }
@@ -39,7 +38,7 @@ const createSubscriberSchema = z.object({
 export async function POST(req: Request) {
   try {
     await connectDB();
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     if (!session?.user?.isAdmin) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }

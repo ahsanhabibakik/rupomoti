@@ -27,7 +27,7 @@ export async function GET(req: Request) {
     await connectDB();
     console.log('🚀 Optimized Admin Orders API - Starting request...');
     
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     
     // Check authentication
     if (!session?.user?.id) {
@@ -225,7 +225,7 @@ export async function GET(req: Request) {
 export async function PUT(req: Request) {
   try {
     await connectDB();
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -281,7 +281,7 @@ export async function PUT(req: Request) {
 export async function DELETE(req: Request) {
   try {
     await connectDB();
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -317,7 +317,7 @@ export async function DELETE(req: Request) {
 export async function POST(req: Request) {
   try {
     await connectDB();
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     const body = await req.json();
     
     console.log('Order API - Received data:', JSON.stringify(body, null, 2));

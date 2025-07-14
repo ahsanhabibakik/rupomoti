@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongoose';
 import Media from '@/models/Media';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/auth';
+import { auth } from '@/app/auth';
 import { z } from 'zod';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
@@ -10,7 +9,7 @@ import { existsSync } from 'fs';
 
 // Helper to get session and check for user
 const getSession = async () => {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session?.user?.id) {
     throw new Error('Unauthorized: No user session found');
   }

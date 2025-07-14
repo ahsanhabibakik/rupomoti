@@ -1,9 +1,7 @@
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import GoogleProvider from "next-auth/providers/google"
-import User from '../models/User'
 import bcrypt from 'bcryptjs'
-import dbConnect from '../lib/mongoose'
 
 const authOptions = {
   secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-for-development',
@@ -26,6 +24,10 @@ const authOptions = {
           if (!email || !password) {
             throw new Error('Email and password are required')
           }
+
+          // Dynamic imports to avoid Edge Runtime issues
+          const { default: dbConnect } = await import('../lib/mongoose')
+          const { default: User } = await import('../models/User')
 
           // Connect to MongoDB
           await dbConnect()
@@ -91,4 +93,4 @@ const authOptions = {
 }
 
 export { authOptions };
-export const auth = authOptions;
+export const auth = NextAuth(authOptions);

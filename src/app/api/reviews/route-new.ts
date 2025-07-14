@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import { cookies } from 'next/headers';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/auth';
+import { auth } from '@/app/auth';
 import { z } from 'zod';
 import { nanoid } from 'nanoid';
 
@@ -61,7 +60,7 @@ export async function GET(request: Request) {
 // Create or update a review
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     const body = await request.json();
     const validatedData = reviewSchema.parse(body);
 
@@ -173,7 +172,7 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
     }
 
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     let userId: string | null = null;
     let anonymousToken: string | null = null;
 

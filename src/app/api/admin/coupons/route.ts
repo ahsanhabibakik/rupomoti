@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from 'next-auth/next';
+import { auth } from '@/app/auth';
 import { authOptions } from "@/app/auth";
 import dbConnect from '@/lib/mongoose';
 import Coupon from '@/models/Coupon';
@@ -31,7 +31,7 @@ const querySchema = z.object({
 export async function GET(req: Request) {
   try {
     await dbConnect();
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session || !["SUPER_ADMIN", "ADMIN"].includes(session.user?.role as string)) {
       return NextResponse.json(
@@ -140,7 +140,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     await dbConnect();
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     const userId = session?.user?.id;
 
     if (!userId || !["SUPER_ADMIN", "ADMIN"].includes(session.user?.role as string)) {
@@ -236,7 +236,7 @@ export async function POST(req: Request) {
 export async function PATCH(req: Request) {
   try {
     await dbConnect();
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     const userId = session?.user?.id;
 
     if (!userId || !["SUPER_ADMIN", "ADMIN"].includes(session.user?.role as string)) {
@@ -345,7 +345,7 @@ export async function PATCH(req: Request) {
 export async function DELETE(req: Request) {
   try {
     await dbConnect();
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     const userId = session?.user?.id;
 
     if (!userId || !["SUPER_ADMIN", "ADMIN"].includes(session.user?.role as string)) {

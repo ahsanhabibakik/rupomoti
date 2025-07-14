@@ -1,5 +1,5 @@
 // Re-export auth utilities for convenience
-export { auth, signIn, signOut } from '@/app/auth'
+export { auth } from '@/app/auth'
 
 // Additional auth utilities
 import { getServerSession } from 'next-auth'

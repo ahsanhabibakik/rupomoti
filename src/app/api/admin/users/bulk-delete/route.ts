@@ -11,7 +11,7 @@ const bulkDeleteSchema = z.object({
 export async function POST(req: Request) {
   try {
     await connectDB();
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session || session.user?.role !== 'SUPER_ADMIN') {
       return NextResponse.json(
         { message: "Only Super Admin can bulk delete users" },

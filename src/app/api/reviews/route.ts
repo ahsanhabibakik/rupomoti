@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 
 import { cookies } from 'next/headers';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/auth';
+import { auth } from '@/app/auth';
 import { z } from 'zod';
 import { nanoid } from 'nanoid';
 
@@ -23,7 +22,7 @@ export async function GET(req: NextRequest) {
     const mine = searchParams.get('mine');
     const status = searchParams.get('status') || 'APPROVED';
     if (mine === '1') {
-      const session = await getServerSession(authOptions);
+      const session = await auth();
       if (!session?.user?.id) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
@@ -58,7 +57,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     await connectDB();
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     const body = await req.json();
     const validatedData = reviewSchema.parse(body);
     let userId: string | null = null;
@@ -141,7 +140,7 @@ export async function PUT(req: NextRequest) {
     if (!productId) {
       return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
     }
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     let userId: string | null = null;
     let anonymousToken: string | null = null;
     if (session?.user?.id) {

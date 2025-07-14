@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/auth';
+import { auth } from '@/app/auth';
 
 
 import { startOfDay, endOfDay, subDays, subMonths, startOfMonth, endOfMonth } from 'date-fns';
@@ -11,7 +10,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: Request) {
   try {
     await connectDB();
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session || !['SUPER_ADMIN', 'ADMIN', 'MANAGER'].includes(session.user?.role as string)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

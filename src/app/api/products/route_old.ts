@@ -156,7 +156,7 @@ export async function GET(request: Request) {
   }
 }
 
-export const POST = withMongoose(async (req) => {
+export async function POST(request: Request) {
   try {
     await dbConnect()
 

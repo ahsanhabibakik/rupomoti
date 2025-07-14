@@ -5,7 +5,7 @@ import { InventoryManager } from '@/lib/inventory'
 export async function POST(req: Request) {
   try {
     await connectDB();
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     
     if (!session?.user || !['ADMIN', 'SUPER_ADMIN', 'MANAGER'].includes(session.user.role)) {
       return NextResponse.json(
@@ -42,7 +42,7 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   try {
     await connectDB();
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     
     if (!session?.user || !['ADMIN', 'SUPER_ADMIN', 'MANAGER'].includes(session.user.role)) {
       return NextResponse.json(

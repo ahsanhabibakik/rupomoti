@@ -1,15 +1,14 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongoose';
 import User from '@/models/User';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/auth';
+import { auth } from '@/app/auth';
 import { AuditLogger } from '@/lib/audit-logger';
 import AuditLog from '@/models/AuditLog';
 
 export async function POST(req: Request) {
   try {
     await dbConnect();
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (
       !session ||
       !session.user ||

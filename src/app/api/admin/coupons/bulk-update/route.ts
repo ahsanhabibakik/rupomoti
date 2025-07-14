@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from 'next-auth/next';
+import { auth } from '@/app/auth';
 import { authOptions } from "@/app/auth";
 import dbConnect from '@/lib/mongoose';
 import Coupon from '@/models/Coupon';
@@ -10,7 +10,7 @@ import AuditLog from '@/models/AuditLog';
 export async function PATCH(req: Request) {
   try {
     await dbConnect();
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     const userId = session?.user?.id;
 
     if (!userId || !["SUPER_ADMIN", "ADMIN"].includes(session.user?.role as string)) {

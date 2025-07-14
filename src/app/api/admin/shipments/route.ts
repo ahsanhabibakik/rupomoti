@@ -10,8 +10,7 @@
  */
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/auth';
+import { auth } from '@/app/auth';
 
 
 import { z } from 'zod';
@@ -188,7 +187,7 @@ async function getRedxAreaInfo(district: string, areaName: string) {
 export async function POST(req: Request) {
   try {
     await connectDB();
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session || !['SUPER_ADMIN', 'ADMIN', 'MANAGER'].includes(session.user?.role as string)) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

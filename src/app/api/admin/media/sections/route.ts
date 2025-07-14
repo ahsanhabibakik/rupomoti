@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 
 
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/auth';
+import { auth } from '@/app/auth';
 
 // Default sections if none are found in the database
 const DEFAULT_SECTIONS = [
@@ -50,7 +49,7 @@ const DEFAULT_SECTIONS = [
 
 // Helper to get session and check for user
 const getSession = async () => {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session?.user?.id) {
     throw new Error('Unauthorized: No user session found');
   }

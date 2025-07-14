@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
+import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/auth'
 import dbConnect from '@/lib/mongoose'
 import User from '@/models/User'
@@ -10,7 +10,7 @@ export const revalidate = 0
 
 export async function GET(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     
     if (
       !session ||

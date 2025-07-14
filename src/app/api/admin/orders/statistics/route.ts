@@ -6,7 +6,7 @@ import { auth } from "@/app/auth";
 export async function GET(req: Request) {
   try {
     await connectDB();
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user?.isAdmin && session?.user?.role !== 'ADMIN' && session?.user?.role !== 'MANAGER') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

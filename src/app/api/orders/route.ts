@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/auth';
+import { auth } from '@/app/auth';
 
 
 import { generateUniqueOrderNumber } from '@/lib/server/order-number-generator'
@@ -43,7 +42,7 @@ export async function GET() {
 export async function PUT(req: Request) {
   try {
     await connectDB();
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     if (!session) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -79,7 +78,7 @@ export async function PUT(req: Request) {
 export async function DELETE(req: Request) {
   try {
     await connectDB();
-    const session = await getServerSession(authOptions)
+    const session = await auth()
 
     if (!session) {
       return NextResponse.json(
@@ -115,7 +114,7 @@ export async function DELETE(req: Request) {
 export async function POST(req: Request) {
   try {
     await connectDB();
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     const body = await req.json();
     
     console.log('Order API - Received data:', JSON.stringify(body, null, 2));

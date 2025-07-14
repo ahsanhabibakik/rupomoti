@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/auth';
+import { auth } from '@/app/auth';
 
 
 import { AuditLogger } from '@/lib/audit-logger';
@@ -12,7 +11,7 @@ export const revalidate = 0;
 export async function PATCH(req: Request) {
   try {
     await connectDB();
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     
     // Check authentication and authorization
     if (!session || !['SUPER_ADMIN', 'ADMIN'].includes(session.user?.role as string)) {

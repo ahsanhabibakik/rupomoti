@@ -2,15 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 
 
 
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/auth';
+import { auth } from '@/app/auth';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string, action: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     
     if (!session?.user?.isAdmin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -233,7 +232,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string, action: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     
     if (!session?.user?.isAdmin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
