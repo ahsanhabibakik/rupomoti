@@ -70,8 +70,69 @@ const nextConfig = {
         hostname: "cdn.prosystem.com.bd",
         pathname: "/**",
       },
+      // BlueStone domains
+      {
+        protocol: "https",
+        hostname: "kinclimg0.bluestone.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "kinclimg1.bluestone.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "kinclimg2.bluestone.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "kinclimg3.bluestone.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "kinclimg4.bluestone.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "kinclimg5.bluestone.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "kinclimg6.bluestone.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "kinclimg7.bluestone.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "kinclimg8.bluestone.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "kinclimg9.bluestone.com",
+        pathname: "/**",
+      },
+      // Piaget domains
+      {
+        protocol: "https",
+        hostname: "img.piaget.com",
+        pathname: "/**",
+      },
     ],
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     unoptimized: process.env.NODE_ENV === 'development',
+    minimumCacheTTL: 60,
+    formats: ['image/webp', 'image/avif'],
   },
   serverExternalPackages: ['bcrypt', 'mongodb', 'mongoose', '@auth/prisma-adapter'],
   compress: true,

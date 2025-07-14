@@ -22,7 +22,7 @@ const createSafeAdapter = () => {
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: createSafeAdapter(),
-  secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-for-development',
+  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET || 'development-secret-key-2024-rupomoti-app',
   basePath: '/api/auth',
   allowDangerousEmailAccountLinking: true, // Allow linking OAuth accounts to existing email accounts
   session: {

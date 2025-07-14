@@ -1,11 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
-import { Heart, ShoppingCart,   } from 'lucide-react'
+import { Heart, ShoppingCart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { SafeImage } from '@/components/ui/SafeImage'
 import { useAppDispatch } from '@/redux/hooks'
 import { addToCart } from '@/redux/slices/cartSlice'
 import { setCartDrawerOpen } from '@/redux/slices/uiSlice'
@@ -25,7 +25,6 @@ export function ProductCard({ product, compact = false, className }: ProductCard
   const discount = price && salePrice && salePrice < price ? Math.round(((price - salePrice) / price) * 100) : 0
   const dispatch = useAppDispatch()
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist()
-  const [isImageLoading, setIsImageLoading] = useState(true)
   const [isHovered, setIsHovered] = useState(false)
 
   const safePrice = typeof price === 'number' && !isNaN(price) ? price : 0
@@ -79,45 +78,31 @@ export function ProductCard({ product, compact = false, className }: ProductCard
         compact ? "aspect-[4/3]" : "aspect-[4/3] sm:aspect-square"
       )}>
         {/* Main Image */}
-        <Image
-          src={images[0]}
+        <SafeImage
+          src={images[0] || '/images/placeholder.jpg'}
           alt={name || 'Unnamed Product'}
           fill
+          fallbackSrc="/images/placeholder.jpg"
           className={cn(
             "object-cover transition-opacity duration-300",
             isHovered && images[1] ? "opacity-0" : "opacity-100"
           )}
           sizes={compact ? "(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw" : "(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 50vw"}
-          onLoad={() => setIsImageLoading(false)}
-          onError={(e) => {
-            console.error('Product image failed to load:', images[0])
-            // Set fallback image on error
-            e.currentTarget.src = '/images/placeholder.jpg'
-            setIsImageLoading(false)
-          }}
         />
         
         {/* Hover Image */}
         {images[1] && (
-          <Image
+          <SafeImage
             src={images[1]}
             alt={`${name || 'Unnamed Product'} - alternate view`}
             fill
+            fallbackSrc="/images/placeholder.jpg"
             className={cn(
               "object-cover transition-opacity duration-300",
               isHovered ? "opacity-100" : "opacity-0"
             )}
             sizes={compact ? "(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw" : "(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 50vw"}
           />
-        )}
-        {/* Loading Overlay */}
-        {isImageLoading && (
-          <div className="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center">
-            <div className={cn(
-              "border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin",
-              compact ? "w-6 h-6" : "w-8 h-8"
-            )}></div>
-          </div>
         )}
         {/* Badges */}
         <div className={cn(
