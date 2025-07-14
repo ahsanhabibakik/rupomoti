@@ -507,3 +507,58 @@ export async function POST(req: Request) {
     );
   }
 }
+
+// PATCH method for bulk operations
+export async function PATCH(req: Request) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { ids, isFakeOrder, restore, status } = await req.json();
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return NextResponse.json({ error: 'Order IDs array required' }, { status: 400 });
+    }
+
+    // Build update data
+    const updateData: Prisma.OrderUpdateInput = { 
+      updatedAt: new Date() 
+    };
+    
+    if (status !== undefined) {
+      updateData.status = status;
+    }
+    
+    if (isFakeOrder !== undefined) {
+      updateData.isFakeOrder = isFakeOrder;
+    }
+    
+    if (restore === true) {
+      updateData.deletedAt = null;
+      updateData.isFakeOrder = false;
+    }
+
+    // Update multiple orders
+    const updateResult = await prisma.order.updateMany({
+      where: { 
+        id: { in: ids }
+      },
+      data: updateData
+    });
+
+    return NextResponse.json({ 
+      success: true, 
+      updatedCount: updateResult.count,
+      message: `Successfully updated ${updateResult.count} order(s)`
+    });
+
+  } catch (error) {
+    console.error('❌ Bulk order update error:', error);
+    return NextResponse.json(
+      { error: 'Failed to update orders' },
+      { status: 500 }
+    );
+  }
+}

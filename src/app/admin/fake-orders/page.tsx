@@ -82,6 +82,7 @@ export default function FakeOrdersPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isRevertDialogOpen, setIsRevertDialogOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
@@ -134,6 +135,36 @@ export default function FakeOrdersPage() {
     },
   });
 
+  // Bulk revert mutation (convert fake orders back to real orders)
+  const bulkRevertMutation = useMutation({
+    mutationFn: async (orderIds: string[]) => {
+      const response = await fetch('/api/admin/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          ids: orderIds,
+          isFakeOrder: false,
+          restore: true
+        }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to revert orders');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-fake-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
+      showToast.success('Orders reverted to real orders successfully');
+      setSelectedOrders([]);
+      setIsRevertDialogOpen(false);
+    },
+    onError: (error: Error) => {
+      showToast.error(error.message);
+    },
+  });
+
   // Handlers
   const handleSearch = useCallback((term: string) => {
     setSearchTerm(term);
@@ -150,6 +181,12 @@ export default function FakeOrdersPage() {
       bulkDeleteMutation.mutate(selectedOrders);
     }
   }, [selectedOrders, bulkDeleteMutation]);
+
+  const handleBulkRevert = useCallback(() => {
+    if (selectedOrders.length > 0) {
+      bulkRevertMutation.mutate(selectedOrders);
+    }
+  }, [selectedOrders, bulkRevertMutation]);
 
   const handleSelectAll = useCallback(() => {
     if (!ordersData?.orders) return;
@@ -460,6 +497,15 @@ export default function FakeOrdersPage() {
                   Clear Selection
                 </Button>
                 <Button 
+                  variant="secondary" 
+                  onClick={() => setIsRevertDialogOpen(true)}
+                  disabled={bulkRevertMutation.isPending}
+                  className="bg-green-100 text-green-800 hover:bg-green-200"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Revert to Real Orders
+                </Button>
+                <Button 
                   variant="destructive" 
                   onClick={() => setIsDeleteDialogOpen(true)}
                   disabled={bulkDeleteMutation.isPending}
@@ -604,6 +650,32 @@ export default function FakeOrdersPage() {
               disabled={bulkDeleteMutation.isPending}
             >
               {bulkDeleteMutation.isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Revert Confirmation Dialog */}
+      <AlertDialog open={isRevertDialogOpen} onOpenChange={setIsRevertDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <RefreshCw className="h-5 w-5 text-green-600" />
+              Confirm Revert to Real Orders
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to revert {selectedOrders.length} fake order(s) back to real orders? 
+              This will remove the "fake" flag and restore them as legitimate orders in the system.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkRevert}
+              className="bg-green-600 text-white hover:bg-green-700"
+              disabled={bulkRevertMutation.isPending}
+            >
+              {bulkRevertMutation.isPending ? 'Reverting...' : 'Revert to Real Orders'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
