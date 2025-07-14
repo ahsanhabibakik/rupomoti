@@ -7,7 +7,6 @@ import authOptions from '@/app/auth';
 export async function GET(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions)
     
     console.log('🔐 Audit Logs API - Session check:', {
@@ -36,7 +35,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Unauthorized - Insufficient permissions' }, { status: 401 })
     }
 
-    const { searchParams } = new URL(request.url)
+    const { searchParams } = new URL(req.url)
     const orderId = searchParams.get('orderId')
 
     console.log('📋 Audit Logs API - Query parameters:', { orderId });

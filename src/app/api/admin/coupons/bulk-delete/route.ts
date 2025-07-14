@@ -6,7 +6,6 @@ import { auth } from "@/app/auth";
 export async function DELETE(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
 
@@ -17,7 +16,7 @@ export async function DELETE(req: Request) {
       );
     }
 
-    const body = await request.json();
+    const body = await req.json();
     const { couponIds } = body;
 
     if (!couponIds || !Array.isArray(couponIds)) {
@@ -92,13 +91,8 @@ export async function DELETE(req: Request) {
       { status: 500 }
     );
   }
-}
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+, { status: 500 });
   }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+, { status: 500 });
   }
 }

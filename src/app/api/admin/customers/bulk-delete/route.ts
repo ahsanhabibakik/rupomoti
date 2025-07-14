@@ -3,13 +3,12 @@ import { connectDB } from '@/lib/db';
 
 
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/auth';
+import authOptions from '@/app/auth';
 import { AuditLogger } from '@/lib/audit-logger';
 
 export async function POST(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
     if (
       !session ||
@@ -19,7 +18,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { customerIds } = await request.json();
+    const { customerIds } = await req.json();
 
     if (!Array.isArray(customerIds) || customerIds.length === 0) {
       return NextResponse.json(
@@ -65,13 +64,8 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
-}
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+, { status: 500 });
   }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+, { status: 500 });
   }
 }

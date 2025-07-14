@@ -27,7 +27,6 @@ const querySchema = z.object({
 export async function GET(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
 
     if (!session || !["SUPER_ADMIN", "ADMIN"].includes(session.user?.role as string)) {
@@ -37,7 +36,7 @@ export async function GET(req: Request) {
       );
     }
 
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(req.url);
     const queryResult = querySchema.safeParse(Object.fromEntries(searchParams));
 
     if (!queryResult.success) {
@@ -133,20 +132,14 @@ export async function GET(req: Request) {
       { status: 500 }
     );
   }
-}
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+, { status: 500 });
   }
-}} catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+, { status: 500 });
   }
 }// POST /api/admin/coupons - Create a new coupon
 export async function POST(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
 
@@ -157,7 +150,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const body = await request.json();
+    const body = await req.json();
     const {
       code,
       type,
@@ -259,7 +252,6 @@ export async function POST(req: Request) {
 export async function PATCH(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
 
@@ -270,7 +262,7 @@ export async function PATCH(req: Request) {
       );
     }
 
-    const body = await request.json();
+    const body = await req.json();
     const { couponId, ...updateData } = body;
 
     if (!couponId) {
@@ -385,7 +377,6 @@ export async function PATCH(req: Request) {
 export async function DELETE(req: Request) {
   try {
     await connectDB();
-  try {
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
 
@@ -396,7 +387,7 @@ export async function DELETE(req: Request) {
       );
     }
 
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(req.url);
     const couponId = searchParams.get("couponId");
 
     if (!couponId) {
