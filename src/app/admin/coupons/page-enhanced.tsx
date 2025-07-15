@@ -186,9 +186,9 @@ export default function CouponsPage() {
   // Event handlers
   const handleSelectAll = useCallback(() => {
     if (selectedCoupons.size === couponsData?.coupons?.length) {
-      setSelectedCoupons(new Set());
+      setSelectedCoupons(new Set<string>());
     } else {
-      const allIds = new Set(couponsData?.coupons?.map((coupon: Coupon) => coupon.id) || []);
+      const allIds = new Set<string>(couponsData?.coupons?.map((coupon: Coupon) => coupon.id as string) || []);
       setSelectedCoupons(allIds);
     }
   }, [selectedCoupons.size, couponsData?.coupons]);
@@ -273,7 +273,7 @@ export default function CouponsPage() {
     ]);
 
     const csvContent = [headers, ...csvData]
-      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .map((row: (string | number)[]) => row.map((cell: string | number) => `"${cell}"`).join(','))
       .join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });

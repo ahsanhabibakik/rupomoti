@@ -23,7 +23,7 @@ export default function TestFeaturesPage() {
 
   useEffect(() => {
     runAllTests()
-  }, [])
+  }, [runAllTests])
 
   const runAllTests = async () => {
     for (let i = 0; i < tests.length; i++) {

@@ -524,7 +524,7 @@ const TestimonialsSection: React.FC<SectionProps> = ({ data, globalSettings }) =
               </div>
               
               <p className="text-xl text-gray-700 mb-8 italic leading-relaxed">
-                "{data.testimonials[activeTestimonial].text}"
+              &quot;{data.testimonials[activeTestimonial].text}&quot;
               </p>
               
               <div className="flex items-center justify-center">

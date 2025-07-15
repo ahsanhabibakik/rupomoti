@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
 // Production-ready logging utility
-export class ProductionLogger {
+class ProductionLogger {
   static log(level: 'info' | 'error' | 'warn' | 'debug', message: string, data?: unknown) {
     const timestamp = new Date().toISOString()
     const logEntry = {

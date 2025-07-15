@@ -1,10 +1,12 @@
 #!/usr/bin/env tsx
 
-import Category from '../src/models/Category'
+import { getCategoryModel } from '../src/models/Category'
 
 async function testCategoryVirtualsOffline() {
   try {
     console.log('🔍 Testing Category virtual fields (offline):')
+
+    const Category = getCategoryModel();
 
     // Create a test category without saving to database
     const testCategory = new Category({

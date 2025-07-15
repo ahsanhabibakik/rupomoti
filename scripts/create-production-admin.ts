@@ -2,7 +2,7 @@
 
 import mongoose from 'mongoose'
 import bcrypt from 'bcryptjs'
-import User from '../src/models/User'
+import { getUserModel } from '../src/models/User'
 
 async function createProductionAdminUser() {
   try {
@@ -12,6 +12,8 @@ async function createProductionAdminUser() {
     console.log('🔌 Connecting to MongoDB Atlas...')
     await mongoose.connect(mongoUri)
     console.log('✅ Connected to MongoDB Atlas')
+
+    const User = getUserModel();
 
     // Check if admin user already exists
     const existingAdmin = await User.findOne({ email: 'admin@rupomoti.com' })

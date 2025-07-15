@@ -713,7 +713,7 @@ function LandingPagePreview({ data, productImages, viewport }: LandingPagePrevie
                     <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
                   ))}
                 </div>
-                <p className="text-gray-700 italic mb-3">"{testimonial.comment}"</p>
+                <p className="text-gray-700 italic mb-3">&quot;{testimonial.comment}&quot;</p>
                 <p className="font-semibold text-gray-900">- {testimonial.name}</p>
               </div>
             ))}

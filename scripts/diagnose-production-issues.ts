@@ -74,7 +74,7 @@ async function diagnoseProductionIssues() {
       take: 3
     })
     
-    sampleProducts.forEach((product, index) => {
+    sampleProducts.forEach((product: any, index: number) => {
       console.log(`\n📦 Sample Product ${index + 1}:`)
       console.log(`   Name: ${product.name}`)
       console.log(`   Slug: ${product.slug}`)

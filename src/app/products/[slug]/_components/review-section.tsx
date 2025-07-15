@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Star } from 'lucide-react'
 import { showToast } from '@/lib/toast'
-import { createReview } from '@/lib/actions/review-actions'
 import { type getReviewsForProduct } from '@/lib/actions/review-actions'
+
+// Removed direct import of createReview
 
 type Review = Awaited<ReturnType<typeof getReviewsForProduct>>[0]
 
@@ -45,9 +46,17 @@ export function ReviewSection({ productId, productSlug, initialReviews = [] }: R
 
     startTransition(async () => {
       setReviews(prev => [newReview, ...prev]);
-      const result = await createReview(formData)
-      if (result?.error) {
-        showToast.error(result.error)
+      // Call the new server action endpoint
+      const response = await fetch(`/products/${productSlug}/review-action`, {
+        method: 'POST',
+        body: formData,
+      })
+      let result = null
+      try {
+        result = await response.json()
+      } catch {}
+      if (!response.ok || result?.error) {
+        showToast.error(result?.error || 'Failed to submit review')
         setReviews(prev => prev.filter(r => r.id !== newReview.id)); // remove optimistic update
       } else {
         showToast.success('Review submitted successfully!')
@@ -106,7 +115,7 @@ function ReviewForm({ productId, productSlug, onSubmit, isPending }: ReviewFormP
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
+    const formData = new FormData(e.target as HTMLFormElement);
     formData.set('rating', rating.toString());
     onSubmit(formData);
     setComment('');

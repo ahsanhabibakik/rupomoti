@@ -1,8 +1,9 @@
 export const runtime = 'nodejs';
 
-import NextAuth from 'next-auth'
-import { authOptions } from '@/lib/auth-node'
+import NextAuth from "next-auth";
+import { authOptions } from "@/lib/auth-node";
 
-const handler = NextAuth(authOptions)
+const handler = NextAuth(authOptions) as any;
 
-export { handler as GET, handler as POST }
+export const GET = handler;
+export const POST = handler;

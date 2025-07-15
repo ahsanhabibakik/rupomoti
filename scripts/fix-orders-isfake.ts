@@ -30,9 +30,9 @@ async function fixOrdersIsFakeField() {
     console.log(`� Found ${allOrders.length} orders total`);
     
     // Count orders by isFakeOrder status
-    const ordersWithNull = allOrders.filter(order => order.isFakeOrder === null);
-    const ordersWithFalse = allOrders.filter(order => order.isFakeOrder === false);
-    const ordersWithTrue = allOrders.filter(order => order.isFakeOrder === true);
+    const ordersWithNull = allOrders.filter((order: any) => order.isFakeOrder === null);
+    const ordersWithFalse = allOrders.filter((order: any) => order.isFakeOrder === false);
+    const ordersWithTrue = allOrders.filter((order: any) => order.isFakeOrder === true);
     
     console.log(`🔍 Current distribution:`);
     console.log(`- isFakeOrder = null: ${ordersWithNull.length}`);
@@ -76,7 +76,7 @@ async function fixOrdersIsFakeField() {
     });
     
     console.log('\n� Final verification - Recent orders:');
-    finalOrders.forEach((order, index) => {
+    finalOrders.forEach((order: any, index: number) => {
       console.log(`${index + 1}. ${order.orderNumber}: isFakeOrder=${order.isFakeOrder}, customer=${order.customer?.name}`);
     });
     

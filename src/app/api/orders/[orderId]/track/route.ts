@@ -4,7 +4,7 @@ import { OrderTrackingManager } from '@/lib/order-tracking'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> }
 ) {
   try {
     const session = await auth()
@@ -39,7 +39,7 @@ export async function GET(
 // POST /api/orders/[orderId]/track - Create shipment
 export async function POST(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> }
 ) {
   try {
     const session = await auth()

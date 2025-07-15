@@ -35,7 +35,7 @@ export function ReviewSystem({ productId }: ReviewSystemProps) {
   useEffect(() => {
     fetchReviews()
     fetchUserReview()
-  }, [productId])
+  }, [productId, fetchReviews, fetchUserReview])
 
   const fetchReviews = async () => {
     try {

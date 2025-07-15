@@ -1,4 +1,4 @@
-import { PrismaClient, CouponType } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -8,7 +8,7 @@ async function seedCoupons() {
   const coupons = [
     {
       code: 'WELCOME10',
-      type: CouponType.PERCENTAGE,
+      type: 'PERCENTAGE',
       value: 10,
       description: 'Welcome 10% discount for new customers',
       minimumAmount: 50,
@@ -20,7 +20,7 @@ async function seedCoupons() {
     },
     {
       code: 'SAVE20',
-      type: CouponType.PERCENTAGE,
+      type: 'PERCENTAGE',
       value: 20,
       description: '20% off on orders above $100',
       minimumAmount: 100,
@@ -32,7 +32,7 @@ async function seedCoupons() {
     },
     {
       code: 'FIXED50',
-      type: CouponType.FIXED_AMOUNT,
+      type: 'FIXED_AMOUNT',
       value: 50,
       description: '$50 off on orders above $200',
       minimumAmount: 200,
@@ -44,7 +44,7 @@ async function seedCoupons() {
     },
     {
       code: 'EXPIRED10',
-      type: CouponType.PERCENTAGE,
+      type: 'PERCENTAGE',
       value: 10,
       description: 'Expired test coupon',
       minimumAmount: 30,
@@ -56,7 +56,7 @@ async function seedCoupons() {
     },
     {
       code: 'BIGDEAL',
-      type: CouponType.PERCENTAGE,
+      type: 'PERCENTAGE',
       value: 25,
       description: 'Big deal 25% off for premium customers',
       minimumAmount: 150,

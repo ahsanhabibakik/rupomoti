@@ -36,20 +36,21 @@ const sortOptions = [
   { id: 'popular', name: 'Most Popular' },
 ]
 
-export default function CategoryPage({ params }: { params: { category: string } }) {
+export default async function CategoryPage({ params }: { params: Promise<any> }) {
+  const { category } = await params;
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false)
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 100000])
   const [sortBy, setSortBy] = useState<string>('newest')
 
-  const category = categories.find((c) => c.id === params.category)
-  if (!category) {
+  const categoryObj = categories.find((c) => c.id === category)
+  if (!categoryObj) {
     notFound()
   }
 
   useEffect(() => {
-    setSelectedCategories([params.category])
-  }, [params.category])
+    setSelectedCategories([category])
+  }, [category])
 
   const filteredProducts = productsData.filter((product) => {
     const matchesCategory =
@@ -130,7 +131,7 @@ export default function CategoryPage({ params }: { params: { category: string } 
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold mb-2">{category.name}</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">{categoryObj.name}</h1>
           <p className="text-muted-foreground">
             {filteredProducts.length} products found
           </p>
@@ -167,7 +168,7 @@ export default function CategoryPage({ params }: { params: { category: string } 
       {(selectedCategories.length > 1 || priceRange[0] > 0 || priceRange[1] < 100000) && (
         <div className="flex flex-wrap gap-2 mb-6">
           {selectedCategories
-            .filter((id) => id !== params.category)
+            .filter((id) => id !== category)
             .map((categoryId) => {
               const cat = categories.find((c) => c.id === categoryId)
               return (

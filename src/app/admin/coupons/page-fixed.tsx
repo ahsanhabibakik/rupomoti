@@ -708,7 +708,7 @@ export default function CouponsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Coupon</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete the coupon "{selectedCoupon?.code}"? This action cannot be undone.
+              Are you sure you want to delete the coupon &quot;{selectedCoupon?.code}&quot;? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

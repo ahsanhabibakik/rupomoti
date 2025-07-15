@@ -14,7 +14,7 @@ const testimonials = [
     role: "Fashion Designer",
     image: "/images/testimonials/customer-1.jpg",
     rating: 5,
-    text: "The quality of jewelry from Rupomoti is absolutely exceptional. Every piece I've purchased has exceeded my expectations. The craftsmanship is evident in every detail.",
+    text: "The quality of jewelry from Rupomoti is absolutely exceptional. Every piece I&apos;ve purchased has exceeded my expectations. The craftsmanship is evident in every detail.",
     location: "New York, USA"
   },
   {
@@ -23,7 +23,7 @@ const testimonials = [
     role: "Entrepreneur",
     image: "/images/testimonials/customer-2.jpg",
     rating: 5,
-    text: "I've been a loyal customer for over 2 years. The pearl collection is stunning and the customer service is outstanding. Highly recommend to anyone looking for elegant jewelry.",
+    text: "I&apos;ve been a loyal customer for over 2 years. The pearl collection is stunning and the customer service is outstanding. Highly recommend to anyone looking for elegant jewelry.",
     location: "Mumbai, India"
   },
   {
@@ -50,7 +50,7 @@ const testimonials = [
     role: "Marketing Director",
     image: "/images/testimonials/customer-5.jpg",
     rating: 5,
-    text: "Professional quality and beautiful designs. I've bought multiple pieces as gifts and they're always well-received. The packaging is also gorgeous.",
+    text: "Professional quality and beautiful designs. I&apos;ve bought multiple pieces as gifts and they&apos;re always well-received. The packaging is also gorgeous.",
     location: "Singapore"
   }
 ]

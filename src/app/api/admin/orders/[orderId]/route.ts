@@ -35,7 +35,7 @@ const patchBodySchema = z.object({
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> }
 ) {
   const session = await auth();
   if (!session?.user?.isAdmin) {
@@ -179,7 +179,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> }
 ) {
   const session = await auth();
   if (!session?.user?.isAdmin) {

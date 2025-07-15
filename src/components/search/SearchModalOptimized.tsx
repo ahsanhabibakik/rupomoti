@@ -381,7 +381,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                 ) : (
                   <div className="text-center py-8 md:py-12">
                     <SearchIcon className="h-12 w-12 md:h-16 md:w-16 text-gray-400 mx-auto mb-4" />
-                    <p className="text-sm md:text-base text-gray-600 mb-2">No products found for "{searchQuery}"</p>
+                    <p className="text-sm md:text-base text-gray-600 mb-2">No products found for &quot;{searchQuery}&quot;</p>
                     <p className="text-xs md:text-sm text-gray-500">Try adjusting your search or browse our categories</p>
                   </div>
                 )}

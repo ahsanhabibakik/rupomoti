@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache'
 // GET - Fetch landing page data
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = params
@@ -72,7 +72,7 @@ export async function GET(
 // PUT - Update landing page data
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = params
@@ -149,7 +149,7 @@ export async function PUT(
 // POST - Publish landing page
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = params
@@ -218,7 +218,7 @@ export async function POST(
 // PATCH - Toggle landing page status
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = params

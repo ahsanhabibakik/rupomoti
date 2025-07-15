@@ -2,7 +2,7 @@
 
 import mongoose from 'mongoose'
 import bcrypt from 'bcryptjs'
-import User from '../src/models/User'
+import { getUserModel } from '../src/models/User'
 
 async function createAdminUser() {
   try {
@@ -10,6 +10,8 @@ async function createAdminUser() {
     const mongoUri = process.env.MONGODB_URI || process.env.MONGODB_URL || 'mongodb://localhost:27017/rupomoti'
     await mongoose.connect(mongoUri)
     console.log('✅ Connected to MongoDB')
+
+    const User = getUserModel();
 
     // Check if admin user already exists
     const existingAdmin = await User.findByEmail('admin@rupomoti.com')

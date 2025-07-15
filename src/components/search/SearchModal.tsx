@@ -160,7 +160,7 @@ export default function SearchModal({ isOpen, onClose }: { isOpen: boolean; onCl
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search for jewelry, pearls, diamonds, rings..."
+                    placeholder="Search products..."
                     className="w-full pl-12 pr-16 py-4 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all duration-300 text-gray-800 placeholder-gray-400 bg-white/80 text-lg font-medium shadow-sm hover:shadow-md"
                     autoFocus
                   />
@@ -254,7 +254,7 @@ export default function SearchModal({ isOpen, onClose }: { isOpen: boolean; onCl
                     {filteredProducts.slice(0, 8).map((product) => (
                       <Link
                         key={product.id}
-                        href={`/product/${product.slug || product.id}`}
+                        href={`/product/${product.id}`}
                         onClick={onClose}
                         className="group bg-white rounded-lg border border-gray-200 hover:border-orange-300 overflow-hidden transition-all duration-300 hover:shadow-lg transform hover:scale-105"
                       >
@@ -302,7 +302,7 @@ export default function SearchModal({ isOpen, onClose }: { isOpen: boolean; onCl
                 ) : (
                   <div className="text-center py-8">
                     <SearchIcon size={48} className="text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500 mb-2">No products found for "{searchQuery}"</p>
+                    <p className="text-gray-500 mb-2">No products found for &quot;{searchQuery}&quot;</p>
                     <p className="text-sm text-gray-400">Try adjusting your search or browse our categories</p>
                   </div>
                 )}

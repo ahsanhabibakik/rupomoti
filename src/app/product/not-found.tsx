@@ -9,9 +9,7 @@ export default async function NotFound() {
   return (
     <div className="container mx-auto text-center py-16">
       <h1 className="text-4xl font-bold mb-4">Product Not Found</h1>
-      <p className="text-lg text-gray-600 mb-8">
-        Sorry, we couldn&apos;t find the product you&apos;re looking for.
-      </p>
+      <p className="text-lg text-gray-600 mb-8">Sorry, we couldn&apos;t find the product you&apos;re looking for.</p>
       <Button asChild>
         <Link href="/shop">Continue Shopping</Link>
       </Button>

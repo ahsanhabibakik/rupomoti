@@ -7,7 +7,7 @@ import { StockManager } from '@/lib/stock-manager';
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> }
 ) {
   try {
     const session = await auth();
@@ -114,7 +114,7 @@ export async function PATCH(
 // Handle other order operations like restore from trash, mark as fake, etc.
 export async function POST(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> }
 ) {
   try {
     const session = await auth();

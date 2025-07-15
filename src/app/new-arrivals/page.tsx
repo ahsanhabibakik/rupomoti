@@ -72,7 +72,7 @@ async function getCategories() {
   }
 }
 
-export default async function NewArrivalsPage({ searchParams }: PageProps) {
+export default async function NewArrivalsPage({ searchParams }: { searchParams: Promise<any> }) {
   const resolvedSearchParams = await searchParams
   const page = Number(resolvedSearchParams.page) || 1
   const limit = Number(resolvedSearchParams.limit) || 24

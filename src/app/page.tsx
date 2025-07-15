@@ -139,7 +139,7 @@ export default async function HomePage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
               {[
                 {
-                  text: "The quality of the pearls is exceptional. I've received so many compliments!",
+                  text: "The quality of the pearls is exceptional. I&apos;ve received so many compliments!",
                   name: "Sarah Ahmed",
                   role: "Verified Customer"
                 },
@@ -222,7 +222,7 @@ export default async function HomePage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Something went wrong</h2>
-        <p className="text-gray-600 mb-4">We're having trouble loading the page. Please try again later.</p>
+        <p className="text-gray-600 mb-4">We&apos;re having trouble loading the page. Please try again later.</p>
         <Button asChild>
           <Link href="/shop">
             Browse Products

@@ -237,7 +237,7 @@ export default function AccountPage() {
   }
 
   const isAdmin = session?.user?.role === 'ADMIN'
-  const isManager = session?.user?.role === 'MANAGER'
+  const isManager = (session?.user?.role as string) === 'MANAGER'
   const isAdminOrManager = isAdmin || isManager
 
   return (
@@ -731,7 +731,7 @@ export default function AccountPage() {
                       <div className="text-center py-12">
                         <MessageSquare className="w-16 h-16 text-pearl-essence-400 mx-auto mb-4" />
                         <h3 className="text-lg font-semibold text-pearl-essence-700 mb-2">No Reviews Yet</h3>
-                        <p className="text-pearl-essence-600 mb-4">Share your thoughts about the jewelry you've purchased</p>
+                        <p className="text-pearl-essence-600 mb-4">Share your thoughts about the jewelry you&apos;ve purchased</p>
                         <Button
                           onClick={() => setShowReviewModal(true)}
                           className="bg-pearl-essence-600 hover:bg-pearl-essence-700 text-white"

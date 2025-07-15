@@ -1,6 +1,9 @@
 import dbConnect from '../src/lib/mongoose'
-import Product from '../src/models/Product'
-import Category from '../src/models/Category'
+import { getProductModel } from '../src/models/Product'
+import { getCategoryModel } from '../src/models/Category'
+
+const Product = getProductModel();
+const Category = getCategoryModel();
 
 async function testMongoose() {
   try {

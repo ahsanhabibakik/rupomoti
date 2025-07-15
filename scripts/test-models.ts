@@ -1,6 +1,9 @@
 // Simple test to verify Mongoose models are working correctly
-import Product from '../src/models/Product'
-import Category from '../src/models/Category'
+import { getProductModel } from '../src/models/Product'
+import { getCategoryModel } from '../src/models/Category'
+
+const Product = getProductModel();
+const Category = getCategoryModel();
 
 console.log('✅ Mongoose models loaded successfully!')
 console.log('📦 Product model:', typeof Product)

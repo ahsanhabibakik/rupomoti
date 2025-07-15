@@ -18,7 +18,7 @@ const ErrorPage = ({
   error,
   reset,
   title = "Something went wrong",
-  message = "We're having trouble loading this page. Please try again later.",
+  message = "We&apos;re having trouble loading this page. Please try again later.",
   showReset = true,
   showHome = true,
   showShop = false

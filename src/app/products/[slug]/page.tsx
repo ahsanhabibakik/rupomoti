@@ -20,8 +20,9 @@ type ProductPageProps = {
   }
 }
 
-export default async function ProductPage({ params }: ProductPageProps) {
-  const product = await getProduct(params.slug)
+export default async function ProductPage({ params }: { params: Promise<any> }) {
+  const { slug } = await params
+  const product = await getProduct(slug)
 
   if (!product) {
     notFound()

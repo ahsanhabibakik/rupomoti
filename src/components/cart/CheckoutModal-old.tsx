@@ -265,7 +265,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
       if (!response.ok) throw new Error(result.error || 'Failed to create order')
       dispatch(clearCart())
       onOpenChange(false)
-      showToast.success(`Order #${result.order.orderNumber} placed successfully! We'll contact you soon.`)
+      showToast.success(`Order #${result.order.orderNumber} placed successfully! We&apos;ll contact you soon.`)
       setFormData({
         name: session?.user?.name || '',
         phone: '',

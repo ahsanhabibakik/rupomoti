@@ -367,7 +367,7 @@ export default function UsersPage() {
   };
 
   const canDeleteUser = (user: User) => {
-    if (user.id === session?.user?.id) return false; // Can't delete yourself
+    if (user.id === session?.user?.id) return false; // Can&apos;t delete yourself
     return canEditUser(user);
   };
 

@@ -244,7 +244,7 @@ export function TwoFactorAuthCard() {
                 Check Your Email
               </h3>
               <p className="text-sm text-pearl-essence-600 mb-4">
-                We've sent a 6-digit verification code to your email address. 
+                We&apos;ve sent a 6-digit verification code to your email address. 
                 Please enter it below to complete setup.
               </p>
               

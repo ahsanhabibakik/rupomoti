@@ -62,7 +62,7 @@ async function testProductFetch() {
     })
     
     console.log(`✅ Categories query returned ${categories.length} categories`)
-    categories.forEach(cat => {
+    categories.forEach((cat: any) => {
       console.log(`   ${cat.name}: ${cat._count.products} products`)
     })
     

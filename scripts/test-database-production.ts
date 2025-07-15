@@ -52,9 +52,7 @@ async function testDatabaseConnection() {
     
   } catch (error: unknown) {
     console.log('❌ Database connection failed:')
-    console.log('Error:', error?.message || error)
-    
-    if (error?.message?.includes('IP')) {
+    if (error && typeof error === 'object' && 'message' in error && typeof (error as any).message === 'string' && (error as any).message.includes('IP')) {
       console.log('\n💡 This looks like an IP whitelist issue!')
       console.log('📝 To fix this:')
       console.log('1. Go to MongoDB Atlas Dashboard')
@@ -63,12 +61,12 @@ async function testDatabaseConnection() {
       console.log('4. Or add Vercel\'s IP ranges')
     }
     
-    if (error?.message?.includes('authentication') || error?.message?.includes('credentials')) {
+    if (error && typeof error === 'object' && 'message' in error && typeof (error as any).message === 'string' && ((error as any).message.includes('authentication') || (error as any).message.includes('credentials'))) {
       console.log('\n💡 This looks like an authentication issue!')
       console.log('📝 Check your database username and password')
     }
     
-    if (error?.message?.includes('timeout') || error?.message?.includes('ENOTFOUND')) {
+    if (error && typeof error === 'object' && 'message' in error && typeof (error as any).message === 'string' && ((error as any).message.includes('timeout') || (error as any).message.includes('ENOTFOUND'))) {
       console.log('\n💡 This looks like a network connectivity issue!')
       console.log('📝 Check if MongoDB Atlas allows connections from your current IP')
     }

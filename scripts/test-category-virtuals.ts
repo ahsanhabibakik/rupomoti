@@ -1,10 +1,11 @@
 #!/usr/bin/env tsx
 
 import mongoose from 'mongoose'
-import Category from '../src/models/Category'
+import { getCategoryModel } from '../src/models/Category'
 
 async function testCategoryVirtuals() {
   try {
+    const Category = getCategoryModel();
     // Connect to MongoDB (using environment variables)
     const mongoUri = process.env.MONGODB_URI || process.env.MONGODB_URL || 'mongodb://localhost:27017/rupomoti'
     await mongoose.connect(mongoUri)

@@ -91,18 +91,7 @@ interface CouponFilters {
 
 export default function CouponsPage() {
   // Helper functions
-  const formatDiscountValue = useCallback((coupon: Coupon) => {
-    switch(coupon.type) {
-      case 'PERCENTAGE':
-        return `${coupon.value}%`;
-      case 'FIXED_AMOUNT':
-        return `৳${coupon.value}`;
-      case 'FREE_SHIPPING':
-        return 'Free Shipping';
-      default:
-        return `${coupon.value}`;
-    }
-  }, []);
+  // (Removed top-level declarations of formatDate, isExpired, getUsagePercentage)
 
   // Format date with null check
   const formatDate = useCallback((date: string | null | undefined) => {
@@ -225,7 +214,7 @@ export default function CouponsPage() {
     if (selectedCoupons.size === couponsData?.coupons?.length) {
       setSelectedCoupons(new Set());
     } else {
-      const allIds = new Set(couponsData?.coupons?.map((coupon: Coupon) => coupon.id) || []);
+      const allIds = new Set<string>(couponsData?.coupons?.map((coupon: Coupon) => coupon.id) || []);
       setSelectedCoupons(allIds);
     }
   }, [selectedCoupons.size, couponsData?.coupons]);
@@ -306,7 +295,7 @@ export default function CouponsPage() {
     ]);
     
     const csvData = [headers, ...csvContent]
-      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .map(row => row.map((cell: any) => `"${cell}"`).join(','))
       .join('\n');
 
     const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
@@ -314,7 +303,7 @@ export default function CouponsPage() {
     link.href = URL.createObjectURL(blob);
     link.download = `coupons-${format(new Date(), 'yyyy-MM-dd')}.csv`;
     link.click();
-  }, [couponsData]);
+  }, [couponsData, formatDate]);
 
   const exportToPDF = useCallback(() => {
     if (!couponsData?.coupons?.length) return;
@@ -334,7 +323,7 @@ export default function CouponsPage() {
     const tableRows = couponsData.coupons.map((coupon: Coupon) => [
       coupon.code,
       coupon.type,
-      formatDiscountValue(coupon),
+      coupon.value, // Changed from formatDiscountValue(coupon) to coupon.value
       coupon.usageLimit || 'Unlimited',
       coupon.usedCount.toString(),
       coupon.isActive ? 'Active' : 'Inactive',
@@ -350,7 +339,7 @@ export default function CouponsPage() {
     });
 
     doc.save(`coupons-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
-  }, [couponsData, formatDiscountValue, formatDate]);
+  }, [couponsData, formatDate]);
 
   const printTable = useCallback(() => {
     if (!couponsData?.coupons?.length) return;
@@ -392,10 +381,10 @@ export default function CouponsPage() {
                 <tr>
                   <td><strong>${coupon.code}</strong></td>
                   <td><span class="${coupon.type.toLowerCase()}">${coupon.type}</span></td>
-                  <td>${coupon.type === 'PERCENTAGE' ? `${coupon.discountValue}%` : `৳${coupon.discountValue}`}</td>
+                  <td>${coupon.type === 'PERCENTAGE' ? `${coupon.value}%` : `৳${coupon.value}`}</td>
                   <td>${coupon.usedCount}/${coupon.usageLimit || '∞'}</td>
                   <td><span class="status ${coupon.isActive ? 'active' : 'inactive'}">${coupon.isActive ? 'Active' : 'Inactive'}</span></td>
-                  <td>${format(new Date(coupon.validUntil), 'yyyy-MM-dd')}</td>
+                  <td>${coupon.validUntil ? format(new Date(coupon.validUntil), 'yyyy-MM-dd') : 'No expiry date'}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -412,616 +401,6 @@ export default function CouponsPage() {
       printWindow.print();
     }
   }, [couponsData]);
-
-  const [filters, setFilters] = useState<CouponFilters>({
-    search: '',
-    type: 'all',
-    status: 'all',
-    dateFrom: null,
-    dateTo: null,
-    sortBy: 'createdAt',
-    sortOrder: 'desc'
-  });
-  const [selectedCoupons, setSelectedCoupons] = useState<Set<string>>(new Set());
-  const [showBulkDialog, setShowBulkDialog] = useState(false);
-  const [bulkAction, setBulkAction] = useState<'activate' | 'deactivate' | 'delete'>('activate');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [showFilters, setShowFilters] = useState(false);
-
-  const queryClient = useQueryClient();
-
-  // Fetch coupons with advanced filtering
-  const { data: couponsData, isLoading, refetch } = useQuery({
-    queryKey: ['coupons', filters, currentPage, pageSize],
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: pageSize.toString(),
-        search: filters.search,
-        type: filters.type === 'all' ? '' : filters.type,
-        status: filters.status === 'all' ? '' : filters.status,
-        sortBy: filters.sortBy,
-        sortOrder: filters.sortOrder,
-        ...(filters.dateFrom && { dateFrom: filters.dateFrom.toISOString() }),
-        ...(filters.dateTo && { dateTo: filters.dateTo.toISOString() }),
-      });
-      
-      const response = await fetch(`/api/admin/coupons?${params.toString()}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch coupons');
-      }
-      return response.json();
-    }
-  });
-
-  // Bulk update coupons mutation
-  const bulkUpdateMutation = useMutation({
-    mutationFn: async ({ action, couponIds }: { action: string; couponIds: string[] }) => {
-      const response = await fetch('/api/admin/coupons/bulk-update', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, couponIds })
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to update coupons');
-      }
-      
-      return response.json();
-    },
-    onSuccess: () => {
-      showToast.success('Coupons updated successfully');
-      setSelectedCoupons(new Set());
-      queryClient.invalidateQueries({ queryKey: ['coupons'] });
-    },
-    onError: (error) => {
-      showToast.error(error instanceof Error ? error.message : 'Failed to update coupons');
-    }
-  });
-
-  // Bulk delete coupons mutation
-  const bulkDeleteMutation = useMutation({
-    mutationFn: async (couponIds: string[]) => {
-      const response = await fetch('/api/admin/coupons/bulk-delete', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ couponIds })
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to delete coupons');
-      }
-      
-      return response.json();
-    },
-    onSuccess: () => {
-      showToast.success('Coupons deleted successfully');
-      setSelectedCoupons(new Set());
-      queryClient.invalidateQueries({ queryKey: ['coupons'] });
-    },
-    onError: (error) => {
-      showToast.error(error instanceof Error ? error.message : 'Failed to delete coupons');
-    }
-  });
-
-  // Event handlers
-  const handleSelectAll = useCallback(() => {
-    if (selectedCoupons.size === couponsData?.coupons?.length) {
-      setSelectedCoupons(new Set());
-    } else {
-      const allIds = new Set(couponsData?.coupons?.map((coupon: Coupon) => coupon.id) || []);
-      setSelectedCoupons(allIds);
-    }
-  }, [selectedCoupons.size, couponsData?.coupons]);
-
-  const handleSelectCoupon = useCallback((couponId: string) => {
-    const newSelected = new Set(selectedCoupons);
-    if (newSelected.has(couponId)) {
-      newSelected.delete(couponId);
-    } else {
-      newSelected.add(couponId);
-    }
-    setSelectedCoupons(newSelected);
-  }, [selectedCoupons]);
-
-  const handleBulkAction = useCallback(async (action: 'activate' | 'deactivate' | 'delete') => {
-    if (selectedCoupons.size === 0) return;
-
-    const couponIds = Array.from(selectedCoupons);
-    
-    if (action === 'delete') {
-      await bulkDeleteMutation.mutateAsync(couponIds);
-    } else {
-      await bulkUpdateMutation.mutateAsync({ action, couponIds });
-    }
-    
-    setShowBulkDialog(false);
-  }, [selectedCoupons, bulkUpdateMutation, bulkDeleteMutation]);
-
-  const handleFilterChange = useCallback((key: keyof CouponFilters, value: string | Date | null) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
-    setCurrentPage(1);
-  }, []);
-
-  const resetFilters = useCallback(() => {
-    setFilters({
-      search: '',
-      type: 'all',
-      status: 'all',
-      dateFrom: null,
-      dateTo: null,
-      sortBy: 'createdAt',
-      sortOrder: 'desc'
-    });
-    setCurrentPage(1);
-  }, []);
-
-  const copyCode = useCallback((code: string) => {
-    navigator.clipboard.writeText(code);
-    showToast.success('Coupon code copied to clipboard');
-  }, []);
-
-  // Export functions
-  const exportToCSV = useCallback(() => {
-    if (!couponsData?.coupons?.length) return;
-
-    const headers = [
-      'Code',
-      'Type',
-      'Value',
-      'Min. Amount',
-      'Limit',
-      'Used',
-      'Status',
-      'Valid Until',
-      'Created At'
-    ];
-
-    const csvContent = couponsData.coupons.map((coupon: Coupon) => [
-      coupon.code,
-      coupon.type,
-      coupon.value,
-      coupon.minimumAmount || 'N/A',
-      coupon.isActive ? 'Active' : 'Inactive',
-      coupon.usageLimit || 'Unlimited',
-      coupon.usedCount || 0,
-      formatDate(coupon.validUntil),
-      formatDate(coupon.createdAt),
-    ]);
-    
-    const csvData = [headers, ...csvContent]
-      .map(row => row.map(cell => `"${cell}"`).join(','))
-      .join('\n');
-
-    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `coupons-${format(new Date(), 'yyyy-MM-dd')}.csv`;
-    link.click();
-  }, [couponsData]);
-
-  const exportToPDF = useCallback(() => {
-    if (!couponsData?.coupons?.length) return;
-
-    const doc = new jsPDF();
-    
-    const tableColumn = [
-      'Code', 
-      'Type', 
-      'Value', 
-      'Limit',
-      'Used',
-      'Status',
-      'Valid Until'
-    ];
-    
-    const tableRows = couponsData.coupons.map((coupon: Coupon) => [
-      coupon.code,
-      coupon.type,
-      formatDiscountValue(coupon),
-      coupon.usageLimit || 'Unlimited',
-      coupon.usedCount.toString(),
-      coupon.isActive ? 'Active' : 'Inactive',
-      formatDate(coupon.validUntil)
-    ]);
-    
-    autoTable(doc, {
-      head: [tableColumn],
-      body: tableRows,
-      startY: 40,
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [59, 130, 246] },
-    });
-
-    doc.save(`coupons-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
-  }, [couponsData, formatDiscountValue, formatDate]);
-
-  const printTable = useCallback(() => {
-    if (!couponsData?.coupons?.length) return;
-
-    const printContent = `
-      <html>
-        <head>
-          <title>Coupons Report</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            h1 { color: #333; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f2f2f2; }
-            .status { padding: 4px 8px; border-radius: 4px; }
-            .active { background-color: #dcfce7; color: #166534; }
-            .inactive { background-color: #fef3c7; color: #d97706; }
-            .percentage { color: #059669; }
-            .fixed { color: #dc2626; }
-            @media print { button { display: none; } }
-          </style>
-        </head>
-        <body>
-          <h1>Coupons Report</h1>
-          <p>Generated on: ${format(new Date(), 'yyyy-MM-dd HH:mm:ss')}</p>
-          <table>
-            <thead>
-              <tr>
-                <th>Code</th>
-                <th>Type</th>
-                <th>Value</th>
-                <th>Usage</th>
-                <th>Status</th>
-                <th>Expires</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${couponsData.coupons.map((coupon: Coupon) => `
-                <tr>
-                  <td><strong>${coupon.code}</strong></td>
-                  <td><span class="${coupon.type.toLowerCase()}">${coupon.type}</span></td>
-                  <td>${coupon.type === 'PERCENTAGE' ? `${coupon.discountValue}%` : `৳${coupon.discountValue}`}</td>
-                  <td>${coupon.usedCount}/${coupon.usageLimit || '∞'}</td>
-                  <td><span class="status ${coupon.isActive ? 'active' : 'inactive'}">${coupon.isActive ? 'Active' : 'Inactive'}</span></td>
-                  <td>${format(new Date(coupon.validUntil), 'yyyy-MM-dd')}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </body>
-      </html>
-    `;
-
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(printContent);
-      printWindow.document.close();
-      printWindow.focus();
-      printWindow.print();
-    }
-  }, [couponsData]);
-
-  const [filters, setFilters] = useState<CouponFilters>({
-    search: '',
-    type: 'all',
-    status: 'all',
-    dateFrom: null,
-    dateTo: null,
-    sortBy: 'createdAt',
-    sortOrder: 'desc'
-  });
-  const [selectedCoupons, setSelectedCoupons] = useState<Set<string>>(new Set());
-  const [showBulkDialog, setShowBulkDialog] = useState(false);
-  const [bulkAction, setBulkAction] = useState<'activate' | 'deactivate' | 'delete'>('activate');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [showFilters, setShowFilters] = useState(false);
-
-  const queryClient = useQueryClient();
-
-  // Fetch coupons with advanced filtering
-  const { data: couponsData, isLoading, refetch } = useQuery({
-    queryKey: ['coupons', filters, currentPage, pageSize],
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: pageSize.toString(),
-        search: filters.search,
-        type: filters.type === 'all' ? '' : filters.type,
-        status: filters.status === 'all' ? '' : filters.status,
-        sortBy: filters.sortBy,
-        sortOrder: filters.sortOrder,
-        ...(filters.dateFrom && { dateFrom: filters.dateFrom.toISOString() }),
-        ...(filters.dateTo && { dateTo: filters.dateTo.toISOString() }),
-      });
-      
-      const response = await fetch(`/api/admin/coupons?${params.toString()}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch coupons');
-      }
-      return response.json();
-    }
-  });
-
-  // Bulk update coupons mutation
-  const bulkUpdateMutation = useMutation({
-    mutationFn: async ({ action, couponIds }: { action: string; couponIds: string[] }) => {
-      const response = await fetch('/api/admin/coupons/bulk-update', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, couponIds })
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to update coupons');
-      }
-      
-      return response.json();
-    },
-    onSuccess: () => {
-      showToast.success('Coupons updated successfully');
-      setSelectedCoupons(new Set());
-      queryClient.invalidateQueries({ queryKey: ['coupons'] });
-    },
-    onError: (error) => {
-      showToast.error(error instanceof Error ? error.message : 'Failed to update coupons');
-    }
-  });
-
-  // Bulk delete coupons mutation
-  const bulkDeleteMutation = useMutation({
-    mutationFn: async (couponIds: string[]) => {
-      const response = await fetch('/api/admin/coupons/bulk-delete', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ couponIds })
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to delete coupons');
-      }
-      
-      return response.json();
-    },
-    onSuccess: () => {
-      showToast.success('Coupons deleted successfully');
-      setSelectedCoupons(new Set());
-      queryClient.invalidateQueries({ queryKey: ['coupons'] });
-    },
-    onError: (error) => {
-      showToast.error(error instanceof Error ? error.message : 'Failed to delete coupons');
-    }
-  });
-
-  // Event handlers
-  const handleSelectAll = useCallback(() => {
-    if (selectedCoupons.size === couponsData?.coupons?.length) {
-      setSelectedCoupons(new Set());
-    } else {
-      const allIds = new Set(couponsData?.coupons?.map((coupon: Coupon) => coupon.id) || []);
-      setSelectedCoupons(allIds);
-    }
-  }, [selectedCoupons.size, couponsData?.coupons]);
-
-  const handleSelectCoupon = useCallback((couponId: string) => {
-    const newSelected = new Set(selectedCoupons);
-    if (newSelected.has(couponId)) {
-      newSelected.delete(couponId);
-    } else {
-      newSelected.add(couponId);
-    }
-    setSelectedCoupons(newSelected);
-  }, [selectedCoupons]);
-
-  const handleBulkAction = useCallback(async (action: 'activate' | 'deactivate' | 'delete') => {
-    if (selectedCoupons.size === 0) return;
-
-    const couponIds = Array.from(selectedCoupons);
-    
-    if (action === 'delete') {
-      await bulkDeleteMutation.mutateAsync(couponIds);
-    } else {
-      await bulkUpdateMutation.mutateAsync({ action, couponIds });
-    }
-    
-    setShowBulkDialog(false);
-  }, [selectedCoupons, bulkUpdateMutation, bulkDeleteMutation]);
-
-  const handleFilterChange = useCallback((key: keyof CouponFilters, value: string | Date | null) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
-    setCurrentPage(1);
-  }, []);
-
-  const resetFilters = useCallback(() => {
-    setFilters({
-      search: '',
-      type: 'all',
-      status: 'all',
-      dateFrom: null,
-      dateTo: null,
-      sortBy: 'createdAt',
-      sortOrder: 'desc'
-    });
-    setCurrentPage(1);
-  }, []);
-
-  const copyCode = useCallback((code: string) => {
-    navigator.clipboard.writeText(code);
-    showToast.success('Coupon code copied to clipboard');
-  }, []);
-
-  // Export functions
-  const exportToCSV = useCallback(() => {
-    if (!couponsData?.coupons?.length) return;
-
-    const headers = [
-      'Code',
-      'Type',
-      'Value',
-      'Min. Amount',
-      'Limit',
-      'Used',
-      'Status',
-      'Valid Until',
-      'Created At'
-    ];
-
-    const csvContent = couponsData.coupons.map((coupon: Coupon) => [
-      coupon.code,
-      coupon.type,
-      coupon.value,
-      coupon.minimumAmount || 'N/A',
-      coupon.isActive ? 'Active' : 'Inactive',
-      coupon.usageLimit || 'Unlimited',
-      coupon.usedCount || 0,
-      formatDate(coupon.validUntil),
-      formatDate(coupon.createdAt),
-    ]);
-    
-    const csvData = [headers, ...csvContent]
-      .map(row => row.map(cell => `"${cell}"`).join(','))
-      .join('\n');
-
-    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `coupons-${format(new Date(), 'yyyy-MM-dd')}.csv`;
-    link.click();
-  }, [couponsData]);
-
-  const exportToPDF = useCallback(() => {
-    if (!couponsData?.coupons?.length) return;
-
-    const doc = new jsPDF();
-    
-    const tableColumn = [
-      'Code', 
-      'Type', 
-      'Value', 
-      'Limit',
-      'Used',
-      'Status',
-      'Valid Until'
-    ];
-    
-    const tableRows = couponsData.coupons.map((coupon: Coupon) => [
-      coupon.code,
-      coupon.type,
-      formatDiscountValue(coupon),
-      coupon.usageLimit || 'Unlimited',
-      coupon.usedCount.toString(),
-      coupon.isActive ? 'Active' : 'Inactive',
-      formatDate(coupon.validUntil)
-    ]);
-    
-    autoTable(doc, {
-      head: [tableColumn],
-      body: tableRows,
-      startY: 40,
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [59, 130, 246] },
-    });
-
-    doc.save(`coupons-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
-  }, [couponsData, formatDiscountValue, formatDate]);
-
-  const printTable = useCallback(() => {
-    if (!couponsData?.coupons?.length) return;
-
-    const printContent = `
-      <html>
-        <head>
-          <title>Coupons Report</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            h1 { color: #333; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f2f2f2; }
-            .status { padding: 4px 8px; border-radius: 4px; }
-            .active { background-color: #dcfce7; color: #166534; }
-            .inactive { background-color: #fef3c7; color: #d97706; }
-            .percentage { color: #059669; }
-            .fixed { color: #dc2626; }
-            @media print { button { display: none; } }
-          </style>
-        </head>
-        <body>
-          <h1>Coupons Report</h1>
-          <p>Generated on: ${format(new Date(), 'yyyy-MM-dd HH:mm:ss')}</p>
-          <table>
-            <thead>
-              <tr>
-                <th>Code</th>
-                <th>Type</th>
-                <th>Value</th>
-                <th>Usage</th>
-                <th>Status</th>
-                <th>Expires</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${couponsData.coupons.map((coupon: Coupon) => `
-                <tr>
-                  <td><strong>${coupon.code}</strong></td>
-                  <td><span class="${coupon.type.toLowerCase()}">${coupon.type}</span></td>
-                  <td>${coupon.type === 'PERCENTAGE' ? `${coupon.discountValue}%` : `৳${coupon.discountValue}`}</td>
-                  <td>${coupon.usedCount}/${coupon.usageLimit || '∞'}</td>
-                  <td><span class="status ${coupon.isActive ? 'active' : 'inactive'}">${coupon.isActive ? 'Active' : 'Inactive'}</span></td>
-                  <td>${format(new Date(coupon.validUntil), 'yyyy-MM-dd')}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </body>
-      </html>
-    `;
-
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(printContent);
-      printWindow.document.close();
-      printWindow.focus();
-      printWindow.print();
-    }
-  }, [couponsData]);
-
-  // Helper function to calculate usage percentage
-  const getUsagePercentage = (used: number, limit: number | null): number => {
-    if (!limit) return 0;
-    return (used / limit) * 100;
-  };
-
-  // Helper function to check if a coupon is expired
-  const isExpired = (date: string | null): boolean => {
-    if (!date) return false;
-    return new Date(date) < new Date();
-  };
-
-  // Helper function to format discount value based on coupon type
-  const formatDiscountValue = useCallback((coupon: Coupon) => {
-    switch(coupon.type) {
-      case 'PERCENTAGE':
-        return `${coupon.value}%`;
-      case 'FIXED_AMOUNT':
-        return `৳${coupon.value}`;
-      case 'FREE_SHIPPING':
-        return 'Free Shipping';
-      default:
-        return `${coupon.value}`;
-    }
-  }, []);
-
-  // Format date with null check
-  const formatDate = useCallback((date: string | null | undefined) => {
-    if (!date) return 'N/A';
-    try {
-      return format(new Date(date), 'yyyy-MM-dd HH:mm:ss');
-    } catch (error) {
-      return 'Invalid Date';
-    }
-  }, []);
 
   if (isLoading) {
     return (
@@ -1334,7 +713,7 @@ export default function CouponsPage() {
                         )}
                         <div>
                           <div className="font-medium">
-                            {coupon.type === 'PERCENTAGE' ? `${coupon.discountValue}%` : `৳${coupon.discountValue}`}
+                            {coupon.type === 'PERCENTAGE' ? `${coupon.value}%` : `৳${coupon.value}`}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             {coupon.type === 'PERCENTAGE' ? 'Percentage' : 'Fixed Amount'}

@@ -1,4 +1,4 @@
-import { PrismaClient, ReviewStatus } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -55,11 +55,11 @@ async function seedReviews() {
     // Create different statuses
     let status;
     if (i < 5) {
-      status = ReviewStatus.PENDING;
+      status = 'PENDING';
     } else if (i < 12) {
-      status = ReviewStatus.APPROVED;
+      status = 'APPROVED';
     } else {
-      status = ReviewStatus.REJECTED;
+      status = 'REJECTED';
     }
 
     reviews.push({

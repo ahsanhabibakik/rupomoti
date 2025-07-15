@@ -100,7 +100,7 @@ export default function AccountPage() {
   }
 
   const isAdmin = session?.user?.role === 'ADMIN'
-  const isManager = session?.user?.role === 'MANAGER'
+  const isManager = (session?.user?.role as string) === 'MANAGER'
   const isAdminOrManager = isAdmin || isManager
 
   return (

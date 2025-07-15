@@ -183,7 +183,7 @@ export default function CategoriesPage() {
     if (selectedCategories.size === categoriesData?.categories?.length) {
       setSelectedCategories(new Set());
     } else {
-      const allIds = new Set(categoriesData?.categories?.map((category: Category) => category.id) || []);
+      const allIds = new Set<string>(categoriesData?.categories?.map((category: Category) => category.id) || []);
       setSelectedCategories(allIds);
     }
   }, [selectedCategories.size, categoriesData?.categories]);
@@ -256,7 +256,7 @@ export default function CategoriesPage() {
     ]);
 
     const csvContent = [headers, ...csvData]
-      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .map((row: any[]) => row.map((cell: any) => `"${cell}"`).join(','))
       .join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -746,10 +746,10 @@ export default function CategoriesPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <DataTablePagination
-          currentPage={currentPage}
+          page={currentPage}
           totalPages={totalPages}
           pageSize={pageSize}
-          totalCount={totalCount}
+          totalRecords={totalCount}
           onPageChange={setCurrentPage}
           onPageSizeChange={setPageSize}
         />

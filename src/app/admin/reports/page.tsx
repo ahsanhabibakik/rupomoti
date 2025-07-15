@@ -114,7 +114,7 @@ export default function ReportsPage() {
 
   useEffect(() => {
     fetchReportData(activeTab)
-  }, [dateRange, activeTab])
+  }, [dateRange, activeTab, fetchReportData])
 
   const handleExport = async (type: string) => {
     setLoading(true)

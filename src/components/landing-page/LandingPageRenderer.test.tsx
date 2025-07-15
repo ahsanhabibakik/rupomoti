@@ -24,9 +24,7 @@ export function LandingPageRenderer({
         <h1 className="text-3xl font-bold text-center mb-8">
           Landing Page Test
         </h1>
-        <p className="text-center text-gray-600">
-          Product ID: {productId}
-        </p>
+        <p className="text-gray-600">No content found for &quot;{section.type}&quot;</p>
         <div className="mt-8">
           <button 
             onClick={() => onOrderNow?.(productId)}
