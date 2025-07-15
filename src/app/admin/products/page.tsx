@@ -531,7 +531,7 @@ export default function ProductsPage() {
         productsToExport.forEach(product => {
           doc.setFontSize(10);
           doc.text(product.name.substring(0, 20), 20, yPos);
-          doc.text(product.sku, 80, yPos);
+          doc.text(product.sku ?? '', 80, yPos);
           doc.text(`৳${product.price}`, 120, yPos);
           doc.text(product.stock.toString(), 160, yPos);
           doc.text(product.category?.name || 'None', 200, yPos);
@@ -1050,7 +1050,7 @@ export default function ProductsPage() {
             fetchProducts(false);
           }
         }}
-        product={editingProduct || undefined}
+        product={editingProduct ? { ...editingProduct, sku: editingProduct.sku ?? undefined, categoryId: editingProduct.categoryId ?? undefined } : undefined}
       />}
 
       {/* Bulk Delete Confirmation Dialog */}

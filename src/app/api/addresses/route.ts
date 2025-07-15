@@ -1,5 +1,6 @@
 export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/lib/auth-node';
 import { connectDB } from '@/lib/db';
 
 export async function GET() {

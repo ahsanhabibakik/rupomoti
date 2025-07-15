@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client'
+// This script is deprecated. Prisma is no longer used. Use Mongoose scripts instead.
 import { hash } from 'bcryptjs'
-
-const prisma = new PrismaClient()
 
 async function main() {
   try {
