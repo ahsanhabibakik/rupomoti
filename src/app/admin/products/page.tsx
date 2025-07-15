@@ -480,7 +480,7 @@ export default function ProductsPage() {
         product.sku,
         `৳${product.price.toLocaleString()}`,
         product.salePrice ? `৳${product.salePrice.toLocaleString()}` : '-',
-        product.stock.toString(),
+        product.inStock.toString(),
         product.category?.name || 'No Category',
         [
           product.isFeatured ? 'Featured' : '',
@@ -539,7 +539,7 @@ export default function ProductsPage() {
           doc.text(product.name.substring(0, 20), 20, yPos);
           doc.text(product.sku, 80, yPos);
           doc.text(`৳${product.price}`, 120, yPos);
-          doc.text(product.stock.toString(), 160, yPos);
+          doc.text(product.inStock.toString(), 160, yPos);
           doc.text(product.category?.name || 'None', 200, yPos);
           yPos += 8;
           
@@ -576,7 +576,7 @@ export default function ProductsPage() {
         product.sku,
         product.price,
         product.salePrice || '',
-        product.stock,
+        product.inStock,
         `"${(product.category?.name || 'No Category').replace(/"/g, '""')}"`,
         product.isFeatured ? 'Yes' : 'No',
         product.isNewArrival ? 'Yes' : 'No',
@@ -670,7 +670,7 @@ export default function ProductsPage() {
                   <td><code style="background: #f3f4f6; padding: 2px 4px; border-radius: 3px;">${product.sku}</code></td>
                   <td class="price">৳${product.price.toLocaleString()}</td>
                   <td>${product.salePrice ? `৳${product.salePrice.toLocaleString()}` : '-'}</td>
-                  <td class="${product.stock > 10 ? 'stock-high' : product.stock > 0 ? 'stock-medium' : 'stock-low'}">${product.stock}</td>
+                  <td class="${product.inStock > 10 ? 'stock-high' : product.inStock > 0 ? 'stock-medium' : 'stock-low'}">${product.inStock}</td>
                   <td>${product.category?.name || 'No Category'}</td>
                   <td>
                     ${product.isFeatured ? '<span class="badge">Featured</span>' : ''}
@@ -816,8 +816,8 @@ export default function ProductsPage() {
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`text-xs px-2 py-1 rounded ${product.stock > 10 ? 'bg-green-100 text-green-800' : product.stock > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
-                        Stock: {product.stock}
+                      <span className={`text-xs px-2 py-1 rounded ${product.inStock > 10 ? 'bg-green-100 text-green-800' : product.inStock > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
+                        Stock: {product.inStock}
                       </span>
                     </div>
                   </div>
@@ -834,13 +834,13 @@ export default function ProductsPage() {
               </TableCell>
               <TableCell className="hidden md:table-cell">
                 <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                  product.stock > 10 
+                  product.inStock > 10 
                     ? 'bg-green-100 text-green-800' 
-                    : product.stock > 0 
+                    : product.inStock > 0 
                     ? 'bg-yellow-100 text-yellow-800' 
                     : 'bg-red-100 text-red-800'
                 }`}>
-                  {product.stock}
+                  {product.inStock}
                 </span>
               </TableCell>
               <TableCell className="hidden lg:table-cell">

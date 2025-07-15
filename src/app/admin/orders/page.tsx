@@ -35,31 +35,19 @@ import { DataTablePagination } from '@/components/ui/DataTablePagination';
 import { showToast } from '@/lib/toast';
 import { OrderFilters } from './_components/OrderFilters';
 import { getOrderAnalyticalInfo } from '@/lib/utils/order-number';
-import { OrderStatus, PaymentStatus } from '@/types/mongoose-types';
+import { Order, OrderStatus, PaymentStatus } from '@/types/mongoose-types';
 
 // Enhanced type definitions
-type OrderWithDetails = {
-  id: string;
-  orderNumber: string;
-  customerId: string;
-  total: number;
-  status: OrderStatus;
-  paymentStatus?: PaymentStatus;
-  isFake: boolean;
-  createdAt: string;
-  updatedAt: string;
-  deliveryAddress?: string;
-  recipientName?: string;
-  recipientPhone?: string;
-  courierName?: string;
-  courierTrackingCode?: string;
+type OrderWithDetails = Order & {
   customer: {
     id: string;
     name: string;
     email: string;
     phone?: string;
     address?: string;
-  };
+    city?: string | null;
+    zone?: string | null;
+  } | null;
   items: Array<{
     id: string;
     quantity: number;
@@ -73,6 +61,12 @@ type OrderWithDetails = {
   }>;
   user: { isFlagged: boolean } | null;
   isFakeOrder?: boolean;
+  isFake?: boolean;
+  deliveryAddress?: string;
+  recipientName?: string;
+  recipientPhone?: string;
+  courierName?: string;
+  courierTrackingCode?: string;
   shippingAddress?: string;
   _isNew?: boolean; // For highlighting new orders
   _lastUpdated?: string; // For tracking updates
@@ -662,10 +656,10 @@ const OrdersList = React.memo(({ status }: { status: 'active' | 'trashed' | 'fak
       const customerSection = `
         <div class="section">
           <h3>👤 Customer Information</h3>              
-          <p><strong>Name:</strong> ${order.recipientName || order.customer.name}</p>
-          <p><strong>Phone:</strong> ${order.recipientPhone || order.customer.phone}</p>
-          <p><strong>Email:</strong> ${order.customer.email || 'N/A'}</p>
-          <p><strong>Address:</strong> ${order.shippingAddress || order.customer.address || 'N/A'}</p>
+          <p><strong>Name:</strong> ${order.recipientName || order.customer?.name || 'N/A'}</p>
+          <p><strong>Phone:</strong> ${order.recipientPhone || order.customer?.phone || 'N/A'}</p>
+          <p><strong>Email:</strong> ${order.customer?.email || 'N/A'}</p>
+          <p><strong>Address:</strong> ${order.shippingAddress || order.customer?.address || 'N/A'}</p>
         </div>
       `;
 
@@ -894,10 +888,10 @@ const OrdersList = React.memo(({ status }: { status: 'active' | 'trashed' | 'fak
             <div class="order-info">
               <div class="section">
                 <h4>👤 Customer Information</h4>
-                <p><strong>Name:</strong> ${order.recipientName || order.customer.name}</p>
-                <p><strong>Phone:</strong> ${order.recipientPhone || order.customer.phone}</p>
-                <p><strong>Email:</strong> ${order.customer.email || 'N/A'}</p>
-                <p><strong>Address:</strong> ${order.shippingAddress || order.customer.address || 'N/A'}</p>
+                <p><strong>Name:</strong> ${order.recipientName || order.customer?.name || 'N/A'}</p>
+                <p><strong>Phone:</strong> ${order.recipientPhone || order.customer?.phone || 'N/A'}</p>
+                <p><strong>Email:</strong> ${order.customer?.email || 'N/A'}</p>
+                <p><strong>Address:</strong> ${order.shippingAddress || order.customer?.address || 'N/A'}</p>
               </div>
               <div class="section">
                 <h4>📦 Order Status</h4>
@@ -1130,16 +1124,16 @@ const OrdersList = React.memo(({ status }: { status: 'active' | 'trashed' | 'fak
                     <TableCell>
                       <div className='flex items-center gap-2'>
                           {order.user?.isFlagged && <span title='This user has been flagged'><AlertTriangle className="h-4 w-4 text-destructive" /></span>}
-                          <span>{order.recipientName || order.customer.name}</span>
+                          <span>{order.recipientName || order.customer?.name || 'N/A'}</span>
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        {order.recipientPhone || order.customer.phone}
+                        {order.recipientPhone || order.customer?.phone || 'N/A'}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col items-start gap-1">
                           <StatusBadge status={order.status} />
-                          <StatusBadge status={order.paymentStatus} />
+                          {order.paymentStatus && <StatusBadge status={order.paymentStatus} />}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -1382,9 +1376,9 @@ const OrdersList = React.memo(({ status }: { status: 'active' | 'trashed' | 'fak
                           <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
                         )}
                         <div className="min-w-0 flex-1">
-                          <div className="font-medium text-base truncate">{order.recipientName || order.customer.name}</div>
+                          <div className="font-medium text-base truncate">{order.recipientName || order.customer?.name || 'N/A'}</div>
                           <div className="text-sm text-gray-600 truncate">
-                            {order.recipientPhone || order.customer.phone}
+                            {order.recipientPhone || order.customer?.phone || 'N/A'}
                           </div>
                           {order.shippingAddress && (
                             <div className="text-xs text-gray-500 mt-1 line-clamp-2">
