@@ -35,6 +35,7 @@ import { DataTablePagination } from '@/components/ui/DataTablePagination';
 import { showToast } from '@/lib/toast';
 import { OrderFilters } from './_components/OrderFilters';
 import { getOrderAnalyticalInfo } from '@/lib/utils/order-number';
+import { OrderStatus, PaymentStatus } from '@/types/mongoose-types';
 
 // Enhanced type definitions
 type OrderWithDetails = {
@@ -42,16 +43,22 @@ type OrderWithDetails = {
   orderNumber: string;
   customerId: string;
   total: number;
-  status: string;
+  status: OrderStatus;
+  paymentStatus?: PaymentStatus;
   isFake: boolean;
   createdAt: string;
   updatedAt: string;
   deliveryAddress?: string;
+  recipientName?: string;
+  recipientPhone?: string;
+  courierName?: string;
+  courierTrackingCode?: string;
   customer: {
     id: string;
     name: string;
     email: string;
     phone?: string;
+    address?: string;
   };
   items: Array<{
     id: string;
@@ -666,7 +673,7 @@ const OrdersList = React.memo(({ status }: { status: 'active' | 'trashed' | 'fak
         <div class="section">
           <h3>📦 Order Status</h3>
           <p><strong>Order Status:</strong> <span class="badge ${order.status.toLowerCase()}">${order.status}</span></p>
-          <p><strong>Payment Status:</strong> <span class="badge ${order.paymentStatus.toLowerCase()}">${order.paymentStatus}</span></p>
+          <p><strong>Payment Status:</strong> <span class="badge ${order.paymentStatus?.toLowerCase() || 'unknown'}">${order.paymentStatus || 'Unknown'}</span></p>
           ${order.courierName ? `<p><strong>Courier:</strong> ${order.courierName}</p>` : ''}
           ${order.courierTrackingCode ? `<p><strong>Tracking:</strong> ${order.courierTrackingCode}</p>` : ''}
         </div>
