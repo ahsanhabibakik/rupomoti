@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
-
-
-
+import { auth } from '@/lib/auth-node';
 import { AuditLogger } from '@/lib/audit-logger';
+import Category from '@/models/Category';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -43,16 +42,14 @@ export async function PATCH(req: Request) {
     // Update categories
     const isActive = action === 'activate';
     
-    const updatedCategories = await prisma.category.updateMany({
-      where: {
-        id: { in: categoryIds }
-      },
-      data: { isActive }
-    });
+    const updatedCategories = await Category.updateMany(
+      { _id: { $in: categoryIds } },
+      { isActive }
+    );
 
     return NextResponse.json({
       message: `Categories ${action}d successfully`,
-      count: updatedCategories.count
+      count: updatedCategories.modifiedCount
     });
   } catch (error) {
     console.error(`Error during bulk ${req.method} categories:`, error);

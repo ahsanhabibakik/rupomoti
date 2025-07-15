@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
-
+import { auth } from '@/lib/auth-node';
 import { cookies } from 'next/headers';
-
 import { z } from 'zod';
 import { nanoid } from 'nanoid';
+import Review from '@/models/Review';
+import Product from '@/models/Product';
+import User from '@/models/User';
 
 const reviewSchema = z.object({
   productId: z.string(),
@@ -26,23 +28,22 @@ export async function GET(req: NextRequest) {
       if (!session?.user?.id) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-      const reviews = await prisma.review.findMany({
-        where: { userId: session.user.id },
-        include: { product: { select: { id: true, name: true, price: true, images: true } } },
-        orderBy: { createdAt: 'desc' },
-      });
+      const reviews = await Review.find({ userId: session.user.id })
+        .populate('product', 'id name price images')
+        .sort({ createdAt: -1 });
       return NextResponse.json(reviews);
     }
     if (!productId) {
       return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
     }
-    const reviews = await prisma.review.findMany({
-      where: { productId, status: status as 'PENDING' | 'APPROVED' | 'REJECTED' },
-      include: { user: { select: { id: true, name: true, image: true } } },
-      orderBy: { createdAt: 'desc' },
-    });
+    const reviews = await Review.find({ 
+      productId, 
+      status: status as 'PENDING' | 'APPROVED' | 'REJECTED' 
+    })
+      .populate('user', 'id name image')
+      .sort({ createdAt: -1 });
     const mappedReviews = reviews.map(review => ({
-      ...review,
+      ...review.toObject(),
       reviewerName: review.user?.name || 'Anonymous User',
       reviewerImage: review.user?.image || null,
       isAnonymous: !review.userId,
@@ -77,17 +78,15 @@ export async function POST(req: NextRequest) {
         });
       }
     }
-    const existingReview = await prisma.review.findFirst({
-      where: {
-        productId: validatedData.productId,
-        ...(userId ? { userId } : { anonymousToken }),
-      },
+    const existingReview = await Review.findOne({
+      productId: validatedData.productId,
+      ...(userId ? { userId } : { anonymousToken }),
     });
     let review;
     if (existingReview) {
-      review = await prisma.review.update({
-        where: { id: existingReview.id },
-        data: {
+      review = await Review.findByIdAndUpdate(
+        existingReview._id,
+        {
           rating: validatedData.rating,
           title: validatedData.title,
           comment: validatedData.comment,
@@ -97,25 +96,23 @@ export async function POST(req: NextRequest) {
           moderationNote: null,
           updatedAt: new Date(),
         },
-        include: { user: { select: { id: true, name: true, image: true } } },
-      });
+        { new: true }
+      ).populate('user', 'id name image');
     } else {
-      review = await prisma.review.create({
-        data: {
-          productId: validatedData.productId,
-          rating: validatedData.rating,
-          title: validatedData.title,
-          comment: validatedData.comment,
-          userId,
-          anonymousToken,
-          status: 'PENDING',
-        },
-        include: { user: { select: { id: true, name: true, image: true } } },
+      review = await Review.create({
+        productId: validatedData.productId,
+        rating: validatedData.rating,
+        title: validatedData.title,
+        comment: validatedData.comment,
+        userId,
+        anonymousToken,
+        status: 'PENDING',
       });
+      review = await Review.findById(review._id).populate('user', 'id name image');
     }
     return NextResponse.json({
       review: {
-        ...review,
+        ...review.toObject(),
         reviewerName: review.user?.name || 'Anonymous User',
         reviewerImage: review.user?.image || null,
         isAnonymous: !review.userId,
@@ -152,19 +149,16 @@ export async function PUT(req: NextRequest) {
     if (!userId && !anonymousToken) {
       return NextResponse.json({ review: null });
     }
-    const review = await prisma.review.findFirst({
-      where: {
-        productId,
-        ...(userId ? { userId } : { anonymousToken }),
-      },
-      include: { user: { select: { id: true, name: true, image: true } } },
-    });
+    const review = await Review.findOne({
+      productId,
+      ...(userId ? { userId } : { anonymousToken }),
+    }).populate('user', 'id name image');
     if (!review) {
       return NextResponse.json({ review: null });
     }
     return NextResponse.json({
       review: {
-        ...review,
+        ...review.toObject(),
         reviewerName: review.user?.name || 'Anonymous User',
         reviewerImage: review.user?.image || null,
         isAnonymous: !review.userId,

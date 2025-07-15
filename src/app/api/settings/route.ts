@@ -1,38 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
-
+import { auth } from '@/lib/auth-node';
 import { connectDB } from '@/lib/db';
-
+import UserSetting from '@/models/UserSetting';
 
 export async function GET() {
   try {
+    await connectDB();
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    let settings = await prisma.userSetting.findUnique({
-      where: { userId: session.user.id }
-    });
+    let settings = await UserSetting.findOne({ userId: session.user.id });
 
     // If no settings exist, create default settings
     if (!settings) {
-      settings = await prisma.userSetting.create({
-        data: {
-          userId: session.user.id,
-          emailNotifications: {
-            orderUpdates: true,
-            promotionalEmails: false,
-            newsletter: false
-          },
-          smsNotifications: {
-            orderUpdates: true,
-            promotionalSms: false
-          },
-          privacySettings: {
-            profileVisibility: 'public',
-            showEmail: false,
-            showPhone: false
-          }
+      settings = await UserSetting.create({
+        userId: session.user.id,
+        emailNotifications: {
+          orderUpdates: true,
+          promotionalEmails: false,
+          newsletter: false
+        },
+        smsNotifications: {
+          orderUpdates: true,
+          promotionalSms: false
+        },
+        privacySettings: {
+          profileVisibility: 'public',
+          showEmail: false,
+          showPhone: false
         }
       });
     }
@@ -53,36 +50,33 @@ export async function PUT(req: NextRequest) {
     }
     const body = await req.json();
     const { emailNotifications, smsNotifications, privacySettings } = body;
-    let settings = await prisma.userSetting.findUnique({
-      where: { userId: session.user.id }
-    });
+    let settings = await UserSetting.findOne({ userId: session.user.id });
     if (settings) {
-      settings = await prisma.userSetting.update({
-        where: { userId: session.user.id },
-        data: {
+      settings = await UserSetting.findOneAndUpdate(
+        { userId: session.user.id },
+        {
           emailNotifications: emailNotifications || settings.emailNotifications,
           smsNotifications: smsNotifications || settings.smsNotifications,
           privacySettings: privacySettings || settings.privacySettings
-        }
-      });
+        },
+        { new: true }
+      );
     } else {
-      settings = await prisma.userSetting.create({
-        data: {
-          userId: session.user.id,
-          emailNotifications: emailNotifications || {
-            orderUpdates: true,
-            promotionalEmails: false,
-            newsletter: false
-          },
-          smsNotifications: smsNotifications || {
-            orderUpdates: true,
-            promotionalSms: false
-          },
-          privacySettings: privacySettings || {
-            profileVisibility: 'public',
-            showEmail: false,
-            showPhone: false
-          }
+      settings = await UserSetting.create({
+        userId: session.user.id,
+        emailNotifications: emailNotifications || {
+          orderUpdates: true,
+          promotionalEmails: false,
+          newsletter: false
+        },
+        smsNotifications: smsNotifications || {
+          orderUpdates: true,
+          promotionalSms: false
+        },
+        privacySettings: privacySettings || {
+          profileVisibility: 'public',
+          showEmail: false,
+          showPhone: false
         }
       });
     }

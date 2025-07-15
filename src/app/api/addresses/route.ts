@@ -2,6 +2,7 @@ export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth-node';
 import { connectDB } from '@/lib/db';
+import Address from '@/models/Address';
 
 export async function GET() {
   try {
@@ -12,10 +13,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const addresses = await prisma.address.findMany({
-      where: { userId: session.user.id },
-      orderBy: { createdAt: 'desc' },
-    });
+    const addresses = await Address.find({ userId: session.user.id }).sort({ createdAt: -1 });
 
     return NextResponse.json(addresses);
   } catch (error) {
@@ -40,17 +38,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
     }
 
-    const address = await prisma.address.create({
-      data: {
-        name,
-        phone,
-        street,
-        city,
-        state,
-        postalCode,
-        country,
-        userId: session.user.id,
-      },
+    const address = await Address.create({
+      name,
+      phone,
+      street,
+      city,
+      state,
+      postalCode,
+      country,
+      userId: session.user.id,
     });
 
     return NextResponse.json(address);
@@ -77,26 +73,21 @@ export async function PUT(req: NextRequest) {
     }
 
     // Verify the address belongs to the user
-    const existingAddress = await prisma.address.findFirst({
-      where: { id, userId: session.user.id },
-    });
+    const existingAddress = await Address.findOne({ _id: id, userId: session.user.id });
 
     if (!existingAddress) {
       return NextResponse.json({ error: 'Address not found' }, { status: 404 });
     }
 
-    const address = await prisma.address.update({
-      where: { id },
-      data: {
-        name,
-        phone,
-        street,
-        city,
-        state,
-        postalCode,
-        country,
-      },
-    });
+    const address = await Address.findByIdAndUpdate(id, {
+      name,
+      phone,
+      street,
+      city,
+      state,
+      postalCode,
+      country,
+    }, { new: true });
 
     return NextResponse.json(address);
   } catch (error) {
@@ -122,17 +113,13 @@ export async function DELETE(req: NextRequest) {
     }
 
     // Verify the address belongs to the user
-    const existingAddress = await prisma.address.findFirst({
-      where: { id, userId: session.user.id },
-    });
+    const existingAddress = await Address.findOne({ _id: id, userId: session.user.id });
 
     if (!existingAddress) {
       return NextResponse.json({ error: 'Address not found' }, { status: 404 });
     }
 
-    await prisma.address.delete({
-      where: { id },
-    });
+    await Address.findByIdAndDelete(id);
 
     return NextResponse.json({ message: 'Address deleted successfully' });
   } catch (error) {

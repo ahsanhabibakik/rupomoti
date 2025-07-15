@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-
-
+import connectDB from '@/lib/db'
+import { auth } from '@/lib/auth-node'
 import { z } from 'zod'
+import Coupon from '@/models/Coupon'
 
 export async function GET(req: Request) {
   try {
@@ -16,8 +16,8 @@ export async function GET(req: Request) {
 
     if (q) {
       where.code = {
-        contains: q,
-        mode: 'insensitive',
+        $regex: q,
+        $options: 'i',
       }
     }
 
@@ -29,12 +29,7 @@ export async function GET(req: Request) {
       where.type = type
     }
     
-    const coupons = await prisma.coupon.findMany({
-      where,
-      orderBy: {
-        createdAt: 'desc',
-      },
-    })
+    const coupons = await Coupon.find(where).sort({ createdAt: -1 })
 
     return NextResponse.json(coupons)
   } catch (error) {
@@ -65,7 +60,7 @@ export async function POST(req: Request) {
 
     const json = await req.json()
     
-    // Transform empty strings for optional fields to null for Prisma
+    // Transform empty strings for optional fields to null for Mongoose
     const transformedJson = {
       ...json,
       type: json.type === 'percentage' ? 'PERCENTAGE' : json.type === 'fixed' ? 'FIXED_AMOUNT' : json.type,
@@ -80,7 +75,7 @@ export async function POST(req: Request) {
       validUntil: new Date(transformedJson.validUntil).toISOString(),
     })
 
-    const coupon = await prisma.coupon.create({ data })
+    const coupon = await Coupon.create(data)
 
     return NextResponse.json(coupon)
   } catch (error) {
@@ -115,10 +110,7 @@ export async function PUT(req: Request) {
       validUntil: new Date(json.validUntil).toISOString(),
     })
     
-    const coupon = await prisma.coupon.update({
-      where: { id },
-      data: dataToUpdate,
-    })
+    const coupon = await Coupon.findByIdAndUpdate(id, dataToUpdate, { new: true })
 
     return NextResponse.json(coupon)
   } catch (error) {
@@ -145,9 +137,7 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: 'Coupon ID is required' }, { status: 400 })
     }
 
-    await prisma.coupon.delete({
-      where: { id },
-    })
+    await Coupon.findByIdAndDelete(id)
 
     return NextResponse.json({ success: true })
   } catch (error) {
