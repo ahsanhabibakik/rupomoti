@@ -14,7 +14,7 @@ export function SearchForm({ initialSearch }: { initialSearch: string }) {
     const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
     useEffect(() => {
-        const params = new URLSearchParams(searchParams);
+        const params = new URLSearchParams(searchParams || '');
         if (debouncedSearchTerm) {
             params.set("search", debouncedSearchTerm);
         } else {

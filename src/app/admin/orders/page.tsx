@@ -37,16 +37,33 @@ import { OrderFilters } from './_components/OrderFilters';
 import { getOrderAnalyticalInfo } from '@/lib/utils/order-number';
 
 // Enhanced type definitions
-type OrderWithDetails = (Prisma.OrderGetPayload<{
-  include: {
-    customer: true;
-    items: {
-      include: {
-        product: true;
-      };
-    };
+type OrderWithDetails = {
+  id: string;
+  orderNumber: string;
+  customerId: string;
+  total: number;
+  status: string;
+  isFake: boolean;
+  createdAt: string;
+  updatedAt: string;
+  deliveryAddress?: string;
+  customer: {
+    id: string;
+    name: string;
+    email: string;
+    phone?: string;
   };
-}>) & {
+  items: Array<{
+    id: string;
+    quantity: number;
+    price: number;
+    product: {
+      id: string;
+      name: string;
+      price: number;
+      sku?: string;
+    };
+  }>;
   user: { isFlagged: boolean } | null;
   isFakeOrder?: boolean;
   shippingAddress?: string;
