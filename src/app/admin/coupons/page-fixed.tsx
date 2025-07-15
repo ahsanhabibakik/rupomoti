@@ -686,19 +686,12 @@ export default function CouponsPage() {
       {/* Pagination */}
       {pagination && (
         <DataTablePagination
-          table={{
-            getState: () => ({ pagination: { pageIndex: currentPage - 1, pageSize } }),
-            getPageCount: () => pagination.totalPages,
-            getCanPreviousPage: () => pagination.hasPrev,
-            getCanNextPage: () => pagination.hasNext,
-            previousPage: () => setCurrentPage(prev => Math.max(1, prev - 1)),
-            nextPage: () => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1)),
-            setPageSize: (size: number) => {
-              setPageSize(size);
-              setCurrentPage(1);
-            },
-            getRowCount: () => pagination.totalCount,
-          } as any}
+          page={currentPage}
+          totalPages={pagination.totalPages}
+          pageSize={pageSize}
+          totalRecords={pagination.totalCount}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
         />
       )}
 

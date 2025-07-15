@@ -19,7 +19,22 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from '@/components/ui/badge'
 
-
+interface Coupon {
+  id: string;
+  code: string;
+  type: 'PERCENTAGE' | 'FIXED';
+  value: number;
+  minOrderAmount: number | null;
+  maxDiscountAmount: number | null;
+  usageLimit: number | null;
+  usedCount: number;
+  isActive: boolean;
+  validFrom: string;
+  validUntil: string;
+  createdAt: string;
+  updatedAt: string;
+  description?: string;
+}
 
 type CouponTableRow = {
   original: Coupon
@@ -88,36 +103,36 @@ export default function CouponsPage() {
     cell: ({ row }: { row: CouponTableRow }) => {
         const type = row.original.type;
         const value = row.getValue('value');
-        return type === 'percentage' ? `${value}%` : `৳${value}`;
+        return type === 'PERCENTAGE' ? `${value}%` : `৳${value}`;
       }
     },
     {
-      accessorKey: 'minimumAmount',
+      accessorKey: 'minOrderAmount',
       header: 'Min. Spend',
-      cell: ({ row }) => row.original.minimumAmount ? `৳${row.original.minimumAmount}` : 'N/A'
+      cell: ({ row }: { row: CouponTableRow }) => row.original.minOrderAmount ? `৳${row.original.minOrderAmount}` : 'N/A'
   },
   {
     accessorKey: 'usageLimit',
     header: 'Usage Limit',
-      cell: ({ row }) => row.original.usageLimit ?? 'Unlimited'
+      cell: ({ row }: { row: CouponTableRow }) => row.original.usageLimit ?? 'Unlimited'
     },
     { accessorKey: 'usedCount', header: 'Used' },
   {
     accessorKey: 'validUntil',
     header: 'Valid Until',
-      cell: ({ row }) => new Date(row.original.validUntil).toLocaleDateString()
+      cell: ({ row }: { row: CouponTableRow }) => new Date(row.original.validUntil).toLocaleDateString()
   },
   {
       accessorKey: 'isActive',
     header: 'Status',
-    cell: ({ row }) => {
+    cell: ({ row }: { row: CouponTableRow }) => {
         const isActive = row.getValue('isActive');
         return <Badge variant={isActive ? 'success' : 'destructive'}>{isActive ? 'Active' : 'Inactive'}</Badge>;
       }
   },
   {
     id: 'actions',
-    cell: ({ row }) => {
+    cell: ({ row }: { row: CouponTableRow }) => {
       const coupon = row.original
       return (
         <div className="flex items-center gap-2">
@@ -134,7 +149,7 @@ export default function CouponsPage() {
   ], []);
 
   const activeFiltersCount = [
-    searchParams.get('type') && searchParams.get('type') !== 'all',
+    searchParams?.get('type') && searchParams?.get('type') !== 'all',
   ].filter(Boolean).length;
 
   if (isLoading && !coupons) {
