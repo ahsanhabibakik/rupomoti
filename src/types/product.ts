@@ -11,7 +11,7 @@ export type Product = {
   images: string[]
   category?: Category | null
   categoryId?: string | null
-  inStock: boolean
+  stock: number
   isFeatured: boolean
   isPopular: boolean
   rating?: number | null
