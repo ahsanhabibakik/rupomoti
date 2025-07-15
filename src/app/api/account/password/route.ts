@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { hash, compare } from 'bcryptjs';
+import { auth } from '@/lib/auth-node';
 
 export async function PUT(req: Request) {
   try {

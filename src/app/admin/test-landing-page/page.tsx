@@ -21,7 +21,7 @@ export default async function AdminTestPage() {
         <h2 className="text-lg font-semibold mb-4">Available Products for Landing Page Builder</h2>
         
         <div className="space-y-4">
-          {products.map((product) => (
+          {products.map((product: { id: string; name: string; slug: string; useCustomLandingPage: boolean; landingPagePublished: boolean }) => (
             <div key={product.id} className="border rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>

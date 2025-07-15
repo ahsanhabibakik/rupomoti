@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/lib/auth-node';
 
 import dbConnect from '@/lib/dbConnect';
 import { AuditLogger } from '@/lib/audit-logger';
@@ -39,7 +40,7 @@ export async function DELETE(request: NextRequest) {
     if (categoriesWithProducts.length > 0) {
       return NextResponse.json({
         error: 'Cannot delete categories with existing products',
-        categoriesWithProducts: categoriesWithProducts.map(cat => ({
+        categoriesWithProducts: categoriesWithProducts.map((cat: any) => ({
           id: cat.id,
           name: cat.name,
           productsCount: cat._count.products

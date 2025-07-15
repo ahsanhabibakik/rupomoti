@@ -1,9 +1,10 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 
 
 
 import { AuditLogger } from '@/lib/audit-logger';
+import { auth } from '@/lib/auth-node';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -50,7 +51,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { 
           error: 'Cannot delete categories with existing products',
-          categoriesWithProducts: categoriesWithProducts.map(cat => ({
+          categoriesWithProducts: categoriesWithProducts.map((cat: any) => ({
             id: cat.id,
             name: cat.name,
             productsCount: cat._count.products

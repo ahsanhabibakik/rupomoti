@@ -27,8 +27,18 @@ import {
 import { toast } from 'sonner'
 import { Badge } from "@/components/ui/badge"
 
+type PermissionGroupKey = 'products' | 'orders' | 'customers' | 'categories' | 'coupons' | 'reviews' | 'settings' | 'users' | 'roles';
+
+type Role = {
+  id: number;
+  name: string;
+  description: string;
+  users: number;
+  permissions: Record<PermissionGroupKey, string[]>;
+};
+
 // Mock data for demonstration
-const roles = [
+const roles: Role[] = [
   {
     id: 1,
     name: 'Super Admin',
@@ -99,7 +109,7 @@ const roles = [
   },
 ]
 
-const permissionGroups = [
+const permissionGroups: { name: string; key: PermissionGroupKey; permissions: string[] }[] = [
   {
     name: 'Products',
     key: 'products',
@@ -269,7 +279,7 @@ export default function RolesPage() {
                                   [group.key]: checked
                                     ? [...currentPermissions, permission]
                                     : currentPermissions.filter(
-                                        (p) => p !== permission
+                                        (p: string) => p !== permission
                                       ),
                                 },
                               })
@@ -430,7 +440,7 @@ export default function RolesPage() {
                                   [group.key]: checked
                                     ? [...currentPermissions, permission]
                                     : currentPermissions.filter(
-                                        (p) => p !== permission
+                                        (p: string) => p !== permission
                                       ),
                                 },
                               })

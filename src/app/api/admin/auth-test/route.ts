@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
+import { auth } from '@/lib/auth-node';
 
 
 export async function GET() {
