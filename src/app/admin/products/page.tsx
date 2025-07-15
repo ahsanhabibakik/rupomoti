@@ -162,7 +162,6 @@ export default function ProductsPage() {
     stockStatus: 'all',
     priceRange: INITIAL_PRICE_RANGE,
     isFeatured: '',
-    isNewArrival: '',
     isPopular: '',
   });
 
@@ -194,8 +193,6 @@ export default function ProductsPage() {
             } else if (key === 'stockStatus' && value !== 'all') {
                 searchParams.set(key, String(value));
             } else if (key === 'isFeatured' && value !== 'all-featured') {
-                searchParams.set(key, String(value));
-            } else if (key === 'isNewArrival' && value !== 'all-new-arrival') {
                 searchParams.set(key, String(value));
             } else if (key === 'isPopular' && value !== 'all-popular') {
                 searchParams.set(key, String(value));
@@ -252,7 +249,6 @@ export default function ProductsPage() {
       stockStatus: 'all',
       priceRange: INITIAL_PRICE_RANGE,
       isFeatured: '',
-      isNewArrival: '',
       isPopular: '',
     });
   };
@@ -264,7 +260,6 @@ export default function ProductsPage() {
       if (key === 'stockStatus' && value !== 'all') return true;
       if (key === 'priceRange' && (value[0] !== INITIAL_PRICE_RANGE[0] || value[1] !== INITIAL_PRICE_RANGE[1])) return true;
       if (key === 'isFeatured' && value && value !== 'all-featured') return true;
-      if (key === 'isNewArrival' && value && value !== 'all-new-arrival') return true;
       if (key === 'isPopular' && value && value !== 'all-popular') return true;
       return false;
     }).length;
@@ -480,11 +475,10 @@ export default function ProductsPage() {
         product.sku,
         `৳${product.price.toLocaleString()}`,
         product.salePrice ? `৳${product.salePrice.toLocaleString()}` : '-',
-        product.inStock.toString(),
+        product.stock.toString(),
         product.category?.name || 'No Category',
         [
           product.isFeatured ? 'Featured' : '',
-          product.isNewArrival ? 'New' : '',
           product.isPopular ? 'Popular' : ''
         ].filter(Boolean).join(', ') || 'Regular',
         new Date(product.createdAt).toLocaleDateString()
@@ -539,7 +533,7 @@ export default function ProductsPage() {
           doc.text(product.name.substring(0, 20), 20, yPos);
           doc.text(product.sku, 80, yPos);
           doc.text(`৳${product.price}`, 120, yPos);
-          doc.text(product.inStock.toString(), 160, yPos);
+          doc.text(product.stock.toString(), 160, yPos);
           doc.text(product.category?.name || 'None', 200, yPos);
           yPos += 8;
           
@@ -576,10 +570,10 @@ export default function ProductsPage() {
         product.sku,
         product.price,
         product.salePrice || '',
-        product.inStock,
+        product.stock,
         `"${(product.category?.name || 'No Category').replace(/"/g, '""')}"`,
         product.isFeatured ? 'Yes' : 'No',
-        product.isNewArrival ? 'Yes' : 'No',
+        false ? 'Yes' : 'No',
         product.isPopular ? 'Yes' : 'No',
         new Date(product.createdAt).toLocaleDateString(),
         activeTab.toUpperCase()
@@ -670,13 +664,13 @@ export default function ProductsPage() {
                   <td><code style="background: #f3f4f6; padding: 2px 4px; border-radius: 3px;">${product.sku}</code></td>
                   <td class="price">৳${product.price.toLocaleString()}</td>
                   <td>${product.salePrice ? `৳${product.salePrice.toLocaleString()}` : '-'}</td>
-                  <td class="${product.inStock > 10 ? 'stock-high' : product.inStock > 0 ? 'stock-medium' : 'stock-low'}">${product.inStock}</td>
+                  <td class="${product.stock > 10 ? 'stock-high' : product.stock > 0 ? 'stock-medium' : 'stock-low'}">${product.stock}</td>
                   <td>${product.category?.name || 'No Category'}</td>
                   <td>
                     ${product.isFeatured ? '<span class="badge">Featured</span>' : ''}
-                    ${product.isNewArrival ? '<span class="badge">New</span>' : ''}
+                    ${false ? '<span class="badge">New</span>' : ''}
                     ${product.isPopular ? '<span class="badge">Popular</span>' : ''}
-                    ${!product.isFeatured && !product.isNewArrival && !product.isPopular ? '<span class="badge">Regular</span>' : ''}
+                    ${!product.isFeatured && !false && !product.isPopular ? '<span class="badge">Regular</span>' : ''}
                   </td>
                   <td>${new Date(product.createdAt).toLocaleDateString()}</td>
                 </tr>
@@ -743,21 +737,13 @@ export default function ProductsPage() {
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">Status Flags</label>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <Select value={filters.isFeatured} onValueChange={(v) => handleFilterChange('isFeatured', v)}>
               <SelectTrigger><SelectValue placeholder="Featured" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all-featured">Any</SelectItem>
                 <SelectItem value="true">Featured</SelectItem>
                 <SelectItem value="false">Not Featured</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={filters.isNewArrival} onValueChange={(v) => handleFilterChange('isNewArrival', v)}>
-              <SelectTrigger><SelectValue placeholder="New Arrival" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all-new-arrival">Any</SelectItem>
-                <SelectItem value="true">New Arrival</SelectItem>
-                <SelectItem value="false">Not New Arrival</SelectItem>
               </SelectContent>
             </Select>
             <Select value={filters.isPopular} onValueChange={(v) => handleFilterChange('isPopular', v)}>
@@ -816,8 +802,8 @@ export default function ProductsPage() {
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`text-xs px-2 py-1 rounded ${product.inStock > 10 ? 'bg-green-100 text-green-800' : product.inStock > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
-                        Stock: {product.inStock}
+                      <span className={`text-xs px-2 py-1 rounded ${product.stock > 10 ? 'bg-green-100 text-green-800' : product.stock > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
+                        Stock: {product.stock}
                       </span>
                     </div>
                   </div>
@@ -834,13 +820,13 @@ export default function ProductsPage() {
               </TableCell>
               <TableCell className="hidden md:table-cell">
                 <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                  product.inStock > 10 
+                  product.stock > 10 
                     ? 'bg-green-100 text-green-800' 
-                    : product.inStock > 0 
+                    : product.stock > 0 
                     ? 'bg-yellow-100 text-yellow-800' 
                     : 'bg-red-100 text-red-800'
                 }`}>
-                  {product.inStock}
+                  {product.stock}
                 </span>
               </TableCell>
               <TableCell className="hidden lg:table-cell">
@@ -849,7 +835,7 @@ export default function ProductsPage() {
               <TableCell>
                 <div className="flex flex-wrap gap-1">
                   {product.isFeatured && <Badge variant="outline" className="text-xs">Featured</Badge>}
-                  {product.isNewArrival && <Badge variant="outline" className="border-blue-500 text-blue-500 text-xs">New</Badge>}
+                  {false && <Badge variant="outline" className="border-blue-500 text-blue-500 text-xs">New</Badge>}
                   {product.isPopular && <Badge variant="outline" className="border-green-500 text-green-500 text-xs">Popular</Badge>}
                 </div>
               </TableCell>
