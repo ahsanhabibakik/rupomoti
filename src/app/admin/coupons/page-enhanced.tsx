@@ -534,7 +534,7 @@ export default function CouponsPage() {
                     <Calendar
                       mode="single"
                       selected={filters.dateFrom || undefined}
-                      onSelect={(date) => handleFilterChange('dateFrom', date)}
+                      onSelect={(date) => handleFilterChange('dateFrom', date || null)}
                     />
                   </PopoverContent>
                 </Popover>
@@ -559,7 +559,7 @@ export default function CouponsPage() {
                     <Calendar
                       mode="single"
                       selected={filters.dateTo || undefined}
-                      onSelect={(date) => handleFilterChange('dateTo', date)}
+                      onSelect={(date) => handleFilterChange('dateTo', date || null)}
                     />
                   </PopoverContent>
                 </Popover>
@@ -817,10 +817,10 @@ export default function CouponsPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <DataTablePagination
-          currentPage={currentPage}
+          page={currentPage}
           totalPages={totalPages}
           pageSize={pageSize}
-          totalCount={totalCount}
+          totalRecords={totalCount}
           onPageChange={setCurrentPage}
           onPageSizeChange={setPageSize}
         />
