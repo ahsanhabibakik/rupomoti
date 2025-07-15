@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
-
-
-
+import { auth } from '@/lib/auth';
 import { z } from 'zod';
+import { getCategoryModel } from '@/models/Category';
+import { getProductModel } from '@/models/Product';
 
 // Query schema for filtering with proper handling of empty strings
 const querySchema = z.object({
@@ -67,44 +67,44 @@ export async function GET(req: Request) {
 
     const skip = (query.page - 1) * query.limit;
 
-    // Build sort object
-    let orderBy: Record<string, string> = {};
+    // Build sort object for Mongoose
+    let sort: Record<string, 1 | -1> = {};
+    const sortOrder = query.sortOrder === 'asc' ? 1 : -1;
+    
     if (query.sortBy === 'products') {
-      // For products count, we'll sort by the count
-      orderBy = { products: { _count: query.sortOrder } };
+      // For products count sorting in Mongoose, we'll handle this separately
+      sort = { name: sortOrder }; // Default sort while we implement product count
     } else {
-      orderBy[query.sortBy] = query.sortOrder;
+      sort[query.sortBy] = sortOrder;
     }
 
-    // Execute parallel queries
+    // Execute parallel queries with Mongoose
+    const Category = getCategoryModel();
+    
     const [categories, totalCount] = await Promise.all([
-      prisma.category.findMany({
-        where,
-        include: {
-          _count: {
-            select: { products: true }
-          }
-        },
-        orderBy,
-        skip,
-        take: query.limit,
-      }),
-      prisma.category.count({ where })
+      Category.find(where)
+        .sort(sort)
+        .skip(skip)
+        .limit(query.limit)
+        .lean(),
+      Category.countDocuments(where)
     ]);
 
     // Calculate additional stats
-    const totalProducts = await prisma.product.count({
-      where: { categoryId: { in: categories.map(c => c.id) } }
+    const Product = getProductModel();
+    const categoryIds = categories.map((c: any) => c._id);
+    const totalProducts = await Product.countDocuments({
+      category: { $in: categoryIds }
     });
 
     // Transform data for admin view
-    const processedCategories = categories.map(category => ({
-      id: category.id,
+    const processedCategories = categories.map((category: any) => ({
+      id: category._id,
       name: category.name,
       description: category.description,
       image: category.image,
       isActive: category.isActive,
-      productsCount: category._count.products,
+      productsCount: 0, // TODO: Calculate per-category product count
       createdAt: category.createdAt,
       updatedAt: category.updatedAt,
     }));

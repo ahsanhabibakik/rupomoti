@@ -2,7 +2,8 @@ export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserModel } from '@/models/User';
-
+import { auth } from '@/lib/auth';
+import dbConnect from '@/lib/mongoose';
 import { AuditLogger } from '@/lib/audit-logger';
 import AuditLog from '@/models/AuditLog';
 

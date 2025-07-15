@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
-
-
-
-import { AuditLogger } from '@/lib/audit-logger';
+import { auth } from '@/lib/auth';
+// import { AuditLogger } from '@/lib/audit-logger'; // TODO: Migrate to Mongoose
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -33,12 +31,16 @@ export async function PATCH(req: Request) {
     }
 
     // Log the action for auditing
+    // TODO: Re-enable audit logging after migrating AuditLogger to Mongoose
+    /*
     await AuditLogger.log({
+      model: 'categories',
+      recordId: categoryIds.join(','),
       userId: session.user.id,
       action: `BULK_${action.toUpperCase()}_CATEGORIES`,
-      resource: 'categories',
       details: { categoryIds }
     });
+    */
 
     // Update categories
     const isActive = action === 'activate';
